@@ -14,16 +14,15 @@
     $orderStatuses = OrderStatus::cases();
 @endphp
 
-<!------------------------------ Employee Management ------------------------------>
+<!------------------------------ Users Management ------------------------------>
 @hasPermission(['admin.employee.index', 'admin.employee.create'])
-    <!--- employees--->
     <li>
         <a class="menu {{ request()->routeIs('admin.employee.*') ? 'active' : '' }}" data-bs-toggle="collapse"
             href="#employeeMenu">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/employee.svg') }}" alt="icon"
                     loading="lazy" />
-                {{ __('Employee Management') }}
+                {{ __('Users Management') }}
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
@@ -33,13 +32,13 @@
                 @hasPermission('admin.employee.index')
                     <a href="{{ route('admin.employee.index') }}"
                         class="subMenu hasCount {{ request()->routeIs('admin.employee.index') ? 'active' : '' }}">
-                        {{ __('All Employee') }}
+                        {{ __('All Users') }}
                     </a>
                 @endhasPermission
                 @hasPermission('admin.employee.create')
                     <a href="{{ route('admin.employee.create') }}"
                         class="subMenu hasCount {{ request()->routeIs('admin.employee.create') ? 'active' : '' }}">
-                        {{ __('Add Employee') }}
+                        {{ __('Add Users') }}
                     </a>
                 @endhasPermission
             </div>
@@ -51,7 +50,6 @@
 
 <!------------------------------ Customer Management ------------------------------>
 @hasPermission(['admin.customer.index', 'admin.customer.create'])
-    <!--- customers--->
     <li>
         <a class="menu {{ request()->routeIs('admin.customer.*') ? 'active' : '' }}" data-bs-toggle="collapse"
             href="#customerMenu">
@@ -84,10 +82,8 @@
 <!------------------------------ End Customer Management ------------------------------>
 
 
-
 <!------------------------------ Product Management ------------------------------>
 @hasPermission(['shop.product.index', 'shop.product.create'])
-    <!--- Products--->
     <li>
         <a class="menu {{ request()->routeIs('shop.product.*') ? 'active' : '' }}" data-bs-toggle="collapse"
             href="#productMenu">
@@ -121,7 +117,6 @@
 
 <!------------------------------ Product Variant Management ------------------------------>
 @hasPermission(['admin.brand.index', 'admin.color.index', 'admin.size.index', 'admin.unit.index'])
-    <!--- Product Varient --->
     <li>
         <a class="menu {{ request()->routeIs('admin.brand.*', 'admin.color.*', 'admin.size.*', 'admin.unit.*') ? 'active' : '' }}"
             data-bs-toggle="collapse" href="#productVarientMenu">
@@ -167,22 +162,38 @@
 
 <!------------------------------ Order Management ------------------------------>
 @hasPermission('admin.order.index')
-    <!--- Orders --->
     <li>
-        <a class="menu {{ $request->routeIs('admin.order.*') ? 'active' : '' }}" href="{{ route('admin.order.index') }}">
+        <a class="menu {{ $request->routeIs('admin.order.*') ? 'active' : '' }}" data-bs-toggle="collapse"
+            href="#OrderManagementMenu">
             <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/orders.svg') }}" alt="icon" loading="lazy" />
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/orders.svg') }}" alt="icon"
+                    loading="lazy" />
                 {{ __('Order Management') }}
             </span>
+            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.order.*') ? 'show' : '' }}" id="OrderManagementMenu">
+            <div class="listBar">
+                @hasPermission('admin.order.index')
+                    <a href="{{ route('admin.order.index') }}" class="subMenu hasCount {{ request()->routeIs('admin.order.index') ? 'active' : '' }}">
+                        {{ __('All Orders') }}
+                    </a>
+                @endhasPermission
+                @hasPermission('admin.order.create')
+                    <a href="#" class="subMenu hasCount {{ request()->routeIs('admin.order.index') ? 'active' : '' }}">
+                        {{ __('Return Orders') }}
+                    </a>
+                @endhasPermission
+            </div>
+        </div>
     </li>
 @endhasPermission
 <!------------------------------ End Order Management ------------------------------>
+    
 
 <!------------------------------ Shop Management ------------------------------>
 @if ($businessModel == 'multi')
     @hasPermission(['admin.shop.index', 'admin.shop.create', 'shop.profile.index'])
-        <!--- shop management--->
         <li>
             <a class="menu {{ request()->routeIs('admin.shop.*', 'shop.profile.*') ? 'active' : '' }}"
                 data-bs-toggle="collapse" href="#shopMenu">
@@ -226,7 +237,6 @@
 
 <!------------------------------ Shop Product Management ------------------------------>
 @if ($businessModel == 'multi')
-    <!--- admin Shop products --->
     @hasPermission(['admin.product.index'])
         <li>
             <a class="menu {{ request()->routeIs('admin.product.index') ? 'active' : '' }}" data-bs-toggle="collapse"
@@ -272,7 +282,6 @@
 
 <!------------------------------ Category Management ------------------------------>
 @hasPermission([ 'admin.category.index', 'admin.subcategory.index', 'admin.category.create', 'admin.subcategory.create'])
-    <!--- categories --->
     <li>
         <a class="menu {{ request()->routeIs('admin.category.*', 'admin.subcategory.*') ? 'active' : '' }}"
             data-bs-toggle="collapse" href="#categoryMenu">
@@ -286,30 +295,48 @@
         <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.category.*', 'admin.subcategory.*') ? 'show' : '' }}"
             id="categoryMenu">
             <div class="listBar">
+                <!---Main categories---> <!-- extra added by ancy -->
+                @hasPermission('admin.category.index')
+                    <a href="#" class="subMenu hasCount {{ request()->routeIs('admin.category.index') ? 'active' : '' }}">
+                        {{ __('All Main Category') }}
+                    </a>
+                @endhasPermission
+                @hasPermission('admin.category.create')
+                    <a href="#" class="subMenu hasCount {{ request()->routeIs('admin.category.create') ? 'active' : '' }}">
+                        {{ __('Add Main Category') }}
+                    </a>
+                @endhasPermission 
                 <!---categories--->
                 @hasPermission('admin.category.index')
-                    <a href="{{ route('admin.category.index') }}"
-                        class="subMenu hasCount {{ request()->routeIs('admin.category.index') ? 'active' : '' }}">
+                    <a href="{{ route('admin.category.index') }}" class="subMenu hasCount {{ request()->routeIs('admin.category.index') ? 'active' : '' }}">
                         {{ __('All Category') }}
                     </a>
                 @endhasPermission
                 @hasPermission('admin.category.create')
-                    <a href="{{ route('admin.category.create') }}"
-                        class="subMenu hasCount {{ request()->routeIs('admin.category.create') ? 'active' : '' }}">
+                    <a href="{{ route('admin.category.create') }}" class="subMenu hasCount {{ request()->routeIs('admin.category.create') ? 'active' : '' }}">
                         {{ __('Add Category') }}
                     </a>
                 @endhasPermission
                 <!--- sub categories--->
                 @hasPermission('admin.subcategory.index')
-                    <a href="{{ route('admin.subcategory.index') }}"
-                        class="subMenu hasCount {{ request()->routeIs('admin.subcategory.index') ? 'active' : '' }}">
+                    <a href="{{ route('admin.subcategory.index') }}" class="subMenu hasCount {{ request()->routeIs('admin.subcategory.index') ? 'active' : '' }}">
                         {{ __('All Sub Category') }}
                     </a>
                 @endhasPermission
                 @hasPermission('admin.subcategory.create')
-                    <a href="{{ route('admin.subcategory.create') }}"
-                        class="subMenu hasCount {{ request()->routeIs('admin.subcategory.create') ? 'active' : '' }}">
+                    <a href="{{ route('admin.subcategory.create') }}" class="subMenu hasCount {{ request()->routeIs('admin.subcategory.create') ? 'active' : '' }}">
                         {{ __('Add Sub Category') }}
+                    </a>
+                @endhasPermission
+                <!---Child categories---> <!-- extra added by ancy -->
+                @hasPermission('admin.category.index')
+                    <a href="#" class="subMenu hasCount {{ request()->routeIs('admin.category.index') ? 'active' : '' }}">
+                        {{ __('All Child Category') }}
+                    </a>
+                @endhasPermission
+                @hasPermission('admin.category.create')
+                    <a href="#" class="subMenu hasCount {{ request()->routeIs('admin.category.create') ? 'active' : '' }}">
+                        {{ __('Add Child Category') }}
                     </a>
                 @endhasPermission
             </div>
@@ -322,7 +349,6 @@
 <!------------------------------ Subscription Management ------------------------------>
 @if ($businessModel == 'multi')
     @hasPermission(['admin.subscription-plan.index', 'admin.subscription-plan.create', 'admin.subscription-plan.subscription.list'])
-        <!--- subscription plans --->
         <li>
             <a class="menu {{ request()->routeIs('admin.subscription-plan.*') ? 'active' : '' }}"
                 data-bs-toggle="collapse" href="#subscriptionMenu">
@@ -364,7 +390,6 @@
 
 <!------------------------------ Promotion Management ------------------------------>
 @hasPermission(['admin.banner.index', 'admin.flashSale.index', 'admin.ad.index', 'admin.coupon.index'])
-    <!--- Promotion management--->
     <li>
         <a class="menu {{ request()->routeIs('admin.flashSale.*', 'admin.banner.*', 'admin.ad.*', 'admin.coupon.*') ? 'active' : '' }}"
             data-bs-toggle="collapse" href="#promotionMenu">
@@ -383,7 +408,7 @@
                         {{ __('Flash Deals') }}
                     </a>
                 @endhasPermission
-                @hasPermission('admin.banner.index')
+                <!-- @hasPermission('admin.banner.index')
                     <a href="{{ route('admin.banner.index') }}"
                         class="subMenu hasCount {{ request()->routeIs('admin.banner.*') ? 'active' : '' }}">
                         {{ __('Banner Setup') }}
@@ -394,11 +419,16 @@
                         class="subMenu hasCount {{ request()->routeIs('admin.ad.*') ? 'active' : '' }}">
                         {{ __('Ads Campaign ') }}
                     </a>
-                @endhasPermission
+                @endhasPermission -->
                 @hasPermission('admin.coupon.index')
                     <a href="{{ route('admin.coupon.index') }}"
                         class="subMenu hasCount {{ request()->routeIs('admin.coupon.*') ? 'active' : '' }}">
                         {{ __('Promo Code') }}
+                    </a>
+                @endhasPermission
+                @hasPermission('admin.coupon.index')
+                    <a href="#" class="subMenu hasCount {{ request()->routeIs('admin.coupon.*') ? 'active' : '' }}">
+                        {{ __('Slider') }}
                     </a>
                 @endhasPermission
             </div>
@@ -408,74 +438,100 @@
 <!------------------------------ End Promotion Management ------------------------------>
 
 
+<!------------------------------ Wallet ------------------------------>
+@hasPermission('admin.contactUs.index')
+    <li>
+        <a href="#"
+            class="menu {{ request()->routeIs('admin.contactUs.*') ? 'active' : '' }}">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/wallet.svg') }}" alt="icon"
+                    loading="lazy" />
+                {{ __('Wallet') }}
+            </span>
+        </a>
+    </li>
+@endhasPermission
+<!------------------------------ End Wallet ------------------------------>
+
+
+<!------------------------------ Certificates ------------------------------>
+@hasPermission('admin.contactUs.index')
+    <li>
+        <a href="#"
+            class="menu {{ request()->routeIs('admin.contactUs.*') ? 'active' : '' }}">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/contacts.svg') }}" alt="icon"
+                    loading="lazy" />
+                {{ __('Certificates') }}
+            </span>
+        </a>
+    </li>
+@endhasPermission
+<!------------------------------ End Certificates ------------------------------>
+
+
+<!------------------------------ Brand Store ------------------------------>
+@hasPermission('admin.contactUs.index')
+    <li>
+        <a href="#"
+            class="menu {{ request()->routeIs('admin.contactUs.*') ? 'active' : '' }}">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/brand.svg') }}" alt="icon"
+                    loading="lazy" />
+                {{ __('Brand Store') }}
+            </span>
+        </a>
+    </li>
+@endhasPermission
+<!------------------------------ End Brand Store ------------------------------>
+
+
+<!------------------------------ Verified Store ------------------------------>
+@hasPermission('admin.contactUs.index')
+    <li>
+        <a href="#"
+            class="menu {{ request()->routeIs('admin.contactUs.*') ? 'active' : '' }}">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/contacts.svg') }}" alt="icon"
+                    loading="lazy" />
+                {{ __('Verified Store') }}
+            </span>
+        </a>
+    </li>
+@endhasPermission
+<!------------------------------ End Verified Store ------------------------------>
+
+
+<!------------------------------ Revenue ------------------------------>
+@hasPermission('admin.contactUs.index')
+    <li>
+        <a href="#"
+            class="menu {{ request()->routeIs('admin.contactUs.*') ? 'active' : '' }}">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/contacts.svg') }}" alt="icon"
+                    loading="lazy" />
+                {{ __('Revenue') }}
+            </span>
+        </a>
+    </li>
+@endhasPermission
+<!------------------------------ End Revenue ------------------------------>
+
+
 <!------------------------------ Push Notification ------------------------------>
 @hasPermission('admin.customerNotification.index')
-    <!--- notification--->
     <li>
         <a class="menu {{ $request->routeIs('admin.customerNotification.*') ? 'active' : '' }}"
             href="{{ route('admin.customerNotification.index') }}">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/notification.svg') }}" alt="icon"
                     loading="lazy" />
-                {{ __('Push Notification') }}
+                {{ __('Notifications') }}
             </span>
         </a>
     </li>
 @endhasPermission
 <!------------------------------ End Push Notification ------------------------------>
-
-
-<!------------------------------ POS Management ------------------------------>
-@hasPermission(['shop.pos.index', 'shop.pos.draft', 'shop.pos.sales'])
-    <li>
-        <a class="menu {{ request()->routeIs('shop.pos.*') ? 'active' : '' }}" data-bs-toggle="collapse" href="#posMenu">
-            <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/pos.svg') }}" alt="icon" loading="lazy" />
-                {{ __('POS Management') }}
-            </span>
-            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
-        </a>
-        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('shop.pos.*') ? 'show' : '' }}" id="posMenu">
-            <div class="listBar">
-                @hasPermission('shop.pos.index')
-                    <a href="{{ route('shop.pos.index') }}"
-                        class="subMenu hasCount {{ request()->routeIs('shop.pos.index') ? 'active' : '' }}">
-                        {{ __('POS') }}
-                    </a>
-                @endhasPermission
-                @hasPermission('shop.pos.sales')
-                    <a href="{{ route('shop.pos.sales') }}"
-                        class="subMenu hasCount {{ request()->routeIs('shop.pos.sales') ? 'active' : '' }}">
-                        {{ __('POS Sales History') }}
-                    </a>
-                @endhasPermission
-                @hasPermission('shop.pos.draft')
-                    <a href="{{ route('shop.pos.draft') }}"
-                        class="subMenu hasCount {{ request()->routeIs('shop.pos.draft') ? 'active' : '' }}">
-                        {{ __('POS Draft') }}
-                    </a>
-                @endhasPermission
-            </div>
-        </div>
-    </li>
-@endhasPermission
-<!------------------------------ End POS Management ------------------------------>
-
-
-<!------------------------------ Refund Management ------------------------------>
-@hasPermission('admin.returnOrder.index')
-    <li>
-        <a class="menu {{ $request->routeIs('admin.returnOrder.*') ? 'active' : '' }}"
-            href="{{ route('admin.returnOrder.index') }}">
-            <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/delivery-cart-arrow-up.svg') }}" alt="icon"
-                    loading="lazy" />
-                {{ __('Refund Management') }}
-            </span>
-        </a>
-    </li>
-@endhasPermission
-<!------------------------------ End Refund Management ------------------------------>
 
 
 <!------------------------------ Messages ------------------------------>
@@ -493,75 +549,6 @@
     </a>
 </li>
 <!------------------------------ End Messages ------------------------------>
-
-
-<!------------------------------ Blog Management ------------------------------>
-@hasPermission(['admin.blog.index', 'admin.blog.create'])
-    <!--- blogs--->
-    <li>
-        <a class="menu {{ request()->routeIs('admin.blog.*') ? 'active' : '' }}" data-bs-toggle="collapse"
-            href="#blogMenu">
-            <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/promotional.svg') }}" alt="icon"
-                    loading="lazy" />
-                {{ __('Blog Management') }}
-            </span>
-            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
-        </a>
-        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.blog.*') ? 'show' : '' }}" id="blogMenu">
-            <div class="listBar">
-                @hasPermission('admin.blog.index')
-                    <a href="{{ route('admin.blog.index') }}"
-                        class="subMenu hasCount {{ request()->routeIs('admin.blog.index') ? 'active' : '' }}">
-                        {{ __('All Blog') }}
-                    </a>
-                @endhasPermission
-                @hasPermission('admin.blog.create')
-                    <a href="{{ route('admin.blog.create') }}"
-                        class="subMenu hasCount {{ request()->routeIs('admin.blog.create') ? 'active' : '' }}">
-                        {{ __('Add Blog') }}
-                    </a>
-                @endhasPermission
-            </div>
-        </div>
-    </li>
-@endhasPermission
-<!------------------------------ End Blog Management ------------------------------>
-
-
-<!------------------------------ Driver Management ------------------------------>
-@hasPermission(['admin.rider.index', 'admin.rider.create'])
-    <!--- rider--->
-    <li>
-        <a class="menu {{ request()->routeIs('admin.rider.*') ? 'active' : '' }}" data-bs-toggle="collapse"
-            href="#riderMenu">
-            <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/rider.svg') }}" alt="icon"
-                    loading="lazy" />
-                {{ __('Driver Management') }}
-            </span>
-            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
-        </a>
-        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.rider.*') ? 'show' : '' }}"
-            id="riderMenu">
-            <div class="listBar">
-                @hasPermission('admin.rider.index')
-                    <a href="{{ route('admin.rider.index') }}"
-                        class="subMenu hasCount {{ request()->routeIs('admin.rider.index') ? 'active' : '' }}">
-                        {{ __('All Driver') }}
-                    </a>
-                @endhasPermission
-                @hasPermission('admin.rider.create')
-                    <a href="{{ route('admin.rider.create') }}"
-                        class="subMenu hasCount {{ request()->routeIs('admin.rider.create') ? 'active' : '' }}">
-                        {{ __('Add Driver') }}
-                    </a>
-                @endhasPermission
-            </div>
-        </div>
-    </li>
-@endhasPermission
-<!------------------------------ End Driver Management ------------------------------>
 
 
 <!------------------------------ Support Management ------------------------------>
@@ -598,109 +585,199 @@
 <!------------------------------ End Support Management ------------------------------>
 
 
-<!------------------------------ Withdrawal Management ------------------------------>
-@if ($businessModel == 'multi')
-    @hasPermission(['admin.withdraw.index'])
-        <!--- withdraw --->
-        <li>
-            <a class="menu {{ $request->routeIs('admin.withdraw.*') ? 'active' : '' }}"
-                href="{{ route('admin.withdraw.index') }}">
-                <span>
-                    <img class="menu-icon" src="{{ asset('assets/icons-admin/withdraw.svg') }}" alt="icon"
-                        loading="lazy" />
-                    {{ __('Withdrawal Management') }}
-                </span>
-            </a>
-        </li>
-    @endhasPermission
-@endif
-<!------------------------------ End Withdrawal Management ------------------------------>
 
-
-<!------------------------------ Import/Export ------------------------------>
-@hasPermission(['shop.bulk-product-export.index', 'shop.bulk-product-import.index', 'shop.gallery.index'])
-    <!--- Import / Export --->
+<!------------------------------ Store Report ------------------------------>
+@hasPermission('admin.contactUs.index')
     <li>
-        <a class="menu {{ request()->routeIs('shop.bulk-product-export.*', 'shop.bulk-product-import.*', 'shop.gallery.*') ? 'active' : '' }}"
-            data-bs-toggle="collapse" href="#exportImportMenu">
+        <a href="#"
+            class="menu {{ request()->routeIs('admin.contactUs.*') ? 'active' : '' }}">
             <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/download.svg') }}" alt="icon"
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/contacts.svg') }}" alt="icon"
                     loading="lazy" />
-                {{ __('Import/Export') }}
+                {{ __('Store Report') }}
             </span>
-            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
-        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('shop.bulk-product-export.*', 'shop.bulk-product-import.*', 'shop.gallery.*') ? 'show' : '' }}"
-            id="exportImportMenu">
+    </li>
+@endhasPermission
+<!------------------------------ End Store Report ------------------------------>
+
+
+<!------------------------------ Analytics ------------------------------>
+@hasPermission('admin.contactUs.index')
+    <li>
+        <a href="#"
+            class="menu {{ request()->routeIs('admin.contactUs.*') ? 'active' : '' }}">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/contacts.svg') }}" alt="icon"
+                    loading="lazy" />
+                {{ __('Analytics') }}
+            </span>
+        </a>
+    </li>
+@endhasPermission
+<!------------------------------ End Analytics ------------------------------>
+
+
+<!------------------------------ Contact Us ------------------------------>
+@hasPermission('admin.contactUs.index')
+    <li>
+        <a href="{{ route('admin.contactUs.index') }}"
+            class="menu {{ request()->routeIs('admin.contactUs.*') ? 'active' : '' }}">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/contacts.svg') }}" alt="icon"
+                    loading="lazy" />
+                {{ __('Contact Us') }}
+            </span>
+        </a>
+    </li>
+@endhasPermission
+<!------------------------------ End Contact Us ------------------------------>
+
+
+
+<!------------------------------ CMS ------------------------------>
+@hasPermission(['admin.menu.index', 'admin.page.index', 'admin.footer.index'])
+    <li>
+        <a class="menu {{ request()->routeIs('admin.menu.index*', 'admin.page.*', 'admin.footer.*') ? 'active' : '' }}"
+            data-bs-toggle="collapse" href="#cms">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/legal.svg') }}" alt="icon"
+                    loading="lazy" />
+                {{ __('CMS') }}
+            </span>
+            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="" class="downIcon">
+        </a>
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.menu.*', 'admin.page.*', 'admin.footer.*') ? 'show' : '' }}"
+            id="cms">
             <div class="listBar">
-                @hasPermission('shop.bulk-product-export.index')
-                    <a href="{{ route('shop.bulk-product-export.index') }}"
-                        class="subMenu hasCount {{ request()->routeIs('shop.bulk-product-export.*') ? 'active' : '' }}">
-                        {{ __('Product Export') }}
+                @hasPermission('admin.page.index')
+                    <a href="{{ route('admin.page.index') }}"
+                        class="subMenu {{ request()->routeIs('admin.page.*') ? 'active' : '' }}">
+                        {{ __('Pages') }}
                     </a>
                 @endhasPermission
-                @hasPermission('shop.bulk-product-import.index')
-                    <a href="{{ route('shop.bulk-product-import.index') }}"
-                        class="subMenu hasCount {{ request()->routeIs('shop.bulk-product-import.*') ? 'active' : '' }}">
-                        {{ __('Product Import') }}
+
+                @hasPermission('admin.menu.index')
+                    <a href="{{ route('admin.menu.index') }}"
+                        class="subMenu {{ request()->routeIs('admin.menu.index') ? 'active' : '' }}">
+                        {{ __('Menus') }}
                     </a>
                 @endhasPermission
-                @hasPermission('shop.gallery.index')
-                    <a href="{{ route('shop.gallery.index') }}"
-                        class="subMenu hasCount {{ request()->routeIs('shop.gallery.*') ? 'active' : '' }}">
-                        {{ __('Gallery Import') }}
+
+                @hasPermission('admin.footer.index')
+                    <a href="{{ route('admin.footer.index') }}"
+                        class="subMenu {{ request()->routeIs('admin.footer.index') ? 'active' : '' }}">
+                        {{ __('Footer') }}
                     </a>
                 @endhasPermission
             </div>
         </div>
     </li>
 @endhasPermission
-<!------------------------------ End Import/Export ------------------------------>
+<!------------------------------ End CMS ------------------------------>
 
 
-<!------------------------------ Country ------------------------------>
-@hasPermission(['admin.country.index'])
+<!------------------------------ 3rd party configuration ------------------------------>
+@hasPermission([ 'admin.pusher.index', 'admin.mailConfig.index', 'admin.paymentGateway.index', 'admin.sms-gateway.index', 'admin.firebase.index', 'admin.googleReCaptcha.index', 'admin.aiPrompt.configure',])
     <li>
-        <a class="menu {{ $request->routeIs('admin.country.*') ? 'active' : '' }}"
-            href="{{ route('admin.country.index') }}">
+        <a class="menu {{ request()->routeIs('admin.pusher.*', 'admin.mailConfig.*', 'admin.paymentGateway.*', 'admin.sms-gateway.*', 'admin.firebase.*', 'admin.googleReCaptcha.*', 'admin.aiPrompt.configure') ? 'active' : '' }}"
+            data-bs-toggle="collapse" href="#thirdPartConfig" title="Third Party configuration">
             <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/country.svg') }}" alt="icon"
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/3rd-config.svg') }}" alt="icon"
                     loading="lazy" />
-                {{ __('Country') }}
+                {{ __('3rd Party Configuration') }}
+            </span>
+            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="" class="downIcon">
+        </a>
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.pusher.*', 'admin.mailConfig.*', 'admin.paymentGateway.*', 'admin.sms-gateway.*', 'admin.firebase.*', 'admin.googleReCaptcha.*', 'admin.aiPrompt.configure') ? 'show' : '' }}"
+            id="thirdPartConfig">
+            <div class="listBar">
+                @hasPermission('admin.paymentGateway.index')
+                    <a href="{{ route('admin.paymentGateway.index') }}"
+                        class="subMenu {{ request()->routeIs('admin.paymentGateway.*') ? 'active' : '' }}">
+                        {{ __('Payment Gateway') }}
+                    </a>
+                @endhasPermission
+
+                <!-- @hasPermission('admin.sms-gateway.index')
+                    <a href="{{ route('admin.sms-gateway.index') }}"
+                        class="subMenu {{ request()->routeIs('admin.sms-gateway.*') ? 'active' : '' }}">
+                        {{ __('SMS Gateway') }}
+                    </a>
+                @endhasPermission -->
+
+                {{-- @hasPermission('admin.socialAuth.index')
+                    <a href="{{ route('admin.socialAuth.index') }}"
+                        class="subMenu {{ request()->routeIs('admin.socialAuth.*') ? 'active' : '' }}">
+                        {{ __('Social Authentication') }}
+                    </a>
+                @endhasPermission --}}
+
+                @hasPermission('admin.pusher.index')
+                    <a href="{{ route('admin.pusher.index') }}"
+                        class="subMenu {{ request()->routeIs('admin.pusher.*') ? 'active' : '' }}">
+                        {{ __('Pusher Setup') }}
+                    </a>
+                @endhasPermission
+
+                @hasPermission('admin.mailConfig.index')
+                    <a href="{{ route('admin.mailConfig.index') }}"
+                        class="subMenu {{ request()->routeIs('admin.mailConfig.*') ? 'active' : '' }}">
+                        {{ __('Mail Config') }}
+                    </a>
+                @endhasPermission
+                <!-- @hasPermission('admin.aiPrompt.configure')
+                    <a href="{{ route('admin.aiPrompt.configure') }}"
+                        class="subMenu {{ request()->routeIs('admin.aiPrompt.configure') ? 'active' : '' }}">
+                        {{ __('OpenAI Config') }}
+                    </a>
+                @endhasPermission
+
+                @hasPermission('admin.firebase.index')
+                    <a href="{{ route('admin.firebase.index') }}"
+                        class="subMenu {{ request()->routeIs('admin.firebase.*') ? 'active' : '' }}">
+                        {{ __('Firebase Notification') }}
+                    </a>
+                @endhasPermission
+
+                @hasPermission('admin.googleReCaptcha.index')
+                    <a href="{{ route('admin.googleReCaptcha.index') }}"
+                        class="subMenu {{ request()->routeIs('admin.googleReCaptcha.*') ? 'active' : '' }}">
+                        {{ __('Google ReCaptcha') }}
+                    </a>
+                @endhasPermission -->
+            </div>
+        </div>
+    </li>
+@endhasPermission
+<!------------------------------ End 3rd party configuration ------------------------------>
+
+
+<!------------------------------ roles and permissions ------------------------------>
+@hasPermission(['admin.role.index'])
+    <li>
+        <a class="menu {{ $request->routeIs('admin.role.*') ? 'active' : '' }}"
+            href="{{ route('admin.role.index') }}">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/role-permission.svg') }}" alt="icon"
+                    loading="lazy" />
+                {{ __('Roles & Permissions') }}
             </span>
         </a>
     </li>
 @endhasPermission
-<!------------------------------ End Country ------------------------------>
-
-
-<!------------------------------ Languages ------------------------------>
-@hasPermission(['admin.language.index'])
-    <!--- Languages --->
-    <li>
-        <a href="{{ route('admin.language.index') }}"
-            class="menu {{ request()->routeIs('admin.language.*') ? 'active' : '' }}">
-            <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/Language.svg') }}" alt="icon"
-                    loading="lazy" />
-                {{ __('Languages') }}
-            </span>
-        </a>
-    </li>
-@endhasPermission
-<!------------------------------ End Languages ------------------------------>
+<!------------------------------ End roles and permissions ------------------------------>
 
 
 <!------------------------------ Business Settings ------------------------------>
 @hasPermission([ 'admin.generale-setting.index', 'admin.business-setting.index', 'admin.socialLink.index', 'admin.themeColor.index', 'admin.deliveryCharge.index', 'admin.ticketIssueType.index', 'admin.verification.index', 'admin.vatTax.index', 'admin.currency.index', 'admin.aiPrompt.index',])
-    <!--- Settings --->
     <li>
         <a class="menu {{ request()->routeIs('admin.generale-setting.*', 'admin.business-setting.*', 'admin.socialLink.*', 'admin.themeColor.*', 'admin.deliveryCharge.*', 'admin.ticketIssueType.*', 'admin.verification.*', 'admin.vatTax.*', 'admin.currency.*', 'admin.aiPrompt.index') ? 'active' : '' }}"
             data-bs-toggle="collapse" href="#settings">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/settings.svg') }}" alt="icon"
                     loading="lazy" />
-                {{ __('Business Settings') }}
+                {{ __('All Settings') }}
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="" class="downIcon">
         </a>
@@ -782,154 +859,214 @@
 <!------------------------------ End Businss Settings ------------------------------>
 
 
-<!------------------------------ CMS ------------------------------>
-@hasPermission(['admin.menu.index', 'admin.page.index', 'admin.footer.index'])
+<!------------------------------ POS Management ------------------------------>
+<!-- @hasPermission(['shop.pos.index', 'shop.pos.draft', 'shop.pos.sales'])
     <li>
-        <a class="menu {{ request()->routeIs('admin.menu.index*', 'admin.page.*', 'admin.footer.*') ? 'active' : '' }}"
-            data-bs-toggle="collapse" href="#cms">
+        <a class="menu {{ request()->routeIs('shop.pos.*') ? 'active' : '' }}" data-bs-toggle="collapse" href="#posMenu">
             <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/legal.svg') }}" alt="icon"
-                    loading="lazy" />
-                {{ __('CMS') }}
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/pos.svg') }}" alt="icon" loading="lazy" />
+                {{ __('POS Management') }}
             </span>
-            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="" class="downIcon">
+            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
-        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.menu.*', 'admin.page.*', 'admin.footer.*') ? 'show' : '' }}"
-            id="cms">
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('shop.pos.*') ? 'show' : '' }}" id="posMenu">
             <div class="listBar">
-                @hasPermission('admin.page.index')
-                    <a href="{{ route('admin.page.index') }}"
-                        class="subMenu {{ request()->routeIs('admin.page.*') ? 'active' : '' }}">
-                        {{ __('Pages') }}
+                @hasPermission('shop.pos.index')
+                    <a href="{{ route('shop.pos.index') }}"
+                        class="subMenu hasCount {{ request()->routeIs('shop.pos.index') ? 'active' : '' }}">
+                        {{ __('POS') }}
                     </a>
                 @endhasPermission
-
-                @hasPermission('admin.menu.index')
-                    <a href="{{ route('admin.menu.index') }}"
-                        class="subMenu {{ request()->routeIs('admin.menu.index') ? 'active' : '' }}">
-                        {{ __('Menus') }}
+                @hasPermission('shop.pos.sales')
+                    <a href="{{ route('shop.pos.sales') }}"
+                        class="subMenu hasCount {{ request()->routeIs('shop.pos.sales') ? 'active' : '' }}">
+                        {{ __('POS Sales History') }}
                     </a>
                 @endhasPermission
-
-                @hasPermission('admin.footer.index')
-                    <a href="{{ route('admin.footer.index') }}"
-                        class="subMenu {{ request()->routeIs('admin.footer.index') ? 'active' : '' }}">
-                        {{ __('Footer') }}
+                @hasPermission('shop.pos.draft')
+                    <a href="{{ route('shop.pos.draft') }}"
+                        class="subMenu hasCount {{ request()->routeIs('shop.pos.draft') ? 'active' : '' }}">
+                        {{ __('POS Draft') }}
                     </a>
                 @endhasPermission
             </div>
         </div>
     </li>
-@endhasPermission
-<!------------------------------ End CMS ------------------------------>
+@endhasPermission -->
+<!------------------------------ End POS Management ------------------------------>
 
 
-<!------------------------------ 3rd party configuration ------------------------------>
-@hasPermission([ 'admin.pusher.index', 'admin.mailConfig.index', 'admin.paymentGateway.index', 'admin.sms-gateway.index', 'admin.firebase.index', 'admin.googleReCaptcha.index', 'admin.aiPrompt.configure',])
+<!------------------------------ Refund Management ------------------------------>
+<!-- @hasPermission('admin.returnOrder.index')
     <li>
-        <a class="menu {{ request()->routeIs('admin.pusher.*', 'admin.mailConfig.*', 'admin.paymentGateway.*', 'admin.sms-gateway.*', 'admin.firebase.*', 'admin.googleReCaptcha.*', 'admin.aiPrompt.configure') ? 'active' : '' }}"
-            data-bs-toggle="collapse" href="#thirdPartConfig" title="Third Party configuration">
+        <a class="menu {{ $request->routeIs('admin.returnOrder.*') ? 'active' : '' }}"
+            href="{{ route('admin.returnOrder.index') }}">
             <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/3rd-config.svg') }}" alt="icon"
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/delivery-cart-arrow-up.svg') }}" alt="icon"
                     loading="lazy" />
-                {{ __('3rd Party Configuration') }}
+                {{ __('Refund Management') }}
             </span>
-            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="" class="downIcon">
         </a>
-        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.pusher.*', 'admin.mailConfig.*', 'admin.paymentGateway.*', 'admin.sms-gateway.*', 'admin.firebase.*', 'admin.googleReCaptcha.*', 'admin.aiPrompt.configure') ? 'show' : '' }}"
-            id="thirdPartConfig">
+    </li>
+@endhasPermission -->
+<!------------------------------ End Refund Management ------------------------------>
+
+
+<!------------------------------ Blog Management ------------------------------>
+<!-- @hasPermission(['admin.blog.index', 'admin.blog.create'])
+    <li>
+        <a class="menu {{ request()->routeIs('admin.blog.*') ? 'active' : '' }}" data-bs-toggle="collapse"
+            href="#blogMenu">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/promotional.svg') }}" alt="icon"
+                    loading="lazy" />
+                {{ __('Blog Management') }}
+            </span>
+            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
+        </a>
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.blog.*') ? 'show' : '' }}" id="blogMenu">
             <div class="listBar">
-                @hasPermission('admin.paymentGateway.index')
-                    <a href="{{ route('admin.paymentGateway.index') }}"
-                        class="subMenu {{ request()->routeIs('admin.paymentGateway.*') ? 'active' : '' }}">
-                        {{ __('Payment Gateway') }}
+                @hasPermission('admin.blog.index')
+                    <a href="{{ route('admin.blog.index') }}"
+                        class="subMenu hasCount {{ request()->routeIs('admin.blog.index') ? 'active' : '' }}">
+                        {{ __('All Blog') }}
                     </a>
                 @endhasPermission
-
-                @hasPermission('admin.sms-gateway.index')
-                    <a href="{{ route('admin.sms-gateway.index') }}"
-                        class="subMenu {{ request()->routeIs('admin.sms-gateway.*') ? 'active' : '' }}">
-                        {{ __('SMS Gateway') }}
-                    </a>
-                @endhasPermission
-
-                {{-- @hasPermission('admin.socialAuth.index')
-                    <a href="{{ route('admin.socialAuth.index') }}"
-                        class="subMenu {{ request()->routeIs('admin.socialAuth.*') ? 'active' : '' }}">
-                        {{ __('Social Authentication') }}
-                    </a>
-                @endhasPermission --}}
-
-                @hasPermission('admin.pusher.index')
-                    <a href="{{ route('admin.pusher.index') }}"
-                        class="subMenu {{ request()->routeIs('admin.pusher.*') ? 'active' : '' }}">
-                        {{ __('Pusher Setup') }}
-                    </a>
-                @endhasPermission
-
-                @hasPermission('admin.mailConfig.index')
-                    <a href="{{ route('admin.mailConfig.index') }}"
-                        class="subMenu {{ request()->routeIs('admin.mailConfig.*') ? 'active' : '' }}">
-                        {{ __('Mail Config') }}
-                    </a>
-                @endhasPermission
-                @hasPermission('admin.aiPrompt.configure')
-                    <a href="{{ route('admin.aiPrompt.configure') }}"
-                        class="subMenu {{ request()->routeIs('admin.aiPrompt.configure') ? 'active' : '' }}">
-                        {{ __('OpenAI Config') }}
-                    </a>
-                @endhasPermission
-
-                @hasPermission('admin.firebase.index')
-                    <a href="{{ route('admin.firebase.index') }}"
-                        class="subMenu {{ request()->routeIs('admin.firebase.*') ? 'active' : '' }}">
-                        {{ __('Firebase Notification') }}
-                    </a>
-                @endhasPermission
-
-                @hasPermission('admin.googleReCaptcha.index')
-                    <a href="{{ route('admin.googleReCaptcha.index') }}"
-                        class="subMenu {{ request()->routeIs('admin.googleReCaptcha.*') ? 'active' : '' }}">
-                        {{ __('Google ReCaptcha') }}
+                @hasPermission('admin.blog.create')
+                    <a href="{{ route('admin.blog.create') }}"
+                        class="subMenu hasCount {{ request()->routeIs('admin.blog.create') ? 'active' : '' }}">
+                        {{ __('Add Blog') }}
                     </a>
                 @endhasPermission
             </div>
         </div>
     </li>
-@endhasPermission
-<!------------------------------ End 3rd party configuration ------------------------------>
+@endhasPermission -->
+<!------------------------------ End Blog Management ------------------------------>
 
 
-<!------------------------------ roles and permissions ------------------------------>
-@hasPermission(['admin.role.index'])
+<!------------------------------ Driver Management ------------------------------>
+<!-- @hasPermission(['admin.rider.index', 'admin.rider.create'])
     <li>
-        <a class="menu {{ $request->routeIs('admin.role.*') ? 'active' : '' }}"
-            href="{{ route('admin.role.index') }}">
+        <a class="menu {{ request()->routeIs('admin.rider.*') ? 'active' : '' }}" data-bs-toggle="collapse"
+            href="#riderMenu">
             <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/role-permission.svg') }}" alt="icon"
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/rider.svg') }}" alt="icon"
                     loading="lazy" />
-                {{ __('Roles & Permissions') }}
+                {{ __('Driver Management') }}
+            </span>
+            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
+        </a>
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.rider.*') ? 'show' : '' }}"
+            id="riderMenu">
+            <div class="listBar">
+                @hasPermission('admin.rider.index')
+                    <a href="{{ route('admin.rider.index') }}"
+                        class="subMenu hasCount {{ request()->routeIs('admin.rider.index') ? 'active' : '' }}">
+                        {{ __('All Driver') }}
+                    </a>
+                @endhasPermission
+                @hasPermission('admin.rider.create')
+                    <a href="{{ route('admin.rider.create') }}"
+                        class="subMenu hasCount {{ request()->routeIs('admin.rider.create') ? 'active' : '' }}">
+                        {{ __('Add Driver') }}
+                    </a>
+                @endhasPermission
+            </div>
+        </div>
+    </li>
+@endhasPermission -->
+<!------------------------------ End Driver Management ------------------------------>
+
+
+<!------------------------------ Withdrawal Management ------------------------------>
+<!-- @if ($businessModel == 'multi')
+    @hasPermission(['admin.withdraw.index'])
+        <li>
+            <a class="menu {{ $request->routeIs('admin.withdraw.*') ? 'active' : '' }}"
+                href="{{ route('admin.withdraw.index') }}">
+                <span>
+                    <img class="menu-icon" src="{{ asset('assets/icons-admin/withdraw.svg') }}" alt="icon"
+                        loading="lazy" />
+                    {{ __('Withdrawal Management') }}
+                </span>
+            </a>
+        </li>
+    @endhasPermission
+@endif -->
+<!------------------------------ End Withdrawal Management ------------------------------>
+
+
+<!------------------------------ Import/Export ------------------------------>
+<!-- @hasPermission(['shop.bulk-product-export.index', 'shop.bulk-product-import.index', 'shop.gallery.index'])
+    <li>
+        <a class="menu {{ request()->routeIs('shop.bulk-product-export.*', 'shop.bulk-product-import.*', 'shop.gallery.*') ? 'active' : '' }}"
+            data-bs-toggle="collapse" href="#exportImportMenu">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/download.svg') }}" alt="icon"
+                    loading="lazy" />
+                {{ __('Import/Export') }}
+            </span>
+            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
+        </a>
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('shop.bulk-product-export.*', 'shop.bulk-product-import.*', 'shop.gallery.*') ? 'show' : '' }}"
+            id="exportImportMenu">
+            <div class="listBar">
+                @hasPermission('shop.bulk-product-export.index')
+                    <a href="{{ route('shop.bulk-product-export.index') }}"
+                        class="subMenu hasCount {{ request()->routeIs('shop.bulk-product-export.*') ? 'active' : '' }}">
+                        {{ __('Product Export') }}
+                    </a>
+                @endhasPermission
+                @hasPermission('shop.bulk-product-import.index')
+                    <a href="{{ route('shop.bulk-product-import.index') }}"
+                        class="subMenu hasCount {{ request()->routeIs('shop.bulk-product-import.*') ? 'active' : '' }}">
+                        {{ __('Product Import') }}
+                    </a>
+                @endhasPermission
+                @hasPermission('shop.gallery.index')
+                    <a href="{{ route('shop.gallery.index') }}"
+                        class="subMenu hasCount {{ request()->routeIs('shop.gallery.*') ? 'active' : '' }}">
+                        {{ __('Gallery Import') }}
+                    </a>
+                @endhasPermission
+            </div>
+        </div>
+    </li>
+@endhasPermission -->
+<!------------------------------ End Import/Export ------------------------------>
+
+
+<!------------------------------ Country ------------------------------>
+<!-- @hasPermission(['admin.country.index'])
+    <li>
+        <a class="menu {{ $request->routeIs('admin.country.*') ? 'active' : '' }}"
+            href="{{ route('admin.country.index') }}">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/country.svg') }}" alt="icon"
+                    loading="lazy" />
+                {{ __('Country') }}
             </span>
         </a>
     </li>
-@endhasPermission
-<!------------------------------ End roles and permissions ------------------------------>
+@endhasPermission -->
+<!------------------------------ End Country ------------------------------>
 
 
-<!------------------------------ Contact Us ------------------------------>
-@hasPermission('admin.contactUs.index')
+<!------------------------------ Languages ------------------------------>
+<!-- @hasPermission(['admin.language.index'])
     <li>
-        <a href="{{ route('admin.contactUs.index') }}"
-            class="menu {{ request()->routeIs('admin.contactUs.*') ? 'active' : '' }}">
+        <a href="{{ route('admin.language.index') }}"
+            class="menu {{ request()->routeIs('admin.language.*') ? 'active' : '' }}">
             <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/contacts.svg') }}" alt="icon"
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/Language.svg') }}" alt="icon"
                     loading="lazy" />
-                {{ __('Contact Us') }}
+                {{ __('Languages') }}
             </span>
         </a>
     </li>
-@endhasPermission
-<!------------------------------ Contact Us ------------------------------>
+@endhasPermission -->
+<!------------------------------ End Languages ------------------------------>
 
 {{-- <li>
     <a href="javascript:void(0)" class="menu logout">
