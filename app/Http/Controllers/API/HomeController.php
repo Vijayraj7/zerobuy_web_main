@@ -42,11 +42,12 @@ class HomeController extends Controller
         $banners = BannerRepository::query()->whereNull('shop_id')->active()->get();
 
         $categories = CategoryRepository::query()->active()
-            ->whereHas('shops', function ($query) use ($rootShop) {
-                return $query->where('shop_id', $rootShop->id);
-            })->whereHas('products', function ($product) {
-                return $product->where('is_active', true);
-            })->withCount('products')->orderByDesc('products_count')->take(10)->get();
+            // ->whereHas('shops', function ($query) use ($rootShop) {
+            //     return $query->where('shop_id', $rootShop->id);
+            // })->whereHas('products', function ($product) {
+            //     return $product->where('is_active', true);
+            // })->withCount('products')->orderByDesc('products_count')
+            ->take(10)->get();
 
         $popularProducts = ProductRepository::query()->isActive()
             ->when($shop, function ($query) use ($shop) {
