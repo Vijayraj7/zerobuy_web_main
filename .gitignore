@@ -13,8 +13,8 @@
 # /.zed
 
 # Vite build output (always ignore)
-public/build/
-public/hot
+# public/build/
+# public/hot
 # /.phpunit.cache
 # /.vscode
 # /.zed
