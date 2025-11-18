@@ -218,7 +218,7 @@
                     @endhasPermission
 
                     <!-- Language Dropdown -->
-                    <div class="user-profile-box dropdown mx-3">
+                    <!-- <div class="user-profile-box dropdown mx-3">
                         <div class="nav-profile-box dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                             @php
                                 $selectedLang = null;
@@ -250,7 +250,7 @@
                                 @endunless
                             @endforeach
                         </div>
-                    </div>
+                    </div> -->
 
                     <!-- User Profile Dropdown -->
                     <div class="user-profile-box user-profile dropdown">
