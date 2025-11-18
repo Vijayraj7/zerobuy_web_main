@@ -89,7 +89,7 @@
             href="#productMenu">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/product.svg') }}" alt="icon" loading="lazy" />
-                {{ __('Product Management') }}
+                {{ __('My Products') }}
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
@@ -99,7 +99,7 @@
                 @hasPermission('shop.product.index')
                     <a href="{{ route('shop.product.index') }}"
                         class="subMenu hasCount {{ request()->routeIs('shop.product.index') ? 'active' : '' }}">
-                        {{ __('All Product') }}
+                        {{ __('All My Products') }}
                     </a>
                 @endhasPermission
                 @hasPermission('shop.product.create')
@@ -365,7 +365,7 @@
                     @hasPermission('admin.subscription-plan.subscription.list')
                         <a href="{{ route('admin.subscription-plan.subscription.list') }}"
                             class="subMenu hasCount {{ request()->routeIs('admin.subscription-plan.subscription.list') ? 'active' : '' }}">
-                            {{ __('All Subscription') }}
+                            {{ __('All Subscription Store') }}
                         </a>
                     @endhasPermission
                     @hasPermission('admin.subscription-plan.index')
@@ -378,6 +378,18 @@
                         <a href="{{ route('admin.subscription-plan.create') }}"
                             class="subMenu hasCount {{ request()->routeIs('admin.subscription-plan.create') ? 'active' : '' }}">
                             {{ __('Add Subscription Plan') }}
+                        </a>
+                    @endhasPermission
+                    @hasPermission('admin.subscription-plan.subscription.list')
+                        <a href="#"
+                            class="subMenu hasCount {{ request()->routeIs('admin.subscription-plan.subscription.list') ? 'active' : '' }}">
+                            {{ __('Add Subscription Store') }}
+                        </a>
+                    @endhasPermission
+                    @hasPermission('admin.subscription-plan.subscription.list')
+                        <a href="#"
+                            class="subMenu hasCount {{ request()->routeIs('admin.subscription-plan.subscription.list') ? 'active' : '' }}">
+                            {{ __('Offline Payment Details') }}
                         </a>
                     @endhasPermission
                 </div>
@@ -608,7 +620,7 @@
         <a href="#"
             class="menu {{ request()->routeIs('admin.contactUs.*') ? 'active' : '' }}">
             <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/contacts.svg') }}" alt="icon"
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/chart-histogram.svg') }}" alt="icon"
                     loading="lazy" />
                 {{ __('Analytics') }}
             </span>
@@ -804,7 +816,7 @@
                         {{ __('Manage Verification') }}
                     </a>
                 @endhasPermission
-                @hasPermission('admin.aiPrompt.index')
+                <!-- @hasPermission('admin.aiPrompt.index')
                     <a href="{{ route('admin.aiPrompt.index') }}"
                         class="subMenu {{ request()->routeIs('admin.aiPrompt.index') ? 'active' : '' }}">
                         {{ __('Ai Prompt') }}
@@ -816,7 +828,7 @@
                         class="subMenu {{ request()->routeIs('admin.currency.*') ? 'active' : '' }}">
                         {{ __('Currency') }}
                     </a>
-                @endhasPermission
+                @endhasPermission -->
 
                 @hasPermission('admin.deliveryCharge.index')
                     <a href="{{ route('admin.deliveryCharge.index') }}"
