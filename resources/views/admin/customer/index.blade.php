@@ -19,19 +19,29 @@
                     <table class="table border table-responsive-lg">
                         <thead>
                             <tr>
-                                <th class="text-center">{{ __('SL') }}.</th>
+                                <th class="text-center">{{ __('SI NO') }}</th>
+                                <th>{{ __('Profile') }}</th>
+                                <th>{{ __('Name') }}</th>
+                                <th>{{ __('Phone') }}</th>
+                                <!-- <th>{{ __('Email') }}</th> -->
+                                <th class="text-center">{{ __('Total Orders') }}</th>
+                                <th class="text-center">{{ __('Joined Date') }}</th>
+                                <th class="text-center">{{ __('Status') }}</th>
+                                <th class="text-center">{{ __('Action') }}</th>
+<!-- updated by ancy -->
+                                <!-- <th class="text-center">{{ __('SL') }}.</th>
                                 <th>{{ __('Profile') }}</th>
                                 <th style="min-width: 150px">{{ __('Name') }}</th>
                                 <th style="min-width: 100px">{{ __('Phone') }}</th>
                                 <th>{{ __('Email') }}</th>
                                 <th class="text-center">{{ __('Gender') }}</th>
                                 <th class="text-center">{{ __('Date of Birth') }}</th>
-                                <th class="text-center">{{ __('Action') }}</th>
+                                <th class="text-center">{{ __('Action') }}</th> -->
                             </tr>
                         </thead>
                         @forelse($customers as $key => $customer)
                             <tr>
-                                <td class="text-center">{{ ++$key }}</td>
+                                <td class="text-center">CST0{{ $customer->id }}</td>
 
                                 <td>
                                     <img src="{{ $customer->thumbnail }}" width="50">
@@ -40,20 +50,40 @@
                                 <td>{{ Str::limit($customer->fullName, 50, '...') }}</td>
 
                                 <td>
-                                    {{ $customer->phone ?? '--' }}
+                                    <i class="fa fa-phone"></i> {{ $customer->phone ?? '--' }}
+                                    <br>
+                                    <i class="fa fa-envelope"></i> {{ $customer->email ?? '--' }}
                                 </td>
 
-                                <td>
+                                <!-- <td>
                                     {{ $customer->email ?? '--' }}
-                                </td>
-
-                                <td class="text-center">
+                                </td> -->
+                                <!-- <td class="text-center">
                                     {{ $customer->gender ?? '--' }}
                                 </td>
 
                                 <td class="text-center">
                                     {{ $customer->date_of_birth ?? '--' }}
+                                </td> -->
+                                <td class="text-center">
+                                    {{ $customer->orders_count }}
                                 </td>
+                                <td class="text-center">
+                                    {{ $customer->created_at->format('d-m-Y') }} <br>
+                                    {{ $customer->created_at->format('h:i A') }}
+                                </td>
+                                <td class="text-center">
+                                    @php
+                                        $status = $customer->status ?? 'active';
+                                    @endphp
+
+                                    @if($status == 'active')
+                                        <span class="badge bg-success">Active</span>
+                                    @else
+                                        <span class="badge bg-danger">Banned</span>
+                                    @endif
+                                </td>
+
 
                                 <td class="text-center">
                                     <div class="d-flex gap-2 justify-content-center">

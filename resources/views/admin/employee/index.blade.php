@@ -1,14 +1,14 @@
 @extends('layouts.app')
-@section('header-title', __('Employees'))
+@section('header-title', __('Admin Users'))
 
 @section('content')
     <div class="d-flex align-items-center flex-wrap gap-3 justify-content-between">
-        <h4>{{ __('Employees') }}</h4>
+        <h4>{{ __('Admin Users List') }}</h4>
 
         @hasPermission('admin.employee.create')
             <a href="{{ route('admin.employee.create') }}" class="btn btn-primary py-2.5">
                 <i class="fa fa-plus-circle"></i>
-                {{ __('Add Employee') }}
+                {{ __('Add New User') }}
             </a>
         @endhasPermission
     </div>

@@ -176,4 +176,9 @@ class User extends Authenticatable
     {
         return $this->last_online && $this->last_online->gt(now()->subMinutes($minutes));
     }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'customer_id');
+    }
 }

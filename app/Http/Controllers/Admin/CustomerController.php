@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Repositories\CustomerRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\WalletRepository;
+use App\Repositories\AddressRepository;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
@@ -18,7 +19,11 @@ class CustomerController extends Controller
 {
     public function index()
     {
-        $customers = User::role(Roles::CUSTOMER->value)->latest('id')->with('media')->paginate(20);
+        $customers = User::role(Roles::CUSTOMER->value)
+            ->latest('id')
+            ->with('media')
+            ->withCount(['orders'])
+            ->paginate(20);
 
         return view('admin.customer.index', compact('customers'));
     }
@@ -34,11 +39,14 @@ class CustomerController extends Controller
         $user = UserRepository::registerNewUser($request);
 
         // Create a new customer
-        CustomerRepository::storeByRequest($user);
+        $customer = CustomerRepository::storeByRequest($user);
 
         // create wallet
         WalletRepository::storeByRequest($user);
 
+        // Store address 
+        AddressRepository::storeForAdminCreate($request, $customer); //added by ancy
+        
         $user->assignRole(Roles::CUSTOMER->value);
 
         return to_route('admin.customer.index')->withSuccess(__('Created successfully'));

@@ -51,6 +51,15 @@ class RegistrationRequest extends FormRequest
             'country' => [$countryRequired, 'string', 'max:100'],
             'gender' => ['nullable', 'string'],
             'profile_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,svg', 'max:2048'],
+
+            // New Address Validation //added by ancy
+            'address_line' => 'required|string|max:255',
+            'address_line2' => 'nullable|string|max:255',
+            'state' => 'required|string|max:255',
+            'area' => 'required|string|max:255',
+            'post_code' => 'required|string|max:20',
+            'address_type' => 'required|in:home,shop,other',
+            'is_default' => 'nullable|boolean',
         ];
     }
 
@@ -72,6 +81,14 @@ class RegistrationRequest extends FormRequest
             'email.required' => __('The email field is required.'),
             'email.email' => __('The email must be a valid email address.'),
             'email.unique' => __('The email has already been taken.'),
+
+            // ---------- ADDRESS VALIDATION ---------- //Added by ancy
+            'address_line.required' => __('The address line field is required.'),
+            'state.required' => __('The state field is required.'),
+            'area.required' => __('The area field is required.'),
+            'post_code.required' => __('The post code field is required.'),
+            'address_type.required' => __('The address type field is required.'),
+            'address_type.in'       => __('Invalid address type selected.'),
         ];
     }
 }

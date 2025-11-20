@@ -4,7 +4,10 @@ namespace App\Repositories;
 
 use Abedin\Maker\Repositories\Repository;
 use App\Http\Requests\AddressRequest;
+use Illuminate\Http\Request;
+use App\Models\Customer;
 use App\Models\Address;
+
 
 class AddressRepository extends Repository
 {
@@ -38,6 +41,7 @@ class AddressRepository extends Repository
             'customer_id' => auth()->user()->customer->id,
             'name' => $request->name,
             'phone' => $request->phone,
+            'state' => $request->state,     // <-- new field created by ancy
             'area' => $request->area,
             'flat_no' => $request->flat_no,
             'post_code' => $request->post_code,
@@ -49,6 +53,33 @@ class AddressRepository extends Repository
             'longitude' => $request->longitude,
         ]);
     }
+
+    public static function storeForAdminCreate(Request $request, Customer $customer): Address  //created by Ancy
+    {
+        $isDefault = $request->is_default ? true : false;
+
+        // If this is default, remove other defaults
+        if ($isDefault && $customer->addresses()->count() > 0) {
+            $customer->addresses()->update(['is_default' => false]);
+        }
+
+        return self::create([
+            'customer_id' => $customer->id,
+            'name' => $request->name,
+            'phone' => $request->phone,
+            'state' => $request->state,     // <-- new field created by ancy
+            'area' => $request->area,
+            'flat_no' => $request->flat_no ?? null,
+            'post_code' => $request->post_code,
+            'address_line' => $request->address_line,
+            'address_line2' => $request->address_line2,
+            'address_type' => $request->address_type,
+            'is_default' => $customer->addresses()->count() == 0 ? true : $isDefault,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+        ]);
+    }
+
 
     /**
      * Update an address using the provided request data.

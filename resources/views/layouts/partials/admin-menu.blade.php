@@ -15,7 +15,7 @@
 @endphp
 
 <!------------------------------ Users Management ------------------------------>
-@hasPermission(['admin.employee.index', 'admin.employee.create'])
+@hasPermission(['admin.employee.index', 'admin.employee.create', 'admin.role.index'])
     <li>
         <a class="menu {{ request()->routeIs('admin.employee.*') ? 'active' : '' }}" data-bs-toggle="collapse"
             href="#employeeMenu">
@@ -32,15 +32,21 @@
                 @hasPermission('admin.employee.index')
                     <a href="{{ route('admin.employee.index') }}"
                         class="subMenu hasCount {{ request()->routeIs('admin.employee.index') ? 'active' : '' }}">
-                        {{ __('All Users') }}
+                        {{ __('Admin Users') }}
                     </a>
                 @endhasPermission
-                @hasPermission('admin.employee.create')
+                @hasPermission('admin.role.index')
+                    <a href="{{ route('admin.role.index') }}"
+                        class="subMenu hasCount {{ request()->routeIs('admin.role.index') ? 'active' : '' }}">
+                        {{ __('Roles & Permissions') }}
+                    </a>
+                @endhasPermission
+                <!-- @hasPermission('admin.employee.create')
                     <a href="{{ route('admin.employee.create') }}"
                         class="subMenu hasCount {{ request()->routeIs('admin.employee.create') ? 'active' : '' }}">
                         {{ __('Add Users') }}
                     </a>
-                @endhasPermission
+                @endhasPermission -->
             </div>
         </div>
     </li>
