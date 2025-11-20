@@ -120,6 +120,7 @@ class CartRepository extends Repository
                 'shop_id' => $key,
                 'shop_name' => $shop->name,
                 'shop_logo' => $shop->logo,
+                'shop' => $shop,
                 'shop_rating' => (float) $shop->averageRating,
                 'shop_online' => $lastOnline,
                 'products' => $productArray,
