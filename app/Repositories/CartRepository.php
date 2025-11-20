@@ -93,6 +93,7 @@ class CartRepository extends Repository
                 $productArray[] = (object) [
                     'id' => $product->id,
                     'quantity' => (int) $cart->quantity,
+                    'product_quantity' => (int) $product->quantity,
                     'name' => $product->name,
                     'thumbnail' => $product->thumbnail,
                     'brand' => $product->brand?->name ?? null,
