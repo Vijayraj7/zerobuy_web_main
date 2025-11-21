@@ -435,15 +435,15 @@ Route::name('admin.')->group(function () {
 
         // customer route
         Route::controller(CustomerController::class)->group(function () {
-            Route::get('/customers', 'index')->name('customer.index');
+            Route::get('/customers/{status?}', 'index')->name('customer.index');
             Route::get('/customers/create', 'create')->name('customer.create');
             Route::post('/customers/store', 'store')->name('customer.store');
             Route::get('/customers/{user}', 'show')->name('customer.show');
             Route::get('/customers/{user}/edit', 'edit')->name('customer.edit');
             Route::put('/customers/{user}/update', 'update')->name('customer.update');
             Route::get('/customers/{user}/destroy', 'destroy')->name('customer.destroy');
-            Route::get('/customers/{user}/toggle', 'statusToggle')->name('customer.toggle');
             Route::post('/customers/{user}/reset-password', 'resetPassword')->name('customer.reset-password')->middleware('demoMode');
+            Route::get('/customers/{user}/ban', 'statusToggle')->name('customer.ban');
         });
 
         // firebase route

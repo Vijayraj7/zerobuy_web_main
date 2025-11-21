@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\Roles;
+use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegistrationRequest;
 use App\Http\Requests\ShopPasswordResetRequest;
 use App\Http\Requests\UserRequest;
 use App\Models\User;
+use Illuminate\Http\Request;
 use App\Repositories\CustomerRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\WalletRepository;
@@ -17,16 +19,51 @@ use Illuminate\Support\Facades\Storage;
 
 class CustomerController extends Controller
 {
-    public function index()
-    {
-        $customers = User::role(Roles::CUSTOMER->value)
-            ->latest('id')
-            ->with('media')
-            ->withCount(['orders'])
-            ->paginate(20);
-
-        return view('admin.customer.index', compact('customers'));
+public function index(Request $request, $status = null)
+{
+    // Normalize status
+    if ($status) {
+        $status = strtolower($status);
     }
+
+    $search = $request->input('search');
+    $date   = $request->input('date');
+    $length = $request->input('length', 20); // pagination size
+
+    $customers = User::role(Roles::CUSTOMER->value)
+        ->with('media')
+        ->with('customer')
+        ->withCount('orders')
+
+        // STATUS FILTER
+        ->when($status, function ($query) use ($status) {
+            $query->whereHas('customer', function ($q) use ($status) {
+                $q->where('status', $status);
+            });
+        })
+
+        // SEARCH FILTER
+        ->when($search, function ($query) use ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%$search%")
+                  ->orWhere('email', 'LIKE', "%$search%")
+                  ->orWhere('phone', 'LIKE', "%$search%");
+            });
+        })
+
+        // DATE FILTER
+        ->when($date, function ($query) use ($date) {
+            $query->whereDate('created_at', $date);
+        })
+
+        ->latest('id')
+        ->paginate($length)
+        ->withQueryString();
+
+    return view('admin.customer.index', compact('customers', 'status'));
+}
+
+
 
     public function create()
     {
@@ -98,4 +135,17 @@ class CustomerController extends Controller
 
         return back()->withSuccess(__('Password updated successfully'));
     }
+
+    public function statusToggle(User $user) //added by ancy
+    {
+        $customer = $user->customer;
+        if (!$customer) {
+            return back()->with('error', 'Customer not found.');
+        }
+        $customer->status = ($customer->status === 'active') ? 'banned' : 'active';
+        $customer->save();
+
+        return back()->with('success', 'Customer status updated successfully.');
+    }
+
 }

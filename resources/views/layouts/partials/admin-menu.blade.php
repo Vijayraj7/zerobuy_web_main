@@ -771,22 +771,6 @@
 <!------------------------------ End 3rd party configuration ------------------------------>
 
 
-<!------------------------------ roles and permissions ------------------------------>
-@hasPermission(['admin.role.index'])
-    <li>
-        <a class="menu {{ $request->routeIs('admin.role.*') ? 'active' : '' }}"
-            href="{{ route('admin.role.index') }}">
-            <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/role-permission.svg') }}" alt="icon"
-                    loading="lazy" />
-                {{ __('Roles & Permissions') }}
-            </span>
-        </a>
-    </li>
-@endhasPermission
-<!------------------------------ End roles and permissions ------------------------------>
-
-
 <!------------------------------ Business Settings ------------------------------>
 @hasPermission([ 'admin.generale-setting.index', 'admin.business-setting.index', 'admin.socialLink.index', 'admin.themeColor.index', 'admin.deliveryCharge.index', 'admin.ticketIssueType.index', 'admin.verification.index', 'admin.vatTax.index', 'admin.currency.index', 'admin.aiPrompt.index',])
     <li>

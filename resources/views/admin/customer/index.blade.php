@@ -12,52 +12,91 @@
     </div>
 
     <div class="container-fluid mt-3">
-
+        
         <div class="mb-3 card">
             <div class="card-body">
+                <form method="GET" id="filterForm">
+    <div class="d-flex gap-3 align-items-center flex-wrap">
+
+        <!-- Length Menu -->
+        <select name="length" onchange="document.getElementById('filterForm').submit()" 
+                class="form-select" style="width:80px;">
+            <option value="10"  {{ request('length')==10 ? 'selected':'' }}>10</option>
+            <option value="25"  {{ request('length')==25 ? 'selected':'' }}>25</option>
+            <option value="50"  {{ request('length')==50 ? 'selected':'' }}>50</option>
+            <option value="100" {{ request('length')==100 ? 'selected':'' }}>100</option>
+        </select>
+
+        <!-- Search Customer -->
+        <input type="text" name="search" value="{{ request('search') }}"
+               class="form-control" placeholder="Search for Customer" style="width:250px;">
+
+        <!-- Search Date -->
+        <input type="date" name="date" value="{{ request('date') }}"
+               class="form-control" style="width:200px;">
+
+        <!-- Search -->
+        <button class="btn btn-primary">Search</button>
+
+        <!-- Reset -->
+        <a href="{{ route('admin.customer.index') }}" class="btn btn-danger">Reset</a>
+
+    </div>
+</form>
+
+
+                <!-- status ul label added by ancy -->
+                <ul class="nav nav-tabs mt-3">
+                    @php
+                        use App\Enums\CustomerStatus;
+                        $CustomerStatuses = CustomerStatus::cases();
+                    @endphp
+                    <li class="nav-item">
+                        <a href="{{ route('admin.customer.index') }}"
+                        class="nav-link {{ request()->url() === route('admin.customer.index') ? 'active' : '' }}">
+                        {{ __('All') }}
+                        </a>
+                    </li> 
+                    @foreach ($CustomerStatuses as $status)
+                    <li class="nav-item">
+                        <a href="{{ route('admin.customer.index', $status->value) }}"
+                            class="nav-link {{ request()->is('admin/customers/'.$status->value) ? 'active' : '' }}">
+                            {{ ucfirst($status->value) }}
+                        </a>
+                    </li>
+                    @endforeach
+
+                </ul>
                 <div class="table-responsive">
                     <table class="table border table-responsive-lg">
                         <thead>
                             <tr>
-                                <th class="text-center">{{ __('SI NO') }}</th>
+                                <th>#</th>
+                                <th class="text-center">{{ __('Joined Date') }}</th>
+                                <th class="text-center">{{ __('Customer ID') }}</th>
                                 <th>{{ __('Profile') }}</th>
                                 <th>{{ __('Name') }}</th>
-                                <th>{{ __('Phone') }}</th>
+                                <th>{{ __('Phone/Email') }}</th>
                                 <!-- <th>{{ __('Email') }}</th> -->
                                 <th class="text-center">{{ __('Total Orders') }}</th>
-                                <th class="text-center">{{ __('Joined Date') }}</th>
                                 <th class="text-center">{{ __('Status') }}</th>
-                                <th class="text-center">{{ __('Action') }}</th>
-<!-- updated by ancy -->
-                                <!-- <th class="text-center">{{ __('SL') }}.</th>
-                                <th>{{ __('Profile') }}</th>
-                                <th style="min-width: 150px">{{ __('Name') }}</th>
-                                <th style="min-width: 100px">{{ __('Phone') }}</th>
-                                <th>{{ __('Email') }}</th>
-                                <th class="text-center">{{ __('Gender') }}</th>
-                                <th class="text-center">{{ __('Date of Birth') }}</th>
-                                <th class="text-center">{{ __('Action') }}</th> -->
+                                <th class="text-center">{{ __('Action') }}</th> 
                             </tr>
                         </thead>
                         @forelse($customers as $key => $customer)
                             <tr>
-                                <td class="text-center">CST0{{ $customer->id }}</td>
-
-                                <td>
-                                    <img src="{{ $customer->thumbnail }}" width="50">
+                                <td> {{$key+1}} </td>
+                                <td class="text-center">
+                                    {{ $customer->created_at->format('d-m-Y') }} <br>
+                                    {{ $customer->created_at->format('h:i A') }}
                                 </td>
-
+                                <td class="text-center">CST0{{ $customer->id }}</td>
+                                <td><img src="{{ $customer->thumbnail }}" width="50"></td>
                                 <td>{{ Str::limit($customer->fullName, 50, '...') }}</td>
-
                                 <td>
-                                    <i class="fa fa-phone"></i> {{ $customer->phone ?? '--' }}
-                                    <br>
+                                    <i class="fa fa-phone"></i> {{ $customer->phone ?? '--' }} <br>
                                     <i class="fa fa-envelope"></i> {{ $customer->email ?? '--' }}
                                 </td>
-
-                                <!-- <td>
-                                    {{ $customer->email ?? '--' }}
-                                </td> -->
                                 <!-- <td class="text-center">
                                     {{ $customer->gender ?? '--' }}
                                 </td>
@@ -65,19 +104,9 @@
                                 <td class="text-center">
                                     {{ $customer->date_of_birth ?? '--' }}
                                 </td> -->
+                                <td class="text-center"> {{ $customer->orders_count }} </td>
                                 <td class="text-center">
-                                    {{ $customer->orders_count }}
-                                </td>
-                                <td class="text-center">
-                                    {{ $customer->created_at->format('d-m-Y') }} <br>
-                                    {{ $customer->created_at->format('h:i A') }}
-                                </td>
-                                <td class="text-center">
-                                    @php
-                                        $status = $customer->status ?? 'active';
-                                    @endphp
-
-                                    @if($status == 'active')
+                                    @if(optional($customer->customer)->status == 'active')
                                         <span class="badge bg-success">Active</span>
                                     @else
                                         <span class="badge bg-danger">Banned</span>
@@ -91,9 +120,18 @@
                                             <a href="{{ route('admin.customer.edit', $customer->id) }}"
                                                 class="btn btn-outline-primary circleIcon" data-bs-toggle="tooltip"
                                                 data-bs-placement="left" data-bs-title="{{ __('Edit') }}">
-                                                <img src="{{ asset('assets/icons-admin/edit.svg') }}" alt="edit"
+                                                <img src="{{ asset('assets/icons-admin/eye.svg') }}" alt="edit"
                                                     loading="lazy" />
                                             </a>
+                                        @endhasPermission 
+
+                                        @hasPermission('admin.customer.ban')
+                                            <button type="button"
+                                                class="btn btn-outline-danger circleIcon"
+                                                onclick="confirmToggle('{{ $customer->id }}', '{{ optional($customer->customer)->status }}')"
+                                                data-bs-title="{{ optional($customer->customer)->status == 'active' ? 'Ban' : 'Activate' }}">
+                                                <i class="fa fa-ban"></i>
+                                            </button>
                                         @endhasPermission
 
                                         @hasPermission('admin.customer.destroy')
@@ -229,5 +267,23 @@
                 document.getElementById('submit').disabled = true;
             }
         });
+
+        function confirmToggle(id, status) {    //added by ancy
+            status = status.toLowerCase();  // Ensure lowercase
+
+            let action = (status === 'active') ? 'Ban' : 'Activate';
+
+            Swal.fire({
+                title: "Are you sure?",
+                text: `Do you want to ${action} this customer?`,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: `Yes, ${action}`,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `/admin/customers/${id}/ban`;
+                }
+            });
+        }
     </script>
 @endpush
