@@ -69,6 +69,7 @@ class ComposerStaticInit3d29dded2dbfbf59be2eafcceb7e87bd
         '320163ac6b93aebe3dc25b60a0533d56' => __DIR__ . '/..' . '/spatie/laravel-ignition/src/helpers.php',
         '377b22b161c09ed6e5152de788ca020a' => __DIR__ . '/..' . '/spatie/laravel-permission/src/helpers.php',
         'b50cc3b860dd4b6f4f09e58a8f6b6ce7' => __DIR__ . '/..' . '/telesign/telesign/src/util.php',
+        '0b47d6d4a00ca9112ba3953b49e7c9a4' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/helper.php',
         'b4e3f29b106af37a2bb239f73cdf68c7' => __DIR__ . '/../..' . '/app/helpers.php',
     );
 
@@ -95,6 +96,7 @@ class ComposerStaticInit3d29dded2dbfbf59be2eafcceb7e87bd
         ),
         'Y' => 
         array (
+            'Yajra\\DataTables\\' => 17,
             'Yabacon\\' => 8,
         ),
         'W' => 
@@ -348,6 +350,10 @@ class ComposerStaticInit3d29dded2dbfbf59be2eafcceb7e87bd
         'ZipStream\\' => 
         array (
             0 => __DIR__ . '/..' . '/maennchen/zipstream-php/src',
+        ),
+        'Yajra\\DataTables\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src',
         ),
         'Yabacon\\' => 
         array (
@@ -1073,6 +1079,7 @@ class ComposerStaticInit3d29dded2dbfbf59be2eafcceb7e87bd
         'Abedin\\WebInstaller\\Traits\\UpdateTrait' => __DIR__ . '/..' . '/joynala/web-installer/src/Traits/UpdateTrait.php',
         'App\\Console\\Commands\\LetsFix' => __DIR__ . '/../..' . '/app/Console/Commands/LetsFix.php',
         'App\\Console\\Kernel' => __DIR__ . '/../..' . '/app/Console/Kernel.php',
+        'App\\Enums\\CustomerStatus' => __DIR__ . '/../..' . '/app/Enums/CustomerStatus.php',
         'App\\Enums\\DeductionType' => __DIR__ . '/../..' . '/app/Enums/DeductionType.php',
         'App\\Enums\\DeliveryChargeType' => __DIR__ . '/../..' . '/app/Enums/DeliveryChargeType.php',
         'App\\Enums\\DiscountType' => __DIR__ . '/../..' . '/app/Enums/DiscountType.php',
@@ -44601,6 +44608,22 @@ class ComposerStaticInit3d29dded2dbfbf59be2eafcceb7e87bd
         'Yabacon\\Paystack\\Routes\\Transaction' => __DIR__ . '/..' . '/yabacon/paystack-php/src/Paystack/Routes/Transaction.php',
         'Yabacon\\Paystack\\Routes\\Transfer' => __DIR__ . '/..' . '/yabacon/paystack-php/src/Paystack/Routes/Transfer.php',
         'Yabacon\\Paystack\\Routes\\Transferrecipient' => __DIR__ . '/..' . '/yabacon/paystack-php/src/Paystack/Routes/Transferrecipient.php',
+        'Yajra\\DataTables\\ApiResourceDataTable' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/ApiResourceDataTable.php',
+        'Yajra\\DataTables\\CollectionDataTable' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/CollectionDataTable.php',
+        'Yajra\\DataTables\\Contracts\\DataTable' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/Contracts/DataTable.php',
+        'Yajra\\DataTables\\Contracts\\Formatter' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/Contracts/Formatter.php',
+        'Yajra\\DataTables\\DataTableAbstract' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/DataTableAbstract.php',
+        'Yajra\\DataTables\\DataTables' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/DataTables.php',
+        'Yajra\\DataTables\\DataTablesServiceProvider' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/DataTablesServiceProvider.php',
+        'Yajra\\DataTables\\EloquentDataTable' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/EloquentDataTable.php',
+        'Yajra\\DataTables\\Exceptions\\Exception' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/Exceptions/Exception.php',
+        'Yajra\\DataTables\\Facades\\DataTables' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/Facades/DataTables.php',
+        'Yajra\\DataTables\\Processors\\DataProcessor' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/Processors/DataProcessor.php',
+        'Yajra\\DataTables\\Processors\\RowProcessor' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/Processors/RowProcessor.php',
+        'Yajra\\DataTables\\QueryDataTable' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/QueryDataTable.php',
+        'Yajra\\DataTables\\Utilities\\Config' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/Utilities/Config.php',
+        'Yajra\\DataTables\\Utilities\\Helper' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/Utilities/Helper.php',
+        'Yajra\\DataTables\\Utilities\\Request' => __DIR__ . '/..' . '/yajra/laravel-datatables-oracle/src/Utilities/Request.php',
         'ZipStream\\CentralDirectoryFileHeader' => __DIR__ . '/..' . '/maennchen/zipstream-php/src/CentralDirectoryFileHeader.php',
         'ZipStream\\CompressionMethod' => __DIR__ . '/..' . '/maennchen/zipstream-php/src/CompressionMethod.php',
         'ZipStream\\DataDescriptor' => __DIR__ . '/..' . '/maennchen/zipstream-php/src/DataDescriptor.php',

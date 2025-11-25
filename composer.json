@@ -36,7 +36,8 @@
         "telesign/telesign": "^3.0",
         "twilio/sdk": "^8.2",
         "vonage/client": "^4.0",
-        "yabacon/paystack-php": "^2.2"
+        "yabacon/paystack-php": "^2.2",
+        "yajra/laravel-datatables-oracle": "^11.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
