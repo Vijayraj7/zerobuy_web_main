@@ -178,6 +178,7 @@ Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
 
     Route::controller(ReturnOrderController::class)->group(function () {
         Route::get('/return-orders', 'index');
+        Route::post('/return-order', 'store');
     });
 
     // coupon route
