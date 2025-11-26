@@ -201,7 +201,7 @@ Route::name('admin.')->group(function () {
             Route::get('/return-order/{returnOrder}/show', 'show')->name('returnOrder.show');
 
             // PAYMENT STATUS
-            Route::post('/return-order/{returnOrder}/payment-status', 'paymentStatus')->name('returnOrder.paymentStatus');
+            Route::post('/return-order/{returnOrder}/payment-status', 'paymentStatus')->name('returnOrder.payment.status');
 
             // REJECT RETURN
             Route::post('/return-order/{returnOrder}/reject', 'returnReject')->name('returnOrder.reject');
