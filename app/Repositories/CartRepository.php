@@ -124,6 +124,7 @@ class CartRepository extends Repository
 
             $shopWiseProducts[] = (object) [
                 'shop_id' => $key,
+                'total_amount' => $totalAmount,
                 'delivery_charge' => $deliveryCharge,
                 'shop_name' => $shop->name,
                 'shop_logo' => $shop->logo,
