@@ -25,7 +25,8 @@ class CartRepository extends Repository
 
         foreach ($groupCart as $key => $products) {
             $productArray = collect([]);
-
+            $totalAmount = 0;
+            $deliveryCharge = 0;
             foreach ($products as $cart) {
 
                 $product = $cart->product;
@@ -107,6 +108,8 @@ class CartRepository extends Repository
                     'size' => $size ? SizeResource::make($size) : null,
                     'unit' => $cart->unit,
                 ];
+                $price = $product->discount_price > 0 ? $product->discount_price : $product->price;
+                $totalAmount += $price * $cart->quantity;
             }
 
             if ($productArray->isEmpty()) {
@@ -117,8 +120,12 @@ class CartRepository extends Repository
 
             $lastOnline = $shop->last_online >= now() ? true : false;
 
+            $deliveryCharge = getDeliveryCharge($totalAmount);
+
             $shopWiseProducts[] = (object) [
                 'shop_id' => $key,
+                'total_amount' => $totalAmount,
+                'delivery_charge' => $deliveryCharge,
                 'shop_name' => $shop->name,
                 'shop_logo' => $shop->logo,
                 'shop_address' => $shop->address,
@@ -231,19 +238,20 @@ class CartRepository extends Repository
         $groupCarts = $carts->groupBy('shop_id');
 
         // get delivery charge
-        $deliveryCharge = 0;
-        foreach ($groupCarts as $shopId => $shopCarts) {
+        // $deliveryCharge = 0;
+        // foreach ($groupCarts as $shopId => $shopCarts) {
 
-            $productQty = 0;
+        //     $productQty = 0;
 
-            foreach ($shopCarts as $cart) {
-                $productQty += $cart->quantity;
-            }
+        //     foreach ($shopCarts as $cart) {
+        //         $productQty += $cart->quantity;
+        //     }
 
-            if ($productQty > 0) {
-                $deliveryCharge += getDeliveryCharge($productQty);
-            }
-        }
+        //     if ($productQty > 0) {
+        //         $deliveryCharge += getDeliveryCharge($productQty);
+        //     }
+        // }
+        $deliveryCharge = getDeliveryCharge($totalAmount);
 
         // generate array for get discount
         $products = collect([]);
