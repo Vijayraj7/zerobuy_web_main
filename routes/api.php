@@ -26,6 +26,7 @@ use App\Http\Controllers\API\SupportTicketController;
 use App\Http\Controllers\Admin\WhatsAppChatController;
 use App\Http\Controllers\API\TicketIssueTypeController;
 use App\Http\Controllers\API\Auth\ForgotPasswordController;
+use App\Http\Controllers\API\ReturnOrderController;
 use App\Http\Controllers\API\SubCategoryController;
 use App\Http\Controllers\API\SupportTicketMessageController;
 
@@ -173,6 +174,10 @@ Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
     // order route for version 1
     Route::controller(OrderController::class)->prefix('/v1')->group(function () {
         Route::post('/place-order', 'store');
+    });
+
+    Route::controller(ReturnOrderController::class)->group(function () {
+        Route::post('/return-orders', 'store');
     });
 
     // coupon route
