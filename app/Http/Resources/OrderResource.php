@@ -23,11 +23,12 @@ class OrderResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'order_code' => (string) '#'.$this->prefix.''.$this->order_code,
+            'order_code' => (string) '#' . $this->prefix . '' . $this->order_code,
             'quantity' => (int) $this->products->sum('pivot.quantity'),
             'amount' => (float) number_format($this->payable_amount, 2, '.', ''),
             'payment_method' => $paymentMethod,
             'payment_status' => $this->payment_status->value,
+            'products' => $this->products,
             'order_status' => $this->order_status->value,
             'created_at' => $this->created_at,
             'placed_at' => $this->created_at->format('d M, Y h:i A'),
