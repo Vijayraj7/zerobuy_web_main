@@ -34,6 +34,7 @@ class OrderProductResource extends JsonResource
             'brand' => $this->brand?->name ?? null,
             'thumbnail' => $this->thumbnail,
             'price' => (float) $this->price,
+            'd_price' => (float) ($this->discount_price > 0 ? $this->discount_price : $this->price),
             'discount_price' => (float) ($this->discount_price > 0 ? $price : 0),
             'order_qty' => (int) $this->pivot->quantity,
             'color' => $this->pivot->color ?? null,
