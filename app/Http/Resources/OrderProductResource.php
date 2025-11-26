@@ -34,13 +34,13 @@ class OrderProductResource extends JsonResource
             'brand' => $this->brand?->name ?? null,
             'thumbnail' => $this->thumbnail,
             'price' => (float) $this->price,
-            'discount_price' => (float) $this->discount_price > 0 ? $price : 0,
+            'discount_price' => (float) ($this->discount_price > 0 ? $price : 0),
             'order_qty' => (int) $this->pivot->quantity,
             'color' => $this->pivot->color ?? null,
             'size' => $this->pivot->size ?? null,
             'rating' => $review ? (float) $review->rating : null,
             'unit' => $this->pivot->unit ?? null,
-             'is_returned' => $isReturnable,
+            'is_returned' => $isReturnable,
         ];
     }
 }
