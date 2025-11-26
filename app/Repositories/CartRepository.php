@@ -25,7 +25,8 @@ class CartRepository extends Repository
 
         foreach ($groupCart as $key => $products) {
             $productArray = collect([]);
-
+            $totalAmount = 0;
+            $deliveryCharge = 0;
             foreach ($products as $cart) {
 
                 $product = $cart->product;
@@ -107,6 +108,8 @@ class CartRepository extends Repository
                     'size' => $size ? SizeResource::make($size) : null,
                     'unit' => $cart->unit,
                 ];
+                $price = $product->discount_price > 0 ? $product->discount_price : $product->price;
+                $totalAmount += $price * $cart->quantity;
             }
 
             if ($productArray->isEmpty()) {
@@ -117,8 +120,11 @@ class CartRepository extends Repository
 
             $lastOnline = $shop->last_online >= now() ? true : false;
 
+            $deliveryCharge = getDeliveryCharge($totalAmount);
+
             $shopWiseProducts[] = (object) [
                 'shop_id' => $key,
+                'delivery_charge' => $deliveryCharge,
                 'shop_name' => $shop->name,
                 'shop_logo' => $shop->logo,
                 'shop_address' => $shop->address,
