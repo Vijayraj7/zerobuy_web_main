@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Illuminate\Support\Str;
 use App\Enums\Roles;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
@@ -16,54 +17,121 @@ use App\Repositories\WalletRepository;
 use App\Repositories\AddressRepository;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use DataTables;
 
 class CustomerController extends Controller
 {
-public function index(Request $request, $status = null)
-{
-    // Normalize status
-    if ($status) {
-        $status = strtolower($status);
+    public function index()
+    {
+        return view('admin.customer.index');
     }
 
-    $search = $request->input('search');
-    $date   = $request->input('date');
-    $length = $request->input('length', 20); // pagination size
+    public function getData(Request $request)
+    {
+        if ($request->ajax()) {
+            $query = User::role(Roles::CUSTOMER->value)
+                ->with('media','customer')
+                ->withCount('orders');
+        
+            /* ---------------- SEARCH FILTER ---------------- */
+            if ($request->searchText) {
+                $search = $request->searchText;
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+                });
+            }
+            /* ---------------- DATE FILTER ---------------- */
+            if ($request->date) {
+                $query->whereDate('created_at', $request->date);
+            }
+            /* ---------------- STATUS TAB FILTER ---------------- */
+            if ($request->status) {
+                $query->whereHas('customer', function ($q) use ($request) {
+                    $q->where('status', $request->status);
+                });
+            }
+            
+            return Datatables::of($query)
+                ->addIndexColumn()
+                ->addColumn('created_at', function ($row) {
+                    return $row->customer?->created_at?->format('d-m-Y | h:i A') ?? '';
+                })
+                ->addColumn('customer_id', function ($row) {
+                    return optional($row->customer)->id ? 'CST0' . $row->customer->id : '';
+                })
+                ->addColumn('profile', function ($row) {
+                    return '<img src="'.$row->thumbnail.'" width="45" class="rounded-circle">';
+                })
+                ->addColumn('fullname', function ($row) {
+                    return Str::limit($row->fullName, 40, '...');
+                })
+                ->addColumn('phone', function ($row) {
+                    return '<i class="fa fa-phone"></i> '.$row->phone.
+                        '<br><i class="fa fa-envelope"></i> '.$row->email;
+                })
+                ->addColumn('status', function ($row) {
+                    if(optional($row->customer)->status == 'active'){
+                        return '<span class="badge bg-success">Active</span>';
+                    }
+                    return '<span class="badge bg-danger">Banned</span>';
+                })
+                // ->addColumn('actions', function ($row) {
+                //     $id = $row->id;
+                //     $status = optional($row->customer)->status;
 
-    $customers = User::role(Roles::CUSTOMER->value)
-        ->with('media')
-        ->with('customer')
-        ->withCount('orders')
+                //     return '
+                //         <a href="'.route('admin.customer.edit', $id).'"
+                //             class="btn btn-outline-primary btn-sm">
+                //             <i class="fa fa-eye"></i>
+                //         </a>
 
-        // STATUS FILTER
-        ->when($status, function ($query) use ($status) {
-            $query->whereHas('customer', function ($q) use ($status) {
-                $q->where('status', $status);
-            });
-        })
+                //         <button class="btn btn-outline-danger btn-sm"
+                //             onclick="confirmToggle('.$id.', `'.$status.'`)">
+                //             <i class="fa fa-ban"></i>
+                //         </button>
 
-        // SEARCH FILTER
-        ->when($search, function ($query) use ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'LIKE', "%$search%")
-                  ->orWhere('email', 'LIKE', "%$search%")
-                  ->orWhere('phone', 'LIKE', "%$search%");
-            });
-        })
+                //         <a href="'.route('admin.customer.destroy', $id).'"
+                //             class="btn btn-outline-danger btn-sm deleteConfirm">
+                //             <i class="fa fa-trash"></i>
+                //         </a>
 
-        // DATE FILTER
-        ->when($date, function ($query) use ($date) {
-            $query->whereDate('created_at', $date);
-        })
+                //         <button onclick="openResetPasswordModal('.$id.', `'.$row->fullName.'`)"
+                //             class="btn btn-outline-info btn-sm">
+                //             <i class="fa fa-key"></i>
+                //         </button>
+                //     ';
+                // })
+                ->addColumn('actions', function ($row) {
+                    $id = $row->id;
+                    $status = optional($row->customer)->status;
 
-        ->latest('id')
-        ->paginate($length)
-        ->withQueryString();
+                    return ' 
+                        <a href="'.route('admin.customer.edit', $id).'" class="btn btn-outline-info circleIcon" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Edit"> 
+                            <i class="fa fa-eye"></i>
+                        </a>
 
-    return view('admin.customer.index', compact('customers', 'status'));
-}
+                        <button class="btn btn-outline-danger circleIcon"
+                            onclick="confirmToggle('.$id.', `'.$status.'`)">
+                            <i class="fa fa-ban"></i>
+                        </button> 
 
+                        <button class="btn btn-outline-danger circleIcon" onclick="confirmDelete('.$id.')" data-bs-title="Delete">
+                            <i class="fa fa-trash"></i>
+                        </button>
 
+                        <button onclick="openResetPasswordModal('.$id.', `'.$row->fullName.'`)"
+                            class="btn btn-outline-info circleIcon" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Reset Password">
+                            <i class="fa fa-key"></i>
+                        </button>
+                    ';
+                })
+                
+                ->rawColumns(['created_at','customer_id','profile','fullname','phone','status','actions'])
+                ->make(true);
+        }
+    }
 
     public function create()
     {

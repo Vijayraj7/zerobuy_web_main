@@ -1,289 +1,268 @@
 @extends('layouts.app')
 @section('content')
-    <div class="d-flex align-items-center flex-wrap gap-3 justify-content-between px-3">
-        <h4>{{ __('All Customers') }}</h4>
 
-        @hasPermission('admin.customer.create')
-            <a href="{{ route('admin.customer.create') }}" class="btn py-2 btn-primary">
-                <i class="bi bi-patch-plus"></i>
-                {{ __('Add Customer') }}
-            </a>
-        @endhasPermission
-    </div>
+<div class="d-flex align-items-center flex-wrap gap-3 justify-content-between px-3">
+    <h4>{{ __('All Customers') }}</h4>
+    @hasPermission('admin.customer.create')
+    <a href="{{ route('admin.customer.create') }}" class="btn py-2 btn-primary">
+        <i class="bi bi-patch-plus"></i>
+        {{ __('Add Customer') }}
+    </a>
+    @endhasPermission
+</div>
 
-    <div class="container-fluid mt-3">
-        
-        <div class="mb-3 card">
-            <div class="card-body">
-                <form method="GET" id="filterForm">
-    <div class="d-flex gap-3 align-items-center flex-wrap">
+<div class="container-fluid mt-3">
+    <div class="mb-3 card">
+        <div class="card-body">
+            
+            <ul class="nav nav-tabs mt-3"> <!-- status ul label added by ancy -->
+                @php
+                use App\Enums\CustomerStatus;
+                $CustomerStatuses = CustomerStatus::cases();
+                @endphp
+                <li class="nav-item">
+                    <a href="{{ route('admin.customer.index') }}"
+                    class="nav-link {{ request('status') == null ? 'active' : '' }}">
+                        All
+                    </a>
+                </li>
 
-        <!-- Length Menu -->
-        <select name="length" onchange="document.getElementById('filterForm').submit()" 
-                class="form-select" style="width:80px;">
-            <option value="10"  {{ request('length')==10 ? 'selected':'' }}>10</option>
-            <option value="25"  {{ request('length')==25 ? 'selected':'' }}>25</option>
-            <option value="50"  {{ request('length')==50 ? 'selected':'' }}>50</option>
-            <option value="100" {{ request('length')==100 ? 'selected':'' }}>100</option>
-        </select>
-
-        <!-- Search Customer -->
-        <input type="text" name="search" value="{{ request('search') }}"
-               class="form-control" placeholder="Search for Customer" style="width:250px;">
-
-        <!-- Search Date -->
-        <input type="date" name="date" value="{{ request('date') }}"
-               class="form-control" style="width:200px;">
-
-        <!-- Search -->
-        <button class="btn btn-primary">Search</button>
-
-        <!-- Reset -->
-        <a href="{{ route('admin.customer.index') }}" class="btn btn-danger">Reset</a>
-
-    </div>
-</form>
-
-
-                <!-- status ul label added by ancy -->
-                <ul class="nav nav-tabs mt-3">
-                    @php
-                        use App\Enums\CustomerStatus;
-                        $CustomerStatuses = CustomerStatus::cases();
-                    @endphp
+                @foreach ($CustomerStatuses as $status)
                     <li class="nav-item">
-                        <a href="{{ route('admin.customer.index') }}"
-                        class="nav-link {{ request()->url() === route('admin.customer.index') ? 'active' : '' }}">
-                        {{ __('All') }}
-                        </a>
-                    </li> 
-                    @foreach ($CustomerStatuses as $status)
-                    <li class="nav-item">
-                        <a href="{{ route('admin.customer.index', $status->value) }}"
-                            class="nav-link {{ request()->is('admin/customers/'.$status->value) ? 'active' : '' }}">
+                        <a href="{{ route('admin.customer.index', ['status' => $status->value]) }}"
+                        class="nav-link {{ request('status') == $status->value ? 'active' : '' }}">
                             {{ ucfirst($status->value) }}
                         </a>
                     </li>
-                    @endforeach
+                @endforeach
+            </ul>
 
-                </ul>
-                <div class="table-responsive">
-                    <table class="table border table-responsive-lg">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th class="text-center">{{ __('Joined Date') }}</th>
-                                <th class="text-center">{{ __('Customer ID') }}</th>
-                                <th>{{ __('Profile') }}</th>
-                                <th>{{ __('Name') }}</th>
-                                <th>{{ __('Phone/Email') }}</th>
-                                <!-- <th>{{ __('Email') }}</th> -->
-                                <th class="text-center">{{ __('Total Orders') }}</th>
-                                <th class="text-center">{{ __('Status') }}</th>
-                                <th class="text-center">{{ __('Action') }}</th> 
-                            </tr>
-                        </thead>
-                        @forelse($customers as $key => $customer)
-                            <tr>
-                                <td> {{$key+1}} </td>
-                                <td class="text-center">
-                                    {{ $customer->created_at->format('d-m-Y') }} <br>
-                                    {{ $customer->created_at->format('h:i A') }}
-                                </td>
-                                <td class="text-center">CST0{{ $customer->id }}</td>
-                                <td><img src="{{ $customer->thumbnail }}" width="50"></td>
-                                <td>{{ Str::limit($customer->fullName, 50, '...') }}</td>
-                                <td>
-                                    <i class="fa fa-phone"></i> {{ $customer->phone ?? '--' }} <br>
-                                    <i class="fa fa-envelope"></i> {{ $customer->email ?? '--' }}
-                                </td>
-                                <!-- <td class="text-center">
-                                    {{ $customer->gender ?? '--' }}
-                                </td>
-
-                                <td class="text-center">
-                                    {{ $customer->date_of_birth ?? '--' }}
-                                </td> -->
-                                <td class="text-center"> {{ $customer->orders_count }} </td>
-                                <td class="text-center">
-                                    @if(optional($customer->customer)->status == 'active')
-                                        <span class="badge bg-success">Active</span>
-                                    @else
-                                        <span class="badge bg-danger">Banned</span>
-                                    @endif
-                                </td>
-
-
-                                <td class="text-center">
-                                    <div class="d-flex gap-2 justify-content-center">
-                                        @hasPermission('admin.customer.edit')
-                                            <a href="{{ route('admin.customer.edit', $customer->id) }}"
-                                                class="btn btn-outline-primary circleIcon" data-bs-toggle="tooltip"
-                                                data-bs-placement="left" data-bs-title="{{ __('Edit') }}">
-                                                <img src="{{ asset('assets/icons-admin/eye.svg') }}" alt="edit"
-                                                    loading="lazy" />
-                                            </a>
-                                        @endhasPermission 
-
-                                        @hasPermission('admin.customer.ban')
-                                            <button type="button"
-                                                class="btn btn-outline-danger circleIcon"
-                                                onclick="confirmToggle('{{ $customer->id }}', '{{ optional($customer->customer)->status }}')"
-                                                data-bs-title="{{ optional($customer->customer)->status == 'active' ? 'Ban' : 'Activate' }}">
-                                                <i class="fa fa-ban"></i>
-                                            </button>
-                                        @endhasPermission
-
-                                        @hasPermission('admin.customer.destroy')
-                                            <a href="{{ route('admin.customer.destroy', $customer->id) }}"
-                                                class="btn btn-outline-danger circleIcon deleteConfirm" data-bs-toggle="tooltip"
-                                                data-bs-placement="left" data-bs-title="{{ __('Delete') }}">
-                                                <img src="{{ asset('assets/icons-admin/trash.svg') }}" alt="delete"
-                                                    loading="lazy" />
-                                            </a>
-                                        @endhasPermission
-
-                                        @hasPermission('admin.customer.reset-password')
-                                            <button type="button" class="btn btn-outline-info circleIcon"
-                                                data-bs-toggle="tooltip" data-bs-placement="left"
-                                                data-bs-title="{{ __('Reset Password') }}"
-                                                onclick="openResetPasswordModal('{{ $customer->id }}','{{ $customer->fullName }}')">
-                                                <img src="{{ asset('assets/icons-admin/role-permission.svg') }}" alt="key"
-                                                    loading="lazy" />
-                                            </button>
-                                        @endhasPermission
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td class="text-center" colspan="100%">{{ __('No Data Found') }}</td>
-                            </tr>
-                        @endforelse
-                        </tbody>
-                    </table>
-                </div>
+            <div class="table-responsive">
+                    <form method="GET" id="filterForm">
+                        <div class="d-flex gap-3 align-items-center justify-content-center flex-wrap mt-2">
+                            <!-- Search Customer -->
+                            <input type="text" name="search" value="{{ request('search') }}" class="form-control"
+                                placeholder="Search for Customer" style="width:250px;">
+                            <!-- Search Date -->
+                            <input type="date" name="date" value="{{ request('date') }}" class="form-control"
+                                style="width:200px;">
+                            <!-- Search -->
+                            <button class="btn btn-primary">Search</button>
+                            <!-- Reset -->
+                            <a href="{{ route('admin.customer.index') }}" class="btn btn-danger">Reset</a>
+                        </div>
+                    </form>
+                <table id="customerTable" class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th class="text-center">{{ __('Joined Date') }}</th>
+                            <th class="text-center">{{ __('Customer ID') }}</th>
+                            <th>{{ __('Profile') }}</th>
+                            <th>{{ __('Name') }}</th>
+                            <th>{{ __('Phone/Email') }}</th>
+                            <th class="text-center">{{ __('Total Orders') }}</th>
+                            <th class="text-center">{{ __('Status') }}</th>
+                            <th class="text-center">{{ __('Action') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
             </div>
         </div>
+    </div>
 
-        <div class="my-3">
-            {{ $customers->withQueryString()->links() }}
-        </div>
-
-        <form action="" method="POST" id="resetPasswordForm">
-            @csrf
-            <div class="modal fade" id="resetPasswordModal" tabindex="-1">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h4 class="modal-title fs-5">{{ __('Reset Password') }} <span id="userName"></span></h4>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <label for="password1" class="form-label">
-                                    {{ __('Password') }}
-                                </label>
-                                <div class="position-relative passwordInput">
-                                    <input type="password" name="password" id="password1" class="form-control"
-                                        required="true" placeholder="Enter Password">
-                                    <span class="eye" onclick="showHidePassword(1)">
-                                        <i class="fa fa-eye-slash" id="togglePassword1"></i>
-                                    </span>
-                                </div>
-                                @error('password')
-                                    <p class="text text-danger m-0">{{ $message }}</p>
-                                @enderror
+    <form action="" method="POST" id="resetPasswordForm">
+        @csrf
+        <div class="modal fade" id="resetPasswordModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title fs-5">{{ __('Reset Password') }} <span id="userName"></span></h4>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="password1" class="form-label">
+                                {{ __('Password') }}
+                            </label>
+                            <div class="position-relative passwordInput">
+                                <input type="password" name="password" id="password1" class="form-control" required="true" placeholder="Enter Password">
+                                <span class="eye" onclick="showHidePassword(1)">
+                                    <i class="fa fa-eye-slash" id="togglePassword1"></i>
+                                </span>
                             </div>
+                            @error('password')
+                            <p class="text text-danger m-0">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                            <div class="mb-3">
-                                <label for="password2" class="form-label">
-                                    {{ __('Confirm Password') }}
-                                </label>
-                                <div class="position-relative passwordInput">
-                                    <input type="password" name="password_confirmation" id="password2" class="form-control"
-                                        required="true" placeholder="Enter Password again">
-                                    <span class="eye" onclick="showHidePassword(2)">
-                                        <i class="fa fa-eye-slash" id="togglePassword2"></i>
-                                    </span>
-                                </div>
-                                <span id="passwordMatch" class="text text-danger d-none"></span>
-                                @error('password_confirmation')
-                                    <p class="text text-danger m-0">{{ $message }}</p>
-                                @enderror
+                        <div class="mb-3">
+                            <label for="password2" class="form-label">
+                                {{ __('Confirm Password') }}
+                            </label>
+                            <div class="position-relative passwordInput">
+                                <input type="password" name="password_confirmation" id="password2" class="form-control"
+                                    required="true" placeholder="Enter Password again">
+                                <span class="eye" onclick="showHidePassword(2)">
+                                    <i class="fa fa-eye-slash" id="togglePassword2"></i>
+                                </span>
                             </div>
+                            <span id="passwordMatch" class="text text-danger d-none"></span>
+                            @error('password_confirmation')
+                            <p class="text text-danger m-0">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                {{ __('Close') }}
-                            </button>
-                            <button type="submit" id="submit" class="btn btn-primary">
-                                {{ __('Save changes') }}
-                            </button>
-                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            {{ __('Close') }}
+                        </button>
+                        <button type="submit" id="submit" class="btn btn-primary">
+                            {{ __('Save changes') }}
+                        </button>
                     </div>
                 </div>
             </div>
-        </form>
+        </div>
+    </form>
 
-    </div>
+</div>
 @endsection
 @push('scripts')
-    <script>
-        function openResetPasswordModal(userId, userName) {
-            $('#resetPasswordModal').modal('show');
-            $('#userName').html('(' + userName + ')');
-            $('#resetPasswordForm').attr('action', `{{ route('admin.customer.reset-password', ':id') }}`.replace(':id',
-                userId));
+
+<script>
+    $(function() {
+        var table = $('#customerTable').DataTable({
+            responsive: true,
+            processing: false,
+            serverSide: true, 
+            ajax: {
+                url: "{{ route('admin.customer.data') }}",
+                data: function (d) {
+                    d.searchText = $('input[name="search"]').val();
+                    d.date = $('input[name="date"]').val();
+                    d.status = "{{ request('status') }}";
+                }
+            },
+            columns: [
+                { data: 'DT_RowIndex', orderable: false, searchable: false },
+                { data: 'created_at', name: 'id' } ,
+                { data: 'customer_id', name: 'id'},
+                { data: 'profile', orderable: false, searchable: false },
+                { data: 'fullname', name: 'name' },
+                { data: 'phone', name: 'email' },
+                { data: 'orders_count', name: 'orders_count', searchable: false },
+                { data: 'status', orderable: false },
+                { data: 'actions', orderable: false, searchable: false },
+            ],
+            order: [[2, 'desc']],
+            dom: '<"row mb-2 mt-2"'
+                +'<"col-md-6 d-flex align-items-center" l<"ms-3" B>>' 
+                +'<"col-md-6 d-flex justify-content-end align-items-center" f>'
+            +'>rtip',
+            buttons: [
+                {
+                    extend: 'collection',
+                    className: 'btn btn-primary dropdown-toggle',
+                    text: 'Export',
+                    buttons: [
+                        { extend: 'copy', text: '<i class="fas fa-copy"></i> Copy' },
+                        { extend: 'csv', text: '<i class="fas fa-file-csv"></i> CSV' },
+                        { extend: 'excel', text: '<i class="fas fa-file-excel"></i> Excel' },
+                        { extend: 'pdf', text: '<i class="fas fa-file-pdf"></i> PDF' },
+                        { extend: 'print', text: '<i class="fas fa-print"></i> Print' }
+                    ]
+                }
+            ],
+            lengthMenu: [
+                [20, 40, 50, 100, -1],
+                [20, 40, 50, 100, "All"]
+            ],
+        });
+    });
+</script>
+
+<script>
+    function openResetPasswordModal(userId, userName) {
+        $('#resetPasswordModal').modal('show');
+        $('#userName').html('(' + userName + ')');
+        $('#resetPasswordForm').attr('action', `{{ route('admin.customer.reset-password', ':id') }}`.replace(':id', userId));
+    }
+
+    function showHidePassword(num) {
+        const toggle = document.getElementById("togglePassword" + num);
+        const password = document.getElementById("password" + num);
+
+        // toggle the type attribute
+        const type = password.getAttribute("type") === "password" ? "text" : "password";
+        password.setAttribute("type", type);
+        // toggle the icon
+        toggle.classList.toggle("fa-eye");
+        toggle.classList.toggle("fa-eye-slash");
+    }
+
+    document.getElementById('password2').addEventListener('keyup', function(e) {
+        $password1 = document.getElementById('password1').value;
+        $password2 = document.getElementById('password2').value;
+
+        $message = document.getElementById('passwordMatch');
+
+        if ($password1 == $password2) {
+            document.getElementById('password2').classList.remove('is-invalid');
+            $message.classList.add('d-none');
+            document.getElementById('submit').disabled = false;
+        } else {
+            document.getElementById('password2').classList.add('is-invalid');
+            $message.classList.remove('d-none');
+            $message.innerHTML = "Password doesn't match";
+            document.getElementById('submit').disabled = true;
         }
+    });
 
-        function showHidePassword(num) {
-            const toggle = document.getElementById("togglePassword" + num);
-            const password = document.getElementById("password" + num);
+    function confirmToggle(id, status) { //added by ancy
+        status = status.toLowerCase(); // Ensure lowercase
 
-            // toggle the type attribute
-            const type = password.getAttribute("type") === "password" ? "text" : "password";
-            password.setAttribute("type", type);
-            // toggle the icon
-            toggle.classList.toggle("fa-eye");
-            toggle.classList.toggle("fa-eye-slash");
-        }
-
-        document.getElementById('password2').addEventListener('keyup', function(e) {
-            $password1 = document.getElementById('password1').value;
-            $password2 = document.getElementById('password2').value;
-
-            $message = document.getElementById('passwordMatch');
-
-            if ($password1 == $password2) {
-                document.getElementById('password2').classList.remove('is-invalid');
-                $message.classList.add('d-none');
-                document.getElementById('submit').disabled = false;
-            } else {
-                document.getElementById('password2').classList.add('is-invalid');
-                $message.classList.remove('d-none');
-                $message.innerHTML = "Password doesn't match";
-                document.getElementById('submit').disabled = true;
+        let action = (status === 'active') ? 'Ban' : 'Activate';
+        // let confirmButtonColor = (status === 'active') ? '#dc3545' : '#059c33ff';
+        let confirmButtonColor = (status === 'active') ? 'var(--bs-danger)' : 'var(--bs-success)';
+        Swal.fire({
+            title: "Are you sure?",
+            text: `Do you want to ${action} this customer?`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: `Yes, ${action}`,
+            confirmButtonColor: confirmButtonColor,
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = `/admin/customers/${id}/ban`;
             }
         });
+    }
+    function confirmDelete(id) {
+        Swal.fire({
+            title: "Are you sure?",
+            text: "This customer will be permanently deleted.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, Delete",
+            cancelButtonText: "Cancel",
+            buttonsStyling: false,
+            customClass: {
+                confirmButton: "btn btn-danger mx-2",
+                cancelButton: "btn btn-secondary mx-2"
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
 
-        function confirmToggle(id, status) {    //added by ancy
-            status = status.toLowerCase();  // Ensure lowercase
+                let url = "{{ route('admin.customer.destroy', ':id') }}";
+                url = url.replace(':id', id);
 
-            let action = (status === 'active') ? 'Ban' : 'Activate';
-
-            Swal.fire({
-                title: "Are you sure?",
-                text: `Do you want to ${action} this customer?`,
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonText: `Yes, ${action}`,
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = `/admin/customers/${id}/ban`;
-                }
-            });
-        }
-    </script>
+                window.location.href = url;
+            }
+        });
+    }
+           
+</script>
 @endpush

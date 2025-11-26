@@ -55,6 +55,12 @@
     <link rel="stylesheet" href="{{ asset('assets/css/jquery.timepicker.min.css') }}" type="text/css" />
     <link rel="stylesheet" href="{{ asset('assets/css/jquery-ui.css') }}" type="text/css">
 
+    <!-- datatable bootstrat-added by ancy -->
+    <link rel="stylesheet" href="{{ asset('assets/css/dataTables.bootstrap5.min.css') }}" type="text/css">
+    <link rel="stylesheet" href="{{ asset('assets/css/responsive.bootstrap5.min.css') }}" type="text/css">
+    <link rel="stylesheet" href="{{ asset('assets/css/buttons.bootstrap5.min.css') }}" type="text/css">
+
+ 
     @stack('css')
 
     <style>
@@ -77,6 +83,17 @@
             border-radius: 50%;
             object-fit: cover;
             border: 1px solid #eee;
+        }
+        #customerTable {
+            display: table !important;
+        }
+
+        #customerTable tbody tr {
+            display: table-row !important;
+        }
+
+        #customerTable tbody td {
+            display: table-cell !important;
         }
     </style>
 </head>
@@ -535,6 +552,20 @@
 
     <!-- Pusher-Js-Link -->
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+
+
+    <!-- Datatable JS - added by ancy--> 
+    <script src="{{ asset('assets/scripts/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('assets/scripts/dataTables.bootstrap5.min.js') }}"></script>
+    <script src="{{ asset('assets/scripts/dataTables.responsive.min.js') }}"></script>
+    <!-- Datatable Buttons - added by ancy -->
+    <script src="{{ asset('assets/scripts/dataTables.buttons.min.js') }}"></script>
+    <script src="{{ asset('assets/scripts/buttons.bootstrap5.min.js') }}"></script>
+    <script src="{{ asset('assets/scripts/jszip.min.js') }}"></script>
+    <script src="{{ asset('assets/scripts/pdfmake.min.js') }}"></script>
+    <script src="{{ asset('assets/scripts/vfs_fonts.js') }}"></script>
+    <script src="{{ asset('assets/scripts/buttons.html5.min.js') }}"></script>
+    <script src="{{ asset('assets/scripts/buttons.print.min.js') }}"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {

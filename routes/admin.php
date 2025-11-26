@@ -435,7 +435,8 @@ Route::name('admin.')->group(function () {
 
         // customer route
         Route::controller(CustomerController::class)->group(function () {
-            Route::get('/customers/{status?}', 'index')->name('customer.index');
+            Route::get('/customers', 'index')->name('customer.index');
+            Route::get('/customers/list', 'getData')->name('customer.data');
             Route::get('/customers/create', 'create')->name('customer.create');
             Route::post('/customers/store', 'store')->name('customer.store');
             Route::get('/customers/{user}', 'show')->name('customer.show');
