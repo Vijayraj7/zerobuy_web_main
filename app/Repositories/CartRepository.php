@@ -231,19 +231,20 @@ class CartRepository extends Repository
         $groupCarts = $carts->groupBy('shop_id');
 
         // get delivery charge
-        $deliveryCharge = 0;
-        foreach ($groupCarts as $shopId => $shopCarts) {
+        // $deliveryCharge = 0;
+        // foreach ($groupCarts as $shopId => $shopCarts) {
 
-            $productQty = 0;
+        //     $productQty = 0;
 
-            foreach ($shopCarts as $cart) {
-                $productQty += $cart->quantity;
-            }
+        //     foreach ($shopCarts as $cart) {
+        //         $productQty += $cart->quantity;
+        //     }
 
-            if ($productQty > 0) {
-                $deliveryCharge += getDeliveryCharge($productQty);
-            }
-        }
+        //     if ($productQty > 0) {
+        //         $deliveryCharge += getDeliveryCharge($productQty);
+        //     }
+        // }
+        $deliveryCharge = getDeliveryCharge($totalAmount);
 
         // generate array for get discount
         $products = collect([]);
