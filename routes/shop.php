@@ -130,11 +130,11 @@ Route::name('shop.')->group(function () {
 
             // SHOP CHANGE STATUS (Pending → Approved → Cancelled)
             Route::post('/return-order/{returnOrder}/status-change', 'statusChange')
-                ->name('returnOrder.statusChange');
+                ->name('returnOrder.status.change');
         });
 
 
-       
+
         // brand
         Route::controller(BrandController::class)->group(function () {
             Route::get('/brands', 'index')->name('brand.index');
