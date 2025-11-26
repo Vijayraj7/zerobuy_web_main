@@ -177,7 +177,7 @@ Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
     });
 
     Route::controller(ReturnOrderController::class)->group(function () {
-        Route::post('/return-orders', 'index');
+        Route::get('/return-orders', 'index');
     });
 
     // coupon route
