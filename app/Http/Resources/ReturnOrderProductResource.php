@@ -19,7 +19,7 @@ class ReturnOrderProductResource extends JsonResource
             'product_name' => $this->product->name ?? '',
             'product_price' => (float)$this->product->price ?? '',
             'thumbnail' => $this->product->thumbnail ?? '',
-            'quantity' => $this->quantity,
+            'quantity' => (int)$this->quantity,
             'color' => $this->color,
             'size' => $this->size,
             'unit' => $this->unit,
