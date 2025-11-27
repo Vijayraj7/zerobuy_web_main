@@ -14,24 +14,24 @@ class ReturnOrderDetailsResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-       // dd($this->returnProduct);
+        // dd($this->returnProduct);
         return [
 
             'id' => $this->id,
             'order_id' => $this->order->prefix . $this->order->order_code,
             'reason' => $this->reason,
-            'amount' => $this->amount,
+            'amount' => (float)$this->amount,
             'status' => $this->status,
             'payment_status' => $this->payment_status ? 'Paid' : 'Unpaid',
-            'shop_name'=>$this->shop->name ?? '',
-            'shop_logo'=>$this->shop->logo ?? '',
-            'shop_rating'=> (float) number_format($this->shop?->averageRating, 1, '.', ''),
+            'shop_name' => $this->shop->name ?? '',
+            'shop_logo' => $this->shop->logo ?? '',
+            'shop_rating' => (float) number_format($this->shop?->averageRating, 1, '.', ''),
             'reject_note' => $this->reject_note,
             'return_date' => $this->created_at->format('d F, Y'),
             'return_address' => $this->return_address,
-            'customer_name' =>$this->customer->user->name ?? '',
-            'customer_phone' =>$this->customer->user->phone ?? '',
-            'customer_email' =>$this->customer->user->email ?? '',
+            'customer_name' => $this->customer->user->name ?? '',
+            'customer_phone' => $this->customer->user->phone ?? '',
+            'customer_email' => $this->customer->user->email ?? '',
             'return_order_products' => ReturnOrderProductResource::collection($this->returnProduct),
         ];
     }
