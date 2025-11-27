@@ -15,7 +15,7 @@ class ReturnOrderProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'product_id' => $this->product_id,
+            'product_id' => (int)$this->product_id,
             'product_name' => $this->product->name ?? '',
             'product_price' => (float)$this->product->price ?? '',
             'thumbnail' => $this->product->thumbnail ?? '',
