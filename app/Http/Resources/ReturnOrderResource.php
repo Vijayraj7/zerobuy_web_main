@@ -20,6 +20,7 @@ class ReturnOrderResource extends JsonResource
             'reason' => $this->reason,
             'amount' => (float)$this->amount,
             'status' => $this->status,
+            'product' => $this->returnProduct,
             'quantity' => $this->returnProduct?->sum('quantity'),
             'payment_status' => $this->payment_status ? 'Paid' : 'Unpaid',
             'reject_note' => $this->reject_note,
