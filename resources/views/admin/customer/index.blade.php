@@ -38,21 +38,20 @@
             </ul>
 
             <div class="table-responsive">
-                    <form method="GET" id="filterForm">
-                        <div class="d-flex gap-3 align-items-center justify-content-center flex-wrap mt-2">
-                            <!-- Search Customer -->
-                            <input type="text" name="search" value="{{ request('search') }}" class="form-control"
-                                placeholder="Search for Customer" style="width:250px;">
-                            <!-- Search Date -->
-                            <input type="date" name="date" value="{{ request('date') }}" class="form-control"
-                                style="width:200px;">
-                            <!-- Search -->
-                            <button class="btn btn-primary">Search</button>
-                            <!-- Reset -->
-                            <a href="{{ route('admin.customer.index') }}" class="btn btn-danger">Reset</a>
-                        </div>
-                    </form>
-                <table id="customerTable" class="table table-bordered">
+                <form method="GET" id="filterForm">
+                    <div class="d-flex gap-2 align-items-center flex-wrap mt-3">
+                        <!-- Search Date -->
+                        <input type="date" name="date" value="{{ request('date') }}" class="form-control"
+                            style="width:200px;">
+                        <!-- Search -->
+                        <button class="btn btn-primary"><i class="fa fa-search"></i></button>
+                        <!-- Reset -->
+                        <a href="{{ route('admin.customer.index') }}" class="btn btn-danger"><i class="fa fa-refresh"></i></a>
+                        <!-- Export Placeholder -->
+                        <span id="exportContainer" class="ms-2"></span>
+                    </div>
+                </form>
+                <table id="customerTable" class="table table-bordered mt-3">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -127,7 +126,6 @@
             </div>
         </div>
     </form>
-
 </div>
 @endsection
 @push('scripts')
@@ -141,7 +139,6 @@
             ajax: {
                 url: "{{ route('admin.customer.data') }}",
                 data: function (d) {
-                    d.searchText = $('input[name="search"]').val();
                     d.date = $('input[name="date"]').val();
                     d.status = "{{ request('status') }}";
                 }
@@ -149,7 +146,7 @@
             columns: [
                 { data: 'DT_RowIndex', orderable: false, searchable: false },
                 { data: 'created_at', name: 'id' } ,
-                { data: 'customer_id', name: 'id'},
+                { data: 'customer_id', name: 'customer_id' },
                 { data: 'profile', orderable: false, searchable: false },
                 { data: 'fullname', name: 'name' },
                 { data: 'phone', name: 'email' },
@@ -158,15 +155,21 @@
                 { data: 'actions', orderable: false, searchable: false },
             ],
             order: [[2, 'desc']],
-            dom: '<"row mb-2 mt-2"'
-                +'<"col-md-6 d-flex align-items-center" l<"ms-3" B>>' 
-                +'<"col-md-6 d-flex justify-content-end align-items-center" f>'
-            +'>rtip',
+            // dom: '<"row mb-2 mt-2"'
+            //     +'<"col-md-6 d-flex align-items-center" l<"ms-3" B>>' 
+            //     +'<"col-md-6 d-flex justify-content-end align-items-center" f>'
+            // +'>rtip',
+            dom:'<"row mb-2 mt-2"' +
+                    '<"col-md-4 d-flex align-items-center" l>' +
+                    '<"col-md-4 d-flex justify-content-center" B>' +
+                    '<"col-md-4 d-flex justify-content-end" f>' +
+                '>' +
+                'rtip',
             buttons: [
                 {
                     extend: 'collection',
-                    className: 'btn btn-primary dropdown-toggle',
-                    text: 'Export',
+                    className: 'btn btn-primary',
+                    text: '<i class="fas fa-download"></i> Export',
                     buttons: [
                         { extend: 'copy', text: '<i class="fas fa-copy"></i> Copy' },
                         { extend: 'csv', text: '<i class="fas fa-file-csv"></i> CSV' },
@@ -180,6 +183,12 @@
                 [20, 40, 50, 100, -1],
                 [20, 40, 50, 100, "All"]
             ],
+            initComplete: function () {
+                table.buttons().container().appendTo('#exportButtons');
+            },
+        });
+        table.on('init.dt', function () {
+            $('.dt-buttons').appendTo('#exportContainer');
         });
     });
 </script>
