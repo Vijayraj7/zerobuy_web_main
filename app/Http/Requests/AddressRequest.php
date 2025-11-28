@@ -32,7 +32,8 @@ class AddressRequest extends FormRequest
 
         return [
             'name' => 'required|string|max:255',
-            'phone' => 'required|numeric|min_digits:'.$min.'|max_digits:'.$max,
+            'phone' => 'required|numeric|min_digits:' . $min . '|max_digits:' . $max,
+            'state' => 'nullable|string|max:255',
             'area' => 'nullable|string|max:255',
             'flat_no' => 'nullable|string|max:255',
             'post_code' => 'nullable|string|max:255',
@@ -59,6 +60,8 @@ class AddressRequest extends FormRequest
             'name.max' => __('The name may not be greater than 255 characters'),
             'name.string' => __('The name must be a string'),
             'phone.required' => __('The phone field is required.'),
+            'state.required' => __('The state field is required'),
+            'state.max' => __('The state may not be greater than 255 characters'),
             'area.required' => __('The area field is required'),
             'area.max' => __('The area may not be greater than 255 characters'),
             'address_type.required' => __('The address type field is required'),

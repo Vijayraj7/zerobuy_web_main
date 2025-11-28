@@ -100,6 +100,7 @@ class AddressRepository extends Repository
         $address->update([
             'name' => $request->name,
             'phone' => $request->phone,
+            'state' => $request->state,
             'area' => $request->area,
             'flat_no' => $request->flat_no,
             'post_code' => $request->post_code,
