@@ -18,6 +18,7 @@ class AddressResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'phone' => $this->phone,
+            'state' => $this->state,
             'area' => $this->area,
             'flat_no' => $this->flat_no,
             'address_type' => $this->address_type,
