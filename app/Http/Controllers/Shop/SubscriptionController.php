@@ -118,7 +118,7 @@ class SubscriptionController extends Controller
 
         $subscription->update([
             'starts_at' => now(),
-            'ends_at' => $subscription->duration ? now()->addDays($subscription->duration) : null,
+            'ends_at' => $subscription->duration ? now()->addDays((int) $subscription->duration) : null,
             'sale_limit' => $saleLimit,
             'remaining_sales' => $remainingSales,
             'status' => SubscriptionStatus::ACTIVE,
