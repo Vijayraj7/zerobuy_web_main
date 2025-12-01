@@ -445,6 +445,7 @@ Route::name('admin.')->group(function () {
             Route::get('/customers/{user}/destroy', 'destroy')->name('customer.destroy');
             Route::post('/customers/{user}/reset-password', 'resetPassword')->name('customer.reset-password')->middleware('demoMode');
             Route::get('/customers/{user}/ban', 'statusToggle')->name('customer.ban');
+            Route::get('/customerorders/{user}/all-orders', 'customerOrders')->name('customer.orders');
         });
 
         // firebase route

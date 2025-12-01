@@ -72,7 +72,7 @@
                                 <div class="item">
                                     <strong>Total Orders</strong>
                                     <div class="ms-2">
-                                        <a href="#" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-title="see all orders">
+                                        <a href="{{route('admin.customer.orders', $customerId)}}" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-title="see all orders">
                                             <i class="fa fa-eye"></i>
                                         </a>
                                         <span class="btn btn-secondary btn-sm">{{ $totalOrdersCount }}</span>
@@ -150,9 +150,11 @@
                                                 @endphp
                                             </td>
                                             <td>
-                                                <a href="#" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-title="View">
-                                                    <i class="fa fa-eye"></i>
-                                                </a>
+                                                @hasPermission('shop.order.show')
+                                                    <a href="{{ route('shop.order.show', $order->id) }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{__('view order details')}}" class="circleIcon btn-outline-primary svg-bg">
+                                                        <img src="{{ asset('assets/icons-admin/eye.svg') }}" alt="icon" loading="lazy" />
+                                                    </a>
+                                                @endhasPermission
                                             </td>
                                         </tr>
                                         @endforeach

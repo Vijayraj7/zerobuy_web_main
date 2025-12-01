@@ -178,6 +178,7 @@ class CustomerController extends Controller
         return view('admin.customer.edit', [
             'user'               => $user,
             'orders'             => $orders,
+            'customerId'        => $customerId,
             'totalOrdersCount'   => Order::where('customer_id', $customerId)->count(),
             'totalOrderAmount'   => Order::where('customer_id', $customerId)->sum('total_amount'),
             'totalDelivered'     => Order::where('customer_id', $customerId)->where('order_status', 'Delivered')->count(),
@@ -238,6 +239,14 @@ class CustomerController extends Controller
         $customer->save();
 
         return back()->with('success', 'Customer status updated successfully.');
+    }
+
+    public function customerOrders(Request $request, User $user)
+    {
+        $customer_id = $user->id;
+        // dd($customer_id);
+
+        return view('admin.customer.cust_orders');
     }
 
 }
