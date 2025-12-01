@@ -36,8 +36,11 @@ class CustomerController extends Controller
 
             /* ---------------- DATE FILTER ---------------- */
             if ($request->date) {
-                $query->whereDate('created_at', $request->date);
+                $query->whereHas('customer', function ($q) use ($request) {
+                    $q->whereDate('customers.created_at', $request->date);
+                });
             }
+
             /* ---------------- STATUS TAB FILTER ---------------- */
             if ($request->status) {
                 $query->whereHas('customer', function ($q) use ($request) {
@@ -141,21 +144,46 @@ class CustomerController extends Controller
         return to_route('admin.customer.index')->withSuccess(__('Created successfully'));
     }
 
+    // public function edit(User $user)
+    // {
+    //     $customerId = $user->load(['customer','media'])->customer->id;
+
+    //     // Latest 10 → paginate 5
+    //     $orders = Order::fromSub(
+    //         Order::where('customer_id', $customerId)->latest()->limit(10),
+    //         'orders'
+    //     )->paginate(5);
+
+    //     return view('admin.customer.edit', [
+    //         'user'               => $user,
+    //         'orders'             => $orders,
+    //         'totalOrdersCount'   => Order::where('customer_id', $customerId)->count(),
+    //         'totalOrderAmount'   => Order::where('customer_id', $customerId)->sum('total_amount'),
+    //         'totalDelivered'     => Order::where('customer_id', $customerId)->where('order_status', 'Delivered')->count(),
+    //         'totalCancelled'     => Order::where('customer_id', $customerId)->where('order_status', 'Cancelled')->count(),
+    //     ]);
+    // }
+
     public function edit(User $user)
-    { 
-        $user->load([
-            'customer',
-            'media'
-        ]);
+    {
+        $user->load(['customer.addresses', 'media']); // Load addresses also
+
         $customerId = $user->customer->id;
 
-        $orders = Order::where('customer_id', $customerId)
-            ->latest()
-            ->paginate(5); 
+        $orders = Order::fromSub(
+            Order::where('customer_id', $customerId)->latest()->limit(10),
+            'orders'
+        )->paginate(5);
 
-        $totalOrderAmount = Order::where('customer_id', $customerId)->sum('total_amount');
-       
-        return view('admin.customer.edit', compact('user', 'orders', 'totalOrderAmount'));
+        return view('admin.customer.edit', [
+            'user'               => $user,
+            'orders'             => $orders,
+            'totalOrdersCount'   => Order::where('customer_id', $customerId)->count(),
+            'totalOrderAmount'   => Order::where('customer_id', $customerId)->sum('total_amount'),
+            'totalDelivered'     => Order::where('customer_id', $customerId)->where('order_status', 'Delivered')->count(),
+            'totalCancelled'     => Order::where('customer_id', $customerId)->where('order_status', 'Cancelled')->count(),
+            'addresses'          => $user->customer->addresses,   // 👈 Send addresses to Blade
+        ]);
     }
 
     public function update(User $user, UserRequest $request)

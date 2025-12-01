@@ -55,14 +55,14 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th class="text-center">{{ __('Joined Date') }}</th>
-                            <th class="text-center">{{ __('Customer ID') }}</th>
+                            <th>{{ __('Joined Date') }}</th>
+                            <th>{{ __('Customer ID') }}</th>
                             <th>{{ __('Profile') }}</th>
                             <th>{{ __('Name') }}</th>
                             <th>{{ __('Phone/Email') }}</th>
-                            <th class="text-center">{{ __('Total Orders') }}</th>
-                            <th class="text-center">{{ __('Status') }}</th>
-                            <th class="text-center">{{ __('Action') }}</th>
+                            <th>{{ __('Total Orders') }}</th>
+                            <th>{{ __('Status') }}</th>
+                            <th>{{ __('Action') }}</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
