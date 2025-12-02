@@ -21,20 +21,27 @@
                                             <h5 class="name mb-0 fw-bold">{{$user->name}}</h5>
                                             <hr class="mt-1 mb-1">
                                             <div class="joindate text-muted small">
-                                                <i class="fa fa-calendar me-1"></i>
-                                                Join Date : {{$user->created_at->format('d-m-Y')}}
+                                                <i class="fa fa-id-badge me-2"></i>
+                                                Customer ID : <span>CST0</span>{{$customerId}}
                                             </div>
                                             <div class="joindate text-muted small">
+                                                <i class="fa fa-calendar me-1"></i>
+                                                Join Date : {{$user->created_at->format('d-m-Y | h:i A')}}
+                                            </div>
+                                            <!-- <div class="joindate text-muted small">
                                                 <i class="fa fa-clock me-1"></i>
                                                 Time : {{$user->created_at->format('h:i A')}}
-                                            </div>
+                                            </div> -->
                                             <div class="action-buttons d-flex gap-1 mt-2">
-                                                <a href="#" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-title="view credentials">
+                                                <!-- <a href="#" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-title="view credentials">
                                                     <i class="fa fa-eye"></i>
-                                                </a>
-                                                <a href="#" class="btn btn-primary btn-sm" data-bs-toggle="tooltip"  data-bs-title="edit customer data">
+                                                </a> -->
+                                                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#viewCredentials">
+                                                    <i class="fa fa-eye"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editCustomerModal">
                                                     <i class="fa fa-edit"></i>
-                                                </a>
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -132,7 +139,7 @@
                                             <!-- <td></td> -->
                                             <td>ORD{{ $order->id }}</td>
                                             <td>{{ $order->created_at->format('d-m-Y | h:i A') }}</td>
-                                            <td>₹ {{ $order->total_amount }}</td>
+                                            <td>₹ {{ $order->payable_amount }}</td>
                                             <td>
                                                 @php
                                                     $status = strtolower(trim($order->order_status->value));
@@ -208,93 +215,143 @@
     </div>
 </div>
 
-<!-- <div class="container-fluid my-md-0 my-4">
-    <form action="{{ route('admin.customer.update', $user->id) }}" method="POST" enctype="multipart/form-data">
-        @csrf
-        @method('PUT')
-        <input type="hidden" name="user_id" value="{{ $user->id }}">
-        <div class="row h-100vh">
-            <div class="col-12 m-auto">
-                <div class="card rounded-12 border-0 shadow-md">
-                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2 py-3">
-                        <h3 class="m-0">{{ __('Edit Customer') }}</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-lg-7">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mt-3">
-                                            <x-input label="First Name" name="name" type="text" placeholder="Enter Name"
-                                                required="true" :value="$user->name" />
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mt-3">
-                                            <x-input label="Last Name" name="last_name" type="text"
-                                                placeholder="Enter Name" :value="$user->last_name" />
-                                        </div>
-                                    </div>
+<!-- EDIT CUSTOMER MODAL -->
+<div class="modal fade" id="editCustomerModal" tabindex="-1" aria-labelledby="editCustomerModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+        <form action="{{ route('admin.customer.update', $user->id) }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            @method('PUT')
+
+            <div class="modal-header">
+                <h5 class="modal-title">{{ __('Edit Customer') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-lg-7">
+                            <div class="row">
+                                <div class="col-md-6 mt-3">
+                                    <x-input label="First Name" name="name" type="text"
+                                    placeholder="Enter Name" required="true" :value="$user->name" />
                                 </div>
 
-                                <div class="mt-3">
-                                    @php
-                                    $phone = $user->phone;
-                                    $phone = str_replace('(', '', $phone);
-                                    $phone = str_replace(')', '', $phone);
-                                    $phone = str_replace('-', '', $phone);
-                                    $phone = str_replace('+', '', $phone);
-                                    @endphp
-                                    <x-input label="Phone Number" name="phone" type="number"
-                                        placeholder="Enter phone number" required="true" :value="$phone" />
-                                </div>
-                                <div class="mt-3">
-                                    <x-input type="email" name="email" label="Email" placeholder="Enter Email Address"
-                                        :value="$user->email" />
-                                </div>
-
-                                <div class="mt-3">
-                                    <x-select label="Gender" name="gender">
-                                        <option value="male" {{ $user->gender == 'male' ? 'selected' : '' }}>
-                                            {{ __('Male') }}
-                                        </option>
-                                        <option value="female" {{ $user->gender == 'female' ? 'selected' : '' }}>
-                                            {{ __('Female') }}
-                                        </option>
-                                    </x-select>
+                                <div class="col-md-6 mt-3">
+                                    <x-input label="Last Name" name="last_name" type="text"
+                                    placeholder="Enter Name" :value="$user->last_name" />
                                 </div>
                             </div>
-                            <div class="col-lg-5">
-                                <div class="mt-3 d-flex align-items-center justify-content-center">
-                                    <div class="ratio1x1">
-                                        <img id="previewProfile"
-                                            src="{{ $user->thumbnail ?? 'https://placehold.co/500x500/png' }}"
-                                            alt="photo" width="100%">
-                                    </div>
-                                </div>
-                                <div class="mt-2">
-                                    <x-file name="profile_photo" label="User profile (Ratio 1:1)"
-                                        preview="previewProfile" />
-                                </div>
 
-                                <div class="mt-3">
-                                    <x-input type="date" name="date_of_birth" label="Date of Birth"
-                                        placeholder="Enter Date of Birth" :value="$user->date_of_birth" />
-                                </div>
+                            <div class="mt-3">
+                                @php
+                                    $phone = str_replace(['(', ')', '-', '+'], '', $user->phone);
+                                @endphp
+                                <x-input type="number" label="Phone Number" name="phone" placeholder="Enter phone number" required="true" :value="$phone" />
                             </div>
+
+                            <div class="mt-3">
+                                <x-input type="email" name="email" label="Email" placeholder="Enter Email Address" :value="$user->email" />
+                            </div>
+
+                            <!-- <div class="mt-3">
+                                <x-select label="Gender" name="gender">
+                                    <option value="male" @selected($user->gender == 'male')>Male</option>
+                                    <option value="female" @selected($user->gender == 'female')>Female</option>
+                                </x-select>
+                            </div> -->
                         </div>
-                    </div>
-                    <div class="card-footer d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <a href="{{ route('admin.customer.index') }}" class="btn btn-lg btn-outline-secondary">
-                            {{ __('Cancel') }}
-                        </a>
-                        <button type="submit" class="btn btn-lg btn-primary">
-                            {{ __('Update') }}
-                        </button>
+                        <div class="col-lg-5">
+                            <div class="mt-3 text-center">
+                                <img id="modalPreviewProfile" src="{{ $user->thumbnail ?? 'https://placehold.co/500x500/png' }}" class="img-fluid rounded" alt="photo" style="max-width: 180px;">
+                            </div>
+                            <div class="mt-2">
+                                <x-file name="profile_photo" label="User profile (Ratio 1:1)" preview="modalPreviewProfile" data-preview="modalPreviewProfile" />
+                            </div>
+                            <!-- <div class="mt-3">
+                                <x-input type="date" name="date_of_birth" label="Date of Birth" :value="$user->date_of_birth" />
+                            </div> -->
+                        </div>
                     </div>
                 </div>
             </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update</button>
+            </div>
+        </form>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW CUSTOMER CREDENTIALS MODAL -->
+<div class="modal fade" id="viewCredentials" tabindex="-1" aria-labelledby="viewCredentialsLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="viewCredentialsLabel">{{ __('View Credentials') }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-    </form>
-</div> -->
+
+        <div class="modal-body">
+            <!-- MOBILE -->
+             <div id="copyFlash" style="display:none; background:white; color:#28a745; padding:2px 2px; z-index:9999;text-align:center;"> Copied! </div> 
+            <div class="input-group mb-2">
+                <input type="text" id="copyMobile" value="{{ $user->phone }}" class="form-control" readonly>
+                <button class="btn btn-outline-primary" onclick="copyField('copyMobile')">
+                    <i class="fa fa-copy"></i>
+                </button>
+            </div>
+
+            <!-- EMAIL -->
+            <div class="input-group mb-2">
+                <input type="text" id="copyEmail" value="{{ $user->email }}" class="form-control" readonly>
+                <button class="btn btn-outline-primary" onclick="copyField('copyEmail')">
+                    <i class="fa fa-copy"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener("change", function (event) {
+        if (event.target.type === "file") {
+            const input = event.target;
+            const previewId = input.getAttribute("preview") || input.getAttribute("data-preview") || "modalPreviewProfile";
+            const previewEl = document.getElementById(previewId);
+
+            if (!previewEl) return;
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    previewEl.src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    });
+
+    function showFlash() {
+        let flash = document.getElementById('copyFlash');
+        flash.style.display = 'block';
+
+        setTimeout(() => {
+            flash.style.display = 'none';
+        }, 2000);
+    }
+    function copyField(id) {
+        let input = document.getElementById(id);
+        input.select();
+        navigator.clipboard.writeText(input.value);
+        showFlash();
+    }
+</script>
+
+@endpush

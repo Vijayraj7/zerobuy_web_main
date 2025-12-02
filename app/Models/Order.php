@@ -34,6 +34,12 @@ class Order extends Model
         return $this->belongsToMany(Product::class, 'order_products')->withPivot('quantity', 'color', 'unit', 'size', 'price')->withoutGlobalScopes();
     }
 
+    public function orderProducts(): HasMany    //added by ancy
+    {
+        return $this->hasMany(OrderProduct::class, 'order_id');
+    }
+
+
     /**
      * Get all of the vat taxes for the Order.
      */

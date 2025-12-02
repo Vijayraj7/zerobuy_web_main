@@ -144,26 +144,6 @@ class CustomerController extends Controller
         return to_route('admin.customer.index')->withSuccess(__('Created successfully'));
     }
 
-    // public function edit(User $user)
-    // {
-    //     $customerId = $user->load(['customer','media'])->customer->id;
-
-    //     // Latest 10 → paginate 5
-    //     $orders = Order::fromSub(
-    //         Order::where('customer_id', $customerId)->latest()->limit(10),
-    //         'orders'
-    //     )->paginate(5);
-
-    //     return view('admin.customer.edit', [
-    //         'user'               => $user,
-    //         'orders'             => $orders,
-    //         'totalOrdersCount'   => Order::where('customer_id', $customerId)->count(),
-    //         'totalOrderAmount'   => Order::where('customer_id', $customerId)->sum('total_amount'),
-    //         'totalDelivered'     => Order::where('customer_id', $customerId)->where('order_status', 'Delivered')->count(),
-    //         'totalCancelled'     => Order::where('customer_id', $customerId)->where('order_status', 'Cancelled')->count(),
-    //     ]);
-    // }
-
     public function edit(User $user)
     {
         $user->load(['customer.addresses', 'media']); // Load addresses also
@@ -180,10 +160,10 @@ class CustomerController extends Controller
             'orders'             => $orders,
             'customerId'        => $customerId,
             'totalOrdersCount'   => Order::where('customer_id', $customerId)->count(),
-            'totalOrderAmount'   => Order::where('customer_id', $customerId)->sum('total_amount'),
+            'totalOrderAmount'   => Order::where('customer_id', $customerId)->sum('payable_amount'),
             'totalDelivered'     => Order::where('customer_id', $customerId)->where('order_status', 'Delivered')->count(),
             'totalCancelled'     => Order::where('customer_id', $customerId)->where('order_status', 'Cancelled')->count(),
-            'addresses'          => $user->customer->addresses,   // 👈 Send addresses to Blade
+            'addresses'          => $user->customer->addresses,
         ]);
     }
 
@@ -244,9 +224,77 @@ class CustomerController extends Controller
     public function customerOrders(Request $request, User $user)
     {
         $customer_id = $user->id;
-        // dd($customer_id);
 
-        return view('admin.customer.cust_orders');
+        $query = Order::with([
+                'shop',
+                'address',
+                'orderProducts'   // <-- needed for sum(quantity)
+            ])
+            ->where('customer_id', $customer_id);
+
+        if ($request->ajax()) {
+
+            return datatables()->of($query)
+                ->addIndexColumn()
+
+                ->addColumn('order_date', fn($row) =>
+                    $row->created_at?->format('d-m-Y | h:i A')
+                )
+
+                ->addColumn('order_id', function ($row) {
+                    return 'ORD0' . $row->id;
+                })
+
+                ->addColumn('shop_id', function ($row) {
+                    return 'STR0' . $row->shop_id;
+                })
+
+                ->addColumn('store_name', fn($row) =>
+                    $row->shop?->name
+                )
+
+                ->addColumn('customer_name', fn($row) =>
+                    $row->address?->name
+                )
+
+                ->addColumn('customer_phone', fn($row) =>
+                    $row->address?->phone
+                )
+
+                ->addColumn('total_quantity', fn($row) =>
+                    $row->orderProducts->sum('quantity')
+                )
+
+                ->addColumn('payable_amount', function ($row) {
+                    return '₹' .$row->payable_amount;
+                }) 
+
+                ->addColumn('order_status_badge', function ($row) {
+
+                    $status = strtolower($row->order_status->value);
+
+                    return match ($status) {
+                        'pending'     => '<span class="badge bg-warning">Pending</span>',
+                        'confirm'     => '<span class="badge bg-info">Accepted</span>',
+                        'on the way'  => '<span class="badge bg-primary">Shipped</span>',
+                        'delivered'   => '<span class="badge bg-success">Delivered</span>',
+                        'cancelled'   => '<span class="badge bg-danger">Cancelled</span>',
+
+                        default       => '<span class="badge bg-secondary">' . $row->order_status->value . '</span>',
+                    };
+                })
+
+                ->addColumn('actions', fn($row) =>
+                    '<a href="'.route('shop.order.show',$row->id).'"
+                    class="btn btn-primary btn-sm"><i class="fa fa-eye"></i></a>'
+                )
+
+                ->rawColumns(['order_status_badge','actions'])
+                ->make(true);
+        }
+
+        return view('admin.customer.cust_orders', compact('user'));
     }
+
 
 }

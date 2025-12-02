@@ -84,15 +84,15 @@
             object-fit: cover;
             border: 1px solid #eee;
         }
-        #customerTable {
+        .datatableCustomCSS {
             display: table !important;
         }
 
-        #customerTable tbody tr {
+        .datatableCustomCSS tbody tr {
             display: table-row !important;
         }
 
-        #customerTable tbody td {
+        .datatableCustomCSS tbody td {
             display: table-cell !important;
         }
     </style>

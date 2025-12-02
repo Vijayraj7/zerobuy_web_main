@@ -51,7 +51,7 @@
                         <span id="exportContainer" class="ms-2"></span>
                     </div>
                 </form>
-                <table id="customerTable" class="table table-bordered mt-3">
+                <table id="customerTable" class="table table-bordered mt-3 datatableCustomCSS">
                     <thead>
                         <tr>
                             <th>#</th>
