@@ -25,7 +25,8 @@ class DashboardController extends Controller
         $pendingOrder = (clone $orderObject)->where('order_status', OrderStatus::PENDING->value)->count();
 
         $toPickupOrders = (clone $orderObject)->where(function ($query) {
-            $query->whereHas('driverOrder')->where('order_status', OrderStatus::CONFIRM->value)->orWhere('order_status', OrderStatus::PENDING->value)->orWhere('order_status', OrderStatus::PICKUP->value);
+            $query->whereHas('driverOrder')->where('order_status', OrderStatus::CONFIRM->value)->orWhere('order_status', OrderStatus::PENDING->value);
+            // ->orWhere('order_status', OrderStatus::PICKUP->value);
         })->count();
 
         $toDeliveryOrders = (clone $orderObject)->where('order_status', OrderStatus::SHIPPED->value)->count();
