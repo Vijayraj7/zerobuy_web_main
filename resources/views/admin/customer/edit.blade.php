@@ -52,7 +52,7 @@
                                 <div class="item">
                                     <div class="personal mt-2">
                                         <h5>{{ _('Total Ordered Amount') }}</h5>
-                                        <h3>₹ {{$totalOrderAmount}}</h3>
+                                        <h3>₹ {{ number_format($totalOrderAmount, 2) }}</h3>
                                     </div>
                                 </div>
                                 <div class="item">
@@ -147,8 +147,8 @@
                                                 @php
                                                     echo match($status) {
                                                         'pending' => '<span class="badge bg-warning">Pending</span>',
-                                                        'confirm' => '<span class="badge bg-info">Accepted</span>',
-                                                        'on the way' => '<span class="badge bg-primary">Shipped</span>',
+                                                        'confirm' => '<span class="badge bg-info">Confirm</span>',
+                                                        'shipped' => '<span class="badge bg-primary">Shipped</span>',
                                                         'delivered' => '<span class="badge bg-success">Delivered</span>',
                                                         'cancelled' => '<span class="badge bg-danger">Cancelled</span>',
                                                         default => '<span class="badge bg-secondary">'.

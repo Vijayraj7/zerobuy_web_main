@@ -128,7 +128,7 @@
                         'processing' => asset('assets/icons-admin/rotate-circle.svg'),
                         'pickup' => asset('assets/icons-admin/delivery-cart-arrow-up.svg'),
                         'delivered' => asset('assets/icons-admin/box-check.svg'),
-                        'onTheWay' => asset('assets/icons-admin/truck.svg'),
+                        'shipped' => asset('assets/icons-admin/truck.svg'),
                         'cancelled' => asset('assets/icons-admin/shopping-cart-times.svg'),
                     ];
                 @endphp

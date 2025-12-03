@@ -221,80 +221,116 @@ class CustomerController extends Controller
         return back()->with('success', 'Customer status updated successfully.');
     }
 
-    public function customerOrders(Request $request, User $user)
+    public function customerOrders(Request $request, $customerId)
     {
-        $customer_id = $user->id;
-
-        $query = Order::with([
-                'shop',
-                'address',
-                'orderProducts'   // <-- needed for sum(quantity)
-            ])
-            ->where('customer_id', $customer_id);
-
-        if ($request->ajax()) {
-
-            return datatables()->of($query)
-                ->addIndexColumn()
-
-                ->addColumn('order_date', fn($row) =>
-                    $row->created_at?->format('d-m-Y | h:i A')
-                )
-
-                ->addColumn('order_id', function ($row) {
-                    return 'ORD0' . $row->id;
-                })
-
-                ->addColumn('shop_id', function ($row) {
-                    return 'STR0' . $row->shop_id;
-                })
-
-                ->addColumn('store_name', fn($row) =>
-                    $row->shop?->name
-                )
-
-                ->addColumn('customer_name', fn($row) =>
-                    $row->address?->name
-                )
-
-                ->addColumn('customer_phone', fn($row) =>
-                    $row->address?->phone
-                )
-
-                ->addColumn('total_quantity', fn($row) =>
-                    $row->orderProducts->sum('quantity')
-                )
-
-                ->addColumn('payable_amount', function ($row) {
-                    return '₹' .$row->payable_amount;
-                }) 
-
-                ->addColumn('order_status_badge', function ($row) {
-
-                    $status = strtolower($row->order_status->value);
-
-                    return match ($status) {
-                        'pending'     => '<span class="badge bg-warning">Pending</span>',
-                        'confirm'     => '<span class="badge bg-info">Accepted</span>',
-                        'on the way'  => '<span class="badge bg-primary">Shipped</span>',
-                        'delivered'   => '<span class="badge bg-success">Delivered</span>',
-                        'cancelled'   => '<span class="badge bg-danger">Cancelled</span>',
-
-                        default       => '<span class="badge bg-secondary">' . $row->order_status->value . '</span>',
-                    };
-                })
-
-                ->addColumn('actions', fn($row) =>
-                    '<a href="'.route('shop.order.show',$row->id).'"
-                    class="btn btn-primary btn-sm"><i class="fa fa-eye"></i></a>'
-                )
-
-                ->rawColumns(['order_status_badge','actions'])
-                ->make(true);
+        $query = Order::query()
+            ->select('orders.*') 
+            ->with(['shop', 'address', 'orderProducts'])
+            ->where('orders.customer_id', $customerId);
+        if ($request->status) {
+            $query->where('orders.order_status', $request->status);
+        }
+        if ($request->startDate) {
+            $query->whereDate('orders.created_at', '>=', $request->startDate);
+        }
+        if ($request->endDate) {
+            $query->whereDate('orders.created_at', '<=', $request->endDate);
         }
 
-        return view('admin.customer.cust_orders', compact('user'));
-    }
+        if ($request->ajax()) {
+            return datatables()->eloquent($query)
+            ->addIndexColumn()
+            ->editColumn('created_at', fn($row) =>
+                $row->created_at?->format('d-m-Y | h:i A')
+            )
+            ->addColumn('order_id_display', fn($row) =>
+                'ORD0' . $row->id
+            )
+            ->addColumn('shop_id_display', fn($row) =>
+                'STR0' . $row->shop_id
+            )
+            ->addColumn('store_name', fn($row) =>
+                $row->shop?->name ?? '-'
+            )
+            ->addColumn('customer_name', fn($row) =>
+                $row->address?->name ?? '-'
+            )
+            ->addColumn('customer_phone', fn($row) =>
+                $row->address?->phone ?? '-'
+            )
+            ->addColumn('total_quantity', fn($row) =>
+                $row->orderProducts->sum('quantity')
+            )
+            ->editColumn('payable_amount', fn($row) =>
+                number_format($row->payable_amount, 2)
+            )
 
+            // ✔ SEARCH — ORDER ID
+            ->filterColumn('order_id_display', function ($query, $keyword) {
+                $keyword = str_replace('ORD0', '', $keyword);
+                $query->where('orders.id', 'LIKE', "%$keyword%");
+            })
+
+            // ✔ SEARCH — STORE ID
+            ->filterColumn('shop_id_display', function ($query, $keyword) {
+                $keyword = str_replace('STR0', '', $keyword);
+                $query->where('orders.shop_id', 'LIKE', "%$keyword%");
+            })
+
+            // ✔ SORT BY RELEVANT FIELDS
+            ->orderColumn('order_id_display', fn($query, $order) =>
+                $query->orderBy('orders.id', $order)
+            )
+
+            ->orderColumn('shop_id_display', fn($query, $order) =>
+                $query->orderBy('orders.shop_id', $order)
+            )
+
+            ->orderColumn('store_name', function ($query, $order) {
+                $query->join('shops', 'orders.shop_id', '=', 'shops.id')
+                    ->orderBy('shops.name', $order)
+                    ->select('orders.*');
+            })
+            ->orderColumn('customer_name', function ($query, $order) {
+                $query->join('addresses', 'orders.address_id', '=', 'addresses.id')
+                    ->orderBy('addresses.name', $order)
+                    ->select('orders.*');
+            })
+            ->orderColumn('customer_phone', function ($query, $order) {
+                $query->join('addresses', 'orders.address_id', '=', 'addresses.id')
+                    ->orderBy('addresses.phone', $order)
+                    ->select('orders.*');
+            })
+            ->orderColumn('total_quantity', function ($query, $order) {
+                $query->withSum('orderProducts as qty_sum', 'quantity')
+                    ->orderBy('qty_sum', $order);
+            })
+            ->addColumn('order_status_badge', function ($row) {
+                return match (strtolower($row->order_status->value)) {
+                    'pending'     => '<span class="badge bg-warning">Pending</span>',
+                    'confirm'     => '<span class="badge bg-info">Confirm</span>',
+                    'shipped'     => '<span class="badge bg-primary">Shipped</span>',
+                    'delivered'   => '<span class="badge bg-success">Delivered</span>',
+                    'cancelled'   => '<span class="badge bg-danger">Cancelled</span>',
+                    default       => '<span class="badge bg-secondary">'.$row->order_status->value.'</span>',
+                };
+            })
+
+            ->addColumn('actions', function ($row) {
+                $downloadUrl = route('shop.download-invoice', $row->id);
+                return '<a href="'.route('shop.order.show',$row->id).'"
+                        class="btn btn-primary btn-sm"><i class="fa fa-eye"></i></a>
+
+                        <a href="'.$downloadUrl.'" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" data-bs-title="Download Invoice">  <i class="fa fa-download"></i> </a>
+                        
+                        ';
+            })
+
+            ->rawColumns(['order_status_badge', 'actions'])
+            ->toJson();
+        }
+
+        return view('admin.customer.cust_orders', compact('customerId'));
+    }
 
 }
