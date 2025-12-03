@@ -84,6 +84,13 @@ class ProductRepository extends Repository
 
         $keywords = implode(',', $request->meta_keywords ?? []);
 
+        $details = $request->details;
+        if (isset($details)) {
+            if (is_string($details)) {
+                $details = json_decode($details, true) ?: null;
+            }
+        }
+
         $product = self::create([
             'shop_id' => $shop?->id,
             'name' => $request->name,
@@ -93,6 +100,7 @@ class ProductRepository extends Repository
             'unit_id' => $request->unit,
             'price' => $request->price,
             'discount_price' => $request->discount_price,
+            'details' => $details,
             'quantity' => $request->quantity ?? 0,
             'min_order_quantity' => $request->min_order_quantity ?? 1,
             'media_id' => $thumbnail->id,
@@ -294,7 +302,7 @@ class ProductRepository extends Repository
         }
 
         $type = $uploadVideoRequest['type'];
-        $url = isset($uploadVideoRequest[$type.'_'.'url']) ? $uploadVideoRequest[$type.'_'.'url'] : null;
+        $url = isset($uploadVideoRequest[$type . '_' . 'url']) ? $uploadVideoRequest[$type . '_' . 'url'] : null;
 
         if ($media && $type == 'file' && isset($uploadVideoRequest['file']) && is_file($uploadVideoRequest['file'])) {
             return MediaRepository::updateByRequest(
@@ -353,7 +361,7 @@ class ProductRepository extends Repository
 
         $folders = $folders !== null ? array_keys($folders) : [];
 
-        $galleryPath = 'gallery/shop'.$shop->id;
+        $galleryPath = 'gallery/shop' . $shop->id;
 
         foreach ($rows as $row) {
 
@@ -371,8 +379,8 @@ class ProductRepository extends Repository
                     foreach ($explodeThumbnails as $thumbnail) {
                         $storeFile = null;
                         foreach ($folders as $folder) {
-                            if (Storage::disk('public')->exists($galleryPath.'/'.$folder)) {
-                                $files = File::files(Storage::disk('public')->path($galleryPath.'/'.$folder));
+                            if (Storage::disk('public')->exists($galleryPath . '/' . $folder)) {
+                                $files = File::files(Storage::disk('public')->path($galleryPath . '/' . $folder));
                                 foreach ($files as $file) {
                                     if (basename($file) == $thumbnail) {
                                         $storeFile = $file;
@@ -531,7 +539,7 @@ class ProductRepository extends Repository
 
             $path = 'thumbnails';
 
-            $fileName = random_int(100000, 999999).date('YmdHis').'.'.pathinfo($realPath, PATHINFO_EXTENSION);
+            $fileName = random_int(100000, 999999) . date('YmdHis') . '.' . pathinfo($realPath, PATHINFO_EXTENSION);
 
             $storagePath = Storage::disk('public')->putFileAs($path, $thumbnail, $fileName);
 

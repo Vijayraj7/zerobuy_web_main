@@ -24,6 +24,10 @@ class Product extends Model
 
     protected $appends = ['thumbnail'];
 
+    protected $casts = [
+        'details' => 'array',
+    ];
+
     /**
      * Retrieve the shop that this model belongs to.
      *
