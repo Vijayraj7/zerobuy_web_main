@@ -156,6 +156,30 @@ class Product extends Model
     /**
      * Generate thumbnails for the medias.
      */
+    public function videourl(): Collection
+    {
+        $video = collect([]);
+        if ($this->videoMedia && $this->videoMedia->type == 'file' && Storage::exists($this->videoMedia->src)) {
+            $video[] = (object) [
+                'id' => $this->videoMedia->id,
+                'thumbnail' => null,
+                'url' => Storage::url($this->videoMedia->src),
+                'type' => $this->videoMedia->type,
+            ];
+        } elseif ($this->videoMedia && $this->videoMedia->type != 'file' && $this->videoMedia->src != null) {
+            $video[] = (object) [
+                'id' => $this->videoMedia->id,
+                'thumbnail' => null,
+                'url' => $this->videoMedia->src,
+                'type' => $this->videoMedia->type,
+            ];
+        }
+        return $video;
+    }
+
+    /**
+     * Generate thumbnails for the medias.
+     */
     public function thumbnails(): Collection
     {
         $thumbnails = collect([]);

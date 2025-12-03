@@ -76,6 +76,7 @@ class ProductDetailsResource extends JsonResource
             'min_order_quantity' => (int) ($this->min_order_quantity ?? 1),
             'is_favorite' => (bool) $favorite,
             'thumbnails' => $this->thumbnails(),
+            'videourl' => $this->videourl(),
             'sizes' => SizeResource::collection($this->sizes),
             'colors' => ColorResource::collection($this->colors),
             'brand' => $brandName,
