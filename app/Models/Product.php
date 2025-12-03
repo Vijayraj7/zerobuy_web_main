@@ -114,7 +114,7 @@ class Product extends Model
         }
 
         return new Attribute(
-            get: fn () => $video
+            get: fn() => $video
         );
     }
 
@@ -132,16 +132,16 @@ class Product extends Model
     public function thumbnail(): Attribute
     {
         $thumbnail = asset('default/default.jpg');
-        if(isset($this->media)){
-            if(isset($this->media->src)){
-        if ($this->media || Storage::exists($this->media->src)) {
-            $thumbnail = Storage::url($this->media->src);
+        if (isset($this->media)) {
+            if (isset($this->media->src)) {
+                if ($this->media || Storage::exists($this->media->src)) {
+                    $thumbnail = Storage::url($this->media->src);
+                }
+            }
         }
-    }
-}
 
         return new Attribute(
-            get: fn () => $thumbnail
+            get: fn() => $thumbnail
         );
     }
 
@@ -161,21 +161,21 @@ class Product extends Model
         $thumbnails = collect([]);
 
         if (request()->is('api/*')) {
-            if ($this->videoMedia && $this->videoMedia->type == 'file' && Storage::exists($this->videoMedia->src)) {
-                $thumbnails[] = (object) [
-                    'id' => $this->videoMedia->id,
-                    'thumbnail' => null,
-                    'url' => Storage::url($this->videoMedia->src),
-                    'type' => $this->videoMedia->type,
-                ];
-            } elseif ($this->videoMedia && $this->videoMedia->type != 'file' && $this->videoMedia->src != null) {
-                $thumbnails[] = (object) [
-                    'id' => $this->videoMedia->id,
-                    'thumbnail' => null,
-                    'url' => $this->videoMedia->src,
-                    'type' => $this->videoMedia->type,
-                ];
-            }
+            // if ($this->videoMedia && $this->videoMedia->type == 'file' && Storage::exists($this->videoMedia->src)) {
+            //     $thumbnails[] = (object) [
+            //         'id' => $this->videoMedia->id,
+            //         'thumbnail' => null,
+            //         'url' => Storage::url($this->videoMedia->src),
+            //         'type' => $this->videoMedia->type,
+            //     ];
+            // } elseif ($this->videoMedia && $this->videoMedia->type != 'file' && $this->videoMedia->src != null) {
+            //     $thumbnails[] = (object) [
+            //         'id' => $this->videoMedia->id,
+            //         'thumbnail' => null,
+            //         'url' => $this->videoMedia->src,
+            //         'type' => $this->videoMedia->type,
+            //     ];
+            // }
 
             $thumbnails[] = (object) [
                 'id' => $this->media?->id,
@@ -241,7 +241,7 @@ class Product extends Model
         $avgRating = $this->reviews()->avg('rating');
 
         return new Attribute(
-            get: fn () => (float) number_format($avgRating > 0 ? $avgRating : 0, 1, '.', '')
+            get: fn() => (float) number_format($avgRating > 0 ? $avgRating : 0, 1, '.', '')
         );
     }
 
