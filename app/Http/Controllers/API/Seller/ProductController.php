@@ -75,7 +75,7 @@ class ProductController extends Controller
 
     public function createData()
     {
-        $shop = generaleSetting('rootShop');
+        $shop = generaleSetting('shop');
 
         $brands = $shop?->brands()->isActive()->get();
         $colors = $shop?->colors()->isActive()->get();
