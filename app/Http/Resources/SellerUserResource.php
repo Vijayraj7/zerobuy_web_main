@@ -54,6 +54,8 @@ class SellerUserResource extends JsonResource
                 'name' => $shop->name,
                 'logo' => $shop->logo,
                 'banner' => $shop->banner,
+                'state' => $shop->state,
+                'district' => $shop->district,
                 'address' => $shop->address,
                 'open_time' => $openingTime,
                 'close_time' => $closingTime,
