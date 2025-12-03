@@ -63,7 +63,7 @@ class SellerUserResource extends JsonResource
                 'close_time' => $closingTime,
                 'off_day' => $offDay,
                 'prefix' => $shop->prefix ?? 'ORD-',
-                'followers' => ShopFollower::where('shop_id', $shop->id)->count(),
+                'followers' => (int) ShopFollower::where('shop_id', $shop->id)->count(),
                 'estimated_delivery_time' => (int) $shop->estimated_delivery_time,
                 'min_order_amount' => (float) $shop->min_order_amount ?? 0,
                 'shop_status' => $shopStatus,
