@@ -75,12 +75,13 @@ class ProductController extends Controller
 
     public function createData()
     {
+        $rshop = generaleSetting('rootShop');
         $shop = generaleSetting('shop');
 
-        $brands = $shop?->brands()->isActive()->get();
+        $brands = $rshop?->brands()->isActive()->get();
         $colors = $shop?->colors()->isActive()->get();
-        $categories = $shop?->categories()->active()->get();
-        $units = $shop?->units()->isActive()->get();
+        $categories = $rshop?->categories()->active()->get();
+        $units = $rshop?->units()->isActive()->get();
         $sizes = $shop?->sizes()->isActive()->get();
 
         return $this->json('create product data', [
@@ -128,7 +129,7 @@ class ProductController extends Controller
 
             $data = (object) [
                 'title' => $message,
-                'content' => 'New product Created Request from '.$shop?->name,
+                'content' => 'New product Created Request from ' . $shop?->name,
                 'url' => '/admin/products?status=0',
                 'icon' => 'bi-shop',
                 'type' => 'success',
@@ -177,7 +178,7 @@ class ProductController extends Controller
 
             $data = (object) [
                 'title' => $message,
-                'content' => 'Product Updated Request from '.$shop->name,
+                'content' => 'Product Updated Request from ' . $shop->name,
                 'url' => '/admin/products?status=1',
                 'icon' => 'bi-shop',
                 'type' => 'success',
