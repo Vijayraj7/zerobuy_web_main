@@ -205,6 +205,13 @@ class ProductRepository extends Repository
         $description = Purifier::clean(self::sanitizeUnicode($request->description));
         $keywords = implode(',', $request->meta_keywords ?? []);
 
+        $details = $request->details;
+        if (isset($details)) {
+            if (is_string($details)) {
+                $details = json_decode($details, true) ?: null;
+            }
+        }
+
         self::update($product, [
             'name' => $request->name,
             'description' => $description,
@@ -213,6 +220,7 @@ class ProductRepository extends Repository
             'unit_id' => $request->unit ?? null,
             'price' => $request->price,
             'discount_price' => $request->discount_price,
+            'details' => $details,
             'quantity' => $request->quantity ?? 0,
             'min_order_quantity' => $request->min_order_quantity ?? 1,
             'media_id' => $thumbnail ? $thumbnail->id : null,
