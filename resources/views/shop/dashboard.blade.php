@@ -110,7 +110,7 @@
                         'processing' => asset('assets/icons-admin/rotate-circle.svg'),
                         'pickup' => asset('assets/icons-admin/delivery-cart-arrow-up.svg'),
                         'delivered' => asset('assets/icons-admin/box-check.svg'),
-                        'onTheWay' => asset('assets/icons-admin/truck.svg'),
+                        'shipped' => asset('assets/icons-admin/truck.svg'),
                         'cancelled' => asset('assets/icons-admin/shopping-cart-times.svg'),
                     ];
                 @endphp
@@ -673,7 +673,8 @@
             font-weight: bold;
             color: var(--theme-color);
         }
-        .addBtn{
+
+        .addBtn {
             border-radius: 25px;
             padding: 10px 20px;
         }
