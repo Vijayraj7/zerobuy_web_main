@@ -133,11 +133,11 @@ class OrderController extends Controller
                 OrderStatus::DELIVERED->value,
             ])->first();
 
-        $pending = $statuses->pending;
-        $confirm = $statuses->confirm;
-        $toPickup = $statuses->toPickup;
-        $toDelivery = $statuses->toDelivery;
-        $delivered = $statuses->delivered;
+        $pending = (int)$statuses->pending;
+        $confirm = (int)$statuses->confirm;
+        $toPickup = (int)$statuses->toPickup;
+        $toDelivery = (int)$statuses->toDelivery;
+        $delivered = (int)$statuses->delivered;
 
         $totalOrders = $shop->orders->count();
 
