@@ -11,9 +11,11 @@ class CountryController extends Controller
 {
     public function index()
     {
-        $countries = Cache::rememberForever('countries', function () {
-            return Country::all();
-        });
+        // $countries = Cache::delete('countries', function () {
+        //     return Country::all();
+        // });
+
+        $countries =  Country::all();
 
         return $this->json('all countries', [
             'countries' => CountryResource::collection($countries),
