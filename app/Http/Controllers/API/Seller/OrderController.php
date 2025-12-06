@@ -82,11 +82,11 @@ class OrderController extends Controller
             return $query->where('order_status', OrderStatus::CONFIRM->value);
         })->when($orderStatus == 'to_pickup', function ($query) {
             return $query->whereHas('driverOrder')->where(function ($query) {
-                $query->where('order_status', OrderStatus::CONFIRM->value)->orWhere('order_status', OrderStatus::PROCESSING->value);
+                $query->where('order_status', OrderStatus::CONFIRM->value)->orWhere('order_status', OrderStatus::PENDING->value);
             });
         })->when($orderStatus == 'to_delivery', function ($query) {
             return $query->where(function ($query) {
-                $query->where('order_status', OrderStatus::ON_THE_WAY->value)->orWhere('order_status', OrderStatus::PICKUP->value);
+                $query->where('order_status', OrderStatus::SHIPPED->value)->orWhere('order_status', OrderStatus::CONFIRM->value);
             });
         })->when($orderStatus == 'delivered', function ($query) {
             return $query->where('order_status', OrderStatus::DELIVERED->value);
@@ -127,9 +127,9 @@ class OrderController extends Controller
                 OrderStatus::PENDING->value,
                 OrderStatus::CONFIRM->value,
                 OrderStatus::CONFIRM->value,
-                OrderStatus::PROCESSING->value,
-                OrderStatus::PICKUP->value,
-                OrderStatus::ON_THE_WAY->value,
+                OrderStatus::PENDING->value,
+                OrderStatus::CONFIRM->value,
+                OrderStatus::SHIPPED->value,
                 OrderStatus::DELIVERED->value,
             ])->first();
 
@@ -207,7 +207,7 @@ class OrderController extends Controller
         ]);
 
         $title = 'Order status updated';
-        $message = 'Your order status updated to '.$request->status.' order code: '.$order->prefix.$order->order_code;
+        $message = 'Your order status updated to ' . $request->status . ' order code: ' . $order->prefix . $order->order_code;
         $deviceKeys = $order->customer->user->devices->pluck('key')->toArray();
 
         try {
