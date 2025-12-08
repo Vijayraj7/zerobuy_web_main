@@ -26,6 +26,7 @@ class SellerOrderResource extends JsonResource
             'payment_status' => $this->payment_status->value,
             'payment_method' => $this->payment_method->value == PaymentMethod::CASH->value ? 'Cash' : 'Online',
             'estimated_delivery_date' => (string) $estimateDays,
+            'track_url' => $this->track_url,
             'order_date' => $this->created_at ? Carbon::parse($this->created_at)->format('d M, Y') : null,
             'pickup_date' => $this->pickup_date ? Carbon::parse($this->pickup_date)->format('d M, Y') : null,
             'delivery_date' => $this->delivery_date ? Carbon::parse($this->delivery_date)->format('d M, Y') : null,
