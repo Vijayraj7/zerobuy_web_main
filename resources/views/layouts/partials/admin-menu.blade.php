@@ -89,9 +89,9 @@
 
 
 <!------------------------------ Product Management ------------------------------>
-@hasPermission(['shop.product.index', 'shop.product.create'])
+@hasPermission(['shop.product.index', 'shop.product.create', 'admin.product.create'])
     <li>
-        <a class="menu {{ request()->routeIs('shop.product.*') ? 'active' : '' }}" data-bs-toggle="collapse"
+        <a class="menu {{ request()->routeIs('shop.product.*','admin.product.create') ? 'active' : '' }}" data-bs-toggle="collapse"
             href="#productMenu">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/product.svg') }}" alt="icon" loading="lazy" />
@@ -99,7 +99,7 @@
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
-        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('shop.product.*') ? 'show' : '' }}"
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('shop.product.*','admin.product.create') ? 'show' : '' }}"
             id="productMenu">
             <div class="listBar">
                 @hasPermission('shop.product.index')
@@ -108,9 +108,15 @@
                         {{ __('All My Products') }}
                     </a>
                 @endhasPermission
-                @hasPermission('shop.product.create')
+                <!-- @hasPermission('shop.product.create')
                     <a href="{{ route('shop.product.create') }}"
                         class="subMenu hasCount {{ request()->routeIs('shop.product.create') ? 'active' : '' }}">
+                        {{ __('Add Product') }}
+                    </a>
+                @endhasPermission -->
+                @hasPermission('admin.product.create') 
+                    <a href="{{ route('admin.product.create') }}"
+                        class="subMenu hasCount {{ request()->routeIs('admin.product.create') ? 'active' : '' }}">
                         {{ __('Add Product') }}
                     </a>
                 @endhasPermission
