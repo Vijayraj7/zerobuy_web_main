@@ -200,7 +200,11 @@ class OrderController extends Controller
             return $this->json('Sorry, this order is not found', [], 422);
         }
 
-        $orderStatus = $request->order_status == 'cancel' ? OrderStatus::CANCELLED->value : OrderStatus::CONFIRM->value;
+        $orderStatus = match ($request->order_status) {
+            'cancel'  => OrderStatus::CANCELLED->value,
+            'shipped' => OrderStatus::SHIPPED->value,
+            default   => OrderStatus::CONFIRM->value,
+        };
 
         $order->update([
             'order_status' => $orderStatus,
