@@ -7,6 +7,7 @@ use App\Http\Controllers\API\Seller\LoginController;
 use App\Http\Controllers\API\Seller\NotificationController;
 use App\Http\Controllers\API\Seller\OrderController;
 use App\Http\Controllers\API\Seller\ProductController;
+use App\Http\Controllers\API\Seller\ReturnOrderController;
 use App\Http\Controllers\API\Seller\UserController;
 use App\Http\Controllers\API\Seller\WalletController;
 use App\Http\Controllers\Seller\SellerChatController;
@@ -60,6 +61,11 @@ Route::prefix('/seller')->group(function () {
             Route::get('/orders/details', 'show');
             Route::post('/orders/status-update', 'update');
             Route::post('/orders/track-url-update', 'trackUrlUpdate');
+        });
+
+
+        Route::controller(ReturnOrderController::class)->group(function () {
+            Route::get('/return-orders', 'index');
         });
 
         // wallet route
