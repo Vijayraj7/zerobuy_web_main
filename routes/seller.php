@@ -59,6 +59,7 @@ Route::prefix('/seller')->group(function () {
             Route::get('/orders', 'index');
             Route::get('/orders/details', 'show');
             Route::post('/orders/status-update', 'update');
+            Route::post('/orders/track-url-update', 'trackUrlUpdate');
         });
 
         // wallet route

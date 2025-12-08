@@ -235,4 +235,26 @@ class OrderController extends Controller
             'order' => SellerOrderResource::make($order),
         ]);
     }
+
+    // track url update
+    public function trackUrlUpdate(StatusUpdateRequest $request)
+    {
+        $order = OrderRepository::find($request->order_id);
+
+        if (! $order) {
+            return $this->json('Sorry, this order is not found', [], 422);
+        }
+
+        $order->update([
+            'track_url' => $request->track_url,
+        ]);
+
+        $order->refresh();
+
+        // OrderMailEvent::dispatch($order);
+
+        return $this->json('Track url updated successfully!', [
+            'order' => SellerOrderResource::make($order),
+        ]);
+    }
 }
