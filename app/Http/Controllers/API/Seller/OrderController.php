@@ -203,6 +203,7 @@ class OrderController extends Controller
         $orderStatus = match ($request->order_status) {
             'cancel'  => OrderStatus::CANCELLED->value,
             'shipped' => OrderStatus::SHIPPED->value,
+            'delivered' => OrderStatus::DELIVERED->value,
             default   => OrderStatus::CONFIRM->value,
         };
 
