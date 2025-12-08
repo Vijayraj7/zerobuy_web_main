@@ -17,10 +17,20 @@ class ReturnOrderController extends Controller
         return view('shop.returnOrder.index', compact('returnOrder'));
     }
 
+
+    public function showall()
+    {
+        $shopId = auth()->user()->shop->id;
+        $returnOrder = ReturnOrderRepository::query()->where('shop_id', $shopId)->latest('id')->paginate(20);
+        // return view('shop.returnOrder.index', compact('returnOrder'));
+        return $this->json('Retur details', ['return' => $returnOrder]);
+    }
+
+
     public function show(ReturnOrder $returnOrder)
     {
         if ($returnOrder->shop_id != auth()->user()->shop->id) {
-          //  abort(404);
+            //  abort(404);
         }
         $returnStatus = ReturnOderStatus::cases();
         return view('shop.returnOrder.show', compact('returnOrder', 'returnStatus'));

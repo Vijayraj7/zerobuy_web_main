@@ -121,6 +121,7 @@ Route::name('shop.')->group(function () {
 
             // LIST ALL RETURN ORDERS
             Route::get('/return-orders', 'index')->name('returnOrder.index');
+            Route::get('/api/return-orders', 'showall')->name('returnOrder.api.index');
 
             // SHOW SINGLE RETURN ORDER
             Route::get('/return-order/{returnOrder}/show', 'show')->name('returnOrder.show');
