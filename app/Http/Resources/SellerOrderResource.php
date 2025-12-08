@@ -20,12 +20,13 @@ class SellerOrderResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'order_code' => (string) '#'.$this->prefix.''.$this->order_code,
+            'order_code' => (string) '#' . $this->prefix . '' . $this->order_code,
             'amount' => (float) number_format($this->payable_amount, 2, '.', ''),
             'order_status' => $this->order_status->value,
             'payment_status' => $this->payment_status->value,
             'payment_method' => $this->payment_method->value == PaymentMethod::CASH->value ? 'Cash' : 'Online',
             'estimated_delivery_date' => (string) $estimateDays,
+            'order_date' => $this->created_at ? Carbon::parse($this->created_at)->format('d M, Y') : null,
             'pickup_date' => $this->pickup_date ? Carbon::parse($this->pickup_date)->format('d M, Y') : null,
             'delivery_date' => $this->delivery_date ? Carbon::parse($this->delivery_date)->format('d M, Y') : null,
             'order_placed' => Carbon::parse($this->created_at)->format('d M, Y'),
