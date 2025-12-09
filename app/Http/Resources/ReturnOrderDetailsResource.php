@@ -28,7 +28,7 @@ class ReturnOrderDetailsResource extends JsonResource
             'shop_logo' => $this->shop->logo ?? '',
             'shop_rating' => (float) number_format($this->shop?->averageRating, 1, '.', ''),
             'reject_note' => $this->reject_note,
-            'return_date' => $this->created_at->format('d F, Y'),
+            'return_date' => $this->created_at->format('d-m-Y h:i A'),
             'return_address' => $this->return_address,
             'customer_name' => $this->customer->user->name ?? '',
             'customer_phone' => $this->customer->user->phone ?? '',
