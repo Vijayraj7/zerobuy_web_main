@@ -18,6 +18,7 @@ class ReturnOrderDetailsResource extends JsonResource
         return [
 
             'id' => $this->id,
+            'orderid' => $this->order_id,
             'order_id' => $this->order->prefix . $this->order->order_code,
             'reason' => $this->reason,
             'amount' => (float)$this->amount,
