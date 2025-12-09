@@ -24,7 +24,7 @@ class ReturnOrderResource extends JsonResource
             'quantity' => $this->returnProduct?->sum('quantity'),
             'payment_status' => $this->payment_status ? 'Paid' : 'Unpaid',
             'reject_note' => $this->reject_note,
-            'return_date' => $this->created_at->format('d F, Y'),
+            'return_date' => $this->created_at->format('d-m-Y h:i A'),
             'return_address' => $this->return_address,
         ];
     }
