@@ -19,6 +19,7 @@ class ReturnOrderResource extends JsonResource
             'order_id' => $this->order->prefix . $this->order->order_code,
             'reason' => $this->reason,
             'amount' => (float)$this->amount,
+            'delivery_charge' => (float)$this->order->delivery_charge,
             'status' => $this->status,
             'product' => ReturnOrderProductResource::collection($this->returnProduct),
             'quantity' => $this->returnProduct?->sum('quantity'),
