@@ -116,4 +116,11 @@ class ProductController extends Controller
 
         return back()->withSuccess(__('Product deleted successfully'));
     }
+
+
+    // created by Ancy
+    public function create()
+    {
+        return view('admin.product.create');
+    }
 }
