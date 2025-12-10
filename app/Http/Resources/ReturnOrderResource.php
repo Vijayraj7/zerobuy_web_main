@@ -19,12 +19,13 @@ class ReturnOrderResource extends JsonResource
             'order_id' => $this->order->prefix . $this->order->order_code,
             'reason' => $this->reason,
             'amount' => (float)$this->amount,
+            'delivery_charge' => (float)$this->order->delivery_charge,
             'status' => $this->status,
             'product' => ReturnOrderProductResource::collection($this->returnProduct),
             'quantity' => $this->returnProduct?->sum('quantity'),
             'payment_status' => $this->payment_status ? 'Paid' : 'Unpaid',
             'reject_note' => $this->reject_note,
-            'return_date' => $this->created_at->format('d F, Y'),
+            'return_date' => $this->created_at->format('d-m-Y h:i A'),
             'return_address' => $this->return_address,
         ];
     }

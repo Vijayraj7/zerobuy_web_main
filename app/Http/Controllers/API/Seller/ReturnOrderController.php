@@ -49,9 +49,14 @@ class ReturnOrderController extends Controller
         ]);
     }
 
-    public function statusChange(ReturnOrder $returnOrder, Request $request)
+    public function statusChange(Request $request)
     {
         $request->validate(['status' => ['required', new Enum(ReturnOderStatus::class)]]);
+
+        $returnOrder = ReturnOrder::where('id', $request->order_id)->first();
+        if (!$returnOrder) {
+            return $this->json('error', __('Not Found'));
+        }
 
         if ($returnOrder->payment_status == 1) {
             return $this->json('error', __('Already paid for this order'));

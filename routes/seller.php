@@ -66,6 +66,8 @@ Route::prefix('/seller')->group(function () {
 
         Route::controller(ReturnOrderController::class)->group(function () {
             Route::get('/return-orders', 'index');
+            Route::get('/return/{returnOrder}/show', 'show');
+            Route::post('/return/update-status', 'statusChange');
         });
 
         // wallet route
