@@ -45,7 +45,7 @@ class UserController extends Controller
     /**
      * Updates the user profile.
      *
-     * @param  UserRequest  $request  The request object containing the updated user data.
+     * @param  UserAuthRequest  $request  The request object containing the updated user data.
      */
     public function updateSingle(UserAuthRequest $request)
     {
