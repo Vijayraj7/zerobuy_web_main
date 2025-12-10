@@ -4,10 +4,12 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\UserAuthRequest;
 use App\Http\Requests\UserRequest;
 use App\Http\Resources\UserResource;
 use App\Repositories\UserRepository;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
@@ -45,7 +47,7 @@ class UserController extends Controller
      *
      * @param  UserRequest  $request  The request object containing the updated user data.
      */
-    public function updateSingle(UserRequest $request)
+    public function updateSingle(UserAuthRequest $request)
     {
         $user = UserRepository::updateSingle($request, auth()->user());
         $user->refresh();
