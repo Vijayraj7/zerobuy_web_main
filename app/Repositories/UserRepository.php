@@ -224,12 +224,19 @@ class UserRepository extends Repository
      */
     public static function updateSingle($request, $user): User
     {
-        $request->validate([
-            $request->key => 'required|string',
-        ]);
+        $field = $request->key;    // e.g. 'gst'
+        $value = $request->value;  // e.g. '09AAACH7409R1ZZ'
+
+        // (optional) whitelist allowed fields to avoid abuse
+        // $allowed = ['name', 'email', 'phone', 'gst'];
+        // if (!in_array($field, $allowed)) {
+        //     abort(400, 'Invalid field');
+        // }
+
         $user->update([
-            $request->key => $request->value,
+            $field => $value,
         ]);
+
         return $user;
     }
 
