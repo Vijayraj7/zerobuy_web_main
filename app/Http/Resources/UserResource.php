@@ -31,6 +31,7 @@ class UserResource extends JsonResource
             'is_active' => (bool) $this->is_active,
             'profile_photo' => $this->thumbnail,
             'gender' => $this->gender,
+            'gst' => $this->gst,
             'date_of_birth' => $this->date_of_birth,
             'country' => $this->country,
             'phone_code' => $this->phone_code,

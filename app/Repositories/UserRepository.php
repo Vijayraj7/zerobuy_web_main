@@ -75,7 +75,7 @@ class UserRepository extends Repository
         $media = null;
 
         if ($profileUrl) {
-            $filename = 'users/'.Str::random(10).'.jpg';
+            $filename = 'users/' . Str::random(10) . '.jpg';
 
             $imageContent = Http::get($profileUrl)->body();
             Storage::disk('public')->put($filename, $imageContent);
@@ -205,6 +205,7 @@ class UserRepository extends Repository
             'phone' => $request->phone,
             'media_id' => $thumbnail ? $thumbnail->id : null,
             'gender' => $request->gender,
+            'gst' => $request->gst,
             'date_of_birth' => $request->date_of_birth ? Carbon::parse($request->date_of_birth)->format('Y-m-d') : $user->date_of_birth,
             'driving_lience' => $request->driving_lience,
             'vehicle_type' => $request->vehicle_type,
