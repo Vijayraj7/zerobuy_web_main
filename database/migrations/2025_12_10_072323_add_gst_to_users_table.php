@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('orders', function (Blueprint $table) {
+        Schema::table('users', function (Blueprint $table) {
             //
-            $table->string('track_url')->nullable()->after('delivery_charge');
+            $table->string('gst')->nullable()->after('country');
         });
     }
 
@@ -22,9 +22,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('orders', function (Blueprint $table) {
+        Schema::table('users', function (Blueprint $table) {
             //
-            $table->dropColumn('track_url');
+            $table->dropColumn('gst');
         });
     }
 };

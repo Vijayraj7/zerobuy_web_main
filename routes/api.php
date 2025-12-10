@@ -146,6 +146,7 @@ Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
     Route::controller(UserController::class)->group(function () {
         Route::get('/profile', 'index');
         Route::post('/update-profile', 'update')->middleware('demoMode');
+        Route::post('/update-single', 'updateSingle')->middleware('demoMode');
         Route::post('/change-password', 'changePassword')->middleware('demoMode');
     });
 

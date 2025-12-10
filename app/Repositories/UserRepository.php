@@ -75,7 +75,7 @@ class UserRepository extends Repository
         $media = null;
 
         if ($profileUrl) {
-            $filename = 'users/'.Str::random(10).'.jpg';
+            $filename = 'users/' . Str::random(10) . '.jpg';
 
             $imageContent = Http::get($profileUrl)->body();
             Storage::disk('public')->put($filename, $imageContent);
@@ -205,11 +205,36 @@ class UserRepository extends Repository
             'phone' => $request->phone,
             'media_id' => $thumbnail ? $thumbnail->id : null,
             'gender' => $request->gender,
+            'gst' => $request->gst,
             'date_of_birth' => $request->date_of_birth ? Carbon::parse($request->date_of_birth)->format('Y-m-d') : $user->date_of_birth,
             'driving_lience' => $request->driving_lience,
             'vehicle_type' => $request->vehicle_type,
             'country' => $request->country ?? $user->country,
             'phone_code' => $request->phone_code ?? $user->phone_code,
+        ]);
+
+        return $user;
+    }
+
+    /**
+     * Update user by request.
+     *
+     * @param  $request  The user request
+     * @param  mixed  $user  The user
+     */
+    public static function updateSingle($request, $user): User
+    {
+        $field = $request->key;    // e.g. 'gst'
+        $value = $request->value;  // e.g. '09AAACH7409R1ZZ'
+
+        // (optional) whitelist allowed fields to avoid abuse
+        // $allowed = ['name', 'email', 'phone', 'gst'];
+        // if (!in_array($field, $allowed)) {
+        //     abort(400, 'Invalid field');
+        // }
+
+        $user->update([
+            $field => $value,
         ]);
 
         return $user;
