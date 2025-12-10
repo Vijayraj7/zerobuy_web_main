@@ -224,18 +224,12 @@ class UserRepository extends Repository
      */
     public static function updateSingle($request, $user): User
     {
-        $field = $request->input('key');
-        $value = $request->input('value');
-
-        if (!$field) {
-            // decide what you want here: ignore, throw, or custom response
-            return $user; // or throw new \InvalidArgumentException('key is required');
-        }
-
-        // direct attribute set, then save
-        $user->{$field} = $value;
-        $user->save();
-
+        $request->validate([
+            $request->key => 'required|string',
+        ]);
+        $user->update([
+            $request->key => $request->value,
+        ]);
         return $user;
     }
 
