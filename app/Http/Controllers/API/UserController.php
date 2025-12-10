@@ -41,6 +41,21 @@ class UserController extends Controller
     }
 
     /**
+     * Updates the user profile.
+     *
+     * @param  UserRequest  $request  The request object containing the updated user data.
+     */
+    public function updateSingle(UserRequest $request)
+    {
+        $user = UserRepository::updateSingle($request, auth()->user());
+        $user->refresh();
+
+        return $this->json('Profile updated successfully', [
+            'user' => UserResource::make($user),
+        ]);
+    }
+
+    /**
      * Change the user's password.
      *
      * @param  ChangePasswordRequest  $request  The request object containing the new password.

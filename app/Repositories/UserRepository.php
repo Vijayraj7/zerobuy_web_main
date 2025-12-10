@@ -217,6 +217,21 @@ class UserRepository extends Repository
     }
 
     /**
+     * Update user by request.
+     *
+     * @param  $request  The user request
+     * @param  mixed  $user  The user
+     */
+    public static function updateSingle($request, $user): User
+    {
+        $user->update([
+            $request->key => $request->value,
+        ]);
+
+        return $user;
+    }
+
+    /**
      * Update the user's profile photo.
      */
     private static function updateProfilePhoto($request, $user)
