@@ -226,7 +226,6 @@ class UserRepository extends Repository
     {
         $request->validate([
             $request->key => 'required|string',
-            $request->value => 'nullable',
         ]);
         $user->update([
             $request->key => $request->value,
