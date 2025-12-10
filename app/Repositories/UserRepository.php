@@ -224,6 +224,10 @@ class UserRepository extends Repository
      */
     public static function updateSingle($request, $user): User
     {
+        $request->validate([
+            'key' => 'required|string',
+            'value' => 'nullable',
+        ]);
         $user->update([
             $request->key => $request->value,
         ]);
