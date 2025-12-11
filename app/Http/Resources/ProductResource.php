@@ -67,6 +67,7 @@ class ProductResource extends JsonResource
             'total_reviews' => (string) Number::abbreviate($this->reviews?->count(), maxPrecision: 2),
             'total_sold' => (string) number_format($totalSold, 0, '.', ','),
             'quantity' => (int) ($flashSaleProduct ? $quantity : $this->quantity),
+            'min_order_quantity' => (int) $this->min_order_quantity,
             'is_favorite' => (bool) $favorite,
             'sizes' => SizeResource::collection($this->sizes),
             'colors' => ColorResource::collection($this->colors),
