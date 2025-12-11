@@ -48,7 +48,7 @@ class SmsGatewayService
         // $response = $this->gateway->sendMessage($to, $message);
 
 
-        $sms_content = 'OTP for Login on ZEROBUY is ' . $otp . ' and valid till 5 minutes. Do not share this OTP to anyone for security reasons. -ZEROBUY';
+        $sms_content = 'OTP for Login on DREAMPOOL is ' . $otp . ' and valid till 5 minutes. Do not share this OTP to anyone for security reasons. -DREAMPOOL';
 
         $url1 = 'thesmsbuddy.com/api/v1/sms/send?key=y7SxblQysDYH0gZMyxoRPRMDzz39kekB&type=1&to=' . $phoneNumber . '&sender=DRPOOL&message=' . urlencode($sms_content) . '&flash=0&template_id=1707169199056277087';
         $response = '';
