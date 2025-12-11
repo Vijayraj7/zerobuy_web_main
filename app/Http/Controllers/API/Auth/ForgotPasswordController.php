@@ -46,7 +46,7 @@ class ForgotPasswordController extends Controller
             $verificationCode = VerificationCodeRepository::findOrCreateByContact($user->phone ?? $user->email);
             $OTP = $verificationCode->otp;
 
-            $message = 'Your '.$messageType.' OTP is '.$OTP;
+            $message = 'Your ' . $messageType . ' OTP is ' . $OTP;
 
             $phoneCode = null;
             if ($type == 'phone') {
@@ -55,20 +55,20 @@ class ForgotPasswordController extends Controller
                     $phoneNumber = $user->phone;
                     $phoneCode = $request->phone_code ?? $user->phone_code;
 
-                    $response = (new SmsGatewayService)->sendSMS($phoneCode, $phoneNumber, $message);
+                    $response = (new SmsGatewayService)->sendSMS($phoneCode, $phoneNumber, $message, $OTP);
 
                     // dd($response);
                 } catch (\Throwable $e) {
                 }
-                $responseMessage = 'Your '.$messageType.' code is sent to your phone';
-                $emailOrPhone = $phoneCode.$user->phone;
+                $responseMessage = 'Your ' . $messageType . ' code is sent to your phone';
+                $emailOrPhone = $phoneCode . $user->phone;
             } elseif ($user->email) {
                 try {
                     SendOTPMail::dispatch($user->email, $message, $OTP);
                 } catch (\Throwable $th) {
                 }
 
-                $responseMessage = 'Your '.$messageType.' code is sent to your email';
+                $responseMessage = 'Your ' . $messageType . ' code is sent to your email';
                 $emailOrPhone = $user->email;
             }
 
@@ -92,7 +92,7 @@ class ForgotPasswordController extends Controller
         $user = UserRepository::findByPhone($request->phone);
 
         if (! $user) {
-            return $this->json('Sorry! No user found' . $request->phone, [], 422);
+            return $this->json('Sorry! No user found', [], 422);
         }
 
         $verifyManage = Cache::rememberForever('verify_manage', function () {
