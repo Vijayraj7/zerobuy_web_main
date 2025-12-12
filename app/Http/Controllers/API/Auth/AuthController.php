@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\Auth;
 
 use App\Enums\Roles;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CustomerRegistrationRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegistrationRequest;
 use App\Http\Resources\UserResource;
@@ -24,7 +25,7 @@ class AuthController extends Controller
      * @param  RegistrationRequest  $request  The registration request data
      * @return Some_Return_Value The registration result data
      */
-    public function register(RegistrationRequest $request)
+    public function register(CustomerRegistrationRequest $request)
     {
         // Create a new user
         $user = UserRepository::registerNewUser($request);
