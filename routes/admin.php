@@ -287,6 +287,7 @@ Route::name('admin.')->group(function () {
             Route::delete('/products/{product}/delete', 'destroy')->name('product.destroy');
 
             Route::get('/products/create', 'create')->name('product.create');
+            Route::post('/products', 'store')->name('product.store');
         });
 
         // Generate Settings

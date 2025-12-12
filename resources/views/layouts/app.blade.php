@@ -55,12 +55,14 @@
     <link rel="stylesheet" href="{{ asset('assets/css/jquery.timepicker.min.css') }}" type="text/css" />
     <link rel="stylesheet" href="{{ asset('assets/css/jquery-ui.css') }}" type="text/css">
 
-    <!-- datatable bootstrat-added by ancy -->
+    <!-- datatable bootstrap-added by ancy -->
     <link rel="stylesheet" href="{{ asset('assets/css/dataTables.bootstrap5.min.css') }}" type="text/css">
     <link rel="stylesheet" href="{{ asset('assets/css/responsive.bootstrap5.min.css') }}" type="text/css">
     <link rel="stylesheet" href="{{ asset('assets/css/buttons.bootstrap5.min.css') }}" type="text/css">
 
- 
+    <!-- Summernote added by ancy -->
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css" rel="stylesheet">
+
     @stack('css')
 
     <style>
@@ -94,6 +96,31 @@
 
         .datatableCustomCSS tbody td {
             display: table-cell !important;
+        }
+
+         .variant-card, .bulk-card {
+            border-left: 4px solid;
+            transition: background-color 0.2s;
+        }
+        
+        .variant-card {
+            border-left-color: #007bff;
+        }
+        
+        .bulk-card {
+            border-left-color: #28a745;
+        }
+        
+        .variant-card:hover, .bulk-card:hover {
+            background-color: #f8f9fa;
+        }
+        
+        #no-variants-message, #no-bulkprice-message {
+            font-style: italic;
+            padding: 20px;
+            text-align: center;
+            background-color: #f8f9fa;
+            border-radius: 5px;
         }
     </style>
 </head>
@@ -566,6 +593,9 @@
     <script src="{{ asset('assets/scripts/vfs_fonts.js') }}"></script>
     <script src="{{ asset('assets/scripts/buttons.html5.min.js') }}"></script>
     <script src="{{ asset('assets/scripts/buttons.print.min.js') }}"></script>
+    <!-- Summernote JS - added by ancy -->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
