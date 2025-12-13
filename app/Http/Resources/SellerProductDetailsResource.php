@@ -24,7 +24,7 @@ class SellerProductDetailsResource extends JsonResource
             'code' => (int) $this->code,
             'min_order_quantity' => (int) $this->min_order_quantity,
             'thumbnail' => $this->thumbnail,
-            'variants' => ProductDetailsResource::collection($this->variants),
+            'variants' => ProductVariantResource::collection($this->variants),
             // 'videourl' => $this->videourl(),
             'additional_thumbnail' => $this->additionalThumbnails(),
             'category' => OnlyCategoryResource::make($this->categories()?->first()),
