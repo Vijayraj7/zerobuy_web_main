@@ -144,16 +144,24 @@ class ProductRepository extends Repository
             }
         }
 
-        if (isset($request->variants)) {
+        if ($request->filled('variants')) {
             foreach ($request->variants as $v) {
-                // Each v expected to contain keys size_id, color_id, price, quantity
-                ProductVariant::create([
-                    'product_id' => strval($product->id),
-                    'size_id' => strval($v->size->id),
-                    'color_id' => strval($v->color->id),
-                    'price' => $v->price,
-                    'quantity' => $v->quantity,
-                ]);
+                $data = [
+                    'product_id' => $product->id,
+                    'size_id'    => $v['size']['id'],
+                    'color_id'   => $v['color']['id'],
+                    'price'      => $v['price'],
+                    'quantity'   => $v['quantity'],
+                ];
+
+                // ✅ CREATE
+                if ($v['id'] == null) {
+                    ProductVariant::create($data);
+                }
+                // ✅ UPDATE
+                else {
+                    ProductVariant::where('id', $v['id'])->update($data);
+                }
             }
         }
 
