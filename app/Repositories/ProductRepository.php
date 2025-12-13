@@ -10,6 +10,7 @@ use App\Models\ProductTranslation;
 use App\Models\ProductVariant;
 use App\Models\RecentView;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -291,26 +292,50 @@ class ProductRepository extends Repository
             }
         }
 
-        if ($request->filled('variants')) {
-            foreach ($request->variants as $v) {
-                $data = [
-                    'product_id' => $product->id,
-                    'size_id'    => $v['size']['id'],
-                    'color_id'   => $v['color']['id'],
-                    'price'      => $v['price'],
-                    'quantity'   => $v['quantity'],
-                ];
+        // if ($request->filled('variants')) {
+        //     foreach ($request->variants as $v) {
+        //         $data = [
+        //             'product_id' => $product->id,
+        //             'size_id'    => $v['size']['id'],
+        //             'color_id'   => $v['color']['id'],
+        //             'price'      => $v['price'],
+        //             'quantity'   => $v['quantity'],
+        //         ];
 
-                // ✅ CREATE
-                if ($v['id'] == null) {
-                    ProductVariant::create($data);
-                }
-                // ✅ UPDATE
-                else {
-                    ProductVariant::where('id', $v['id'])->update($data);
-                }
+        //         // ✅ CREATE
+        //         if ($v['id'] == null) {
+        //             ProductVariant::create($data);
+        //         }
+        //         // ✅ UPDATE
+        //         else {
+        //             ProductVariant::where('id', $v['id'])->update($data);
+        //         }
+        //     }
+        // }
+
+
+        DB::transaction(function () use ($product, $request) {
+
+            $variants = collect($request->variants ?? []);
+
+            // 1️⃣ DELETE variants not in request
+            $product->variants()
+                ->whereNotIn('id', $variants->pluck('id')->filter())
+                ->delete();
+
+            // 2️⃣ UPDATE or CREATE variants from request
+            foreach ($variants as $v) {
+                $product->variants()->updateOrCreate(
+                    ['id' => $v['id'] ?? null],
+                    [
+                        'size_id'  => $v['size']['id'],
+                        'color_id' => $v['color']['id'],
+                        'price'    => $v['price'],
+                        'quantity' => $v['quantity'],
+                    ]
+                );
             }
-        }
+        });
 
 
         $product->categories()->sync($request->category ?? []);
