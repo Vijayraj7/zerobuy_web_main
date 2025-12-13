@@ -288,10 +288,10 @@ class ProductRepository extends Repository
                 // Each v expected to contain keys size_id, color_id, price, quantity
                 ProductVariant::create([
                     'product_id' => strval($product->id),
-                    'size_id' => strval($v->size->id),
-                    'color_id' => strval($v->color->id),
-                    'price' => $v->price,
-                    'quantity' => $v->quantity,
+                    'size_id' => strval($v['size']['id']),
+                    'color_id' => strval($v['color']['id']),
+                    'price' => $v['price'],
+                    'quantity' => $v['quantity'],
                 ]);
             }
         }
