@@ -7,6 +7,7 @@ use App\Http\Requests\ProductRequest;
 use App\Models\Media;
 use App\Models\Product;
 use App\Models\ProductTranslation;
+use App\Models\ProductVariant;
 use App\Models\RecentView;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
@@ -143,6 +144,18 @@ class ProductRepository extends Repository
             }
         }
 
+        if (isset($request->variants)) {
+            foreach ($request->variants as $v) {
+                // Each v expected to contain keys size_id, color_id, price, quantity
+                ProductVariant::create([
+                    'product_id' => strval($product->id),
+                    'size_id' => strval($v->size->id),
+                    'color_id' => strval($v->color->id),
+                    'price' => $v->price,
+                    'quantity' => $v->quantity,
+                ]);
+            }
+        }
         $product->categories()->sync($request->category ?? []);
         $product->subcategories()->sync($request->sub_category ?? []);
 
