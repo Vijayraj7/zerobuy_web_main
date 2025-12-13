@@ -294,7 +294,7 @@ class ProductRepository extends Repository
                 ];
 
                 // ✅ CREATE
-                if ($v['id'] == -1) {
+                if ($v['id'] == null) {
                     ProductVariant::create($data);
                 }
                 // ✅ UPDATE
