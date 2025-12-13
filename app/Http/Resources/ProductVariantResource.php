@@ -19,8 +19,10 @@ class ProductVariantResource extends JsonResource
             'product_id' => (int) $this->product_id,
             'price' => (float) $this->price,
             'quantity' => (int) $this->quantity,
-            'color' => ColorResource::collection($this->color),
-            'size' => SizeResource::collection($this->size),
+            'color' => $this->color,
+            'size' => $this->size,
+            // 'color' => ColorResource::collection($this->color),
+            // 'size' => SizeResource::collection($this->size),
         ];
     }
 }
