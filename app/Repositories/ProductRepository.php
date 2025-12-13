@@ -293,13 +293,13 @@ class ProductRepository extends Repository
                     'quantity'   => $v['quantity'],
                 ];
 
-                // ✅ UPDATE
-                if ($v['id'] != -1 && $v['id'] != null) {
-                    ProductVariant::where('id', $v['id'])->update($data);
-                }
                 // ✅ CREATE
-                else {
+                if ($v['id'] == -1) {
                     ProductVariant::create($data);
+                }
+                // ✅ UPDATE
+                else {
+                    ProductVariant::where('id', $v['id'])->update($data);
                 }
             }
         }
