@@ -57,9 +57,9 @@ class Product extends Model
     /**
      * Retrieve the varients associated with the current model.
      */
-    public function variants(): HasMany
+    public function variants(): BelongsToMany
     {
-        return $this->hasMany(ProductVariant::class, 'product_id');
+        return $this->belongsToMany(ProductVariant::class, 'product_id');
     }
 
     /**
