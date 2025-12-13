@@ -285,14 +285,23 @@ class ProductRepository extends Repository
 
         if (isset($request->variants)) {
             foreach ($request->variants as $v) {
-                // Each v expected to contain keys size_id, color_id, price, quantity
-                ProductVariant::create([
-                    'product_id' => strval($product->id),
-                    'size_id' => strval($v['size']['id']),
-                    'color_id' => strval($v['color']['id']),
-                    'price' => $v['price'],
-                    'quantity' => $v['quantity'],
-                ]);
+                if (isset($v['size']['id'])) {
+                    ProductVariant::where('id', $v['size']['id'])->update([
+                        'product_id' => strval($product->id),
+                        'size_id' => strval($v['size']['id']),
+                        'color_id' => strval($v['color']['id']),
+                        'price' => $v['price'],
+                        'quantity' => $v['quantity'],
+                    ]);
+                } else {
+                    ProductVariant::create([
+                        'product_id' => strval($product->id),
+                        'size_id' => strval($v['size']['id']),
+                        'color_id' => strval($v['color']['id']),
+                        'price' => $v['price'],
+                        'quantity' => $v['quantity'],
+                    ]);
+                }
             }
         }
 
