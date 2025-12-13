@@ -283,27 +283,27 @@ class ProductRepository extends Repository
             }
         }
 
-        if (isset($request->variants)) {
+        if ($request->filled('variants')) {
             foreach ($request->variants as $v) {
-                if (isset($v['size']['id'])) {
-                    ProductVariant::where('id', $v['size']['id'])->update([
-                        'product_id' => strval($product->id),
-                        'size_id' => strval($v['size']['id']),
-                        'color_id' => strval($v['color']['id']),
-                        'price' => $v['price'],
-                        'quantity' => $v['quantity'],
-                    ]);
-                } else {
-                    ProductVariant::create([
-                        'product_id' => strval($product->id),
-                        'size_id' => strval($v['size']['id']),
-                        'color_id' => strval($v['color']['id']),
-                        'price' => $v['price'],
-                        'quantity' => $v['quantity'],
-                    ]);
+                $data = [
+                    'product_id' => $product->id,
+                    'size_id'    => $v['size']['id'],
+                    'color_id'   => $v['color']['id'],
+                    'price'      => $v['price'],
+                    'quantity'   => $v['quantity'],
+                ];
+
+                // ✅ UPDATE
+                if ($v['id'] != -1 || $v['id'] != null) {
+                    ProductVariant::where('id', $v['id'])->update($data);
+                }
+                // ✅ CREATE
+                else {
+                    ProductVariant::create($data);
                 }
             }
         }
+
 
         $product->categories()->sync($request->category ?? []);
         $product->subcategories()->sync($request->sub_category ?? []);
