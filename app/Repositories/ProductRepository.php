@@ -156,6 +156,7 @@ class ProductRepository extends Repository
                 ]);
             }
         }
+
         $product->categories()->sync($request->category ?? []);
         $product->subcategories()->sync($request->sub_category ?? []);
 
@@ -279,6 +280,19 @@ class ProductRepository extends Repository
         } else {
             foreach ($request->color ?? [] as $color) {
                 $product->colors()->attach($color['id'], ['price' => $color['price']]);
+            }
+        }
+
+        if (isset($request->variants)) {
+            foreach ($request->variants as $v) {
+                // Each v expected to contain keys size_id, color_id, price, quantity
+                ProductVariant::create([
+                    'product_id' => strval($product->id),
+                    'size_id' => strval($v->size->id),
+                    'color_id' => strval($v->color->id),
+                    'price' => $v->price,
+                    'quantity' => $v->quantity,
+                ]);
             }
         }
 
