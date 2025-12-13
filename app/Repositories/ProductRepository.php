@@ -294,7 +294,7 @@ class ProductRepository extends Repository
                 ];
 
                 // ✅ UPDATE
-                if ($v['id'] != -1 || $v['id'] != null) {
+                if ($v['id'] != -1 && $v['id'] != null) {
                     ProductVariant::where('id', $v['id'])->update($data);
                 }
                 // ✅ CREATE
