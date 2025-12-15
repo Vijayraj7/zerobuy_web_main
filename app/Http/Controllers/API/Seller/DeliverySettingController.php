@@ -33,9 +33,14 @@ class DeliverySettingController extends Controller
             ], 404);
         }
 
+        $selectedIds = $setting?->selected_state_ids ?? [];
         // return response()->json($setting);
         return $this->json('Delivery Settings', [
             'settings' => $setting,
+            'selected_states' => State::whereIn('id', $selectedIds)
+                ->select('id', 'name')
+                ->orderBy('name')
+                ->get(),
         ]);
     }
 
@@ -45,22 +50,17 @@ class DeliverySettingController extends Controller
     public function getStates(Request $request)
     {
         $shop = generaleSetting('shop');
-
         $setting = DeliverySetting::where('shop_id', $shop->id)->first();
-
-        // Thanks to $casts, this is already an array
         $selectedIds = $setting?->selected_state_ids ?? [];
 
         return $this->json('State List', [
             'states' => State::select('id', 'name')
                 ->orderBy('name')
                 ->get(),
-
             'selected_states' => State::whereIn('id', $selectedIds)
                 ->select('id', 'name')
                 ->orderBy('name')
                 ->get(),
-
             'selected_state_ids' => $selectedIds,
         ]);
     }
