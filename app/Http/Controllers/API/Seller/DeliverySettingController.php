@@ -59,6 +59,7 @@ class DeliverySettingController extends Controller
             'states' => State::select('id', 'name')
                 ->orderBy('name')
                 ->get(),
+            'days' => $shop->estimated_delivery_time,
             'selected_states' => State::whereIn('id', $selectedIds)
                 ->select('id', 'name')
                 ->orderBy('name')
