@@ -145,6 +145,10 @@ class DeliverySettingController extends Controller
 
             // Save state wise charges
             if ($validated['delivery_mode'] === 'state_wise') {
+                return response()->json([
+                    'message' => 'Delivery settings aved successfully',
+                    'v' => $validated['state_charges']
+                ]);
                 foreach ($validated['state_charges'] ?? [] as $state) {
                     DeliveryStateCharge::create([
                         'delivery_setting_id' => $setting->id,
