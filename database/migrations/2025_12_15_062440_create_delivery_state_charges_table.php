@@ -14,13 +14,22 @@ return new class extends Migration {
                 ->constrained('delivery_settings')
                 ->cascadeOnDelete();
 
-            $table->string('state', 100);
-            $table->decimal('charge', 10, 2);
+            // NEW: state_id (FK)
+            $table->foreignId('state_id')
+                ->constrained('states')
+                ->cascadeOnDelete();
 
+            // Keep state name (optional but useful)
+            $table->string('state', 100);
+
+            $table->decimal('charge', 10, 2);
             $table->timestamps();
 
-            // One state per delivery setting
-            $table->unique(['delivery_setting_id', 'state']);
+            // Correct unique constraint
+            $table->unique(
+                ['delivery_setting_id', 'state_id'],
+                'delivery_setting_state_unique'
+            );
         });
     }
 
