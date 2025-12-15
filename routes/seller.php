@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\ChatController;
+use App\Http\Controllers\API\DeliverySettingController;
 use App\Http\Controllers\API\Seller\BannerController;
 use App\Http\Controllers\API\Seller\DashboardController;
 use App\Http\Controllers\API\Seller\LoginController;
@@ -63,11 +64,15 @@ Route::prefix('/seller')->group(function () {
             Route::post('/orders/track-url-update', 'trackUrlUpdate');
         });
 
-
         Route::controller(ReturnOrderController::class)->group(function () {
             Route::get('/return-orders', 'index');
             Route::get('/return/{returnOrder}/show', 'show');
             Route::post('/return/update-status', 'statusChange');
+        });
+
+        Route::controller(DeliverySettingController::class)->group(function () {
+            Route::get('/delivery-settings', 'show');
+            Route::post('/delivery-settings', 'store');
         });
 
         // wallet route
