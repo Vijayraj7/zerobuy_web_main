@@ -11,4 +11,8 @@ class DeliveryStateCharge extends Model
         'state',
         'charge',
     ];
+    public function state()
+    {
+        return $this->belongsTo(State::class);
+    }
 }

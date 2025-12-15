@@ -24,7 +24,7 @@ class DeliverySettingController extends Controller
 
         $setting = DeliverySetting::with([
             'amountRules',
-            'stateCharges',
+            'stateCharges.state',
         ])->where('shop_id', $shop->id)->first();
 
         if (!$setting) {
@@ -46,7 +46,7 @@ class DeliverySettingController extends Controller
     public function getStates(Request $request)
     {
         return $this->json('State List', [
-            'state' => State::all(),
+            'states' => State::select('id', 'name')->orderBy('name')->get(),
         ]);
     }
 
@@ -70,7 +70,16 @@ class DeliverySettingController extends Controller
 
             'state_charges' => ['array'],
             'state_charges.*.state'  => ['required_if:delivery_mode,state_wise', 'string', 'max:100'],
-            'state_charges.*.charge' => ['required_if:delivery_mode,state_wise', 'numeric', 'min:0'],
+            'state_charges.*.state_id' => [
+                'required_if:delivery_mode,state_wise',
+                'integer',
+                'exists:states,id',
+            ],
+            'state_charges.*.charge' => [
+                'required_if:delivery_mode,state_wise',
+                'numeric',
+                'min:0',
+            ],
         ]);
 
         // $shopId = auth()->user()->shop_id ?? null;
@@ -110,6 +119,7 @@ class DeliverySettingController extends Controller
                     DeliveryStateCharge::create([
                         'delivery_setting_id' => $setting->id,
                         'state'  => $state['state'],
+                        'state_id'  => $state['state_id'],
                         'charge' => $state['charge'],
                     ]);
                 }
