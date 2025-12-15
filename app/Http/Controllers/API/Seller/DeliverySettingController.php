@@ -61,7 +61,7 @@ class DeliverySettingController extends Controller
         $setting = DeliverySetting::updateOrCreate(
             ['shop_id' => strval($shop->id)],
             [
-                'selected_state_ids' => json_encode($validated['selected_state_ids']),
+                'selected_state_ids' => $validated['selected_state_ids'],
             ]
         );
 

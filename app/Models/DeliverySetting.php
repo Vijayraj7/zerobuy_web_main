@@ -10,6 +10,10 @@ class DeliverySetting extends Model
         'shop_id',
         'delivery_mode',
         'update_when_shipped',
+        'selected_state_ids',
+    ];
+
+    protected $casts = [
         'selected_state_ids' => 'array',
     ];
 
