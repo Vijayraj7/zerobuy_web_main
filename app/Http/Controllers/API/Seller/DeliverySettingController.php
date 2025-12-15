@@ -32,7 +32,10 @@ class DeliverySettingController extends Controller
             ], 404);
         }
 
-        return response()->json($setting);
+        // return response()->json($setting);
+        return $this->json('Delivery Settings', [
+            'settings' => $setting,
+        ]);
     }
 
     /**
