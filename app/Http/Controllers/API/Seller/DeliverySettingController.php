@@ -104,7 +104,7 @@ class DeliverySettingController extends Controller
             'amount_rules.*.charge'     => ['required_if:delivery_mode,amount_based', 'numeric', 'min:0'],
 
             'state_charges' => ['array'],
-            'state_charges.*.state'  => ['required_if:delivery_mode,state_wise', 'string', 'max:100'],
+            'state_charges.*.state'  => ['required_if:delivery_mode,state_wise', 'integer', 'max:100'],
             'state_charges.*.state_id' => [
                 'required_if:delivery_mode,state_wise',
                 'integer',
@@ -153,8 +153,8 @@ class DeliverySettingController extends Controller
                 foreach ($validated['state_charges'] ?? [] as $state) {
                     DeliveryStateCharge::create([
                         'delivery_setting_id' => $setting->id,
-                        'state'  => $state['state'],
-                        'state_id'  => $state['state_id'],
+                        'state'  => State::where('id', $state['state'])->first()->name,
+                        'state_id'  => $state['state'],
                         'charge' => $state['charge'],
                     ]);
                 }
