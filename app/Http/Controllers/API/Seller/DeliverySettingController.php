@@ -38,6 +38,7 @@ class DeliverySettingController extends Controller
         // return response()->json($setting);
         return $this->json('Delivery Settings', [
             'settings' => $setting,
+            'days' => $shop->estimated_delivery_time,
             'selected_states' => State::whereIn('id', $selectedIds)
                 ->select('id', 'name')
                 ->orderBy('name')
