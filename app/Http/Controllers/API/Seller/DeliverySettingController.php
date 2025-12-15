@@ -66,7 +66,7 @@ class DeliverySettingController extends Controller
         );
 
         return $this->json('Selected states saved successfully', [
-            'selected_state_ids' => $shop->id,
+            'selected_state_ids' => $validated['selected_state_ids'],
         ]);
     }
 
