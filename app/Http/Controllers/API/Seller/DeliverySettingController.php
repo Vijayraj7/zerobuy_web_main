@@ -162,6 +162,8 @@ class DeliverySettingController extends Controller
 
         return response()->json([
             'message' => 'Delivery settings saved successfully',
+            $validated['delivery_mode'] === 'state_wise',
+            $validated['delivery_mode'],
         ]);
     }
 }
