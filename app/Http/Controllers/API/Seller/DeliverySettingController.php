@@ -83,8 +83,10 @@ class DeliverySettingController extends Controller
             ]
         );
 
-        if (isset($validated['days'])) {
-            Shop::where('id', $shop->id)->update(['estimated_delivery_time' => $validated['days']]);
+        if (!empty($validated['days'])) {
+            $shop->update([
+                'estimated_delivery_time' => $validated['days'],
+            ]);
         }
 
         return $this->json('Selected states saved successfully', [
