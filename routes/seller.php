@@ -73,6 +73,7 @@ Route::prefix('/seller')->group(function () {
         Route::controller(DeliverySettingController::class)->group(function () {
             Route::get('/delivery-settings', 'show');
             Route::get('/get-states', 'getStates');
+            Route::post('/delivery-settings/selected-states',  'saveSelectedStates');
             Route::post('/delivery-settings', 'store');
         });
 

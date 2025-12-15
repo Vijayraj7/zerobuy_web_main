@@ -39,7 +39,6 @@ class DeliverySettingController extends Controller
         ]);
     }
 
-
     /**
      * Get states
      */
@@ -50,6 +49,26 @@ class DeliverySettingController extends Controller
         ]);
     }
 
+    public function saveSelectedStates(Request $request)
+    {
+        $validated = $request->validate([
+            'selected_state_ids' => ['required', 'array'],
+            'selected_state_ids.*' => ['integer', 'exists:states,id'],
+        ]);
+
+        $shop = generaleSetting('shop');
+
+        $setting = DeliverySetting::updateOrCreate(
+            ['shop_id' => $shop->id],
+            [
+                'selected_state_ids' => $validated['selected_state_ids'],
+            ]
+        );
+
+        return $this->json('Selected states saved successfully', [
+            'selected_state_ids' => $setting->selected_state_ids,
+        ]);
+    }
 
     /**
      * Store or update delivery settings
