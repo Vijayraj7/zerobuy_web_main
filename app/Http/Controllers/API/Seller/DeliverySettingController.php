@@ -104,12 +104,7 @@ class DeliverySettingController extends Controller
             'amount_rules.*.charge'     => ['required_if:delivery_mode,amount_based', 'numeric', 'min:0'],
 
             'state_charges' => ['array'],
-            'state_charges.*.state'  => ['required_if:delivery_mode,state_wise', 'integer', 'max:100'],
-            'state_charges.*.state_id' => [
-                'required_if:delivery_mode,state_wise',
-                'integer',
-                'exists:states,id',
-            ],
+            'state_charges.*.state'  => ['required_if:delivery_mode,state_wise', 'integer', 'exists:states,id'],
             'state_charges.*.charge' => [
                 'required_if:delivery_mode,state_wise',
                 'numeric',
