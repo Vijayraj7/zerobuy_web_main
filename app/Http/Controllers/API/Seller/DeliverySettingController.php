@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DeliverySetting;
 use App\Models\DeliveryAmountRule;
 use App\Models\DeliveryStateCharge;
+use App\Models\Shop;
 use App\Models\State;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -69,6 +70,7 @@ class DeliverySettingController extends Controller
     {
         $validated = $request->validate([
             'selected_state_ids' => ['required', 'array'],
+            'days' => ['nullable', 'string'],
             'selected_state_ids.*' => ['integer', 'exists:states,id'],
         ]);
 
@@ -80,6 +82,10 @@ class DeliverySettingController extends Controller
                 'selected_state_ids' => $validated['selected_state_ids'],
             ]
         );
+
+        if (isset($validated['days'])) {
+            Shop::where('id', $shop->id)->update(['estimated_delivery_time' => $validated['days']]);
+        }
 
         return $this->json('Selected states saved successfully', [
             'selected_state_ids' => $validated['selected_state_ids'],
