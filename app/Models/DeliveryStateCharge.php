@@ -8,6 +8,7 @@ class DeliveryStateCharge extends Model
 {
     protected $fillable = [
         'delivery_setting_id',
+        'state_id',
         'state',
         'charge',
     ];
