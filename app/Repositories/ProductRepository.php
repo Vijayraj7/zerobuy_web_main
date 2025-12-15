@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use Illuminate\Http\Request;
 use Abedin\Maker\Repositories\Repository;
 use App\Http\Requests\ProductRequest;
 use App\Models\Media;
@@ -15,6 +16,10 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Mews\Purifier\Facades\Purifier;
+use Illuminate\Support\Facades\Log;
+
+use App\Models\ProductBulkPrice;  
+use App\Models\ProductItemDetail; 
 
 class ProductRepository extends Repository
 {
@@ -691,6 +696,179 @@ class ProductRepository extends Repository
             }
 
             $media->delete();
+        }
+    }
+
+    public static function storeByProductRequest(Request $request, array $data): Product
+    { 
+        $thumbnail = MediaRepository::storeByRequest($request->thumbnail, 'products', 'thumbnail');
+    
+        $shop = generaleSetting('shop');
+        $generaleSetting = generaleSetting('setting');
+        $approve = $generaleSetting?->new_product_approval ? false : true;
+
+        $user = auth()->user(); 
+        $isAdmin = false;
+        if ($user->hasRole('root') || ($generaleSetting?->shop_type == 'single')) {
+            $isAdmin = true;
+        }
+
+        $keywords = null;
+        if (!empty($data['meta_keywords']) && is_array($data['meta_keywords'])) {
+            $keywords = implode(',', array_map('trim', $data['meta_keywords']));
+        }
+
+        DB::beginTransaction();
+
+        try {
+            /** -----------------------------
+             * 1. Create Product
+             * ----------------------------- */
+            $product = Product::create([
+                'shop_id'            => $shop?->id,
+                'name'               => $data['name'],
+                'description'        => $data['description'] ?? null,
+                'condition_status'   => $data['condition_status'],
+                'quantity'           => $data['quantity'],
+                'min_order_quantity' => $data['min_order_quantity'] ?? 1,
+                'return_period'      => $data['return_period'] ?? null,
+                'price'              => $data['mrp'],
+                'discount_price'     => $data['selling_price'] ?? null,
+                'tax_percentage'     => $data['tax_percentage'] ?? null,
+                'media_id'           => $thumbnail->id,
+                'is_active'          => $isAdmin ? true : $approve,
+                'is_new'             => true,
+                'is_approve'         => $isAdmin ? true : $approve,
+                'meta_title'         => $data['meta_title'] ?? null,
+                'meta_description'   => $data['meta_description'] ?? null,
+                'meta_keywords'      => $keywords,
+            ]);
+            /** -----------------------------
+             * 2. Categories
+             * ----------------------------- */ 
+            if (!empty($data['main_category'])) {
+                $product->categories()->sync([$data['main_category']]);
+            }
+            if (!empty($data['sub_categories']) && is_array($data['sub_categories'])) {
+                $product->subcategories()->sync($data['sub_categories']);
+            }
+            if (!empty($data['child_categories'])) {
+                $rows = [];
+                foreach ($data['child_categories'] as $cc) {
+                    $rows[] = [
+                        'product_id'        => $product->id,
+                        'child_category_id' => $cc,
+                    ];
+                }
+                DB::table('product_child_categories')->insert($rows);
+            }
+            /** -----------------------------
+             * 3. Item Details
+             * ----------------------------- */
+           if (!empty($data['item_details'])) {
+    foreach ($data['item_details'] as $item) {
+
+        if (
+            empty($item['name'] ?? null) ||
+            empty($item['value'] ?? null)
+        ) {
+            continue;
+        }
+
+        ProductItemDetail::create([
+            'product_id' => $product->id,
+            'item_name'  => $item['name'],
+            'item_value' => $item['value'],
+        ]);
+    }
+}
+
+
+            // if (!empty($data['item_details'])) {
+            //     foreach ($data['item_details'] as $text) {
+            //         if (trim($text) === '') continue;
+
+            //         ProductItemDetail::create([
+            //             'product_id' => $product->id,
+            //             'item_text'  => $text,
+            //         ]);
+            //     }
+            // }
+            // if (!empty($data['item_details'])) {
+            //     foreach ($data['item_details'] as $item) {
+
+            //         if (
+            //             empty(trim($item['name'] ?? '')) ||
+            //             empty(trim($item['value'] ?? ''))
+            //         ) {
+            //             continue;
+            //         }
+
+            //         ProductItemDetail::create([
+            //             'product_id' => $product->id,
+            //             'item_name'  => $item['name'],
+            //             'item_value' => $item['value'],
+            //         ]);
+            //     }
+            // }
+
+
+            /** -----------------------------
+             * 4. Bulk Pricing
+             * ----------------------------- */
+            if (!empty($data['bulk'])) {
+                foreach ($data['bulk'] as $b) {
+                    if (!isset($b['min_qty'], $b['max_qty'], $b['price'])) continue;
+
+                    ProductBulkPrice::create([
+                        'product_id' => $product->id,
+                        'min_qty'    => (int) $b['min_qty'],
+                        'max_qty'    => (int) $b['max_qty'],
+                        'price'      => (float) $b['price'],
+                    ]);
+                }
+            }
+            /** -----------------------------
+             * 5. Variants
+             * ----------------------------- */
+            if (!empty($data['variants'])) {
+                foreach ($data['variants'] as $v) {
+                    ProductVariant::create([
+                        'product_id' => $product->id,
+                        'size_id'    => $v['size_id'] ?? null,
+                        'color_id'   => $v['color_id'] ?? null,
+                        'price'      => $v['price'] ?? 0,
+                        'quantity'   => $v['quantity'] ?? 0,
+                    ]);
+                }
+            }
+            /** -----------------------------
+             * 6. Video
+             * ----------------------------- */
+            if (!empty($data['video_link']) && !empty($data['video_type'])) {
+                $media = Media::create([
+                    'type'          => $data['video_type'],
+                    'name'          => basename($data['video_link']),
+                    'original_name' => basename($data['video_link']),
+                    'src'           => $data['video_link'],
+                    'extention'     => null,
+                ]);
+                $product->update(['video_id' => $media->id]);
+            }
+            /** -----------------------------
+             * 7. Additional Images
+             * ----------------------------- */ 
+            foreach ($request->file('additional_images', []) as $additionThumbnail) {
+                $thumbnail = MediaRepository::storeByRequest($additionThumbnail, 'products', 'thumbnail', 'image');
+                $product->medias()->attach($thumbnail->id);
+            }
+            DB::commit();
+            return $product;
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('ProductRepository store error: '.$e->getMessage());
+            throw $e;
         }
     }
 }

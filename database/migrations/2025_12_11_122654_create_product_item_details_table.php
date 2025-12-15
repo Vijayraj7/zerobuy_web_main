@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('product_item_details', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('product_id')->index();
-            $table->text('item_text');
+            $table->string('item_name')->nullable();
+            $table->string('item_value')->nullable(); 
             $table->timestamps();
         });
     }

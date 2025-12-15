@@ -19,6 +19,7 @@
                 <li class="nav-item"><a class="nav-link" data-step="2" href="#">Price</a></li>
                 <li class="nav-item"><a class="nav-link" data-step="3" href="#">Product Variants</a></li>
                 <li class="nav-item"><a class="nav-link" data-step="4" href="#">Images</a></li>
+                <li class="nav-item"><a class="nav-link" data-step="5" href="#">SEO Information</a></li>
             </ul>
 
             <!-- STEP 1 -->
@@ -118,17 +119,28 @@
                             </div>
                             <div class="col-9">
                                 <label class="form-label">Video Link</label>
-                                <input type="text" class="form-control" name="video_link" 
-                                    placeholder="Enter YouTube or external video URL">
+                                <input type="text" class="form-control" name="video_link" placeholder="Enter YouTube or external video URL">
                             </div>
                         </div>
-                        <div class="mt-4">
+                        <!-- <div class="mt-4">
                             <label class="form-label">Item Details (Add multiple)</label>
                             <div id="item-details-list">
                                 <div class="d-flex gap-2 mb-2">
                                     <input type="text" name="item_details[]" class="form-control" placeholder="Item detail">
                                     <button type="button" class="btn btn-danger btn-sm remove-item" onclick="this.closest('.d-flex').remove()">-</button>
                                 </div>
+                            </div>
+                            <button type="button" class="btn btn-primary btn-sm" id="add-item-detail">+ Add More</button>
+                        </div> -->
+                        <div class="mt-4">
+                            <label class="form-label">Item Details (Add multiple)</label>
+                            <div id="item-details-list">
+                                <div class="d-flex gap-2 mb-2 item-row" data-index="0">
+                                    <input type="text" name="item_details[0][name]" class="form-control" placeholder="Item Name">
+                                    <input type="text" name="item_details[0][value]" class="form-control" placeholder="Item Value">
+                                    <button type="button" class="btn btn-danger btn-sm remove-item">-</button>
+                                </div>
+
                             </div>
                             <button type="button" class="btn btn-primary btn-sm" id="add-item-detail">+ Add More</button>
                         </div>
@@ -307,7 +319,45 @@
                     </div> -->
                 </div>
                 <div class="mt-3">
-                    <button type="button" class="btn btn-secondary prev-btn" data-prev="3">&laquo; Previous</button> 
+                    <button type="button" class="btn btn-secondary prev-btn" data-prev="3">&laquo; Previous</button>
+                    <button type="button" class="btn btn-primary next-btn float-end" data-next="5">Next &raquo;</button> 
+                </div>
+            </div>
+
+            <!-- STEP 5 - SEO INFORMATION -->
+            <div class="step-content step-5 mt-3" style="display:none;">
+                <div class="row">
+                    <div class="card mt-4 mb-3">
+                        <div class="card-body">
+                            <div class="d-flex gap-2 border-bottom pb-2">
+                                <i class="fa-solid fa-square-poll-vertical"></i>
+                                <h5> {{ __('SEO Information') }} </h5>
+                            </div>
+                            <div class="mt-3">
+                                <label for="uploadType" class="form-label"> {{ __('Meta Title') }} </label>
+                                <x-input name="meta_title" type="text" placeholder="Meta Title" />
+                            </div>
+                            <div class="mt-3">
+                                <label for="uploadType" class="form-label"> {{ __('Meta Description') }} </label>
+                                <textarea name="meta_description" type="text" placeholder="{{ __('Meta Description') }}" class="form-control">{{ old('meta_description') }}</textarea>
+                                @error('meta_description')
+                                    <p class="text text-danger m-0">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div class="mt-3">
+                                <label for="tags" class="form-label">@lang('Meta Keywords')</label>
+                                <select id="tags" name="meta_keywords[]" class="form-control selectTags" multiple style="width: 100%">
+                                    @foreach (old('meta_keywords', []) as $keyword)
+                                        <option value="{{ $keyword }}" selected>{{ $keyword }}</option>
+                                    @endforeach
+                                </select>
+                                <small>@lang('Write keywords and Press enter to add new one')</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="button" class="btn btn-secondary prev-btn" data-prev="4">&laquo; Previous</button> 
                 </div>
             </div>
         </div>
@@ -318,7 +368,6 @@
 
 @push('scripts')
 <script>
-    
     // Flash Message
     function showFlash(message) {
         const flash = document.createElement('div');
@@ -333,6 +382,16 @@
     // Summernote
     $(document).ready(function() {
         $('#description').summernote();
+    });
+
+    // Tag
+    $(document).ready(function () {
+        $('.selectTags').select2({
+            tags: true,
+            tokenSeparators: [',', ' '],
+            placeholder: 'Enter keywords',
+            width: '100%'
+        });
     });
 
     // Tabs navigation
@@ -361,16 +420,61 @@
         });
     });
 
-    // Item details add-more
-    document.getElementById('add-item-detail').addEventListener('click', function() {
-        let container = document.getElementById('item-details-list');
-        let div = document.createElement('div');
-        div.classList.add('d-flex', 'gap-2', 'mb-2');
-        div.innerHTML =
-            `<input type="text" name="item_details[]" class="form-control" placeholder="Item detail">
-            <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.d-flex').remove()">-</button>`;
-        container.appendChild(div);
+    // Category-Subcategory Select
+    $(document).ready(function() {
+        $('select[name="main_category"]').on('change', function() {
+            var categoryId = $(this).val();
+
+            if (categoryId) {
+                $.ajax({
+                    url: '/api/sub-categories?category_id=' + categoryId,
+                    type: "GET",
+                    dataType: "json",
+                    success: function(data) {
+                        var subCategorySelected = $('select[name="sub_categories[]"]');
+                        subCategorySelected.empty();
+
+                        $.each(data.data.sub_categories, function(key, value) {
+                            subCategorySelected.append('<option value="' + value.id + '">' + value.name + '</option>');
+                        });
+                        subCategorySelected.trigger('change');
+                    },
+                    error: function() {
+                        console.log('Error retrieving subcategories. Please try again.');
+                    }
+                });
+            } else {
+                $('select[name="subCategory[]"]').empty();
+            }
+        });
     });
+
+    // Item details add-more 
+let itemIndex = 1;
+
+document.getElementById('add-item-detail').addEventListener('click', function () {
+    let container = document.getElementById('item-details-list');
+
+    let div = document.createElement('div');
+    div.classList.add('d-flex', 'gap-2', 'mb-2', 'item-row');
+
+    div.innerHTML = `
+        <input type="text" name="item_details[${itemIndex}][name]" class="form-control" placeholder="Item Name">
+        <input type="text" name="item_details[${itemIndex}][value]" class="form-control" placeholder="Item Value">
+        <button type="button" class="btn btn-danger btn-sm remove-item">-</button>
+    `;
+
+    container.appendChild(div);
+    itemIndex++;
+});
+
+// remove row
+document.addEventListener('click', function (e) {
+    if (e.target.classList.contains('remove-item')) {
+        e.target.closest('.item-row').remove();
+    }
+});
+
 
     // Thumbnail preview
     function previewFile(event, targetId) {
@@ -404,417 +508,39 @@
     }
     
     // Color code
-    $(document).ready(function() { 
-        $('.colorSelect').select2({
-            width: '100%'
-        }); 
-        $('.colorSelect').each(function() {
-            var $select = $(this);
-            $select.select2('destroy').select2({
-                width: '100%',
-                templateResult: function(state) {
-                    if (!state.id) return state.text;
-                    var color = $(state.element).data('color');
-                    if (color) {
-                        return $('<span><span style="width:15px;height:15px;background:'+color+';display:inline-block;margin-right:8px;border-radius:2px"></span> ' + state.text + '</span>');
-                    }
-                    return state.text;
-                },
-                templateSelection: function(state) {
-                    if (!state.id) return state.text;
-                    var color = $(state.element).data('color');
-                    if (color) {
-                        return $('<span><span style="width:15px;height:15px;background:'+color+';display:inline-block;margin-right:8px;border-radius:2px"></span> ' + state.text + '</span>');
-                    }
-                    return state.text;
-                }
-            });
-        });
-    });
-
-</script>
-<script>
-// Simple function to show color squares
-function formatColorOption(state) {
-    if (!state.id) {
-        return state.text;
-    }
-    
-    var colorCode = $(state.element).data('color');
-    
-    if (colorCode) {
-        return $(
-            '<span>' +
-                '<span style="display:inline-block; width:15px; height:15px; background-color:' + colorCode + 
-                '; border-radius:3px; margin-right:8px; border:1px solid #ddd"></span>' +
-                state.text +
-            '</span>'
-        );
-    }
-    
-    return state.text;
-}
-
-$(document).ready(function() {
-    $('.colorSelect').select2({
-        templateResult: formatColorOption,
-        templateSelection: formatColorOption
-    });
-});
-</script>
-
-<script>
     $(document).ready(function() {
-        $('select[name="main_category"]').on('change', function() {
-            var categoryId = $(this).val();
-
-            if (categoryId) {
-                $.ajax({
-                    url: '/api/sub-categories?category_id=' + categoryId,
-                    type: "GET",
-                    dataType: "json",
-                    success: function(data) {
-                        var subCategorySelected = $('select[name="sub_categories[]"]');
-                        subCategorySelected.empty();
-
-                        $.each(data.data.sub_categories, function(key, value) {
-                            subCategorySelected.append('<option value="' + value.id + '">' + value.name + '</option>');
-                        });
-                        subCategorySelected.trigger('change');
-                    },
-                    error: function() {
-                        console.log('Error retrieving subcategories. Please try again.');
-                    }
-                });
-            } else {
-                $('select[name="subCategory[]"]').empty();
+        function formatColorOption(state) {
+            if (!state.id) {
+                return state.text;
             }
+            
+            var colorCode = $(state.element).data('color');
+            
+            if (colorCode) {
+                return $(
+                    '<span>' +
+                        '<span style="display:inline-block; width:15px; height:15px; background-color:' + colorCode + 
+                        '; border-radius:3px; margin-right:8px; border:1px solid #ddd"></span>' +
+                        state.text +
+                    '</span>'
+                );
+            }
+            
+            return state.text;
+        }
+        $('.colorSelect').select2({
+            templateResult: formatColorOption,
+            templateSelection: formatColorOption
         });
     });
-</script>
+</script> 
 
-<!-- Add Variants -->
-<!-- <script>
-    // Variant builder 
-    let addedVariants = [];
-
-    document.getElementById('add-variant').addEventListener('click', function() {
-        const colorSelect = document.getElementById('variant-color');
-        const sizeSelect = document.getElementById('variant-size');
-        const priceInput = document.getElementById('variant-price');
-        const qtyInput = document.getElementById('variant-qty');
-        
-        const colorId = colorSelect.value;
-        const colorName = colorSelect.options[colorSelect.selectedIndex]?.text || '';
-        const sizeId = sizeSelect.value;
-        const sizeName = sizeSelect.options[sizeSelect.selectedIndex]?.text || '';
-        const price = priceInput.value || 0;
-        const qty = qtyInput.value || 0;
-        
-        // Check if variant already exists
-        const variantKey = `${colorId}-${sizeId}`;
-        if (addedVariants.includes(variantKey)) {
-            showFlash('This color and size combination already exists!');
-            return;
-        }
-
-        // Validate at least one variant attribute is selected
-        if (!sizeId && !colorId) {
-            showFlash('Please choose either size or color (or both)');
-            return;
-        }
-        
-        // Validate price and quantity
-        if (!price || price <= 0) {
-            showFlash('Please enter a valid price');
-            return;
-        }
-        
-        if (!qty || qty < 0) {
-            showFlash('Please enter a valid quantity');
-            return;
-        }
-        
-        addedVariants.push(variantKey);
-        
-        // Create unique ID for the variant
-        const variantId = Date.now() + Math.random().toString(36).substr(2, 9);
-        
-        // Hide "no variants" message if it exists
-        const noVariantsMsg = document.getElementById('no-variants-message');
-        if (noVariantsMsg) {
-            noVariantsMsg.style.display = 'none';
-        }
-        
-        // Create variant display card
-        const variantContainer = document.getElementById('added-variants-container');
-        const variantCard = document.createElement('div');
-        variantCard.className = 'card mb-2 variant-card';
-        variantCard.id = 'variant-' + variantId;
-        variantCard.setAttribute('data-variant-id', variantId);
-        
-        variantCard.innerHTML = `
-            <div class="card-body py-2">
-                <div class="row align-items-center">
-                    <div class="col-md-10">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <strong>Color:</strong> ${colorName || 'N/A'}
-                                <input type="hidden" name="variants[${variantId}][color_id]" value="${colorId}">
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Size:</strong> ${sizeName || 'N/A'}
-                                <input type="hidden" name="variants[${variantId}][size_id]" value="${sizeId}">
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Price:</strong> $${parseFloat(price).toFixed(2)}
-                                <input type="hidden" name="variants[${variantId}][price]" value="${price}">
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Quantity:</strong> ${qty}
-                                <input type="hidden" name="variants[${variantId}][quantity]" value="${qty}">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-2 text-end">
-                        <button type="button" class="btn btn-sm btn-danger delete-variant" data-variant-id="${variantId}">
-                            <i class="fas fa-trash"></i> Remove
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Add to display container
-        variantContainer.appendChild(variantCard);
-        
-        // Clear input fields
-        colorSelect.value = '';
-        sizeSelect.value = '';
-        priceInput.value = '';
-        qtyInput.value = '';
-        
-        // Focus back to color select for quick entry
-        colorSelect.focus();
-    });
-
-    // Delete variant
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.delete-variant')) {
-            const button = e.target.closest('.delete-variant');
-            const variantCard = button.closest('.variant-card');
-            
-            if (variantCard) {
-                // Get color and size IDs
-                const colorId = variantCard.querySelector('input[name*="color_id"]').value;
-                const sizeId = variantCard.querySelector('input[name*="size_id"]').value;
-                const variantKey = `${colorId}-${sizeId}`;
-                
-                // Remove from tracking array
-                addedVariants = addedVariants.filter(key => key !== variantKey);
-                
-                // Remove from page
-                variantCard.remove();
-            }
-        }
-    });
-
-    // Optional: Add CSS for better display
-    const style = document.createElement('style');
-    style.textContent = `
-        .variant-card {
-            border-left: 4px solid #007bff;
-        }
-        .variant-card:hover {
-            background-color: #f8f9fa;
-        }
-        #no-variants-message {
-            font-style: italic;
-            padding: 20px;
-            text-align: center;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-        }
-    `;
-    document.head.appendChild(style);
-
-    // Bulk price
-    // document.getElementById('add-bulk').addEventListener('click', function() {
-    //     let min = document.getElementById('bulk-min').value;
-    //     let max = document.getElementById('bulk-max').value;
-    //     let price = document.getElementById('bulk-price').value;
-    //     if (!min || !max || !price) {
-    //         showFlash('Fill Min Quantity, Max Quantity and Extra Price');
-    //         return;
-    //     }
-    //     let tbody = document.querySelector('#bulk-table tbody');
-    //     let row = document.createElement('tr');
-    //     row.innerHTML = `
-    //             <td><input type="hidden" name="bulk[][min_qty]" value="${min}">${min}</td>
-    //             <td><input type="hidden" name="bulk[][max_qty]" value="${max}">${max}</td>
-    //             <td><input type="hidden" name="bulk[][price]" value="${price}">${price}</td>
-    //             <td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()">Remove</button></td>
-    //         `;
-    //     tbody.appendChild(row);
-    //     document.getElementById('bulk-min').value = '';
-    //     document.getElementById('bulk-max').value = '';
-    //     document.getElementById('bulk-price').value = '';
-    // });
-</script> -->
-
-<!-- Add Bulk prices  -->
-<!-- <script>
-    let addedBulkRanges = [];
-
-    document.getElementById('add-bulk').addEventListener('click', function() {
-        const minInput = document.getElementById('bulk-min');
-        const maxInput = document.getElementById('bulk-max');
-        const priceInput = document.getElementById('bulk-price');
-        
-        const min = minInput.value;
-        const max = maxInput.value;
-        const price = priceInput.value;
-        
-        if (!min || !max || !price) {
-            showFlash('Fill Min Quantity, Max Quantity and Price');
-            return;
-        }
-        
-        // Validate min < max
-        if (parseInt(min) >= parseInt(max)) {
-            showFlash('Min quantity must be less than Max quantity');
-            return;
-        }
-        
-        // Check for overlapping ranges
-        const rangeKey = `${min}-${max}`;
-        if (addedBulkRanges.includes(rangeKey)) {
-            showFlash('This quantity range already exists!');
-            return;
-        }
-        
-        // Check for overlapping with existing ranges
-        for (let range of addedBulkRanges) {
-            const [existingMin, existingMax] = range.split('-').map(Number);
-            if (
-                (min >= existingMin && min <= existingMax) ||
-                (max >= existingMin && max <= existingMax) ||
-                (min <= existingMin && max >= existingMax)
-            ) {
-                showFlash('This quantity range overlaps with existing range!');
-                return;
-            }
-        }
-        
-        addedBulkRanges.push(rangeKey);
-        
-        // Hide "no bulk price" message
-        const noBulkMsg = document.getElementById('no-bulkprice-message');
-        if (noBulkMsg) {
-            noBulkMsg.style.display = 'none';
-        }
-        
-        // Create bulk price display card
-        const bulkId = Date.now() + Math.random().toString(36).substr(2, 9);
-        const bulkContainer = document.getElementById('added-bulkprice-container');
-        const bulkCard = document.createElement('div');
-        bulkCard.className = 'card mb-2 bulk-card';
-        bulkCard.id = 'bulk-' + bulkId;
-        bulkCard.setAttribute('data-bulk-id', bulkId);
-        
-        bulkCard.innerHTML = `
-            <div class="card-body py-2">
-                <div class="row align-items-center">
-                    <div class="col-md-10">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <strong>Min Qty:</strong> ${min}
-                                <input type="hidden" name="bulk[${bulkId}][min_qty]" value="${min}">
-                            </div>
-                            <div class="col-md-4">
-                                <strong>Max Qty:</strong> ${max}
-                                <input type="hidden" name="bulk[${bulkId}][max_qty]" value="${max}">
-                            </div>
-                            <div class="col-md-4">
-                                <strong>Price:</strong> ₹${parseFloat(price).toFixed(2)}
-                                <input type="hidden" name="bulk[${bulkId}][price]" value="${price}">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-2 text-end">
-                        <button type="button" class="btn btn-sm btn-danger delete-bulk" data-bulk-id="${bulkId}">
-                            <i class="fas fa-trash"></i> Remove
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Add to display container
-        bulkContainer.appendChild(bulkCard);
-        
-        // Clear input fields
-        minInput.value = '';
-        maxInput.value = '';
-        priceInput.value = '';
-        
-        // Focus back to min input for quick entry
-        minInput.focus();
-    });
-
-    // Delete bulk price
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.delete-bulk')) {
-            const button = e.target.closest('.delete-bulk');
-            const bulkCard = button.closest('.bulk-card');
-            
-            if (bulkCard) {
-                // Get min and max values
-                const min = bulkCard.querySelector('input[name*="min_qty"]').value;
-                const max = bulkCard.querySelector('input[name*="max_qty"]').value;
-                const rangeKey = `${min}-${max}`;
-                
-                // Remove from tracking array
-                addedBulkRanges = addedBulkRanges.filter(key => key !== rangeKey);
-                
-                // Remove from page
-                bulkCard.remove();
-                
-                // Show "no bulk price" message if all are deleted
-                const bulkCards = document.querySelectorAll('.bulk-card');
-                const noBulkMsg = document.getElementById('no-bulkprice-message');
-                
-                if (bulkCards.length === 0 && noBulkMsg) {
-                    noBulkMsg.style.display = 'block';
-                }
-            }
-        }
-    });
-
-    // Update CSS to include bulk card styling
-    style.textContent += `
-        .bulk-card {
-            border-left: 4px solid #28a745;
-        }
-        .bulk-card:hover {
-            background-color: #f8f9fa;
-        }
-        #no-bulkprice-message {
-            font-style: italic;
-            padding: 20px;
-            text-align: center;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-        }
-    `;
-</script> -->
-
+<!-- Product Variants and Bulk Prices -->
 <script>  
     function createUniqueId() {
         return Date.now() + Math.random().toString(36).substr(2, 9);
     }
-    
-    // Variants Management
+
     let addedVariants = [];
     let addedBulkRanges = [];
     
@@ -832,22 +558,19 @@ $(document).ready(function() {
         const price = parseFloat(priceInput.value);
         const qty = parseInt(qtyInput.value);
         
-        // Validation
+        // Validations
         if (!sizeId && !colorId) {
             showFlash('Please choose either size or color (or both)');
             return;
         }
-        
         if (!price || price <= 0) {
             showFlash('Please enter a valid price');
             return;
         }
-        
         if (!qty || qty < 0) {
             showFlash('Please enter a valid quantity');
             return;
         }
-        
         const variantKey = `${colorId}-${sizeId}`;
         if (addedVariants.includes(variantKey)) {
             showFlash('This color and size combination already exists!');
@@ -897,7 +620,7 @@ $(document).ready(function() {
         `;
         
         document.getElementById('added-variants-container').appendChild(variantCard);
-        
+        $(colorSelect).val(null).trigger('change');
         // Clear inputs
         colorSelect.value = '';
         sizeSelect.value = '';
