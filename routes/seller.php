@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\ChatController;
-use App\Http\Controllers\API\DeliverySettingController;
+use App\Http\Controllers\API\Seller\DeliverySettingController;
 use App\Http\Controllers\API\Seller\BannerController;
 use App\Http\Controllers\API\Seller\DashboardController;
 use App\Http\Controllers\API\Seller\LoginController;
