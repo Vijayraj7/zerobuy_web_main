@@ -20,8 +20,11 @@ return new class extends Migration {
 
             $table->timestamps();
 
-            // Performance
-            $table->index(['delivery_setting_id', 'min_amount', 'max_amount']);
+            // ✅ Short, safe index name
+            $table->index(
+                ['delivery_setting_id', 'min_amount', 'max_amount'],
+                'delivery_amount_rules_range_idx'
+            );
         });
     }
 
