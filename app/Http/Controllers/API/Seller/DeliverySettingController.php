@@ -99,12 +99,28 @@ class DeliverySettingController extends Controller
             'update_when_shipped' => ['boolean'],
 
             'amount_rules' => ['array'],
-            'amount_rules.*.min_amount' => ['required_if:delivery_mode,amount_based', 'numeric', 'min:0'],
-            'amount_rules.*.max_amount' => ['required_if:delivery_mode,amount_based', 'numeric', 'gt:amount_rules.*.min_amount'],
-            'amount_rules.*.charge'     => ['required_if:delivery_mode,amount_based', 'numeric', 'min:0'],
+            'amount_rules.*.min_amount' => [
+                'required_if:delivery_mode,amount_based',
+                'numeric',
+                'min:0',
+            ],
+            'amount_rules.*.max_amount' => [
+                'required_if:delivery_mode,amount_based',
+                'numeric',
+                'gt:amount_rules.*.min_amount',
+            ],
+            'amount_rules.*.charge' => [
+                'required_if:delivery_mode,amount_based',
+                'numeric',
+                'min:0',
+            ],
 
             'state_charges' => ['array'],
-            'state_charges.*.state'  => ['required_if:delivery_mode,state_wise', 'integer', 'exists:states,id'],
+            'state_charges.*.state' => [
+                'required_if:delivery_mode,state_wise',
+                'integer',
+                'exists:states,id',
+            ],
             'state_charges.*.charge' => [
                 'required_if:delivery_mode,state_wise',
                 'numeric',
@@ -112,13 +128,10 @@ class DeliverySettingController extends Controller
             ],
         ]);
 
-        // $shopId = auth()->user()->shop_id ?? null;
-
         $shop = generaleSetting('shop');
 
         DB::transaction(function () use ($validated, $shop) {
 
-            // Create or update main setting
             $setting = DeliverySetting::updateOrCreate(
                 ['shop_id' => $shop->id],
                 [
@@ -127,11 +140,11 @@ class DeliverySettingController extends Controller
                 ]
             );
 
-            // Clean old rules
+            // Clean old data
             DeliveryAmountRule::where('delivery_setting_id', $setting->id)->delete();
             DeliveryStateCharge::where('delivery_setting_id', $setting->id)->delete();
 
-            // Save amount based rules
+            // Amount based
             if ($validated['delivery_mode'] === 'amount_based') {
                 foreach ($validated['amount_rules'] ?? [] as $rule) {
                     DeliveryAmountRule::create([
@@ -143,17 +156,15 @@ class DeliverySettingController extends Controller
                 }
             }
 
-            // Save state wise charges
+            // State wise
             if ($validated['delivery_mode'] === 'state_wise') {
-                return response()->json([
-                    'message' => 'Delivery settings aved successfully',
-                    'v' => $validated['state_charges']
-                ]);
                 foreach ($validated['state_charges'] ?? [] as $state) {
+                    $stateModel = State::find($state['state']);
+
                     DeliveryStateCharge::create([
                         'delivery_setting_id' => $setting->id,
-                        'state'  => State::where('id', $state['state'])->first()->name,
-                        'state_id'  => $state['state'],
+                        'state' => $stateModel->name,
+                        'state_id' => $stateModel->id,
                         'charge' => $state['charge'],
                     ]);
                 }
@@ -162,8 +173,7 @@ class DeliverySettingController extends Controller
 
         return response()->json([
             'message' => 'Delivery settings saved successfully',
-            $validated['delivery_mode'] === 'state_wise',
-            $validated['delivery_mode'],
+            'delivery_mode' => $validated['delivery_mode'],
         ]);
     }
 }
