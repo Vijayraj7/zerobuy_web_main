@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DeliverySetting;
 use App\Models\DeliveryAmountRule;
 use App\Models\DeliveryStateCharge;
+use App\Models\State;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -37,6 +38,18 @@ class DeliverySettingController extends Controller
             'settings' => $setting,
         ]);
     }
+
+
+    /**
+     * Get states
+     */
+    public function getStates(Request $request)
+    {
+        return $this->json('State List', [
+            'state' => State::all(),
+        ]);
+    }
+
 
     /**
      * Store or update delivery settings
