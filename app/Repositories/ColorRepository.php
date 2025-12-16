@@ -73,4 +73,41 @@ class ColorRepository extends Repository
 
         return $color;
     }
+
+    public static function syncFromRequest(array $colors, int $shopId)
+    {
+        $existingIds = Color::where('shop_id', $shopId)
+            ->pluck('id')
+            ->toArray();
+
+        $requestIds = collect($colors)
+            ->pluck('id')
+            ->filter()
+            ->toArray();
+
+        // � DELETE removed colors
+        Color::where('shop_id', $shopId)
+            ->whereNotIn('id', $requestIds)
+            ->delete();
+
+        $saved = [];
+
+        foreach ($colors as $item) {
+            $color = Color::updateOrCreate(
+                [
+                    'id' => $item['id'] ?? null,
+                    'shop_id' => $shopId,
+                ],
+                [
+                    'name' => $item['name'],
+                    'color_code' => $item['color_code'],
+                    'is_active' => $item['is_active'] ?? true,
+                ]
+            );
+
+            $saved[] = $color;
+        }
+
+        return $saved;
+    }
 }

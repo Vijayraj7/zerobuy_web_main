@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ColorRequest;
 use App\Models\Color;
 use App\Repositories\ColorRepository;
+use App\Repositories\SizeRepository;
+use Illuminate\Support\Facades\Request;
 
 class ColorController extends Controller
 {
@@ -30,11 +32,37 @@ class ColorController extends Controller
         // Get colors
         $colors = $shop->colors()->paginate(20);
         $sizes = $shop->sizes()->paginate(20);
-        return $this->json('Colors & Sizws getted successfully', [
+        return $this->json('Colors & Sizes getted successfully', [
             'sizes' => $sizes,
             'colors' => $colors,
         ]);
     }
+
+    public function saveColorsAndSizes(Request $request)
+    {
+        $request->validate([
+            'colors' => 'array',
+            'sizes' => 'array',
+        ]);
+
+        $shop = generaleSetting('shop');
+
+        $colors = ColorRepository::syncFromRequest(
+            $request->colors ?? [],
+            $shop->id
+        );
+
+        $sizes = SizeRepository::syncFromRequest(
+            $request->sizes ?? [],
+            $shop->id
+        );
+
+        return $this->json('Colors & Sizes saved successfully', [
+            'colors' => $colors,
+            'sizes' => $sizes,
+        ]);
+    }
+
 
 
     /**

@@ -77,4 +77,40 @@ class SizeRepository extends Repository
 
         return $size;
     }
+
+    public static function syncFromRequest(array $sizes, int $shopId)
+    {
+        $existingIds = Size::where('shop_id', $shopId)
+            ->pluck('id')
+            ->toArray();
+
+        $requestIds = collect($sizes)
+            ->pluck('id')
+            ->filter()
+            ->toArray();
+
+        // � DELETE removed sizes
+        Size::where('shop_id', $shopId)
+            ->whereNotIn('id', $requestIds)
+            ->delete();
+
+        $saved = [];
+
+        foreach ($sizes as $item) {
+            $size = Size::updateOrCreate(
+                [
+                    'id' => $item['id'] ?? null,
+                    'shop_id' => $shopId,
+                ],
+                [
+                    'name' => strtoupper($item['name']),
+                    'is_active' => $item['is_active'] ?? true,
+                ]
+            );
+
+            $saved[] = $size;
+        }
+
+        return $saved;
+    }
 }
