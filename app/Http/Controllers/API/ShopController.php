@@ -7,6 +7,7 @@ use App\Http\Resources\CategoryResource;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\ShopDetailsResource;
 use App\Http\Resources\ShopResource;
+use App\Models\Category;
 use App\Models\Shop;
 use App\Repositories\ProductRepository;
 use App\Repositories\ShopRepository;
@@ -65,19 +66,42 @@ class ShopController extends Controller
             'shop_id' => 'required|exists:shops,id',
         ]);
 
-        $shop = Shop::findOrFail($request->shop_id);
+        $page = $request->page;
+        $perPage = $request->per_page;
+        $skip = ($page * $perPage) - $perPage;
 
-        $categories = $shop->categories()
+        $shop = ShopRepository::find($request->shop_id);
+
+        // $categories = $shop->categories()->active()->where(function ($query) use ($perPage, $page, $skip) {
+        //     $query->when($perPage && $page, function ($query) use ($perPage, $skip) {
+        //         return $query->skip($skip)->take($perPage);
+        //     });
+        // })->get();
+
+        $categories = Category::query()
             ->active()
-            ->paginate($request->get('per_page', 10));
+            ->whereHas('products', function ($q) use ($shop) {
+                $q->where('products.shop_id', $shop->id)
+                    ->where('products.is_active', true);
+            })
+            ->withCount([
+                'products as products_count' => function ($q) use ($shop) {
+                    $q->where('products.shop_id', $shop->id)
+                        ->where('products.is_active', true);
+                }
+            ])
+            ->orderByDesc('products_count')
+            ->take(10)
+            ->get();
+
+        $total = $shop->categories->count();
 
         return $this->json('Shop categories', [
-            'total' => $categories->total(),
-            'categories' => CategoryResource::collection($categories->items()),
-            'current_page' => $categories->currentPage(),
-            'last_page' => $categories->lastPage(),
+            'total' => $total,
+            'categories' => CategoryResource::collection($categories),
         ]);
     }
+
     /**
      * Get top 10 shops.
      *
