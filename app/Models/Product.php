@@ -351,4 +351,10 @@ class Product extends Model
     {
         return $this->hasMany(Favorite::class);
     }
+
+    //added by ancy
+    public function bulkItems()
+    {
+        return $this->hasMany(ProductBulkItem::class);
+    }
 }

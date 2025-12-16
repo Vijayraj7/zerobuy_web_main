@@ -20,6 +20,7 @@
                 <li class="nav-item"><a class="nav-link" data-step="3" href="#">Product Variants</a></li>
                 <li class="nav-item"><a class="nav-link" data-step="4" href="#">Images</a></li>
                 <li class="nav-item"><a class="nav-link" data-step="5" href="#">SEO Information</a></li>
+                <li class="nav-item"><a class="nav-link" data-step="6" href="#" id="bulkProductTab"> Bulk Products</a></li>
             </ul>
 
             <!-- STEP 1 -->
@@ -121,17 +122,7 @@
                                 <label class="form-label">Video Link</label>
                                 <input type="text" class="form-control" name="video_link" placeholder="Enter YouTube or external video URL">
                             </div>
-                        </div>
-                        <!-- <div class="mt-4">
-                            <label class="form-label">Item Details (Add multiple)</label>
-                            <div id="item-details-list">
-                                <div class="d-flex gap-2 mb-2">
-                                    <input type="text" name="item_details[]" class="form-control" placeholder="Item detail">
-                                    <button type="button" class="btn btn-danger btn-sm remove-item" onclick="this.closest('.d-flex').remove()">-</button>
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-primary btn-sm" id="add-item-detail">+ Add More</button>
-                        </div> -->
+                        </div>                        
                         <div class="mt-4">
                             <label class="form-label">Item Details (Add multiple)</label>
                             <div id="item-details-list">
@@ -360,6 +351,50 @@
                     <button type="button" class="btn btn-secondary prev-btn" data-prev="4">&laquo; Previous</button> 
                 </div>
             </div>
+
+            <!-- STEP 6 -->
+            <div class="step-content step-6 mt-3" style="display:none;">
+                <div class="alert alert-info small">
+                    Bulk products can be added only if variants and bulk pricing are NOT used.
+                </div>
+
+                <!-- Field Titles -->
+                <div class="row g-2 mb-2 fw-semibold text-muted">
+                    <div class="col-md-3">Item Name</div>
+                    <div class="col-md-2">Quantity</div>
+                    <div class="col-md-2">MOQ</div>
+                    <div class="col-md-2">MRP</div>
+                    <div class="col-md-2">Selling Price</div>
+                    <div class="col-md-1"></div>
+                </div>
+
+                <div id="bulk-items-list">
+                    <div class="row g-2 mb-2 bulk-item-row">
+                        <div class="col-md-3">
+                            <input type="text" name="bulk_items[0][name]" class="form-control" placeholder="Item Name">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" name="bulk_items[0][quantity]" class="form-control" placeholder="Qty">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" name="bulk_items[0][moq]" class="form-control" placeholder="MOQ">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" name="bulk_items[0][mrp]" class="form-control" placeholder="MRP">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" name="bulk_items[0][selling_price]" class="form-control" placeholder="Selling Price">
+                        </div>
+                        <div class="col-md-1">
+                            <button type="button" class="btn btn-danger remove-bulk-item">-</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-primary btn-sm mt-2" id="add-bulk-item">
+                    + Add More
+                </button>
+            </div>
         </div>
     </div>
 </form>
@@ -450,31 +485,28 @@
     });
 
     // Item details add-more 
-let itemIndex = 1;
+    let itemIndex = 1;
+    document.getElementById('add-item-detail').addEventListener('click', function () {
+        let container = document.getElementById('item-details-list');
 
-document.getElementById('add-item-detail').addEventListener('click', function () {
-    let container = document.getElementById('item-details-list');
+        let div = document.createElement('div');
+        div.classList.add('d-flex', 'gap-2', 'mb-2', 'item-row');
 
-    let div = document.createElement('div');
-    div.classList.add('d-flex', 'gap-2', 'mb-2', 'item-row');
+        div.innerHTML = `
+            <input type="text" name="item_details[${itemIndex}][name]" class="form-control" placeholder="Item Name">
+            <input type="text" name="item_details[${itemIndex}][value]" class="form-control" placeholder="Item Value">
+            <button type="button" class="btn btn-danger btn-sm remove-item">-</button>
+        `;
 
-    div.innerHTML = `
-        <input type="text" name="item_details[${itemIndex}][name]" class="form-control" placeholder="Item Name">
-        <input type="text" name="item_details[${itemIndex}][value]" class="form-control" placeholder="Item Value">
-        <button type="button" class="btn btn-danger btn-sm remove-item">-</button>
-    `;
-
-    container.appendChild(div);
-    itemIndex++;
-});
-
-// remove row
-document.addEventListener('click', function (e) {
-    if (e.target.classList.contains('remove-item')) {
-        e.target.closest('.item-row').remove();
-    }
-});
-
+        container.appendChild(div);
+        itemIndex++;
+    });
+    // remove row
+    document.addEventListener('click', function (e) {
+        if (e.target.classList.contains('remove-item')) {
+            e.target.closest('.item-row').remove();
+        }
+    });
 
     // Thumbnail preview
     function previewFile(event, targetId) {
@@ -868,6 +900,230 @@ document.addEventListener('click', function (e) {
         
         minInput.placeholder = `Min Qty (suggestion: ${lastMax + 1})`;
     }
+</script>
+
+<!-- Disable Variants or Bulk Prices or Bulk Items -->
+<!-- <script>
+    function disableVariants(disable = true) {
+        $('#variant-color, #variant-size, #variant-price, #variant-qty').prop('disabled', disable);
+        $('#add-variant').prop('disabled', disable);
+
+        if (disable && !variantDisabledNotified) {
+            showFlash('Bulk pricing is added. Product variants are disabled.');
+            variantDisabledNotified = true;
+        }
+
+        if (!disable) {
+            variantDisabledNotified = false;
+        }
+    }
+
+    function disableBulkPricing(disable = true) {
+        $('#bulk-min, #bulk-max, #bulk-price').prop('disabled', disable);
+        $('#add-bulk').prop('disabled', disable);
+
+        if (disable && !bulkDisabledNotified) {
+            showFlash('Product variants are added. Bulk pricing is disabled.');
+            bulkDisabledNotified = true;
+        }
+
+        if (!disable) {
+            bulkDisabledNotified = false;
+        }
+    }
+
+    function hasVariants() {
+        return document.querySelectorAll('.variant-card').length > 0;
+    }
+
+    function hasBulkPricing() {
+        return document.querySelectorAll('.bulk-card').length > 0;
+    }
+
+    function syncExclusiveRules() {
+        if (hasBulkPricing()) {
+            disableVariants(true);
+        } else {
+            disableVariants(false);
+        }
+
+        if (hasVariants()) {
+            disableBulkPricing(true);
+        } else {
+            disableBulkPricing(false);
+        }
+    }
+
+    // Run on page load (important for edit / validation reload)
+    document.addEventListener('DOMContentLoaded', syncExclusiveRules);
+
+    // Re-check after add/remove
+    document.addEventListener('click', function (e) {
+        if (
+            e.target.id === 'add-variant' ||
+            e.target.id === 'add-bulk' ||
+            e.target.closest('.delete-item')
+        ) {
+            setTimeout(syncExclusiveRules, 100);
+        }
+    });
+</script> -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        let variantDisabledNotified = false;
+        let bulkDisabledNotified = false;
+        const bulkTab = document.getElementById('bulkProductTab');
+
+        // HELPERS
+        function hasVariants() {
+            return document.querySelectorAll('.variant-card').length > 0;
+        }
+        function hasBulkPricing() {
+            return document.querySelectorAll('.bulk-card').length > 0;
+        }
+        function hasBulkItems() {
+            let hasData = false;
+
+            document.querySelectorAll('.bulk-item-row').forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                inputs.forEach(input => {
+                    if (input.value && input.value.trim() !== '') {
+                        hasData = true;
+                    }
+                });
+            });
+
+            return hasData;
+        }
+
+        // DISABLE FUNCTIONS 
+        function disableVariants(disable = true) {
+            $('#variant-color, #variant-size, #variant-price, #variant-qty').prop('disabled', disable);
+            $('#add-variant').prop('disabled', disable);
+
+            if (disable && !variantDisabledNotified) {
+                showFlash('Bulk pricing or Bulk products are added. Product variants are disabled.');
+                variantDisabledNotified = true;
+            }
+
+            if (!disable) variantDisabledNotified = false;
+        }
+        function disableBulkPricing(disable = true) {
+            $('#bulk-min, #bulk-max, #bulk-price').prop('disabled', disable);
+            $('#add-bulk').prop('disabled', disable);
+
+            if (disable && hasBulkItems() && !bulkDisabledNotified) {
+                showFlash('Product variants or Bulk products are added. Bulk pricing is disabled.');
+                bulkDisabledNotified = true;
+            }
+            if (!disable) bulkDisabledNotified = false;
+        }
+
+        // BULK PRODUCTS TAB 
+        function toggleBulkTab(disable = true) {
+            bulkTab.classList.toggle('disabled', disable);
+            bulkTab.style.pointerEvents = disable ? 'none' : 'auto';
+            bulkTab.style.opacity = disable ? '0.5' : '1';
+
+            // force redirect if currently inside
+            const bulkStep = document.querySelector('.step-6');
+            if (disable && bulkStep.style.display === 'block') {
+                document.querySelectorAll('.step-content').forEach(el => el.style.display = 'none');
+                document.querySelector('.step-3').style.display = 'block';
+
+                document.querySelectorAll('#productTabs .nav-link').forEach(tab => tab.classList.remove('active'));
+                document.querySelector('#productTabs .nav-link[data-step="3"]').classList.add('active');
+            }
+        }
+    
+        // MASTER RULE ENGINE 
+        function syncAllExclusiveRules() {
+            /* Rule 1: Variant ↔ Bulk Pricing */
+            if (hasVariants()) {
+                disableBulkPricing(true);
+            } else {
+                disableBulkPricing(false);
+            }
+            if (hasBulkPricing()) {
+                disableVariants(true);
+            } else {
+                disableVariants(false);
+            }
+            /* Rule 2: Bulk Products vs Others */
+            if (hasVariants() || hasBulkPricing()) {
+                toggleBulkTab(true);
+            } else {
+                toggleBulkTab(false);
+            }
+            /* Rule 3: Bulk products block others */
+            if (hasBulkItems()) {
+                disableVariants(true);
+                disableBulkPricing(true);
+                toggleBulkTab(false); // user is allowed inside
+            }
+        }
+
+        // INITIAL RUN
+        syncAllExclusiveRules(); 
+
+        // RE-CHECK ON ACTIONS 
+        document.addEventListener('click', function (e) {
+            if (
+                e.target.id === 'add-variant' ||
+                e.target.id === 'add-bulk' ||
+                e.target.id === 'add-bulk-item' ||
+                e.target.closest('.delete-item') ||
+                e.target.closest('.remove-bulk-item')
+            ) {
+                setTimeout(syncAllExclusiveRules, 100);
+            }
+
+        });
+
+    });
+</script>
+
+<!-- Bulk Items -->
+<script>
+    let bulkItemIndex = 1;
+
+    document.getElementById('add-bulk-item').addEventListener('click', function () {
+        const container = document.getElementById('bulk-items-list');
+
+        const row = document.createElement('div');
+        row.className = 'row g-2 mb-2 bulk-item-row';
+
+        row.innerHTML = `
+            <div class="col-md-3">
+                <input type="text" name="bulk_items[${bulkItemIndex}][name]" class="form-control" placeholder="Item Name">
+            </div>
+            <div class="col-md-2">
+                <input type="number" name="bulk_items[${bulkItemIndex}][quantity]" class="form-control" placeholder="Quantity">
+            </div>
+            <div class="col-md-2">
+                <input type="number" name="bulk_items[${bulkItemIndex}][moq]" class="form-control" placeholder="MOQ">
+            </div>
+            <div class="col-md-2">
+                <input type="number" name="bulk_items[${bulkItemIndex}][mrp]" class="form-control" placeholder="MRP">
+            </div>
+            <div class="col-md-2">
+                <input type="number" name="bulk_items[${bulkItemIndex}][selling_price]" class="form-control" placeholder="Selling Price">
+            </div>
+            <div class="col-md-1">
+                <button type="button" class="btn btn-danger remove-bulk-item">-</button>
+            </div>
+        `;
+
+        container.appendChild(row);
+        bulkItemIndex++;
+    });
+
+    document.addEventListener('click', function (e) {
+        if (e.target.classList.contains('remove-bulk-item')) {
+            e.target.closest('.bulk-item-row').remove();
+            syncAllExclusiveRules();
+        }
+    });
 </script>
 
 @endpush

@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Log;
 
 use App\Models\ProductBulkPrice;  
 use App\Models\ProductItemDetail; 
+use App\Models\ProductBulkItem; 
 
 class ProductRepository extends Repository
 {
@@ -765,54 +766,23 @@ class ProductRepository extends Repository
             /** -----------------------------
              * 3. Item Details
              * ----------------------------- */
-           if (!empty($data['item_details'])) {
-    foreach ($data['item_details'] as $item) {
+            if (!empty($data['item_details'])) {
+                foreach ($data['item_details'] as $item) {
 
-        if (
-            empty($item['name'] ?? null) ||
-            empty($item['value'] ?? null)
-        ) {
-            continue;
-        }
+                    if (
+                        empty($item['name'] ?? null) ||
+                        empty($item['value'] ?? null)
+                    ) {
+                        continue;
+                    }
 
-        ProductItemDetail::create([
-            'product_id' => $product->id,
-            'item_name'  => $item['name'],
-            'item_value' => $item['value'],
-        ]);
-    }
-}
-
-
-            // if (!empty($data['item_details'])) {
-            //     foreach ($data['item_details'] as $text) {
-            //         if (trim($text) === '') continue;
-
-            //         ProductItemDetail::create([
-            //             'product_id' => $product->id,
-            //             'item_text'  => $text,
-            //         ]);
-            //     }
-            // }
-            // if (!empty($data['item_details'])) {
-            //     foreach ($data['item_details'] as $item) {
-
-            //         if (
-            //             empty(trim($item['name'] ?? '')) ||
-            //             empty(trim($item['value'] ?? ''))
-            //         ) {
-            //             continue;
-            //         }
-
-            //         ProductItemDetail::create([
-            //             'product_id' => $product->id,
-            //             'item_name'  => $item['name'],
-            //             'item_value' => $item['value'],
-            //         ]);
-            //     }
-            // }
-
-
+                    ProductItemDetail::create([
+                        'product_id' => $product->id,
+                        'item_name'  => $item['name'],
+                        'item_value' => $item['value'],
+                    ]);
+                }
+            }
             /** -----------------------------
              * 4. Bulk Pricing
              * ----------------------------- */
@@ -862,6 +832,23 @@ class ProductRepository extends Repository
                 $thumbnail = MediaRepository::storeByRequest($additionThumbnail, 'products', 'thumbnail', 'image');
                 $product->medias()->attach($thumbnail->id);
             }
+            
+           /** ---- 4. Bulk Items ---- */
+            if (!empty($data['bulk_items'])) {
+                foreach ($data['bulk_items'] as $item) {
+                    if (empty($item['name'])) continue; // skip empty rows
+
+                    ProductBulkItem::create([
+                        'product_id'    => $product->id,
+                        'name'          => $item['name'],
+                        'quantity'      => $item['quantity'] ?? 0,
+                        'moq'           => $item['moq'] ?? 1,
+                        'mrp'           => $item['mrp'] ?? 0,
+                        'selling_price' => $item['selling_price'] ?? 0,
+                    ]);
+                }
+            }
+            
             DB::commit();
             return $product;
 
