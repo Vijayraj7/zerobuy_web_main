@@ -7,12 +7,10 @@ use App\Http\Resources\CategoryResource;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\ShopDetailsResource;
 use App\Http\Resources\ShopResource;
-use App\Models\Category;
 use App\Models\Shop;
 use App\Repositories\ProductRepository;
 use App\Repositories\ShopRepository;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ShopController extends Controller
 {
@@ -81,18 +79,8 @@ class ShopController extends Controller
 
         $total = $shop->categories->count();
 
-        $categoryIds = DB::table('shop_categories')
-            ->where('shop_id', $shop->id)
-            ->pluck('category_id');
-
-        $categoriess = DB::table('categories')
-            ->whereIn('id', $categoryIds)
-            ->get();
-
         return $this->json('Shop categories', [
             'total' => $total,
-            'shop' => $shop,
-            'ca' => $categoriess,
             'categories' => CategoryResource::collection($categories),
         ]);
     }
