@@ -8,6 +8,7 @@ use App\Http\Resources\ProductResource;
 use App\Http\Resources\ShopDetailsResource;
 use App\Http\Resources\ShopResource;
 use App\Models\Shop;
+use App\Repositories\CategoryRepository;
 use App\Repositories\ProductRepository;
 use App\Repositories\ShopRepository;
 use Illuminate\Http\Request;
@@ -71,11 +72,19 @@ class ShopController extends Controller
 
         $shop = ShopRepository::find($request->shop_id);
 
-        $categories = $shop->categories()->active()->where(function ($query) use ($perPage, $page, $skip) {
-            $query->when($perPage && $page, function ($query) use ($perPage, $skip) {
-                return $query->skip($skip)->take($perPage);
-            });
-        })->get();
+        // $categories = $shop->categories()->active()->where(function ($query) use ($perPage, $page, $skip) {
+        //     $query->when($perPage && $page, function ($query) use ($perPage, $skip) {
+        //         return $query->skip($skip)->take($perPage);
+        //     });
+        // })->get();
+
+        $categories = CategoryRepository::query()->active()
+            ->whereHas('shops', function ($query) use ($shop) {
+                return $query->where('shop_id', $shop->id);
+            })->whereHas('products', function ($product) {
+                return $product->where('is_active', true);
+            })->withCount('products')->orderByDesc('products_count')
+            ->take(10)->get();
 
         $total = $shop->categories->count();
 
