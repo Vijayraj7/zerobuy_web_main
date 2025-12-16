@@ -432,13 +432,13 @@
                         {{ __('Flash Deals') }}
                     </a>
                 @endhasPermission
-                <!-- @hasPermission('admin.banner.index')
+                @hasPermission('admin.banner.index')
                     <a href="{{ route('admin.banner.index') }}"
                         class="subMenu hasCount {{ request()->routeIs('admin.banner.*') ? 'active' : '' }}">
                         {{ __('Banner Setup') }}
                     </a>
                 @endhasPermission
-                @hasPermission('admin.ad.index')
+                <!-- @hasPermission('admin.ad.index')
                     <a href="{{ route('admin.ad.index') }}"
                         class="subMenu hasCount {{ request()->routeIs('admin.ad.*') ? 'active' : '' }}">
                         {{ __('Ads Campaign ') }}
