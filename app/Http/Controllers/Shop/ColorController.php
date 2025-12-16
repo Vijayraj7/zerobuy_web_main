@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Shop;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ColorRequest;
 use App\Models\Color;
+use Illuminate\Http\Request;
 use App\Repositories\ColorRepository;
 use App\Repositories\SizeRepository;
-use Illuminate\Support\Facades\Request;
 
 class ColorController extends Controller
 {
