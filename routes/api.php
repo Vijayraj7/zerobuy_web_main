@@ -121,6 +121,7 @@ Route::controller(ReviewController::class)->group(function () {
 // shop route
 Route::controller(ShopController::class)->group(function () {
     Route::get('/shops', 'index');
+    Route::get('/shop-categories', 'shopCategory');
     Route::get('/shops/top', 'topShops');
     Route::get('/shops/popular-products', 'popularProducts');
     Route::get('/shops/{shop}', 'show');
