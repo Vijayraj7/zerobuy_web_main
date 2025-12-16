@@ -642,6 +642,24 @@
 <!------------------------------ End Analytics ------------------------------>
 
 
+<!------------------------------ Withdrawal Management ------------------------------>
+@if ($businessModel == 'multi')
+    @hasPermission(['admin.withdraw.index'])
+        <li>
+            <a class="menu {{ $request->routeIs('admin.withdraw.*') ? 'active' : '' }}"
+                href="{{ route('admin.withdraw.index') }}">
+                <span>
+                    <img class="menu-icon" src="{{ asset('assets/icons-admin/withdraw.svg') }}" alt="icon"
+                        loading="lazy" />
+                    {{ __('Withdrawal Management') }}
+                </span>
+            </a>
+        </li>
+    @endhasPermission
+@endif
+<!------------------------------ End Withdrawal Management ------------------------------>
+
+
 <!------------------------------ Contact Us ------------------------------>
 @hasPermission('admin.contactUs.index')
     <li>
@@ -812,19 +830,20 @@
                         {{ __('Manage Verification') }}
                     </a>
                 @endhasPermission
+
                 <!-- @hasPermission('admin.aiPrompt.index')
                     <a href="{{ route('admin.aiPrompt.index') }}"
                         class="subMenu {{ request()->routeIs('admin.aiPrompt.index') ? 'active' : '' }}">
                         {{ __('Ai Prompt') }}
                     </a>
-                @endhasPermission
+                @endhasPermission -->
 
                 @hasPermission('admin.currency.index')
                     <a href="{{ route('admin.currency.index') }}"
                         class="subMenu {{ request()->routeIs('admin.currency.*') ? 'active' : '' }}">
                         {{ __('Currency') }}
                     </a>
-                @endhasPermission -->
+                @endhasPermission
 
                 @hasPermission('admin.deliveryCharge.index')
                     <a href="{{ route('admin.deliveryCharge.index') }}"
@@ -985,24 +1004,6 @@
     </li>
 @endhasPermission -->
 <!------------------------------ End Driver Management ------------------------------>
-
-
-<!------------------------------ Withdrawal Management ------------------------------>
-<!-- @if ($businessModel == 'multi')
-    @hasPermission(['admin.withdraw.index'])
-        <li>
-            <a class="menu {{ $request->routeIs('admin.withdraw.*') ? 'active' : '' }}"
-                href="{{ route('admin.withdraw.index') }}">
-                <span>
-                    <img class="menu-icon" src="{{ asset('assets/icons-admin/withdraw.svg') }}" alt="icon"
-                        loading="lazy" />
-                    {{ __('Withdrawal Management') }}
-                </span>
-            </a>
-        </li>
-    @endhasPermission
-@endif -->
-<!------------------------------ End Withdrawal Management ------------------------------>
 
 
 <!------------------------------ Import/Export ------------------------------>
