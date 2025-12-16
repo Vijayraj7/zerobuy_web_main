@@ -81,7 +81,7 @@ Route::prefix('/seller')->group(function () {
 
         Route::controller(ColorController::class)->group(function () {
             Route::get('/get-color', 'getcolors');
-            Route::post('/save-color', 'savecolors');
+            Route::post('/save-color', 'saveColorsAndSizes');
             // Route::get('/get-states', 'getStates');
             // Route::post('/delivery-settings/selected-states',  'saveSelectedStates');
             // Route::post('/delivery-settings', 'store');
