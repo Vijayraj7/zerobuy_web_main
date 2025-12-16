@@ -22,6 +22,21 @@ class ColorController extends Controller
         return view('shop.color.index', compact('colors'));
     }
 
+
+    public function getcolors()
+    {
+        $shop = generaleSetting('shop');
+
+        // Get colors
+        $colors = $shop->colors()->paginate(20);
+        $sizes = $shop->sizes()->paginate(20);
+        return $this->json('Colors & Sizws getted successfully', [
+            'sizes' => $sizes,
+            'colors' => $colors,
+        ]);
+    }
+
+
     /**
      * store a new color
      */

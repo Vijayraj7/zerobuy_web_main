@@ -12,6 +12,7 @@ use App\Http\Controllers\API\Seller\ReturnOrderController;
 use App\Http\Controllers\API\Seller\UserController;
 use App\Http\Controllers\API\Seller\WalletController;
 use App\Http\Controllers\Seller\SellerChatController;
+use App\Http\Controllers\Shop\ColorController;
 use Illuminate\Support\Facades\Route;
 
 // ==========Route for seller==========
@@ -75,6 +76,14 @@ Route::prefix('/seller')->group(function () {
             Route::get('/get-states', 'getStates');
             Route::post('/delivery-settings/selected-states',  'saveSelectedStates');
             Route::post('/delivery-settings', 'store');
+        });
+
+
+        Route::controller(ColorController::class)->group(function () {
+            Route::get('/get-color', 'getcolors');
+            // Route::get('/get-states', 'getStates');
+            // Route::post('/delivery-settings/selected-states',  'saveSelectedStates');
+            // Route::post('/delivery-settings', 'store');
         });
 
         // wallet route
