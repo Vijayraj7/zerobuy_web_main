@@ -78,7 +78,7 @@ class ShopController extends Controller
         //     });
         // })->get();
 
-        $rootShop = generaleSetting('rootShop');
+        $rootShop = generaleSetting('shop');
         $categories = CategoryRepository::query()->active()
             ->whereHas('shops', function ($query) use ($rootShop) {
                 return $query->where('shop_id', $rootShop->id);
