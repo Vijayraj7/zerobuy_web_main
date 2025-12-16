@@ -81,8 +81,8 @@ class ShopController extends Controller
 
         return $this->json('Shop categories', [
             'total' => $total,
-            'shop' => $shop->categories(),
-            'ca' => $total,
+            'shop' => $shop,
+            'ca' => $shop->categories(),
             'categories' => CategoryResource::collection($categories),
         ]);
     }
