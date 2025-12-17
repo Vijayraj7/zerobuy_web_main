@@ -355,11 +355,11 @@ class Product extends Model
     //added by ancy
     public function bulkItems()
     {
-        return $this->hasMany(ProductBulkItem::class);
+        return $this->hasMany(ProductBulkItem::class, 'product_id');
     }
 
     public function bulkPrices()
     {
-        return $this->hasMany(ProductBulkPrice::class);
+        return $this->hasMany(ProductBulkPrice::class, 'product_id');
     }
 }
