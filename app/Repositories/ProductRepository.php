@@ -18,9 +18,9 @@ use Illuminate\Support\Str;
 use Mews\Purifier\Facades\Purifier;
 use Illuminate\Support\Facades\Log;
 
-use App\Models\ProductBulkPrice;  
-use App\Models\ProductItemDetail; 
-use App\Models\ProductBulkItem; 
+use App\Models\ProductBulkPrice;
+use App\Models\ProductItemDetail;
+use App\Models\ProductBulkItem;
 
 class ProductRepository extends Repository
 {
@@ -342,6 +342,60 @@ class ProductRepository extends Repository
                 );
             }
         });
+
+
+        DB::transaction(function () use ($product, $request) {
+
+            $bulkItems = collect($request->input('bulk_items', []));
+
+            // 1️⃣ Collect valid IDs from request
+            $requestIds = $bulkItems
+                ->pluck('id')
+                ->filter()
+                ->values();
+
+            // 2️⃣ DELETE DB items not present in request
+            if ($requestIds->isNotEmpty()) {
+                $product->bulkItems()
+                    ->whereNotIn('id', $requestIds)
+                    ->delete();
+            } else {
+                // No IDs sent → delete all existing bulk items
+                $product->bulkItems()->delete();
+            }
+
+            // 3️⃣ UPDATE / CREATE bulk items
+            foreach ($bulkItems as $item) {
+
+                if (empty($item['name'])) {
+                    continue;
+                }
+
+                if (!empty($item['id'])) {
+                    // 🔄 UPDATE
+                    $product->bulkItems()
+                        ->where('id', $item['id'])
+                        ->update([
+                            'name'          => $item['name'],
+                            'quantity'      => $item['quantity'] ?? 0,
+                            'moq'           => $item['moq'] ?? 1,
+                            'mrp'           => $item['mrp'] ?? 0,
+                            'selling_price' => $item['selling_price'] ?? 0,
+                        ]);
+                } else {
+                    // ➕ CREATE
+                    $product->bulkItems()->create([
+                        'name'          => $item['name'],
+                        'quantity'      => $item['quantity'] ?? 0,
+                        'moq'           => $item['moq'] ?? 1,
+                        'mrp'           => $item['mrp'] ?? 0,
+                        'selling_price' => $item['selling_price'] ?? 0,
+                    ]);
+                }
+            }
+        });
+
+
 
 
         $product->categories()->sync($request->category ?? []);
@@ -701,14 +755,14 @@ class ProductRepository extends Repository
     }
 
     public static function storeByProductRequest(Request $request, array $data): Product
-    { 
+    {
         $thumbnail = MediaRepository::storeByRequest($request->thumbnail, 'products', 'thumbnail');
-    
+
         $shop = generaleSetting('shop');
         $generaleSetting = generaleSetting('setting');
         $approve = $generaleSetting?->new_product_approval ? false : true;
 
-        $user = auth()->user(); 
+        $user = auth()->user();
         $isAdmin = false;
         if ($user->hasRole('root') || ($generaleSetting?->shop_type == 'single')) {
             $isAdmin = true;
@@ -746,7 +800,7 @@ class ProductRepository extends Repository
             ]);
             /** -----------------------------
              * 2. Categories
-             * ----------------------------- */ 
+             * ----------------------------- */
             if (!empty($data['main_category'])) {
                 $product->categories()->sync([$data['main_category']]);
             }
@@ -827,13 +881,13 @@ class ProductRepository extends Repository
             }
             /** -----------------------------
              * 7. Additional Images
-             * ----------------------------- */ 
+             * ----------------------------- */
             foreach ($request->file('additional_images', []) as $additionThumbnail) {
                 $thumbnail = MediaRepository::storeByRequest($additionThumbnail, 'products', 'thumbnail', 'image');
                 $product->medias()->attach($thumbnail->id);
             }
-            
-           /** ---- 4. Bulk Items ---- */
+
+            /** ---- 4. Bulk Items ---- */
             if (!empty($data['bulk_items'])) {
                 foreach ($data['bulk_items'] as $item) {
                     if (empty($item['name'])) continue; // skip empty rows
@@ -848,13 +902,12 @@ class ProductRepository extends Repository
                     ]);
                 }
             }
-            
+
             DB::commit();
             return $product;
-
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('ProductRepository store error: '.$e->getMessage());
+            Log::error('ProductRepository store error: ' . $e->getMessage());
             throw $e;
         }
     }
