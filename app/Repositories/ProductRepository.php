@@ -254,6 +254,7 @@ class ProductRepository extends Repository
             'min_order_quantity' => $request->min_order_quantity ?? 1,
             'media_id' => $thumbnail ? $thumbnail->id : null,
             'code' => $request->code,
+            'condition_status' => $request->condition_status ?? 'New',
             'buy_price' => $request->buy_price ?? 0,
             'is_active' => $isAdmin ? true : $approve,
             'is_new' => false,
