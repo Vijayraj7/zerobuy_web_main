@@ -36,6 +36,9 @@ class SellerProductDetailsResource extends JsonResource
             'bulk_items' => ProductBulkItemResource::collection(
                 $this->bulkItems
             ),
+            'bulk_prices' => ProductBulkPriceResource::collection(
+                $this->bulkPrices
+            ),
             'short_description' => $this->short_description,
             'description' => $this->description,
         ];
