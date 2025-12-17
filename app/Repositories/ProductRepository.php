@@ -300,7 +300,7 @@ class ProductRepository extends Repository
 
         $hasVariants   = $request->filled('variants');
         $hasBulkItems  = $request->filled('bulk_items');
-        $hasBulkPrice  = $request->filled('bulk_price');
+        $hasBulkPrice  = $request->filled('bulk_prices');
 
         if ($hasVariants) {
             DB::transaction(function () use ($product, $request) {
@@ -365,7 +365,7 @@ class ProductRepository extends Repository
                 $product->bulkItems()->delete();
 
                 // ✅ sync bulk price
-                $bulkPrices = collect($request->bulk_price);
+                $bulkPrices = collect($request->bulk_prices);
 
                 $product->bulkPrices()
                     ->whereNotIn('id', $bulkPrices->pluck('id')->filter())
