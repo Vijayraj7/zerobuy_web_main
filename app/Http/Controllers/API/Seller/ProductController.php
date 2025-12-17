@@ -105,15 +105,15 @@ class ProductController extends Controller
 
         $shop = generaleSetting('shop');
 
-        $skuCode = $shop?->products()->where('code', $request->code)->exists();
+        // $skuCode = $shop?->products()->where('code', $request->code)->exists();
 
-        if ($skuCode) {
-            return $this->json('Product code already exists', [
-                'errors' => (object) [
-                    'code' => ['The product code already exists'],
-                ],
-            ], 422);
-        }
+        // if ($skuCode) {
+        //     return $this->json('Product code already exists', [
+        //         'errors' => (object) [
+        //             'code' => ['The product code already exists'],
+        //         ],
+        //     ], 422);
+        // }
 
         $product = ProductRepository::storeByRequest($request);
 
@@ -154,15 +154,15 @@ class ProductController extends Controller
         $user = auth()->user();
         $shop = generaleSetting('shop');
 
-        $skuCode = $shop?->products()->where('code', $request->code)->where('id', '!=', $product->id)->exists();
+        // $skuCode = $shop?->products()->where('code', $request->code)->where('id', '!=', $product->id)->exists();
 
-        if ($skuCode) {
-            return $this->json('Product code already exists', [
-                'errors' => (object) [
-                    'code' => ['The product code already exists'],
-                ],
-            ], 422);
-        }
+        // if ($skuCode) {
+        //     return $this->json('Product code already exists', [
+        //         'errors' => (object) [
+        //             'code' => ['The product code already exists'],
+        //         ],
+        //     ], 422);
+        // }
 
         $product = ProductRepository::updateByRequest($request, $product);
 
