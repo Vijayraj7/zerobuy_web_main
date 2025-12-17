@@ -357,4 +357,9 @@ class Product extends Model
     {
         return $this->hasMany(ProductBulkItem::class);
     }
+
+    public function bulkPrices()
+    {
+        return $this->hasMany(ProductBulkPrice::class);
+    }
 }

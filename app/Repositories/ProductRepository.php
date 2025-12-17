@@ -298,102 +298,93 @@ class ProductRepository extends Repository
             }
         }
 
-        // if ($request->filled('variants')) {
-        //     foreach ($request->variants as $v) {
-        //         $data = [
-        //             'product_id' => $product->id,
-        //             'size_id'    => $v['size']['id'],
-        //             'color_id'   => $v['color']['id'],
-        //             'price'      => $v['price'],
-        //             'quantity'   => $v['quantity'],
-        //         ];
+        $hasVariants   = $request->filled('variants');
+        $hasBulkItems  = $request->filled('bulk_items');
+        $hasBulkPrice  = $request->filled('bulk_price');
 
-        //         // ✅ CREATE
-        //         if ($v['id'] == null) {
-        //             ProductVariant::create($data);
-        //         }
-        //         // ✅ UPDATE
-        //         else {
-        //             ProductVariant::where('id', $v['id'])->update($data);
-        //         }
-        //     }
-        // }
+        if ($hasVariants) {
+            DB::transaction(function () use ($product, $request) {
 
-
-        DB::transaction(function () use ($product, $request) {
-
-            $variants = collect($request->variants ?? []);
-
-            // 1️⃣ DELETE variants not in request
-            $product->variants()
-                ->whereNotIn('id', $variants->pluck('id')->filter())
-                ->delete();
-
-            // 2️⃣ UPDATE or CREATE variants from request
-            foreach ($variants as $v) {
-                $product->variants()->updateOrCreate(
-                    ['id' => $v['id'] ?? null],
-                    [
-                        'size_id'  => $v['size']['id'],
-                        'color_id' => $v['color']['id'],
-                        'price'    => $v['price'],
-                        'quantity' => $v['quantity'],
-                    ]
-                );
-            }
-        });
-
-
-        DB::transaction(function () use ($product, $request) {
-
-            $bulkItems = collect($request->input('bulk_items', []));
-
-            // 1️⃣ Collect valid IDs from request
-            $requestIds = $bulkItems
-                ->pluck('id')
-                ->filter()
-                ->values();
-
-            // 2️⃣ DELETE DB items not present in request
-            if ($requestIds->isNotEmpty()) {
-                $product->bulkItems()
-                    ->whereNotIn('id', $requestIds)
-                    ->delete();
-            } else {
-                // No IDs sent → delete all existing bulk items
+                // ❌ delete others
                 $product->bulkItems()->delete();
-            }
+                $product->bulkPrices()->delete();
 
-            // 3️⃣ UPDATE / CREATE bulk items
-            foreach ($bulkItems as $item) {
+                // ✅ sync variants
+                $variants = collect($request->variants);
 
-                if (empty($item['name'])) {
-                    continue;
-                }
+                $product->variants()
+                    ->whereNotIn('id', $variants->pluck('id')->filter())
+                    ->delete();
 
-                if (!empty($item['id'])) {
-                    // 🔄 UPDATE
-                    $product->bulkItems()
-                        ->where('id', $item['id'])
-                        ->update([
+                $variants->each(function ($v) use ($product) {
+                    $product->variants()->updateOrCreate(
+                        ['id' => $v['id'] ?? null],
+                        [
+                            'size_id'  => $v['size']['id'],
+                            'color_id' => $v['color']['id'],
+                            'price'    => $v['price'],
+                            'quantity' => $v['quantity'],
+                        ]
+                    );
+                });
+            });
+        } elseif ($hasBulkItems) {
+            DB::transaction(function () use ($product, $request) {
+
+                // ❌ delete others
+                $product->variants()->delete();
+                $product->bulkPrices()->delete();
+
+                // ✅ sync bulk items
+                $bulkItems = collect($request->bulk_items);
+
+                $product->bulkItems()
+                    ->whereNotIn('id', $bulkItems->pluck('id')->filter())
+                    ->delete();
+
+                $bulkItems->each(function ($item) use ($product) {
+                    if (empty($item['name'])) return;
+
+                    $product->bulkItems()->updateOrCreate(
+                        ['id' => $item['id'] ?? null],
+                        [
                             'name'          => $item['name'],
                             'quantity'      => $item['quantity'] ?? 0,
                             'moq'           => $item['moq'] ?? 1,
                             'mrp'           => $item['mrp'] ?? 0,
                             'selling_price' => $item['selling_price'] ?? 0,
-                        ]);
-                } else {
-                    // ➕ CREATE
-                    $product->bulkItems()->create([
-                        'name'          => $item['name'],
-                        'quantity'      => $item['quantity'] ?? 0,
-                        'moq'           => $item['moq'] ?? 1,
-                        'mrp'           => $item['mrp'] ?? 0,
-                        'selling_price' => $item['selling_price'] ?? 0,
-                    ]);
-                }
-            }
-        });
+                        ]
+                    );
+                });
+            });
+        } elseif ($hasBulkPrice) {
+            DB::transaction(function () use ($product, $request) {
+
+                // ❌ delete others
+                $product->variants()->delete();
+                $product->bulkItems()->delete();
+
+                // ✅ sync bulk price
+                $bulkPrices = collect($request->bulk_price);
+
+                $product->bulkPrices()
+                    ->whereNotIn('id', $bulkPrices->pluck('id')->filter())
+                    ->delete();
+
+                $bulkPrices->each(function ($b) use ($product) {
+                    if (!isset($b['min_qty'], $b['max_qty'], $b['price'])) return;
+
+                    $product->bulkPrices()->updateOrCreate(
+                        ['id' => $b['id'] ?? null],
+                        [
+                            'min_qty' => (int) $b['min_qty'],
+                            'max_qty' => (int) $b['max_qty'],
+                            'price'   => (float) $b['price'],
+                        ]
+                    );
+                });
+            });
+        }
 
 
 
