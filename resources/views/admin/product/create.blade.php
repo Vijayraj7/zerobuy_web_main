@@ -53,9 +53,9 @@
                                     <p class="text text-danger m-0">{{ $message }}</p>
                                 @enderror
                             </div>
-                            <div class="col-md-4">
-                                <x-select label="Sub Category" name="sub_categories[]" multiple>
-                                    <option value="" selected disabled>{{ __('Select Sub Category') }}</option>
+                            <div class="col-md-4"> 
+                                <x-select label="Sub Category" name="sub_categories[]">
+                                    <option value="" selected disabled>Select Sub Category</option>
                                 </x-select>
                                 @error('sub_categories')
                                     <p class="text text-danger m-0">{{ $message }}</p>
@@ -76,7 +76,7 @@
                         <div class="row mt-3 g-2">
                             <div class="col-md-6"> 
                                 <label class="form-label">Stock Quantity <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" name="quantity" placeholder="Enter Quantity" min="0" value="0">
+                                <input type="number" class="form-control" name="quantity" placeholder="Enter Quantity" value="0">
                                 @error('quantity')
                                     <p class="text text-danger m-0">{{ $message }}</p>
                                 @enderror
@@ -186,7 +186,7 @@
                             <tr>
                                 <td><input id="bulk-min" class="form-control" placeholder="Min Qty" type="number" min="1"></td>
                                 <td><input id="bulk-max" class="form-control" placeholder="Max Qty" type="number" min="1"></td>
-                                <td><input id="bulk-price" class="form-control" placeholder="Price" type="number" step="0.01"></td>
+                                <td><input id="bulk-price" class="form-control" placeholder="Price" type="number" min="1"></td>
                                 <td><button type="button" class="btn btn-primary" id="add-bulk">Add</button></td>
                             </tr>
                         </tbody>
@@ -220,8 +220,8 @@
                                     <tr>
                                         <th>Color (optional)</th>
                                         <th>Size (optional)</th>
-                                        <th>Price</th>
-                                        <th>Quantity</th>
+                                        <th>Price <span class="text-danger">*</span></th>
+                                        <th>Quantity <span class="text-danger">*</span></th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
@@ -252,7 +252,7 @@
                                             </select>
                                         </td>
                                         <td>
-                                            <input id="variant-price" class="form-control" placeholder="Price" type="number" step="0.01">
+                                            <input id="variant-price" class="form-control" placeholder="Price" type="number" min="1">
                                         </td>
                                         <td>
                                             <input id="variant-qty" class="form-control" placeholder="Qty" type="number">
@@ -285,7 +285,7 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="card card-body">
-                            <h5>Thumbnail <small class="text-muted">(Ratio 1:1 500x500) *</small></h5>
+                            <h5>Thumbnail <small class="text-muted">(Ratio 1:1 500x500) <span class="text-danger">*</span></small></h5>
                             <label for="thumbnail" style="cursor:pointer;display:block;">
                                 <img src="https://placehold.co/500x500/f1f5f9/png" id="preview" alt="thumbnail" style="width:100%;max-width:300px">
                             </label>
@@ -360,11 +360,11 @@
 
                 <!-- Field Titles -->
                 <div class="row g-2 mb-2 fw-semibold text-muted">
-                    <div class="col-md-3">Item Name</div>
-                    <div class="col-md-2">Quantity</div>
-                    <div class="col-md-2">MOQ</div>
-                    <div class="col-md-2">MRP</div>
-                    <div class="col-md-2">Selling Price</div>
+                    <div class="col-md-3">Item Name <span class="text-danger">*</span></div>
+                    <div class="col-md-2">Quantity <span class="text-danger">*</span></div>
+                    <div class="col-md-2">MOQ <span class="text-danger">*</span></div>
+                    <div class="col-md-2">MRP <span class="text-danger">*</span></div>
+                    <div class="col-md-2">Selling Price <span class="text-danger">*</span></div>
                     <div class="col-md-1"></div>
                 </div>
 
@@ -386,14 +386,14 @@
                             <input type="number" name="bulk_items[0][selling_price]" class="form-control" placeholder="Selling Price">
                         </div>
                         <div class="col-md-1">
-                            <button type="button" class="btn btn-danger remove-bulk-item">-</button>
+                            <button type="button" class="btn btn-danger remove-bulk-item" disabled>-</button>
+                            <button type="button" class="btn btn-success add-bulk-item" id="add-bulk-item">+</button>
                         </div>
                     </div>
                 </div>
-
-                <button type="button" class="btn btn-primary btn-sm mt-2" id="add-bulk-item">
+                <!-- <button type="button" class="btn btn-primary btn-sm mt-2" id="add-bulk-item">
                     + Add More
-                </button>
+                </button> -->
             </div>
         </div>
     </div>
@@ -403,16 +403,36 @@
 
 @push('scripts')
 <script>
-    // Flash Message
+    // Flash Message 
     function showFlash(message) {
+        // remove existing flash if any
+        const existingFlash = document.querySelector('.bulk-flash-message');
+        if (existingFlash) {
+            existingFlash.remove();
+        }
+
         const flash = document.createElement('div');
-        flash.className = 'alert alert-danger';
-        flash.innerHTML = `${message} <button class="btn-close btn-sm float-end" onclick="this.parentElement.remove()"></button>`;
+        flash.className = 'alert alert-danger bulk-flash-message';
+        flash.innerHTML = `
+            ${message}
+            <button class="btn-close btn-sm float-end" onclick="this.parentElement.remove()"></button>
+        `;
         flash.style.cssText = 'position:fixed; top:10px; right:10px; z-index:9999;';
-        
+
         document.body.appendChild(flash);
-        setTimeout(() => flash.remove(), 5000);
+
+        setTimeout(() => {
+            if (flash) flash.remove();
+        }, 5000);
     }
+
+    // Remove +,-,e, and letters from number inputs
+    document.addEventListener('input', function(e) {
+        if (e.target.matches('input[type="number"]')) {
+            // Remove everything that's not a digit
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        }
+    });
 
     // Summernote
     $(document).ready(function() {
@@ -456,31 +476,45 @@
     });
 
     // Category-Subcategory Select
-    $(document).ready(function() {
-        $('select[name="main_category"]').on('change', function() {
-            var categoryId = $(this).val();
+    $(document).ready(function () {
+        $('select[name="main_category"]').on('change', function () {
+            let categoryId = $(this).val();
+            let $sub = $('select[name="sub_categories[]"]');
 
-            if (categoryId) {
-                $.ajax({
-                    url: '/api/sub-categories?category_id=' + categoryId,
-                    type: "GET",
-                    dataType: "json",
-                    success: function(data) {
-                        var subCategorySelected = $('select[name="sub_categories[]"]');
-                        subCategorySelected.empty();
+            // Reset completely
+            $sub.empty().append(
+                '<option value="" selected disabled>Select Sub Category</option>'
+            ).val(null).trigger('change');
 
-                        $.each(data.data.sub_categories, function(key, value) {
-                            subCategorySelected.append('<option value="' + value.id + '">' + value.name + '</option>');
+            if (!categoryId) return;
+
+            $.ajax({
+                url: '/api/sub-categories?category_id=' + categoryId,
+                type: 'GET',
+                dataType: 'json',
+                success: function (res) {
+                    let subs = res.data.sub_categories;
+
+                    // ✅ ONLY ONE → auto select
+                    if (subs.length === 1) {
+                        $sub.append(
+                            `<option value="${subs[0].id}" selected>
+                                ${subs[0].name}
+                            </option>`
+                        );
+                    } 
+                    // ✅ MORE THAN ONE → user must choose
+                    else {
+                        $.each(subs, function (_, sub) {
+                            $sub.append(
+                                `<option value="${sub.id}">${sub.name}</option>`
+                            );
                         });
-                        subCategorySelected.trigger('change');
-                    },
-                    error: function() {
-                        console.log('Error retrieving subcategories. Please try again.');
                     }
-                });
-            } else {
-                $('select[name="subCategory[]"]').empty();
-            }
+
+                    $sub.trigger('change');
+                }
+            });
         });
     });
 
@@ -1002,7 +1036,7 @@
             $('#add-variant').prop('disabled', disable);
 
             if (disable && !variantDisabledNotified) {
-                showFlash('Bulk pricing or Bulk products are added. Product variants are disabled.');
+                // showFlash('Bulk pricing or Bulk products are added. Product variants are disabled.');
                 variantDisabledNotified = true;
             }
 
@@ -1013,7 +1047,7 @@
             $('#add-bulk').prop('disabled', disable);
 
             if (disable && hasBulkItems() && !bulkDisabledNotified) {
-                showFlash('Product variants or Bulk products are added. Bulk pricing is disabled.');
+                // showFlash('Product variants or Bulk products are added. Bulk pricing is disabled.');
                 bulkDisabledNotified = true;
             }
             if (!disable) bulkDisabledNotified = false;
@@ -1084,30 +1118,42 @@
 </script>
 
 <!-- Bulk Items -->
-<script>
+<!-- <script>
     let bulkItemIndex = 1;
 
     document.getElementById('add-bulk-item').addEventListener('click', function () {
         const container = document.getElementById('bulk-items-list');
+        const rows = container.querySelectorAll('.bulk-item-row');
+        const lastRow = rows[rows.length - 1];
+
+        let isValid = true;
+        lastRow.querySelectorAll('input').forEach(input => {
+            if (input.value.trim() === '') isValid = false;
+        });
+
+        if (!isValid) {
+            showFlash('Please fill Item Name, Quantity, MOQ, MRP and Selling Price before adding more.');
+            return;
+        }
 
         const row = document.createElement('div');
         row.className = 'row g-2 mb-2 bulk-item-row';
 
         row.innerHTML = `
             <div class="col-md-3">
-                <input type="text" name="bulk_items[${bulkItemIndex}][name]" class="form-control" placeholder="Item Name">
+                <input type="text" name="bulk_items[${bulkItemIndex}][name]" class="form-control">
             </div>
             <div class="col-md-2">
-                <input type="number" name="bulk_items[${bulkItemIndex}][quantity]" class="form-control" placeholder="Quantity">
+                <input type="number" name="bulk_items[${bulkItemIndex}][quantity]" class="form-control">
             </div>
             <div class="col-md-2">
-                <input type="number" name="bulk_items[${bulkItemIndex}][moq]" class="form-control" placeholder="MOQ">
+                <input type="number" name="bulk_items[${bulkItemIndex}][moq]" class="form-control">
             </div>
             <div class="col-md-2">
-                <input type="number" name="bulk_items[${bulkItemIndex}][mrp]" class="form-control" placeholder="MRP">
+                <input type="number" name="bulk_items[${bulkItemIndex}][mrp]" class="form-control">
             </div>
             <div class="col-md-2">
-                <input type="number" name="bulk_items[${bulkItemIndex}][selling_price]" class="form-control" placeholder="Selling Price">
+                <input type="number" name="bulk_items[${bulkItemIndex}][selling_price]" class="form-control">
             </div>
             <div class="col-md-1">
                 <button type="button" class="btn btn-danger remove-bulk-item">-</button>
@@ -1120,9 +1166,88 @@
 
     document.addEventListener('click', function (e) {
         if (e.target.classList.contains('remove-bulk-item')) {
-            e.target.closest('.bulk-item-row').remove();
-            syncAllExclusiveRules();
+            const rows = document.querySelectorAll('.bulk-item-row');
+            if (rows.length > 1) {
+                e.target.closest('.bulk-item-row').remove();
+            }
         }
+    });
+</script> -->
+<script>
+    let bulkItemIndex = 1;
+    document.addEventListener('click', function (e) {
+
+        /* ADD */
+        if (e.target.classList.contains('add-bulk-item')) {
+
+            const container = document.getElementById('bulk-items-list');
+            const rows = container.querySelectorAll('.bulk-item-row');
+            const lastRow = rows[rows.length - 1];
+
+            let isValid = true;
+            lastRow.querySelectorAll('input').forEach(input => {
+                if (!input.value.trim()) isValid = false;
+            });
+
+            if (!isValid) {
+                showFlash('Please fill all fields before adding more.');
+                return;
+            }
+
+            /* Hide + from all rows */
+            rows.forEach(row => {
+                row.querySelector('.add-bulk-item')?.classList.add('d-none');
+                row.querySelector('.remove-bulk-item').disabled = false;
+            });
+
+            const row = document.createElement('div');
+            row.className = 'row g-2 mb-2 bulk-item-row';
+
+            row.innerHTML = `
+                <div class="col-md-3">
+                    <input type="text" name="bulk_items[${bulkItemIndex}][name]" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="bulk_items[${bulkItemIndex}][quantity]" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="bulk_items[${bulkItemIndex}][moq]" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="bulk_items[${bulkItemIndex}][mrp]" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="bulk_items[${bulkItemIndex}][selling_price]" class="form-control">
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-danger remove-bulk-item">-</button>
+                    <button type="button" class="btn btn-success add-bulk-item">+</button>
+                </div>
+            `;
+
+            container.appendChild(row);
+            bulkItemIndex++;
+        }
+
+        /* REMOVE */
+        if (e.target.classList.contains('remove-bulk-item')) {
+
+            const container = document.getElementById('bulk-items-list');
+            const row = e.target.closest('.bulk-item-row');
+            row.remove();
+
+            const rows = container.querySelectorAll('.bulk-item-row');
+            if (!rows.length) return;
+
+            /* Show + only in last row */
+            rows.forEach(r => r.querySelector('.add-bulk-item')?.classList.add('d-none'));
+            rows[rows.length - 1].querySelector('.add-bulk-item')?.classList.remove('d-none');
+
+            if (rows.length === 1) {
+                rows[0].querySelector('.remove-bulk-item').disabled = true;
+            }
+        }
+
     });
 </script>
 
