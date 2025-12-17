@@ -151,26 +151,72 @@ class ProductRepository extends Repository
             }
         }
 
-        if ($request->filled('variants')) {
-            foreach ($request->variants as $v) {
-                $data = [
-                    'product_id' => $product->id,
-                    'size_id'    => $v['size']['id'],
-                    'color_id'   => $v['color']['id'],
-                    'price'      => $v['price'],
-                    'quantity'   => $v['quantity'],
-                ];
 
-                // ✅ CREATE
-                if ($v['id'] == null) {
-                    ProductVariant::create($data);
-                }
-                // ✅ UPDATE
-                else {
-                    ProductVariant::where('id', $v['id'])->update($data);
-                }
-            }
+        $hasVariants   = $request->filled('variants');
+        $hasBulkItems  = $request->filled('bulk_items');
+        $hasBulkPrice  = $request->filled('bulk_prices');
+
+        if ($hasVariants) {
+            DB::transaction(function () use ($product, $request) {
+
+                // ✅ sync variants
+                $variants = collect($request->variants);
+
+
+                $variants->each(function ($v) use ($product) {
+                    ProductVariant::create(
+                        [
+                            'product_id' => $product->id,
+                            'size_id'  => $v['size']['id'],
+                            'color_id' => $v['color']['id'],
+                            'price'    => $v['price'],
+                            'quantity' => $v['quantity'],
+                        ]
+                    );
+                });
+            });
+        } elseif ($hasBulkItems) {
+            DB::transaction(function () use ($product, $request) {
+
+                // ✅ sync bulk items
+                $bulkItems = collect($request->bulk_items);
+
+                $bulkItems->each(function ($item) use ($product) {
+                    if (empty($item['name'])) return;
+
+                    ProductBulkItem::create(
+                        [
+                            'product_id' => $product->id,
+                            'name'          => $item['name'],
+                            'quantity'      => $item['quantity'] ?? 0,
+                            'moq'           => $item['moq'] ?? 1,
+                            'mrp'           => $item['mrp'] ?? 0,
+                            'selling_price' => $item['selling_price'] ?? 0,
+                        ]
+                    );
+                });
+            });
+        } elseif ($hasBulkPrice) {
+            DB::transaction(function () use ($product, $request) {
+
+                // ✅ sync bulk price
+                $bulkPrices = collect($request->bulk_prices);
+
+                $bulkPrices->each(function ($b) use ($product) {
+                    if (!isset($b['min_qty'], $b['max_qty'], $b['price'])) return;
+
+                    ProductBulkPrice::create(
+                        [
+                            'product_id' => $product->id,
+                            'min_qty' => (int) $b['min_qty'],
+                            'max_qty' => (int) $b['max_qty'],
+                            'price'   => (float) $b['price'],
+                        ]
+                    );
+                });
+            });
         }
+
 
         $product->categories()->sync($request->category ?? []);
         $product->subcategories()->sync($request->sub_category ?? []);
