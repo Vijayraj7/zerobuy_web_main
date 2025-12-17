@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use ProductBulkItemResource;
 
 class SellerProductDetailsResource extends JsonResource
 {
@@ -33,6 +34,9 @@ class SellerProductDetailsResource extends JsonResource
             'colors' => ColorResource::collection($this->colors),
             'brand' => BrandResource::make($this->brand),
             'unit' => UnitResource::make($this->unit),
+            'bulk_items' => ProductBulkItemResource::collection(
+                $this->bulkItems
+            ),
             'short_description' => $this->short_description,
             'description' => $this->description,
         ];
