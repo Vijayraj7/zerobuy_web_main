@@ -384,6 +384,10 @@ class ProductRepository extends Repository
                     );
                 });
             });
+        } else {
+            $product->variants()->delete();
+            $product->bulkItems()->delete();
+            $product->bulkPrices()->delete();
         }
 
 
