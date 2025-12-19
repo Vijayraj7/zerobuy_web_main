@@ -36,7 +36,7 @@ class ShopFollowerController extends Controller
                 ->paginate($perPage);
         }
         return $this->json('Followed stores', [
-            'followings' => ShopDetailsResource::collection($shops),
+            'stores' => ShopDetailsResource::collection($shops),
             'meta' => [
                 'current_page' => $shops->currentPage(),
                 'last_page' => $shops->lastPage(),
