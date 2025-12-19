@@ -71,6 +71,7 @@ class SubscriptionController extends Controller
         $url = $controller::process($paymentGateway, $payment, []);
 
         return response()->json([
+            'message' => 'success',
             'payment_url' => $url,
         ]);
     }
