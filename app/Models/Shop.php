@@ -241,8 +241,8 @@ class Shop extends Model
         return $this->hasMany(ReturnOrder::class);
     }
 
-    // public function followers()
-    // {
-    //     return $this->hasMany(ShopFollower::class);
-    // }
+    public function followers()
+    {
+        return $this->hasMany(ShopFollower::class);
+    }
 }

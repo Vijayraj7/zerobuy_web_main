@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\ShopFollower;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -35,6 +36,9 @@ class ShopDetailsResource extends JsonResource
             'name' => $this->name,
             'logo' => $this->logo,
             'banner' => $this->banner,
+            'state' => $this->state,
+            'district' => $this->district,
+            'followers' => (int) ShopFollower::where('shop_id', $this->id)->count(),
             'total_products' => (int) $this->products()->isActive()->count(),
             'total_categories' => (int) $this->categories()->active()->count(),
             'rating' => (float) number_format($this->averageRating, 1, '.', ''),
@@ -42,6 +46,8 @@ class ShopDetailsResource extends JsonResource
             'shop_status' => (string) $shopStatus,
             'short_description' => $this->short_description,
             'description' => $this->description,
+            'is_verified' => false,
+            'is_branded' => false,
             'banners' => BannerResource::collection($this->banners()->where('status', 1)->get()),
         ];
     }
