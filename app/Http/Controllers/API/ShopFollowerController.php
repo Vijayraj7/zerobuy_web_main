@@ -9,18 +9,13 @@ use App\Http\Resources\ShopDetailsResource;
 use App\Http\Resources\ShopResource;
 use App\Models\Category;
 use App\Models\Shop;
+use App\Models\ShopFollower;
 use App\Repositories\ProductRepository;
 use App\Repositories\ShopRepository;
 use Illuminate\Http\Request;
 
 class ShopFollowerController extends Controller
 {
-    /**
-     * Get all shops with pagination and filtering options.
-     *
-     * @param  Request  $request  The request object
-     * @return Some_Return_Value The JSON response
-     */
     public function index(Request $request)
     {
         $orderStatus = $request->order_status;
@@ -31,11 +26,46 @@ class ShopFollowerController extends Controller
 
         $customer = auth()->user()->customer;
 
-        $followings = $customer->followings();
+        $followings = $customer->followedShops();
 
         // Response
         return $this->json('orders', [
-            'status_wise_orders' => $followings,
+            'followings' => $followings,
+        ]);
+    }
+
+    public function followStore(Request $request)
+    {
+        $request->validate([
+            'shop_id' => ['required', 'exists:shops,id'],
+        ]);
+
+        $customer = auth()->user()->customer;
+        $shopId = $request->shop_id;
+
+        $alreadyFollowed = ShopFollower::where([
+            'customer_id' => $customer->id,
+            'shop_id'     => $shopId,
+        ])->first();
+
+        // 🔁 Toggle logic
+        if ($alreadyFollowed) {
+            $alreadyFollowed->delete();
+
+            return $this->json('Store unfollowed', [
+                'followed' => false,
+                'shop_id'  => $shopId,
+            ]);
+        }
+
+        ShopFollower::create([
+            'customer_id' => $customer->id,
+            'shop_id'     => $shopId,
+        ]);
+
+        return $this->json('Store followed', [
+            'followed' => true,
+            'shop_id'  => $shopId,
         ]);
     }
 }

@@ -63,4 +63,14 @@ class Customer extends Model
     {
         return $this->hasMany(ShopFollower::class, 'customer_id');
     }
+
+    public function followedShops()
+    {
+        return $this->belongsToMany(
+            Shop::class,
+            'shop_followers',
+            'customer_id',
+            'shop_id'
+        );
+    }
 }
