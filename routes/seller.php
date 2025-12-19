@@ -99,6 +99,7 @@ Route::prefix('/seller')->group(function () {
         // Subscription
         Route::controller(SubscriptionController::class)->group(function () {
             Route::get('/subscription', 'index');
+            Route::get('/subscription/purchase', 'purchase');
             Route::post('/subscription/purchase', 'purchase');
         });
 
