@@ -19,14 +19,11 @@ class SubscriptionController extends Controller
         $generalSettings = generaleSetting('setting');
         $shop = generaleSetting('shop');
 
-        if ($generalSettings?->business_based_on !== 'subscription') {
+        if ($generalSettings?->business_based_on != 'subscription') {
             abort(404);
         }
 
-        $subscriptionPlans = SubscriptionPlanRepository::query()
-            ->active()
-            ->paginate(20);
-
+        $subscriptionPlans = SubscriptionPlanRepository::query()->active()->paginate(20);
         $paymentGateways = Cache::rememberForever('payment_gateway', function () {
             return PaymentGateway::where('is_active', true)->get();
         });
@@ -36,28 +33,29 @@ class SubscriptionController extends Controller
             ->where('status', SubscriptionStatus::ACTIVE->value)
             ->first();
 
-        if ($currentSubscription && $currentSubscription->ends_at) {
+        // if ($currentSubscription) {
 
-            $now = now();
-
-            $isExpired = $currentSubscription->ends_at->lt($now);
-            $aboutToExpire = !$isExpired && $currentSubscription->ends_at->lte($now->copy()->addDays(7));
-
-            // attach computed values (safe for API response)
-            $currentSubscription->subscription_expired = $isExpired;
-            $currentSubscription->subscription_about_to_expire = $aboutToExpire;
-            $currentSubscription->subscription_time_left = $isExpired
-                ? null
-                : $currentSubscription->ends_at->diffInLargestUnit($now);
-        }
+        //     if ($currentSubscription->ends_at && $currentSubscription->ends_at->lt(now())) {
+        //         $currentSubscription->merge([
+        //             'subscription_expired' => true,
+        //             'subscription_about_to_expire' => true,
+        //             'subscription_time_left' => diffInLargestUnit(now(), $currentSubscription->ends_at),
+        //         ]);
+        //     } elseif ($currentSubscription->ends_at && $currentSubscription->ends_at->lt(now()->addDays(7))) {
+        //         $currentSubscription->merge([
+        //             'subscription_expired' => false,
+        //             'subscription_about_to_expire' => true,
+        //             'subscription_time_left' => diffInLargestUnit(now(), $currentSubscription->ends_at),
+        //         ]);
+        //     }
+        // }
 
         return $this->json('subscription lists', [
             'current_subscription' => $currentSubscription,
             'subscription' => $subscriptionPlans,
-            'payments' => $paymentGateways,
+            'payments' => $paymentGateways
         ]);
     }
-
 
     public function purchase(SubscriptionPurchaseRequest $request)
     {
