@@ -38,6 +38,7 @@ class ShopDetailsResource extends JsonResource
             'banner' => $this->banner,
             'state' => $this->state,
             'district' => $this->district,
+            'is_followed' => (bool) $this->is_followed,
             'followers' => (int) ShopFollower::where('shop_id', $this->id)->count(),
             'total_products' => (int) $this->products()->isActive()->count(),
             'total_categories' => (int) $this->categories()->active()->count(),

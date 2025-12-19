@@ -31,6 +31,11 @@ class ShopFollowerController extends Controller
                 ->with(['products', 'categories', 'reviews', 'banners'])
                 ->orderByDesc('average_rating')
                 ->orderByDesc('orders_count')
+                ->withExists([
+                    'followers as is_followed' => function ($q) use ($customer) {
+                        $q->where('customer_id', $customer->id);
+                    }
+                ])
                 ->paginate($perPage); // ✅ IMPORTANT
         } else {
             $shops = $customer
