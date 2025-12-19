@@ -12,6 +12,7 @@ use App\Http\Controllers\API\Seller\ReturnOrderController;
 use App\Http\Controllers\API\Seller\UserController;
 use App\Http\Controllers\API\Seller\WalletController;
 use App\Http\Controllers\Seller\SellerChatController;
+use App\Http\Controllers\Seller\SubscriptionController;
 use App\Http\Controllers\Shop\ColorController;
 use Illuminate\Support\Facades\Route;
 
@@ -93,6 +94,14 @@ Route::prefix('/seller')->group(function () {
             Route::get('/wallet/history', 'history');
             Route::post('/wallet/withdraw', 'withdraw');
         });
+
+
+        // Subscription
+        Route::controller(SubscriptionController::class)->group(function () {
+            Route::get('/subscription', 'index');
+            Route::post('/subscription/purchase', 'purchase');
+        });
+
 
         // notification
         Route::controller(NotificationController::class)->group(function () {
