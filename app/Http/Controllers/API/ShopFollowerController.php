@@ -22,12 +22,19 @@ class ShopFollowerController extends Controller
         $customer = auth()->user()->customer;
         $perPage = $request->per_page ?? 20;
 
-        $shops = $customer
-            ->followedShops()
-            ->with(['products', 'categories', 'reviews', 'banners'])
-            ->latest()
-            ->paginate($perPage);
-
+        if ($request->type == 'all') {
+            $shops = Shop::withCount('followers')
+                ->orderBy('followers_count', 'desc')
+                ->with(['products', 'categories', 'reviews', 'banners'])
+                ->latest()
+                ->paginate($perPage);
+        } else {
+            $shops = $customer
+                ->followedShops()
+                ->with(['products', 'categories', 'reviews', 'banners'])
+                ->latest()
+                ->paginate($perPage);
+        }
         return $this->json('Followed stores', [
             'followings' => ShopDetailsResource::collection($shops),
             'meta' => [
