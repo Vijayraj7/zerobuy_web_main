@@ -161,6 +161,7 @@ Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
     // followings
     Route::controller(ShopFollowerController::class)->group(function () {
         Route::get('/followings', 'index');
+        Route::get('/get-states', 'getStates');
         Route::post('/follow', 'followStore');
     });
 
