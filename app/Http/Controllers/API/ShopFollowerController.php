@@ -35,7 +35,6 @@ class ShopFollowerController extends Controller
 
         // Response
         return $this->json('orders', [
-            'total' => $total,
             'status_wise_orders' => $followings,
         ]);
     }

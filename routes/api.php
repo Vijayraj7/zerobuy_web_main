@@ -158,11 +158,9 @@ Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
     });
 
 
-    // favorite add or remove route
+    // followings
     Route::controller(ShopFollowerController::class)->group(function () {
         Route::get('/followings', 'index');
-        // Route::get('/favorite-products', 'favoriteProducts');
-        // Route::post('/product-review', 'storeReview');
     });
 
     // favorite add or remove route
