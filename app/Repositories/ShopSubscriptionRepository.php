@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Repositories;
 
 use Abedin\Maker\Repositories\Repository;
@@ -30,6 +31,7 @@ class ShopSubscriptionRepository extends Repository
             'plan_id' => $subscriptionPlan->id,
             'price' => $subscriptionPlan->price,
             'duration' => $subscriptionPlan->duration,
+            'status' => 'active',
             'sale_limit' => $subscriptionPlan->sale_limit,
             'remaining_sales' => $subscriptionPlan->sale_limit,
             'payment_id' => $payment->id,

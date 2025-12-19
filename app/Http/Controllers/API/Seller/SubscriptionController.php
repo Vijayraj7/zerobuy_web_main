@@ -70,13 +70,13 @@ class SubscriptionController extends Controller
 
         $payment = $result['payment'];
 
-        $paymentUrl = route('order.payment', [
-            'payment' => $payment,
-            'gateway' => $request->payment_method,
-        ]);
+        // $paymentUrl = route('order.payment', [
+        //     'payment' => $payment,
+        //     'gateway' => $request->payment_method,
+        // ]);
 
         return $this->json('Subscription created', [
-            'subscription_payment_url' => $paymentUrl,
+            'subscription_payment_url' => 'done',
         ]);
     }
 
