@@ -14,13 +14,13 @@ class ShopFollower extends Model
         'shop_id',
     ];
 
-    // public function customer()
-    // {
-    //     return $this->belongsTo(Customer::class);
-    // }
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class, 'customer_id');
+    }
 
-    // public function shop()
-    // {
-    //     return $this->belongsTo(Shop::class);
-    // }
+    public function shop()
+    {
+        return $this->belongsTo(Shop::class, 'shop_id');
+    }
 }

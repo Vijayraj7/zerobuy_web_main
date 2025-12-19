@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\WhatsAppChatController;
 use App\Http\Controllers\API\TicketIssueTypeController;
 use App\Http\Controllers\API\Auth\ForgotPasswordController;
 use App\Http\Controllers\API\ReturnOrderController;
+use App\Http\Controllers\API\ShopFollowerController;
 use App\Http\Controllers\API\SubCategoryController;
 use App\Http\Controllers\API\SupportTicketMessageController;
 
@@ -154,6 +155,14 @@ Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
     // recently view route
     Route::controller(HomeController::class)->group(function () {
         Route::get('/recently-views', 'recentlyViews');
+    });
+
+
+    // favorite add or remove route
+    Route::controller(ShopFollowerController::class)->group(function () {
+        Route::get('/followings', 'index');
+        // Route::get('/favorite-products', 'favoriteProducts');
+        // Route::post('/product-review', 'storeReview');
     });
 
     // favorite add or remove route

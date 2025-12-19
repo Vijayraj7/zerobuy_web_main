@@ -59,8 +59,8 @@ class Customer extends Model
         return $this->hasMany(ReturnOrder::class);
     }
 
-    // public function shopFollowers()
-    // {
-    //     return $this->hasMany(ShopFollower::class);
-    // }
+    public function followings()
+    {
+        return $this->hasMany(ShopFollower::class, 'customer_id');
+    }
 }
