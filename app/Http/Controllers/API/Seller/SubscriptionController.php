@@ -59,53 +59,72 @@ class SubscriptionController extends Controller
 
     public function purchase(SubscriptionPurchaseRequest $request)
     {
-        $paymentGateway = PaymentGateway::where('name', $request->payment_method)->first();
-
-        if (! $paymentGateway || ! $paymentGateway->is_active) {
-            $message = $paymentGateway ? 'Payment gateway not active' : 'Payment gateway not found';
-
-            return back()->withErrors(['payment_method' => $message]);
-        }
-
+        $paymentGateway = PaymentGateway::where('name', $request->payment_method)->firstOrFail();
         $subscriptionPlan = SubscriptionPlanRepository::find($request->plan_id);
+
         $result = ShopSubscriptionRepository::storeByRequest($request, $subscriptionPlan);
-
         $payment = $result['payment'];
-        $dirName = $paymentGateway->alias;
-        $controller = 'App\\Http\\Controllers\\Gateway\\' . $dirName . '\\ProcessController';
 
-        $user = $request->user();
+        $controller = 'App\\Http\\Controllers\\Gateway\\' .
+            $paymentGateway->alias . '\\ProcessController';
 
-        $info = [
-            'email' => $user->email,
-            'phone' => $user->phone,
-            'name' => $user->name,
-            'description' => sprintf(
-                'Plan: %s, price: %s, duration: %s, sale limit: %s',
-                $subscriptionPlan->name,
-                $subscriptionPlan->price,
-                $subscriptionPlan->duration,
-                $subscriptionPlan->sale_limit
-            ),
-            'type' => 'subscription',
-        ];
+        $url = $controller::process($paymentGateway, $payment, []);
 
-        $url = $controller::process($paymentGateway, $payment, $info);
-
-        $error = json_decode($url);
-
-        if ($error) {
-            $message = 'Opps! Payment gateway error occurred not configured correctly';
-            $message2 = 'Payment gateway problem: ' . $error->error;
-
-            return back()->with('alertError', [
-                'message' => $message,
-                'message2' => $message2,
-            ]);
-        }
-
-        return redirect()->away($url);
+        return response()->json([
+            'payment_url' => $url,
+        ]);
     }
+
+
+    // public function purchase(SubscriptionPurchaseRequest $request)
+    // {
+    //     $paymentGateway = PaymentGateway::where('name', $request->payment_method)->first();
+
+    //     if (! $paymentGateway || ! $paymentGateway->is_active) {
+    //         $message = $paymentGateway ? 'Payment gateway not active' : 'Payment gateway not found';
+
+    //         return back()->withErrors(['payment_method' => $message]);
+    //     }
+
+    //     $subscriptionPlan = SubscriptionPlanRepository::find($request->plan_id);
+    //     $result = ShopSubscriptionRepository::storeByRequest($request, $subscriptionPlan);
+
+    //     $payment = $result['payment'];
+    //     $dirName = $paymentGateway->alias;
+    //     $controller = 'App\\Http\\Controllers\\Gateway\\' . $dirName . '\\ProcessController';
+
+    //     $user = $request->user();
+
+    //     $info = [
+    //         'email' => $user->email,
+    //         'phone' => $user->phone,
+    //         'name' => $user->name,
+    //         'description' => sprintf(
+    //             'Plan: %s, price: %s, duration: %s, sale limit: %s',
+    //             $subscriptionPlan->name,
+    //             $subscriptionPlan->price,
+    //             $subscriptionPlan->duration,
+    //             $subscriptionPlan->sale_limit
+    //         ),
+    //         'type' => 'subscription',
+    //     ];
+
+    //     $url = $controller::process($paymentGateway, $payment, $info);
+
+    //     $error = json_decode($url);
+
+    //     if ($error) {
+    //         $message = 'Opps! Payment gateway error occurred not configured correctly';
+    //         $message2 = 'Payment gateway problem: ' . $error->error;
+
+    //         return back()->with('alertError', [
+    //             'message' => $message,
+    //             'message2' => $message2,
+    //         ]);
+    //     }
+
+    //     return redirect()->away($url);
+    // }
 
     public function paymentSuccess(Request $request, Payment $payment)
     {
