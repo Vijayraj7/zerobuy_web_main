@@ -22,36 +22,34 @@ class ShopFollowerController extends Controller
         $customer = auth()->user()->customer;
         $perPage = $request->per_page ?? 20;
 
-        if ($request->type === 'all') {
-            $shops = ShopRepository::query()
-                ->isActive()
-                ->whereHas('products', fn($q) => $q->isActive())
-                ->withCount(['followers', 'orders'])
-                ->withAvg('reviews as average_rating', 'rating')
-                ->with(['products', 'categories', 'reviews', 'banners'])
-                ->orderByDesc('average_rating')
-                ->orderByDesc('orders_count')
-                ->paginate($perPage);
+        if ($request->type == 'all') {
+            // $shops = Shop::withCount('followers')
+            //     ->orderBy('followers_count', 'desc')
+            //     ->with(['products', 'categories', 'reviews', 'banners'])
+            //     ->latest()
+            //     ->paginate($perPage);
+
+            $shops = collect([]);
+
+            $shops = ShopRepository::query()->isActive()->whereHas('products', function ($query) {
+                return $query->isActive();
+            })->withCount('orders')->with(['products', 'categories', 'reviews', 'banners'])->withAvg('reviews as average_rating', 'rating')->orderByDesc('average_rating')->orderByDesc('orders_count')->take(8)->get();
         } else {
             $shops = $customer
                 ->followedShops()
-                ->withCount('followers')
                 ->with(['products', 'categories', 'reviews', 'banners'])
                 ->latest()
                 ->paginate($perPage);
         }
-
-        return $this->json('Stores list', [
+        return $this->json('Followed stores', [
             'stores' => ShopDetailsResource::collection($shops),
             'meta' => [
                 'current_page' => $shops->currentPage(),
                 'last_page' => $shops->lastPage(),
-                'per_page' => $shops->perPage(),
                 'total' => $shops->total(),
             ],
         ]);
     }
-
 
     public function followStore(Request $request)
     {
