@@ -57,6 +57,7 @@ Route::name('shop.')->group(function () {
         // Subscription
         Route::controller(SubscriptionController::class)->group(function () {
             Route::get('/subscription', 'index')->name('subscription.index');
+            Route::get('/subscription/purchase', 'purchase')->name('subscription.get.purchase');
             Route::post('/subscription/purchase', 'purchase')->name('subscription.purchase');
         });
 
