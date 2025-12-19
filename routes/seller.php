@@ -12,7 +12,7 @@ use App\Http\Controllers\API\Seller\ReturnOrderController;
 use App\Http\Controllers\API\Seller\UserController;
 use App\Http\Controllers\API\Seller\WalletController;
 use App\Http\Controllers\Seller\SellerChatController;
-use App\Http\Controllers\Seller\SubscriptionController;
+use App\Http\Controllers\API\Seller\SubscriptionController;
 use App\Http\Controllers\Shop\ColorController;
 use Illuminate\Support\Facades\Route;
 

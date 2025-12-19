@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Seller;
+namespace App\Http\Controllers\API\Seller;
 
 use App\Enums\SubscriptionStatus;
 use App\Http\Controllers\Controller;
