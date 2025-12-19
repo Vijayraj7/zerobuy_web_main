@@ -41,6 +41,11 @@ class ShopFollowerController extends Controller
             $shops = $customer
                 ->followedShops()
                 ->with(['products', 'categories', 'reviews', 'banners'])
+                ->withExists([
+                    'followers as is_followed' => function ($q) use ($customer) {
+                        $q->where('customer_id', $customer->id);
+                    }
+                ])
                 ->latest()
                 ->paginate($perPage);
         }
