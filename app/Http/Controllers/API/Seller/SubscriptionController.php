@@ -60,21 +60,26 @@ class SubscriptionController extends Controller
     public function purchase(SubscriptionPurchaseRequest $request)
     {
         $paymentGateway = PaymentGateway::where('name', $request->payment_method)->firstOrFail();
-        $subscriptionPlan = SubscriptionPlanRepository::find($request->plan_id);
 
-        $result = ShopSubscriptionRepository::storeByRequest($request, $subscriptionPlan);
+        $subscriptionPlan = SubscriptionPlanRepository::findOrFail($request->plan_id);
+
+        $result = ShopSubscriptionRepository::storeByRequest(
+            $request,
+            $subscriptionPlan
+        );
+
         $payment = $result['payment'];
 
-        $controller = 'App\\Http\\Controllers\\Gateway\\' .
-            $paymentGateway->alias . '\\ProcessController';
+        $paymentUrl = route('order.payment', [
+            'payment' => $payment,
+            'gateway' => $request->payment_method,
+        ]);
 
-        $url = $controller::process($paymentGateway, $payment, []);
-
-        return response()->json([
-            'message' => 'success',
-            'payment_url' => $url,
+        return $this->json('Subscription created', [
+            'subscription_payment_url' => $paymentUrl,
         ]);
     }
+
 
 
     // public function purchase(SubscriptionPurchaseRequest $request)
