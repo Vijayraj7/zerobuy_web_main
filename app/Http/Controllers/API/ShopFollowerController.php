@@ -22,18 +22,16 @@ class ShopFollowerController extends Controller
         $customer = auth()->user()->customer;
         $perPage = $request->per_page ?? 20;
 
-        if ($request->type == 'all') {
-            // $shops = Shop::withCount('followers')
-            //     ->orderBy('followers_count', 'desc')
-            //     ->with(['products', 'categories', 'reviews', 'banners'])
-            //     ->latest()
-            //     ->paginate($perPage);
-
-            $shops = collect([]);
-
-            $shops = ShopRepository::query()->isActive()->whereHas('products', function ($query) {
-                return $query->isActive();
-            })->withCount('orders')->with(['products', 'categories', 'reviews', 'banners'])->withAvg('reviews as average_rating', 'rating')->orderByDesc('average_rating')->orderByDesc('orders_count')->take(8)->get();
+        if ($request->type === 'all') {
+            $shops = ShopRepository::query()
+                ->isActive()
+                ->whereHas('products', fn($q) => $q->isActive())
+                ->withCount('orders')
+                ->withAvg('reviews as average_rating', 'rating')
+                ->with(['products', 'categories', 'reviews', 'banners'])
+                ->orderByDesc('average_rating')
+                ->orderByDesc('orders_count')
+                ->paginate($perPage); // ✅ IMPORTANT
         } else {
             $shops = $customer
                 ->followedShops()
@@ -41,13 +39,15 @@ class ShopFollowerController extends Controller
                 ->latest()
                 ->paginate($perPage);
         }
-        return $this->json('Followed stores', [
+
+        return $this->json('Stores list', [
             'type' => $request->type,
             's' => Shop::all(),
             'stores' => ShopDetailsResource::collection($shops),
             'meta' => [
                 'current_page' => $shops->currentPage(),
                 'last_page' => $shops->lastPage(),
+                'per_page' => $shops->perPage(),
                 'total' => $shops->total(),
             ],
         ]);
