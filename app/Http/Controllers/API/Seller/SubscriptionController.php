@@ -62,6 +62,41 @@ class SubscriptionController extends Controller
         $subscriptionPlan = SubscriptionPlanRepository::find($request->plan_id);
         $result = ShopSubscriptionRepository::storeByRequest($request, $subscriptionPlan);
 
+        $subscription = $result['subscription'];
+
+        $payment = $result['payment'];
+
+        $payment->update([
+            'is_paid' => true,
+        ]);
+
+        $currentSubscription = ShopSubscriptionRepository::query()
+            ->where('shop_id', $subscription->shop_id)
+            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->first();
+
+        $saleLimit = $subscription->sale_limit;
+        $remainingSales = $subscription->sale_limit;
+
+        if ($currentSubscription) {
+            if ($saleLimit && $currentSubscription->remaining_sales) {
+                $saleLimit = $saleLimit + $currentSubscription->remaining_sales;
+                $remainingSales = $saleLimit + $currentSubscription->remaining_sales;
+            }
+
+            $currentSubscription->update([
+                'status' => SubscriptionStatus::CANCELLED,
+            ]);
+        }
+
+        $subscription->update([
+            'starts_at' => now(),
+            'ends_at' => $subscription->duration ? now()->addDays((int) $subscription->duration) : null,
+            'sale_limit' => $saleLimit,
+            'remaining_sales' => $remainingSales,
+            'status' => SubscriptionStatus::ACTIVE,
+        ]);
+
         return $this->json('Subscription created', [
             'subscription' => $result,
         ]);
