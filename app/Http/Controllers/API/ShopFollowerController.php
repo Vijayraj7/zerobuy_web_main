@@ -25,18 +25,14 @@ class ShopFollowerController extends Controller
         if ($request->type === 'all') {
             $shops = ShopRepository::query()
                 ->isActive()
-                ->whereHas('products', fn($q) => $q->isActive())
+                // ->where('is_branded', true)
                 ->withCount('orders')
                 ->withAvg('reviews as average_rating', 'rating')
-                ->with(['products', 'categories', 'reviews', 'banners'])
-                ->orderByDesc('average_rating')
-                ->orderByDesc('orders_count')
                 ->withExists([
-                    'followers as is_followed' => function ($q) use ($customer) {
-                        $q->where('customer_id', $customer->id);
-                    }
+                    'followers as is_followed' => fn($q) =>
+                    $q->where('customer_id', $customer->id)
                 ])
-                ->paginate($perPage); // ✅ IMPORTANT
+                ->paginate(20);
         } else if ($request->type === 'branded') {
             $shops = ShopRepository::query()
                 ->isActive()
@@ -59,7 +55,7 @@ class ShopFollowerController extends Controller
                     $q->where('customer_id', $customer->id)
                 ])
                 ->paginate(20);
-        } else {
+        } else if ($request->type === 'following') {
             $shops = $customer
                 ->followedShops()
                 ->with(['products', 'categories', 'reviews', 'banners'])
