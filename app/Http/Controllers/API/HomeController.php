@@ -43,6 +43,14 @@ class HomeController extends Controller
 
         $banners = BannerRepository::query()->whereNull('shop_id')->active()->get();
 
+        $categories = BusinessCategoryRepository::query()->active()
+            ->whereHas('shops', function ($query) use ($rootShop) {
+                return $query->where('shop_id', $rootShop->id);
+            })->whereHas('products', function ($product) {
+                return $product->where('is_active', true);
+            })->withCount('products')->orderByDesc('products_count')
+            ->take(10)->get();
+
         $businesscategories = BusinessCategoryRepository::query()->active()
             ->whereHas('shops', function ($query) use ($rootShop) {
                 return $query->where('shop_id', $rootShop->id);
@@ -85,6 +93,7 @@ class HomeController extends Controller
         return $this->json('home', [
             'banners' => BannerResource::collection($banners),
             'ads' => BannerResource::collection($ads),
+            'categories' => CategoryResource::collection($categories),
             'business_categories' => BusinessCategoryResource::collection($businesscategories),
             'shops' => ShopResource::collection($shops),
             'popular_products' => ProductResource::collection($popularProducts),
