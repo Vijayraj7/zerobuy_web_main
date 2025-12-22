@@ -37,6 +37,38 @@ class ShopFollowerController extends Controller
                     }
                 ])
                 ->paginate($perPage); // ✅ IMPORTANT
+        } else if ($request->type === 'branded') {
+            $shops = ShopRepository::query()
+                ->isActive()
+                ->whereHas('products', fn($q) => $q->isActive())
+                ->withCount('orders')
+                ->withAvg('reviews as average_rating', 'rating')
+                ->with(['products', 'categories', 'reviews', 'banners'])
+                ->orderByDesc('average_rating')
+                ->orderByDesc('orders_count')
+                ->where('is_branded', true)
+                ->withExists([
+                    'followers as is_followed' => function ($q) use ($customer) {
+                        $q->where('customer_id', $customer->id);
+                    }
+                ])
+                ->paginate($perPage); // ✅ IMPORTANT
+        } else if ($request->type === 'verified') {
+            $shops = ShopRepository::query()
+                ->isActive()
+                ->whereHas('products', fn($q) => $q->isActive())
+                ->withCount('orders')
+                ->withAvg('reviews as average_rating', 'rating')
+                ->with(['products', 'categories', 'reviews', 'banners'])
+                ->orderByDesc('average_rating')
+                ->orderByDesc('orders_count')
+                ->where('is_verified', true)
+                ->withExists([
+                    'followers as is_followed' => function ($q) use ($customer) {
+                        $q->where('customer_id', $customer->id);
+                    }
+                ])
+                ->paginate($perPage); // ✅ IMPORTANT
         } else {
             $shops = $customer
                 ->followedShops()
