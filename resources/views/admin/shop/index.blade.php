@@ -149,6 +149,12 @@
                             <th>{{ __('Logo') }}</th>
                             <th>{{ __('Name') }}</th>
                             @hasPermission('admin.shop.status.toggle')
+                            <th>Branded</th>
+                            @endhasPermission
+                            @hasPermission('admin.shop.status.toggle')
+                            <th>Verified</th>
+                            @endhasPermission
+                            @hasPermission('admin.shop.status.toggle')
                             <th>{{ __('Status') }}</th>
                             @endhasPermission
                             @hasPermission('admin.shop.products')
