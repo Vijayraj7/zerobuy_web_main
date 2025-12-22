@@ -30,6 +30,7 @@ use App\Http\Controllers\API\ReturnOrderController;
 use App\Http\Controllers\API\ShopFollowerController;
 use App\Http\Controllers\API\SubCategoryController;
 use App\Http\Controllers\API\SupportTicketMessageController;
+use App\Http\Controllers\API\ChildCategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -97,6 +98,7 @@ Route::controller(CategoryController::class)->group(function () {
     Route::get('/categories', 'index');
     Route::get('/category/{category_id}/attributes', 'getCategoryAttributes');
 });
+Route::get('/child-categories', [ChildCategoryController::class, 'index']);
 
 // category route
 Route::controller(SubCategoryController::class)->group(function () {
