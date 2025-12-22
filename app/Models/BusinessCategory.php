@@ -23,12 +23,12 @@ class BusinessCategory extends Model
     {
         return $this->hasMany(Category::class, 'business_category_id');
     }
-    public function shops(): BelongsToMany
-    {
-        return $this->belongsToMany(Shop::class, 'shop_categories');
-    }
-    public function products(): BelongsToMany
-    {
-        return $this->belongsToMany(Product::class, 'product_business_categories');
-    }
+    // public function shops(): BelongsToMany
+    // {
+    //     return $this->belongsToMany(Shop::class, 'shop_categories');
+    // }
+    // public function products(): BelongsToMany
+    // {
+    //     return $this->belongsToMany(Product::class, 'product_business_categories');
+    // }
 }
