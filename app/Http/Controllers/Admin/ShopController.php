@@ -134,8 +134,8 @@ class ShopController extends Controller
         }
 
         // Update the user status
-        $shop->user()->update([
-            'is_verified' => ! $shop->user->is_verified,
+        $shop->update([
+            'is_verified' => ! $shop->is_verified,
         ]);
 
         return back()->withSuccess(__('Verified updated successfully'));

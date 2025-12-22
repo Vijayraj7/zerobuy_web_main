@@ -70,6 +70,20 @@
                                     </label>
                                 </div>
                                 <div class="item">
+                                    <strong>Branded</strong>
+                                    <label class="switch mb-0" data-bs-toggle="tooltip" data-bs-placement="left"
+                                        data-bs-title="Click here to enable branded store">
+                                        @hasPermission('admin.shop.status.toggle')
+                                            <a href="{{ route('admin.shop.verify.toggle', $shop->id) }}">
+                                                <input type="checkbox" {{ $shop->is_verified ? 'checked' : '' }}>
+                                                <span class="slider round"></span>
+                                            </a>
+                                        @else
+                                            <input type="checkbox" {{ $shop->is_verified ? 'checked' : '' }}>
+                                        @endhasPermission
+                                    </label>
+                                </div>
+                                <div class="item">
                                     <strong>{{ __('Status') }}</strong>
                                     <label class="switch mb-0" data-bs-toggle="tooltip" data-bs-placement="left"
                                         data-bs-title="{{__('Click here to change status')}}">
