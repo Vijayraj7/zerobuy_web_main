@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::table('shops', function (Blueprint $table) {
             //
-            $table->boolean('is_branded')->default(false)->after('is_branded');
-            $table->index('is_verified')->default(false)->after('is_verified');
+            $table->boolean('is_branded')->default(false)->after('status');
+            $table->boolean('is_verified')->default(false)->after('is_branded');
         });
     }
 
