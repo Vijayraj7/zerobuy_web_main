@@ -173,6 +173,26 @@
                                 <td>{{ $shop->name }}</td>
                                 @hasPermission('admin.shop.status.toggle')
                                 <td>
+                                    <label class="switch mb-0" data-bs-toggle="tooltip" data-bs-placement="top" title="{{__('Click here to change branded')}}">
+                                        <a href="{{ route('admin.shop.branded.toggle', $shop->id) }}">
+                                            <input type="checkbox" {{ $shop->is_branded ? 'checked' : '' }}>
+                                            <span class="slider round"></span>
+                                        </a>
+                                    </label>
+                                </td>
+                                @endhasPermission
+                                @hasPermission('admin.shop.status.toggle')
+                                <td>
+                                    <label class="switch mb-0" data-bs-toggle="tooltip" data-bs-placement="top" title="{{__('Click here to change status')}}">
+                                        <a href="{{ route('admin.shop.verify.toggle', $shop->id) }}">
+                                            <input type="checkbox" {{ $shop->is_verified ? 'checked' : '' }}>
+                                            <span class="slider round"></span>
+                                        </a>
+                                    </label>
+                                </td>
+                                @endhasPermission
+                                @hasPermission('admin.shop.status.toggle')
+                                <td>
                                     <label class="switch mb-0" data-bs-toggle="tooltip" data-bs-placement="top" title="{{__('Click here to change status')}}">
                                         <a href="{{ route('admin.shop.status.toggle', $shop->id) }}">
                                             <input type="checkbox" {{ $shop->user?->is_active ? 'checked' : '' }}>
