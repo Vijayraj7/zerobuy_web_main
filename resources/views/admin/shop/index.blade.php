@@ -61,11 +61,11 @@
                                         data-bs-title="Click here to enable branded store">
                                         @hasPermission('admin.shop.status.toggle')
                                             <a href="{{ route('admin.shop.branded.toggle', $shop->id) }}">
-                                                <input type="checkbox" {{ $shop->user?->is_branded ? 'checked' : '' }}>
+                                                <input type="checkbox" {{ $shop->is_branded ? 'checked' : '' }}>
                                                 <span class="slider round"></span>
                                             </a>
                                         @else
-                                            <input type="checkbox" {{ $shop->user?->is_branded ? 'checked' : '' }}>
+                                            <input type="checkbox" {{ $shop->is_branded ? 'checked' : '' }}>
                                         @endhasPermission
                                     </label>
                                 </div>
