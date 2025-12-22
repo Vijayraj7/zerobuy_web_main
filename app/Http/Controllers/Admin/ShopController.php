@@ -120,6 +120,28 @@ class ShopController extends Controller
     }
 
     /**
+     * Toggle the status of the shop user.
+     */
+    public function verifyToggle(Shop $shop)
+    {
+        if (app()->environment() == 'local' && $shop->user->email == 'shop@readyecommerce.com') {
+            return back()->with('demoMode', 'You can not update status of the shop in demo mode');
+        }
+
+        $user = $shop->user;
+        if ($user->hasRole('root')) {
+            return back()->with('error', __('You can not update status of the root shop'));
+        }
+
+        // Update the user status
+        $shop->user()->update([
+            'is_verified' => ! $shop->user->is_verified,
+        ]);
+
+        return back()->withSuccess(__('Verified updated successfully'));
+    }
+
+    /**
      * Display the shop orders.
      */
     public function orders(Shop $shop)
