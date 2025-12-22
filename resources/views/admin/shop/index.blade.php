@@ -65,7 +65,7 @@
                                                 <span class="slider round"></span>
                                             </a>
                                         @else
-                                            <input type="checkbox" {{ $shop->user?->is_active ? 'checked' : '' }}>
+                                            <input type="checkbox" {{ $shop->user?->is_branded ? 'checked' : '' }}>
                                         @endhasPermission
                                     </label>
                                 </div>

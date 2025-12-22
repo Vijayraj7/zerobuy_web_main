@@ -112,8 +112,8 @@ class ShopController extends Controller
         }
 
         // Update the user status
-        $shop->user()->update([
-            'is_branded' => ! $shop->user->is_branded,
+        $shop->update([
+            'is_branded' => ! $shop->is_branded,
         ]);
 
         return back()->withSuccess(__('Branded updated successfully'));
