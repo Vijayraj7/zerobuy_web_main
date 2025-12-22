@@ -195,7 +195,7 @@ Route::name('admin.')->group(function () {
         Route::controller(AjaxCategoryController::class)->group(function () {
             Route::get('/get-categories/{businessCategory}', 'categories')->name('ajax.categories');
             Route::get('/get-subcategories/{category}', 'subCategories')->name('ajax.subcategories'); 
-        }); 
+        });
 
         // Category Attribute
         // Route::controller(CategoryAttributeController::class)->prefix('category-attributes')->group(function () {
