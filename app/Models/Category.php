@@ -37,10 +37,10 @@ class Category extends Model
         return $this->hasMany(Blog::class, 'category_id');
     }
 
-    // public function subCategories(): BelongsToMany
-    // {
-    //     return $this->belongsToMany(SubCategory::class, 'category_subcategories')->where('is_active', 1);
-    // }
+    public function subCategories(): BelongsToMany
+    {
+        return $this->belongsToMany(SubCategory::class, 'category_subcategories')->where('is_active', 1);
+    }
 
     // added by ancy
     public function businessCategory()
@@ -48,10 +48,10 @@ class Category extends Model
         return $this->belongsTo(BusinessCategory::class, 'business_category_id');
     }
     // added by ancy
-    public function subCategories()
-    {
-        return $this->hasMany(SubCategory::class, 'category_id');
-    }
+    // public function subCategories()
+    // {
+    //     return $this->hasMany(SubCategory::class, 'category_id');
+    // }
 
     public function shops(): BelongsToMany
     {
