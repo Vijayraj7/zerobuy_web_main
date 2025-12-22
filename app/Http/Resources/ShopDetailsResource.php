@@ -47,8 +47,8 @@ class ShopDetailsResource extends JsonResource
             'shop_status' => (string) $shopStatus,
             'short_description' => $this->short_description,
             'description' => $this->description,
-            'is_verified' => false,
-            'is_branded' => false,
+            'is_verified' => $this->is_verified,
+            'is_branded' => $this->is_branded,
             'banners' => BannerResource::collection($this->banners()->where('status', 1)->get()),
         ];
     }
