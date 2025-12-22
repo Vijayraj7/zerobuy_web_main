@@ -9,20 +9,39 @@ use Illuminate\Http\Request;
 
 class SubCategoryController extends Controller
 {
+    // public function index(Request $request)
+    // {
+    //     $request->validate([
+    //         'category_id' => 'required|exists:categories,id',
+    //     ]);
+
+    //     $categoryId = $request->category_id;
+
+    //     $subCategories = SubCategory::whereHas('categories', function ($query) use ($categoryId) {
+    //         return $query->where('category_id', $categoryId);
+    //     })->isActive()->get();
+
+    //     return $this->json('Sub categories list', [
+    //         'sub_categories' => SubCategoryResource::collection($subCategories),
+    //     ]);
+    // }
+
     public function index(Request $request)
     {
         $request->validate([
             'category_id' => 'required|exists:categories,id',
         ]);
 
-        $categoryId = $request->category_id;
+        $subCategories = SubCategory::where('category_id', $request->category_id)
+            ->where('is_active', 1)
+            ->get();
 
-        $subCategories = SubCategory::whereHas('categories', function ($query) use ($categoryId) {
-            return $query->where('category_id', $categoryId);
-        })->isActive()->get();
-
-        return $this->json('Sub categories list', [
-            'sub_categories' => SubCategoryResource::collection($subCategories),
+        return response()->json([
+            'status' => true,
+            'data' => [
+                'sub_categories' => SubCategoryResource::collection($subCategories),
+            ],
         ]);
     }
+
 }

@@ -293,9 +293,9 @@
 
 
 <!------------------------------ Category Management ------------------------------>
-@hasPermission([ 'admin.category.index', 'admin.subcategory.index', 'admin.category.create', 'admin.subcategory.create'])
+@hasPermission([ 'admin.business-category.index', 'admin.category.index', 'admin.subcategory.index', 'admin.child-category.index', 'admin.business-category.create', 'admin.category.create', 'admin.subcategory.create', 'admin.child-category.create'])
     <li>
-        <a class="menu {{ request()->routeIs('admin.category.*', 'admin.subcategory.*') ? 'active' : '' }}"
+        <a class="menu {{ request()->routeIs('admin.business-category.*', 'admin.category.*', 'admin.subcategory.*', 'admin.child-category.*') ? 'active' : '' }}"
             data-bs-toggle="collapse" href="#categoryMenu">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/category.svg') }}" alt="icon"
@@ -304,18 +304,13 @@
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
-        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.category.*', 'admin.subcategory.*') ? 'show' : '' }}"
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.business-category.*', 'admin.category.*', 'admin.subcategory.*', 'admin.child-category.*') ? 'show' : '' }}"
             id="categoryMenu">
             <div class="listBar">
-                <!---Main categories---> <!-- extra added by ancy -->
-                @hasPermission('admin.category.index')
-                    <a href="#" class="subMenu hasCount {{ request()->routeIs('admin.category.index') ? 'active' : '' }}">
-                        {{ __('All Main Category') }}
-                    </a>
-                @endhasPermission
-                @hasPermission('admin.category.create')
-                    <a href="#" class="subMenu hasCount {{ request()->routeIs('admin.category.create') ? 'active' : '' }}">
-                        {{ __('Add Main Category') }}
+                <!---Business Categories---> <!-- extra added by ancy -->
+                @hasPermission('admin.business-category.index')
+                    <a href="{{route('admin.business-category.index')}}" class="subMenu hasCount {{ request()->routeIs('admin.business-category.index') ? 'active' : '' }}">
+                        {{ __('Business Category') }}
                     </a>
                 @endhasPermission 
                 <!---categories--->
@@ -323,34 +318,19 @@
                     <a href="{{ route('admin.category.index') }}" class="subMenu hasCount {{ request()->routeIs('admin.category.index') ? 'active' : '' }}">
                         {{ __('All Category') }}
                     </a>
-                @endhasPermission
-                @hasPermission('admin.category.create')
-                    <a href="{{ route('admin.category.create') }}" class="subMenu hasCount {{ request()->routeIs('admin.category.create') ? 'active' : '' }}">
-                        {{ __('Add Category') }}
-                    </a>
-                @endhasPermission
+                @endhasPermission 
                 <!--- sub categories--->
                 @hasPermission('admin.subcategory.index')
                     <a href="{{ route('admin.subcategory.index') }}" class="subMenu hasCount {{ request()->routeIs('admin.subcategory.index') ? 'active' : '' }}">
                         {{ __('All Sub Category') }}
                     </a>
-                @endhasPermission
-                @hasPermission('admin.subcategory.create')
-                    <a href="{{ route('admin.subcategory.create') }}" class="subMenu hasCount {{ request()->routeIs('admin.subcategory.create') ? 'active' : '' }}">
-                        {{ __('Add Sub Category') }}
-                    </a>
-                @endhasPermission
+                @endhasPermission 
                 <!---Child categories---> <!-- extra added by ancy -->
-                @hasPermission('admin.category.index')
-                    <a href="#" class="subMenu hasCount {{ request()->routeIs('admin.category.index') ? 'active' : '' }}">
+                @hasPermission('admin.child-category.index')
+                    <a href="{{ route('admin.child-category.index') }}" class="subMenu hasCount {{ request()->routeIs('admin.child-category.index') ? 'active' : '' }}">
                         {{ __('All Child Category') }}
                     </a>
-                @endhasPermission
-                @hasPermission('admin.category.create')
-                    <a href="#" class="subMenu hasCount {{ request()->routeIs('admin.category.create') ? 'active' : '' }}">
-                        {{ __('Add Child Category') }}
-                    </a>
-                @endhasPermission
+                @endhasPermission 
             </div>
         </div>
     </li>

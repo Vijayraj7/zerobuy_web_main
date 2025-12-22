@@ -1,11 +1,11 @@
 @extends('layouts.app')
-@section('header-title', __('Sub Categories'))
+@section('header-title', __('Child Categories'))
 @section('content')
 
 <div class="d-flex align-items-center justify-content-between px-3">
-    <h4>{{ __('Sub Categories') }}</h4>
-    @hasPermission('admin.subcategory.create')
-    <button class="btn btn-primary" id="addSubCategoryBtn"><i class="fa fa-plus"></i> Add Sub Category</button>
+    <h4>{{ __('Child Categories') }}</h4>
+    @hasPermission('admin.child-category.create')
+    <button class="btn btn-primary" id="addChildCategoryBtn"><i class="fa fa-plus"></i> Add Child Category</button>
     @endhasPermission
 </div>
 
@@ -29,34 +29,36 @@
                             <th>Business Category</th>
                             <th>Category</th>
                             <th>Sub Category</th>
-                            @hasPermission('admin.subcategory.toggle')
+                            <th>Child Category</th>
+                            @hasPermission('admin.child-category.toggle')
                             <th>Status</th>
                             @endhasPermission
-                            @hasPermission('admin.subcategory.edit')
+                            @hasPermission('admin.child-category.edit')
                             <th class="text-center">Action</th>
                             @endhasPermission
                         </tr>
                     </thead>
 
                     <tbody>
-                        @forelse($subCategories as $key => $subCategory)
+                        @forelse($childCategories as $key => $childCategory)
                             <tr>
-                                <td class="text-center">{{ $subCategories->firstItem() + $key }}</td>
-                                <td><img src="{{ $subCategory->thumbnail }}" width="50"></td>
-                                <td>{{ $subCategory->businessCategory?->name ?? 'N/A' }}</td>
-                                <td>{{ $subCategory->category?->name ?? 'N/A' }}</td> 
-                                <td>{{ $subCategory->name }}</td>
-                                @hasPermission('admin.subcategory.toggle')
+                                <td class="text-center">{{ $childCategories->firstItem() + $key }}</td>
+                                <td><img src="{{ $childCategory->thumbnail }}" width="50"></td>
+                                <td>{{ $childCategory->businessCategory?->name ?? 'N/A' }}</td>
+                                <td>{{ $childCategory->category?->name ?? 'N/A' }}</td>
+                                <td>{{ $childCategory->subCategory?->name ?? 'N/A' }}</td>
+                                <td>{{ $childCategory->name }}</td>
+                                @hasPermission('admin.child-category.toggle')
                                 <td class="text-center"> 
                                     <label class="switch">
-                                        <input type="checkbox" class="status-toggle" data-id="{{ $subCategory->id }}" {{ $subCategory->is_active ? 'checked' : '' }}>
+                                        <input type="checkbox" class="status-toggle" data-id="{{ $childCategory->id }}" {{ $childCategory->status ? 'checked' : '' }}>
                                         <span class="slider round"></span>
                                     </label>
                                 </td>
                                 @endhasPermission
-                                @hasPermission('admin.subcategory.edit')
+                                @hasPermission('admin.child-category.edit')
                                 <td class="text-center"> 
-                                    <a href="javascript:;" class="btn btn-outline-primary editSubCategoryButton" data-id="{{$subCategory->id}}"><i class="fa fa-edit"></i></a>
+                                    <a href="javascript:;" class="btn btn-outline-primary editChildCategoryButton" data-id="{{$childCategory->id}}"><i class="fa fa-edit"></i></a>
                                 </td>
                                 @endhasPermission
                             </tr>
@@ -67,20 +69,20 @@
                 </table>
             </div>
             <div class="mt-3">
-                {{ $subCategories->withQueryString()->links() }}
+                {{ $childCategories->withQueryString()->links() }}
             </div>
         </div>
     </div>
 </div>
 
 {{-- MODAL --}}
-<div class="modal fade" id="subCategoryModal" tabindex="-1">
+<div class="modal fade" id="childCategoryModal" tabindex="-1">
     <div class="modal-dialog modal-md modal-dialog-centered">
         <div class="modal-content">
-            <form id="subCategoryForm" method="POST" enctype="multipart/form-data">@csrf 
-                <input type="hidden" name="sub_cat_id" id="sub_cat_id">
+            <form id="childCategoryForm" method="POST" enctype="multipart/form-data">@csrf 
+                <input type="hidden" name="child_cat_id" id="child_cat_id">
                 <div class="modal-header"> 
-                    <h4 class="modal-title" id="subCategoryModelHeading"></h4>
+                    <h4 class="modal-title" id="childCategoryModelHeading"></h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -96,10 +98,14 @@
                     <div class="mb-3">
                         <label>Category</label>
                         <select id="category" name="category_id" class="form-control" required></select>
-                    </div> 
+                    </div>
                     <div class="mb-3">
-                        <label>Sub Category Name</label>
-                        <input type="text" name="name" id="sub_name" class="form-control" required>
+                        <label>Sub Category</label>
+                        <select id="sub_category" name="sub_category_id" class="form-control" required></select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Child Category Name</label>
+                        <input type="text" name="name" id="child_name" class="form-control" required>
                     </div>
                     <div class="mt-3 d-flex align-items-center justify-content-center">
                         <div class="ratio1x1">
@@ -113,7 +119,7 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary" id="saveSubCategoryButton">Submit</button>
+                    <button class="btn btn-primary" id="saveChildCategoryButton">Submit</button>
                 </div>
             </form>
         </div>
@@ -134,32 +140,37 @@
         }, 500);
     });
     $('#resetSearch').on('click', function () {
-        window.location = "{{ route('admin.subcategory.index') }}";
+        window.location = "{{ route('admin.child-category.index') }}";
     });
 
-    // Add/Edit subcategory
-    $('#addSubCategoryBtn').click(function() {
-        resetSubCategoryForm(); 
-        $('#subCategoryModelHeading').html("Create New Sub Category");
-        $('#subCategoryModal').modal('show');
-        $('#subCategoryForm').data('mode', 'create');
+    // Add/Edit child-category
+    $('#addChildCategoryBtn').click(function() {
+        resetChildCategoryForm();
+        // $('#childCategoryForm').trigger("reset");
+        // $('#previewProfile').attr('src', 'https://placehold.co/500x500/f1f5f9/png'); // reset image
+        // $('#saveChildCategoryButton').val("create-post");
+        // $('#child_cat_id').val('');
+        $('#childCategoryModelHeading').html("Create New Child Category");
+        $('#childCategoryModal').modal('show');
+        $('#childCategoryForm').data('mode', 'create');
     });
-    function resetSubCategoryForm() {
-        $('#subCategoryForm')[0].reset();
-        $('#sub_cat_id').val('');
-        $('#category').html('<option value="">Select Category</option>'); 
+    function resetChildCategoryForm() {
+        $('#childCategoryForm')[0].reset();
+        $('#child_cat_id').val('');
+        $('#category').html('<option value="">Select Category</option>');
+        $('#sub_category').html('<option value="">Select Sub Category</option>');
         $('#previewProfile').attr('src', 'https://placehold.co/500x500/f1f5f9/png');
         $('.textdanger').remove();
     }
 
-    $('#saveSubCategoryButton').click(function (e) {
+    $('#saveChildCategoryButton').click(function (e) {
         e.preventDefault();
-        let id = $('#sub_cat_id').val();
-        let formData = new FormData($('#subCategoryForm')[0]);
-        let url = "{{ route('admin.subcategory.store') }}";
+        let id = $('#child_cat_id').val();
+        let formData = new FormData($('#childCategoryForm')[0]);
+        let url = "{{ route('admin.child-category.store') }}";
         let method = "POST";
         if (id) {
-            url = `/admin/subcategory/${id}/update`;
+            url = `/admin/child-category/${id}/update`;
             formData.append('_method', 'PUT');
         }
         $.ajax({
@@ -169,7 +180,7 @@
             processData: false,
             contentType: false,
             success: function (res) {
-                $('#subCategoryModal').modal('hide'); 
+                $('#childCategoryModal').modal('hide'); 
                 Toast.fire({
                     icon: 'success',
                     title: res.message
@@ -187,30 +198,36 @@
         });
     }); 
     
-    $('body').on('click', '.editSubCategoryButton', function() {
+    $('body').on('click', '.editChildCategoryButton', function() {
         let id = $(this).data('id');
-        $('#subCategoryForm')[0].reset();
-        $('#category').html('<option>Loading...</option>');
+        $('#childCategoryForm')[0].reset();
+        $('#category, #sub_category').html('<option>Loading...</option>');
 
-        $.get(`/admin/subcategory/${id}/edit`, function (data) {
-            const sub = data.subCategory;
+        $.get(`/admin/child-category/${id}/edit`, function (data) {
+            const child = data.childCategory;
             const categories = data.categories;
             const subCategories = data.subCategories;
 
-            $('#subCategoryModelHeading').html("Edit Sub Category");
-            $('#subCategoryModal').modal('show');
+            $('#childCategoryModelHeading').html("Edit Child Category");
+            $('#childCategoryModal').modal('show');
 
-            $('#sub_cat_id').val(sub.id);
-            $('#sub_name').val(sub.name);
+            $('#child_cat_id').val(child.id);
+            $('#child_name').val(child.name);
             $('#previewProfile').attr('src', data.thumbnail ?? 'https://placehold.co/500x500/f1f5f9/png');
             // Business Category
-            $('#business_category').val(sub.business_category_id);
+            $('#business_category').val(child.business_category_id);
             // Populate Category dropdown
             let categoryHtml = '<option value="">Select Category</option>';
             categories.forEach(cat => {
-                categoryHtml += `<option value="${cat.id}" ${cat.id == sub.category_id ? 'selected' : ''}>${cat.name}</option>`;
+                categoryHtml += `<option value="${cat.id}" ${cat.id == child.category_id ? 'selected' : ''}>${cat.name}</option>`;
             });
-            $('#category').html(categoryHtml); 
+            $('#category').html(categoryHtml);
+            // Populate Sub Category dropdown
+            let subHtml = '<option value="">Select Sub Category</option>';
+            subCategories.forEach(sub => {
+                subHtml += `<option value="${sub.id}" ${sub.id == child.sub_category_id ? 'selected' : ''}>${sub.name}</option>`;
+            });
+            $('#sub_category').html(subHtml);
         });
     });
 
@@ -234,19 +251,33 @@
     // Dropdowns
     $('#business_category').on('change', function () {
         let id = this.value;
-        $('#category').html('<option>Loading...</option>'); 
+        $('#category').html('<option>Loading...</option>');
+        $('#sub_category').html('<option>Select Sub Category</option>');
+
         if (id) {
             $.get(`/admin/get-categories/${id}`, res => {
                 $('#category').html('<option value="">Select Category</option>');
                 res.forEach(i => $('#category').append(`<option value="${i.id}">${i.name}</option>`));
             });
         }
-    }); 
+    });
+
+    $('#category').on('change', function () {
+        let id = this.value;
+        $('#sub_category').html('<option>Loading...</option>');
+
+        if (id) {
+            $.get(`/admin/get-subcategories/${id}`, res => {
+                $('#sub_category').html('<option value="">Select Sub Category</option>');
+                res.forEach(i => $('#sub_category').append(`<option value="${i.id}">${i.name}</option>`));
+            });
+        }
+    });
 
     // Status Toggle(Ajax)
     document.querySelectorAll('.status-toggle').forEach(toggle => {
         toggle.addEventListener('change', function () {
-            fetch(`/admin/subcategory/${this.dataset.id}/toggle`, {
+            fetch(`/admin/child-category/${this.dataset.id}/toggle`, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'

@@ -850,16 +850,19 @@ class ProductRepository extends Repository
             if (!empty($data['sub_categories']) && is_array($data['sub_categories'])) {
                 $product->subcategories()->sync($data['sub_categories']);
             }
-            if (!empty($data['child_categories'])) {
-                $rows = [];
-                foreach ($data['child_categories'] as $cc) {
-                    $rows[] = [
-                        'product_id'        => $product->id,
-                        'child_category_id' => $cc,
-                    ];
-                }
-                DB::table('product_child_categories')->insert($rows);
+            if (!empty($data['child_categories']) && is_array($data['child_categories'])) {
+                $product->childCategories()->sync($data['child_categories']);
             }
+            // if (!empty($data['child_categories'])) {
+            //     $rows = [];
+            //     foreach ($data['child_categories'] as $cc) {
+            //         $rows[] = [
+            //             'product_id'        => $product->id,
+            //             'child_category_id' => $cc,
+            //         ];
+            //     }
+            //     DB::table('product_child_categories')->insert($rows);
+            // }
             /** -----------------------------
              * 3. Item Details
              * ----------------------------- */

@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+
+class BusinessCategory extends Model
+{
+    use HasFactory;
+    protected $fillable = [
+        'name',
+        'slug',
+        'status',
+    ];
+    public function scopeActive(Builder $query)
+    {
+        return $query->where('status', 1);
+    }
+    public function categories()
+    {
+        return $this->hasMany(Category::class, 'business_category_id');
+    }
+}

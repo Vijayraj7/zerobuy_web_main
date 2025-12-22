@@ -1043,6 +1043,31 @@
         });
     </script>
 
+    <!-- Flash Message  -->
+    <script> 
+        function showFlash(message) {
+            // remove existing flash if any
+            const existingFlash = document.querySelector('.bulk-flash-message');
+            if (existingFlash) {
+                existingFlash.remove();
+            }
+
+            const flash = document.createElement('div');
+            flash.className = 'alert alert-danger bulk-flash-message';
+            flash.innerHTML = `
+                ${message}
+                <button class="btn-close btn-sm float-end" onclick="this.parentElement.remove()"></button>
+            `;
+            flash.style.cssText = 'position:fixed; top:10px; right:10px; z-index:9999;';
+
+            document.body.appendChild(flash);
+
+            setTimeout(() => {
+                if (flash) flash.remove();
+            }, 5000);
+        }
+    </script>
+
 </body>
 
 </html>

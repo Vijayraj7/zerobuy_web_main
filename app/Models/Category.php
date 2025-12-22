@@ -15,7 +15,8 @@ class Category extends Model
     use HasFactory;
 
     protected $guarded = ['id'];
-
+    protected $appends = ['thumbnail'];
+    
     public function translations(): HasMany
     {
         return $this->hasMany(TranslateUtility::class);
@@ -36,9 +37,20 @@ class Category extends Model
         return $this->hasMany(Blog::class, 'category_id');
     }
 
-    public function subCategories(): BelongsToMany
+    // public function subCategories(): BelongsToMany
+    // {
+    //     return $this->belongsToMany(SubCategory::class, 'category_subcategories')->where('is_active', 1);
+    // }
+
+    // added by ancy
+    public function businessCategory()
     {
-        return $this->belongsToMany(SubCategory::class, 'category_subcategories')->where('is_active', 1);
+        return $this->belongsTo(BusinessCategory::class, 'business_category_id');
+    }
+    // added by ancy
+    public function subCategories()
+    {
+        return $this->hasMany(SubCategory::class, 'category_id');
     }
 
     public function shops(): BelongsToMany

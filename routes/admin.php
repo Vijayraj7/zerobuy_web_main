@@ -55,6 +55,9 @@ use App\Http\Controllers\Admin\ReturnOrderController;
 use App\Http\Controllers\Admin\SizeController;
 use App\Http\Controllers\Admin\SubCategoryController;
 use App\Http\Controllers\Admin\UnitController;
+use App\Http\Controllers\Admin\BusinessCategoryController;
+use App\Http\Controllers\Admin\ChildCategoryController;
+use App\Http\Controllers\Admin\AjaxCategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -145,41 +148,54 @@ Route::name('admin.')->group(function () {
             Route::get('/orders/{order}/payment-status-toggle', 'paymentStatusToggle')->name('order.payment.status.toggle');
         });
 
+        // Business Categories
+        Route::controller(BusinessCategoryController::class)->group(function () {
+            Route::get('/business-category', 'index')->name('business-category.index');
+            Route::post('/business-category/store', 'store')->name('business-category.store');
+            Route::put('/business-category/{businessCategory}/update', 'update')->name('business-category.update');
+            Route::post('/business-category/{businessCategory}/toggle', 'statusToggle')->name('business-category.toggle');
+        });
+
         // Categories
         Route::controller(CategoryController::class)->group(function () {
             Route::get('/categories', 'index')->name('category.index');
             Route::get('/category/create', 'create')->name('category.create');
             Route::post('/category/store', 'store')->name('category.store');
-            Route::get('/category/show', 'show')->name('category.show');
+            // Route::get('/category/show', 'show')->name('category.show');
             Route::get('/category/{category}/edit', 'edit')->name('category.edit');
             Route::put('/category/{category}/update', 'update')->name('category.update');
             Route::delete('/category/{category}/destroy', 'destroy')->name('category.destroy');
-            Route::get('/category/{category}/toggle', 'statusToggle')->name('category.toggle');
-            Route::get('/category/menu-update', 'menuUpdate')->name('category.menu.update');
+            Route::post('/category/{category}/toggle', 'statusToggle')->name('category.toggle');
+            // Route::get('/category/menu-update', 'menuUpdate')->name('category.menu.update');
         });
 
         // Sub Categories
         Route::controller(SubCategoryController::class)->group(function () {
-
             Route::get('/subcategory', 'index')->name('subcategory.index');
             Route::get('/subcategory/create', 'create')->name('subcategory.create');
             Route::post('/subcategory/store', 'store')->name('subcategory.store');
-
-            // EDIT FORM
             Route::get('/subcategory/{subCategory}/edit', 'edit')->name('subcategory.edit');
-
-            // UPDATE (must be PUT or POST)
             Route::put('/subcategory/{subCategory}/update', 'update')->name('subcategory.update');
-            // OR: Route::post('/subcategory/{subCategory}/update', 'update')->name('subcategory.update');
-
-            // DELETE
-            Route::delete('/subcategory/{subCategory}/destroy', 'destroy')->name('subcategory.destroy');
-
-            // STATUS TOGGLE
-            Route::get('/subcategory/{subCategory}/toggle', 'statusToggle')->name('subcategory.toggle');
+            Route::delete('/subcategory/{subCategory}/destroy', 'destroy')->name('subcategory.destroy'); 
+            Route::post('/subcategory/{subCategory}/toggle','statusToggle')->name('subcategory.toggle');
         });
 
+        // Child Categories
+        Route::controller(ChildCategoryController::class)->group(function () {
+            Route::get('/child-category', 'index')->name('child-category.index');
+            Route::get('/child-category/create', 'create')->name('child-category.create');
+            Route::post('/child-category/store', 'store')->name('child-category.store');
+            Route::get('/child-category/{childCategory}/edit', 'edit')->name('child-category.edit');
+            Route::put('/child-category/{childCategory}/update', 'update')->name('child-category.update');
+            Route::delete('/child-category/{childCategory}/destroy', 'destroy')->name('child-category.destroy');
+            Route::post('/child-category/{childCategory}/toggle', 'statusToggle')->name('child-category.toggle');
+        });
 
+        // AJAX DROPDOWNS
+        Route::controller(AjaxCategoryController::class)->group(function () {
+            Route::get('/get-categories/{businessCategory}', 'categories')->name('ajax.categories');
+            Route::get('/get-subcategories/{category}', 'subCategories')->name('ajax.subcategories'); 
+        }); 
 
         // Category Attribute
         // Route::controller(CategoryAttributeController::class)->prefix('category-attributes')->group(function () {

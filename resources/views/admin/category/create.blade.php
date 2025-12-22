@@ -19,8 +19,13 @@
                             <h5>
                                 {{__('Category Information')}}
                             </h5>
-                        </div>
-
+                        </div> 
+                        <select id="business_category" name="business_category_id" class="form-control select2" required>
+                            <option value="">Select Business Category</option>
+                            @foreach($businessCategories as $bc)
+                                <option value="{{ $bc->id }}">{{ $bc->name }}</option>
+                            @endforeach
+                        </select>
                         <div class="mt-3">
                             <x-input label="Name" name="name" type="text" placeholder="Enter Name" required="true"/>
                         </div>
@@ -33,12 +38,12 @@
                             <x-file name="thumbnail" label="Thumbnail (Ratio 1:1)" preview="previewProfile" required="true"/>
                         </div>
 
-                        <div class="mt-4">
+                        <!-- <div class="mt-4">
                             <label for="description" class="form-label">
                                 {{__('Description')}}
                             </label>
                             <textarea name="description" class="form-control" rows="3" placeholder="Enter description"></textarea>
-                        </div>
+                        </div> -->
 
 
                         <div class="mt-5 d-flex gap-2 justify-content-between">
@@ -49,7 +54,6 @@
                             <button type="submit" class="btn btn-primary py-2 px-4">
                                 {{__('Submit')}}
                             </button>
-
                         </div>
 
                     </div>

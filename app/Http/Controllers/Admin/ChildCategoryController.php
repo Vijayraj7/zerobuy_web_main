@@ -3,52 +3,53 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\SubCategory;
 use Illuminate\Http\Request;
 use App\Models\BusinessCategory;
 use App\Models\Category;
+use App\Models\SubCategory;
+use App\Models\ChildCategory; 
 use Illuminate\Support\Str;
 use App\Repositories\MediaRepository; 
 
-class SubCategoryController extends Controller
+class ChildCategoryController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
-        $query = SubCategory::with([
+        $query = ChildCategory::with([
             'businessCategory',
-            'category'
+            'category',
+            'subCategory'
         ])->latest('id');
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where('name', 'like', "%{$search}%")
-            ->orWhereHas('category', function ($q) use ($search) {
+            ->orWhereHas('subCategory', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                ->orWhereHas('businessCategory', function ($q2) use ($search) {
-                    $q2->where('name', 'like', "%{$search}%");
+                ->orWhereHas('category', function ($q2) use ($search) {
+                    $q2->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('businessCategory', function ($q2) use ($search) {
+                        $q2->where('name', 'like', "%{$search}%");
+                    });
                 }); 
             });
         }
-        $subCategories = $query->paginate(10);
+        $childCategories = $query->paginate(10);
 
         $businessCategories = BusinessCategory::active()->get();
 
-        return view('admin.sub-category.index', compact(
-            'subCategories',
+        return view('admin.child-category.index', compact(
+            'childCategories',
             'businessCategories'
         ));
     }
 
     public function store(Request $request)
     { 
-        $shop = generaleSetting('rootShop');
-
         $this->validate($request, [
             'business_category_id' => 'required',
-            'category_id' => 'required', 
+            'category_id' => 'required',
+            'sub_category_id' => 'required',
             'name' => 'required',
             'thumbnail' => 'required|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
@@ -61,38 +62,41 @@ class SubCategoryController extends Controller
                     'image'
                 );
             }
-            SubCategory::create([
+            ChildCategory::create([
                 'business_category_id'  => $request->business_category_id, 
-                'category_id'           => $request->category_id, 
-                'shop_id'               => $shop->id,
+                'category_id'           => $request->category_id,
+                'sub_category_id'       => $request->sub_category_id,
                 'name'                  => $request->name,
                 'slug'                  => Str::slug($request->name, '-'),
                 'media_id'              => $thumbnail->id ?? null,
-                'is_active'             => true,
+                'status'                => true,
             ]);
-            return response()->json(['message' => 'New Sub Category Created Successfully']);
+            return response()->json(['message' => 'New Child Category Created Successfully']);
         }catch (\Exception $e) { 
             return back()->with('error','somethingwrong');
         }
     }
 
-    public function edit(SubCategory $subCategory)
+    public function edit(ChildCategory $childCategory)
     {
         // Fetch categories and subcategories for this business category
-        $categories = Category::where('business_category_id', $subCategory->business_category_id)->where('status', 1)->select('id', 'name')->get(); 
+        $categories = Category::where('business_category_id', $childCategory->business_category_id)->where('status', 1)->select('id', 'name')->get();
+        $subCategories = SubCategory::where('category_id', $childCategory->category_id)->where('is_active', 1)->select('id', 'name')->get();
 
         return response()->json([
-            'subCategory' => $subCategory,
-            'categories'    => $categories, 
-            'thumbnail'     => $subCategory->thumbnail,
+            'childCategory' => $childCategory,
+            'categories'    => $categories,
+            'subCategories' => $subCategories,
+            'thumbnail'     => $childCategory->thumbnail,
         ]);
     }
 
-    public function update(Request $request, SubCategory $subCategory)
+    public function update(Request $request, ChildCategory $childCategory)
     {
         $this->validate($request, [
             'business_category_id' => 'required',
-            'category_id'          => 'required', 
+            'category_id'          => 'required',
+            'sub_category_id'      => 'required',
             'name'                 => 'required',
             'thumbnail'            => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
@@ -104,25 +108,26 @@ class SubCategoryController extends Controller
                     'categories',
                     'image'
                 );
-                $subCategory->media_id = $thumbnail->id;
+                $childCategory->media_id = $thumbnail->id;
             }
 
-            $subCategory->update([
+            $childCategory->update([
                 'business_category_id' => $request->business_category_id,
-                'category_id'          => $request->category_id, 
+                'category_id'          => $request->category_id,
+                'sub_category_id'      => $request->sub_category_id,
                 'name'                 => $request->name,
                 'slug'                 => Str::slug($request->name, '-'),
             ]);
-            return response()->json(['message' => 'Sub Category Updated Successfully']);
+            return response()->json(['message' => 'Child Category Updated Successfully']);
         }catch (\Exception $e) { 
             return back()->with('error','somethingwrong');
         }
     }
 
-    public function statusToggle(SubCategory $subCategory)
+    public function statusToggle(ChildCategory $childCategory)
     {
-        $subCategory->update([
-            'is_active' => ! $subCategory->is_active
+        $childCategory->update([
+            'status' => ! $childCategory->status
         ]);
 
         return response()->json(['success' => true]);

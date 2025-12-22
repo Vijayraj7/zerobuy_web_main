@@ -63,10 +63,10 @@
                             </div>
                             <div class="col-md-4">
                                 <x-select label="Child Category" name="child_categories[]" multiple>
-                                    <option value="" disabled>{{ __('Select Child Category') }}</option>
-                                    <option value="1">child cat1</option>
+                                    <option value="" selected disabled>{{ __('Select Child Category') }}</option>
+                                    <!-- <option value="1">child cat1</option>
                                     <option value="2">child cat2</option>
-                                    <option value="3">child cat3</option>
+                                    <option value="3">child cat3</option> -->
                                 </x-select>
                                 @error('child_categories')
                                     <p class="text text-danger m-0">{{ $message }}</p>
@@ -402,30 +402,7 @@
 @endsection
 
 @push('scripts')
-<script>
-    // Flash Message 
-    function showFlash(message) {
-        // remove existing flash if any
-        const existingFlash = document.querySelector('.bulk-flash-message');
-        if (existingFlash) {
-            existingFlash.remove();
-        }
-
-        const flash = document.createElement('div');
-        flash.className = 'alert alert-danger bulk-flash-message';
-        flash.innerHTML = `
-            ${message}
-            <button class="btn-close btn-sm float-end" onclick="this.parentElement.remove()"></button>
-        `;
-        flash.style.cssText = 'position:fixed; top:10px; right:10px; z-index:9999;';
-
-        document.body.appendChild(flash);
-
-        setTimeout(() => {
-            if (flash) flash.remove();
-        }, 5000);
-    }
-
+<script> 
     // Remove +,-,e, and letters from number inputs
     document.addEventListener('input', function(e) {
         if (e.target.matches('input[type="number"]')) {
@@ -477,46 +454,90 @@
 
     // Category-Subcategory Select
     $(document).ready(function () {
-        $('select[name="main_category"]').on('change', function () {
-            let categoryId = $(this).val();
-            let $sub = $('select[name="sub_categories[]"]');
 
-            // Reset completely
-            $sub.empty().append(
-                '<option value="" selected disabled>Select Sub Category</option>'
-            ).val(null).trigger('change');
+    const $sub = $('select[name="sub_categories[]"]');
+    const $child = $('select[name="child_categories[]"]');
 
-            if (!categoryId) return;
+    // Main → Sub
+    $('select[name="main_category"]').on('change', function () {
+        let categoryId = $(this).val();
 
-            $.ajax({
-                url: '/api/sub-categories?category_id=' + categoryId,
-                type: 'GET',
-                dataType: 'json',
-                success: function (res) {
-                    let subs = res.data.sub_categories;
+        $sub.empty().append('<option disabled selected>Select Sub Category</option>');
+        $child.empty().append('<option disabled selected>Select Child Category</option>');
 
-                    // ✅ ONLY ONE → auto select
-                    if (subs.length === 1) {
-                        $sub.append(
-                            `<option value="${subs[0].id}" selected>
-                                ${subs[0].name}
-                            </option>`
-                        );
-                    } 
-                    // ✅ MORE THAN ONE → user must choose
-                    else {
-                        $.each(subs, function (_, sub) {
-                            $sub.append(
-                                `<option value="${sub.id}">${sub.name}</option>`
-                            );
-                        });
-                    }
+        if (!categoryId) return;
 
-                    $sub.trigger('change');
-                }
+        $.get('/api/sub-categories', { category_id: categoryId }, function (res) {
+            let subs = res.data.sub_categories;
+
+            if (subs.length === 1) {
+                $sub.append(`<option value="${subs[0].id}" selected>${subs[0].name}</option>`)
+                    .trigger('change');
+            } else {
+                subs.forEach(sub => {
+                    $sub.append(`<option value="${sub.id}">${sub.name}</option>`);
+                });
+            }
+        });
+    });
+
+    // Sub → Child
+    $sub.on('change', function () {
+        let subCategoryId = $(this).val();
+
+        $child.empty().append('<option disabled>Select Child Category</option>');
+
+        if (!subCategoryId) return;
+
+        $.get('/api/child-categories', { sub_category_id: subCategoryId }, function (res) {
+            res.data.forEach(child => {
+                $child.append(`<option value="${child.id}">${child.name}</option>`);
             });
         });
     });
+});
+
+    // $(document).ready(function () {
+    //     $('select[name="main_category"]').on('change', function () {
+    //         let categoryId = $(this).val();
+    //         let $sub = $('select[name="sub_categories[]"]');
+
+    //         // Reset completely
+    //         $sub.empty().append(
+    //             '<option value="" selected disabled>Select Sub Category</option>'
+    //         ).val(null).trigger('change');
+
+    //         if (!categoryId) return;
+
+    //         $.ajax({
+    //             url: '/api/sub-categories?category_id=' + categoryId,
+    //             type: 'GET',
+    //             dataType: 'json',
+    //             success: function (res) {
+    //                 let subs = res.data.sub_categories;
+
+    //                 // ✅ ONLY ONE → auto select
+    //                 if (subs.length === 1) {
+    //                     $sub.append(
+    //                         `<option value="${subs[0].id}" selected>
+    //                             ${subs[0].name}
+    //                         </option>`
+    //                     );
+    //                 } 
+    //                 // ✅ MORE THAN ONE → user must choose
+    //                 else {
+    //                     $.each(subs, function (_, sub) {
+    //                         $sub.append(
+    //                             `<option value="${sub.id}">${sub.name}</option>`
+    //                         );
+    //                     });
+    //                 }
+
+    //                 $sub.trigger('change');
+    //             }
+    //         });
+    //     });
+    // });
 
     // Item details add-more 
     let itemIndex = 1;

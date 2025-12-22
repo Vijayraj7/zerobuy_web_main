@@ -60,4 +60,20 @@ class SubCategory extends Model
             get: fn () => $thumbnail
         );
     }
+
+    // added these category relations added by ancy
+    public function businessCategory()
+    {
+        return $this->belongsTo(BusinessCategory::class, 'business_category_id');
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
+
+    public function childCategories()
+    {
+        return $this->hasMany(ChildCategory::class);
+    }
 }

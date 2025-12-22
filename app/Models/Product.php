@@ -70,6 +70,12 @@ class Product extends Model
         return $this->belongsToMany(SubCategory::class, 'product_subcategories');
     }
 
+    public function childCategories()
+    {
+        return $this->belongsToMany(ChildCategory::class, 'product_child_categories','product_id',
+        'child_category_id');
+    }
+
     /**
      * Retrieve the flash sales associated with the model.
      *

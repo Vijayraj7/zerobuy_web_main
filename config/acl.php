@@ -54,6 +54,7 @@ return [
             'blog' => ['index', 'create', 'edit', 'toggle', 'destroy', 'generate.AI.data'],
             'aiPrompt' => ['index', 'configure', 'configure.update', 'update'],
             'returnOrder' => ['index', 'show', 'payment.status','reject'],
+            'child-category' => ['index', 'create', 'edit', 'toggle', 'destroy'],
         ],
         'shop' => [
             'order' => ['index', 'show', 'status.change'],
