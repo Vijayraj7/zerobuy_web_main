@@ -40,35 +40,25 @@ class ShopFollowerController extends Controller
         } else if ($request->type === 'branded') {
             $shops = ShopRepository::query()
                 ->isActive()
-                ->whereHas('products', fn($q) => $q->isActive())
+                ->where('is_branded', true)
                 ->withCount('orders')
                 ->withAvg('reviews as average_rating', 'rating')
-                ->with(['products', 'categories', 'reviews', 'banners'])
-                ->orderByDesc('average_rating')
-                ->orderByDesc('orders_count')
-                ->where('is_branded', true)
                 ->withExists([
-                    'followers as is_followed' => function ($q) use ($customer) {
-                        $q->where('customer_id', $customer->id);
-                    }
+                    'followers as is_followed' => fn($q) =>
+                    $q->where('customer_id', $customer->id)
                 ])
-                ->paginate($perPage); // ✅ IMPORTANT
+                ->paginate(20);
         } else if ($request->type === 'verified') {
             $shops = ShopRepository::query()
                 ->isActive()
-                ->whereHas('products', fn($q) => $q->isActive())
+                ->where('is_verified', true)
                 ->withCount('orders')
                 ->withAvg('reviews as average_rating', 'rating')
-                ->with(['products', 'categories', 'reviews', 'banners'])
-                ->orderByDesc('average_rating')
-                ->orderByDesc('orders_count')
-                ->where('is_verified', true)
                 ->withExists([
-                    'followers as is_followed' => function ($q) use ($customer) {
-                        $q->where('customer_id', $customer->id);
-                    }
+                    'followers as is_followed' => fn($q) =>
+                    $q->where('customer_id', $customer->id)
                 ])
-                ->paginate($perPage); // ✅ IMPORTANT
+                ->paginate(20);
         } else {
             $shops = $customer
                 ->followedShops()
