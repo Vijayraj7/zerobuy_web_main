@@ -72,7 +72,7 @@
                                 <div class="item">
                                     <strong>Verified</strong>
                                     <label class="switch mb-0" data-bs-toggle="tooltip" data-bs-placement="left"
-                                        data-bs-title="Click here to enable branded store">
+                                        data-bs-title="Click here to enable verified store">
                                         @hasPermission('admin.shop.status.toggle')
                                             <a href="{{ route('admin.shop.verify.toggle', $shop->id) }}">
                                                 <input type="checkbox" {{ $shop->is_verified ? 'checked' : '' }}>
