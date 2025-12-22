@@ -111,6 +111,8 @@ Route::name('admin.')->group(function () {
             Route::post('/vendors/{shop}/update', 'update')->name('shop.update');
             Route::get('/vendors/{shop}', 'show')->name('shop.show');
             Route::get('/vendors/{shop}/status-toggle', 'statusToggle')->name('shop.status.toggle');
+            Route::get('/vendors/{shop}/branded-toggle', 'brandedToggle')->name('shop.branded.toggle');
+            Route::get('/vendors/{shop}/verify-toggle', 'verifyToggle')->name('shop.verify.toggle');
             Route::get('/vendors/{shop}/orders', 'orders')->name('shop.orders');
             Route::get('/vendors/{shop}/products', 'products')->name('shop.products');
             Route::get('/vendors/{shop}/categories', 'categories')->name('shop.category');

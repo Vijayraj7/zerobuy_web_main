@@ -47,7 +47,7 @@ class ShopController extends Controller
      */
     public function show(Shop $shop)
     {
-        Notification::where('url', '/admin/shops/'.$shop->id)->whereNull('shop_id')->where('is_read', false)->update(['is_read' => true]);
+        Notification::where('url', '/admin/shops/' . $shop->id)->whereNull('shop_id')->where('is_read', false)->update(['is_read' => true]);
 
         return view('admin.shop.show', compact('shop'));
     }
@@ -95,6 +95,28 @@ class ShopController extends Controller
         ]);
 
         return back()->withSuccess(__('Status updated successfully'));
+    }
+
+    /**
+     * Toggle the status of the shop user.
+     */
+    public function brandedToggle(Shop $shop)
+    {
+        if (app()->environment() == 'local' && $shop->user->email == 'shop@readyecommerce.com') {
+            return back()->with('demoMode', 'You can not update status of the shop in demo mode');
+        }
+
+        $user = $shop->user;
+        if ($user->hasRole('root')) {
+            return back()->with('error', __('You can not update status of the root shop'));
+        }
+
+        // Update the user status
+        $shop->user()->update([
+            'is_branded' => ! $shop->user->is_branded,
+        ]);
+
+        return back()->withSuccess(__('Branded updated successfully'));
     }
 
     /**
