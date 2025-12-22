@@ -106,10 +106,10 @@ class ShopController extends Controller
             return back()->with('demoMode', 'You can not update status of the shop in demo mode');
         }
 
-        $user = $shop->user;
-        if ($user->hasRole('root')) {
-            return back()->with('error', __('You can not update status of the root shop'));
-        }
+        // $user = $shop->user;
+        // if ($user->hasRole('root')) {
+        //     return back()->with('error', __('You can not update status of the root shop'));
+        // }
 
         // Update the user status
         $shop->update([
@@ -128,10 +128,10 @@ class ShopController extends Controller
             return back()->with('demoMode', 'You can not update status of the shop in demo mode');
         }
 
-        $user = $shop->user;
-        if ($user->hasRole('root')) {
-            return back()->with('error', __('You can not update status of the root shop'));
-        }
+        // $user = $shop->user;
+        // if ($user->hasRole('root')) {
+        //     return back()->with('error', __('You can not update status of the root shop'));
+        // }
 
         // Update the user status
         $shop->update([
