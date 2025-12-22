@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Enums\Roles;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BannerResource;
+use App\Http\Resources\BusinessCategoryResource;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\FlashSaleResource;
 use App\Http\Resources\ProductResource;
@@ -13,6 +14,7 @@ use App\Models\Ad;
 use App\Models\GeneraleSetting;
 use App\Models\User;
 use App\Repositories\BannerRepository;
+use App\Repositories\BusinessCategoryRepository;
 use App\Repositories\CategoryRepository;
 use App\Repositories\FlashSaleRepository;
 use App\Repositories\ProductRepository;
@@ -41,7 +43,7 @@ class HomeController extends Controller
 
         $banners = BannerRepository::query()->whereNull('shop_id')->active()->get();
 
-        $categories = CategoryRepository::query()->active()
+        $businesscategories = BusinessCategoryRepository::query()->active()
             ->whereHas('shops', function ($query) use ($rootShop) {
                 return $query->where('shop_id', $rootShop->id);
             })->whereHas('products', function ($product) {
@@ -83,7 +85,7 @@ class HomeController extends Controller
         return $this->json('home', [
             'banners' => BannerResource::collection($banners),
             'ads' => BannerResource::collection($ads),
-            'categories' => CategoryResource::collection($categories),
+            'business_categories' => BusinessCategoryResource::collection($businesscategories),
             'shops' => ShopResource::collection($shops),
             'popular_products' => ProductResource::collection($popularProducts),
             'just_for_you' => [
