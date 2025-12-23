@@ -514,7 +514,8 @@
             }
 
             $.get('/api/child-categories', { sub_category_id: subCategoryId }, function (res) {
-                let childs = res?.data || [];
+                // let childs = res?.data || [];
+                let childs = res.data?.child_categories || [];
                 if (childs.length === 0) {
                     notAvailable($child, 'Not Available');
                     return;

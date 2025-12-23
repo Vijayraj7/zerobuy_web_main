@@ -316,19 +316,19 @@
                 <!---categories--->
                 @hasPermission('admin.category.index')
                     <a href="{{ route('admin.category.index') }}" class="subMenu hasCount {{ request()->routeIs('admin.category.index') ? 'active' : '' }}">
-                        {{ __('All Category') }}
+                        {{ __('Main Category') }}
                     </a>
                 @endhasPermission 
                 <!--- sub categories--->
                 @hasPermission('admin.subcategory.index')
                     <a href="{{ route('admin.subcategory.index') }}" class="subMenu hasCount {{ request()->routeIs('admin.subcategory.index') ? 'active' : '' }}">
-                        {{ __('All Sub Category') }}
+                        {{ __('Sub Category') }}
                     </a>
                 @endhasPermission 
                 <!---Child categories---> <!-- extra added by ancy -->
                 @hasPermission('admin.child-category.index')
                     <a href="{{ route('admin.child-category.index') }}" class="subMenu hasCount {{ request()->routeIs('admin.child-category.index') ? 'active' : '' }}">
-                        {{ __('All Child Category') }}
+                        {{ __('Child Category') }}
                     </a>
                 @endhasPermission 
             </div>
