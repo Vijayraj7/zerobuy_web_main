@@ -119,6 +119,8 @@ class ProductRepository extends Repository
             'is_approve' => $isAdmin ? true : $approve,
             'video_id' => $videoMedia ? $videoMedia->id : null,
             'meta_title' => $request->meta_title,
+            'tax_percentage' => $request->gst ?? 0,
+            'return_period' => $request->return_period ?? 0,
             'meta_description' => $request->meta_description,
             'meta_keywords' => $keywords ? Str::limit($keywords, 200, '') : null,
         ]);
@@ -302,6 +304,7 @@ class ProductRepository extends Repository
             'media_id' => $thumbnail ? $thumbnail->id : null,
             // 'code' => $request->code,
             'tax_percentage' => $request->gst ?? 0,
+            'return_period' => $request->return_period ?? 0,
             'condition_status' => $request->condition_status ?? 'New',
             'buy_price' => $request->buy_price ?? 0,
             'is_active' => $isAdmin ? true : $approve,
