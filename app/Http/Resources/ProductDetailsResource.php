@@ -80,6 +80,7 @@ class ProductDetailsResource extends JsonResource
             'videourl' => $this->videourl(),
             'sizes' => SizeResource::collection($this->sizes),
             'colors' => ColorResource::collection($this->colors),
+            'variants' => ProductVariantResource::collection($this->variants),
             'brand' => $brandName,
             'unit' => $this->unit ? UnitResource::make($this->unit) : null,
             'description' => $description,
