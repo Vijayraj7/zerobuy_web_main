@@ -18,9 +18,9 @@ class ChildCategoryController extends Controller
             ->where('status', 1)
             ->get(['id', 'name']);
 
-        return response()->json([
+        return $this->json('child category', [
             'status' => true,
-            'data' => $childCategories,
+            'child_categories' => $childCategories,
         ]);
     }
 }
