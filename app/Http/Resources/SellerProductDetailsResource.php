@@ -31,6 +31,7 @@ class SellerProductDetailsResource extends JsonResource
             'additional_thumbnail' => $this->additionalThumbnails(),
             'category' => OnlyCategoryResource::make($this->categories()?->first()),
             'sub_categories' => SubCategoryResource::collection($this->subCategories),
+            'child_categories' => ChildCategoryResource::collection($this->childCategories),
             'sizes' => SizeResource::collection($this->sizes),
             'colors' => ColorResource::collection($this->colors),
             'brand' => BrandResource::make($this->brand),
