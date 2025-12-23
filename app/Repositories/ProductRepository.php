@@ -169,8 +169,8 @@ class ProductRepository extends Repository
                     ProductVariant::create(
                         [
                             'product_id' => $product->id,
-                            'size_id'  => $v['size']['id'],
-                            'color_id' => $v['color']['id'],
+                            'size_id'    => $v['size']['id']  ?? null,
+                            'color_id'   => $v['color']['id'] ?? null,
                             'price'    => $v['price'],
                             'quantity' => $v['quantity'],
                         ]
@@ -372,8 +372,8 @@ class ProductRepository extends Repository
                     $product->variants()->updateOrCreate(
                         ['id' => $v['id'] ?? null],
                         [
-                            'size_id'  => $v['size']['id'],
-                            'color_id' => $v['color']['id'],
+                            'size_id'    => $v['size']['id']  ?? null,
+                            'color_id'   => $v['color']['id'] ?? null,
                             'price'    => $v['price'],
                             'quantity' => $v['quantity'],
                         ]
