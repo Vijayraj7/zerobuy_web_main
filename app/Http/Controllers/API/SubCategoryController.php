@@ -38,9 +38,7 @@ class SubCategoryController extends Controller
 
         return $this->json('sub', [
             'status' => true,
-            'data' => [
-                'sub_categories' => SubCategoryResource::collection($subCategories),
-            ],
+            'sub_categories' => SubCategoryResource::collection($subCategories),
         ]);
     }
 }
