@@ -76,4 +76,34 @@ class SubCategory extends Model
     {
         return $this->hasMany(ChildCategory::class);
     }
+
+    public function scopeSortByField($query, $sortBy, $sortOrder)
+    {
+        $allowedSortFields = [
+            'id',
+            'sub_category_name',
+            'category_name',
+            'business_name',
+        ];
+
+        if (!in_array($sortBy, $allowedSortFields)) {
+            $sortBy = 'id';
+        }
+
+        if ($sortBy === 'business_name') {
+            $query->join('business_categories', 'sub_categories.business_category_id', '=', 'business_categories.id')
+                  ->select('sub_categories.*')
+                  ->orderBy('business_categories.name', $sortOrder);
+        } elseif ($sortBy === 'category_name') {
+            $query->join('categories', 'sub_categories.category_id', '=', 'categories.id')
+                  ->select('sub_categories.*')
+                  ->orderBy('categories.name', $sortOrder);
+        } elseif ($sortBy === 'sub_category_name') {
+            $query->orderBy('sub_categories.name', $sortOrder);
+        } else {
+            $query->orderBy('sub_categories.id', $sortOrder);
+        }
+
+        return $query;
+    }
 }

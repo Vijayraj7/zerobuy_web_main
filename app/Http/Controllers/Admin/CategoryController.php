@@ -13,7 +13,10 @@ class CategoryController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Category::with(['businessCategory'])->latest('id');
+        $sortBy    = $request->input('sort_by', 'id');
+        $sortOrder = $request->input('sort_order', 'desc');
+
+        $query = Category::with(['businessCategory']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -22,13 +25,15 @@ class CategoryController extends Controller
                 $q->where('name', 'like', "%{$search}%");
             });
         }
-        $Categories = $query->paginate(10);
+        // $Categories = $query->paginate(50);
+        $Categories = $query->sortByField($sortBy, $sortOrder)->paginate(50)->withQueryString();
 
         $businessCategories = BusinessCategory::active()->get();
 
         return view('admin.category.index', compact(
             'Categories',
-            'businessCategories'
+            'businessCategories',
+            'sortBy', 'sortOrder'
         )); 
     }
     /**

@@ -17,10 +17,13 @@ class SubCategoryController extends Controller
      */
     public function index(Request $request)
     {
+        $sortBy    = $request->input('sort_by', 'id');
+        $sortOrder = $request->input('sort_order', 'desc');
+
         $query = SubCategory::with([
             'businessCategory',
             'category'
-        ])->latest('id');
+        ]);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -32,13 +35,15 @@ class SubCategoryController extends Controller
                 }); 
             });
         }
-        $subCategories = $query->paginate(10);
+        // $subCategories = $query->paginate(50);
+        $subCategories = $query->sortByField($sortBy, $sortOrder)->paginate(50)->withQueryString();
 
         $businessCategories = BusinessCategory::active()->get();
 
         return view('admin.sub-category.index', compact(
             'subCategories',
-            'businessCategories'
+            'businessCategories',
+            'sortBy', 'sortOrder'
         ));
     }
 

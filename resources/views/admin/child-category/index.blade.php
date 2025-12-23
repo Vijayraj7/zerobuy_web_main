@@ -14,7 +14,7 @@
         <div class="card-body"> 
             <div class="row mb-3 g-2">
                 <div class="col-md-4">
-                    <input type="text" id="search" class="form-control" placeholder="Search All Categories" value="{{ request('search') }}">
+                    <input type="text" id="search" class="form-control" placeholder="Search Business/Main/Sub/Child Categories" value="{{ request('search') }}">
                 </div>
                 <div class="col-md-2">
                     <button id="resetSearch" class="btn btn-outline-secondary"><i class="fa fa-refresh"></i></button>
@@ -24,12 +24,18 @@
                 <table class="table table-bordered">
                     <thead>
                         <tr>
-                            <th class="text-center">SL</th>
+                            <!-- <th class="text-center">SL</th>
                             <th>Thumbnail</th>
                             <th>Business Category</th>
                             <th>Category</th>
                             <th>Sub Category</th>
-                            <th>Child Category</th>
+                            <th>Child Category</th> -->
+                            <th>SL</th>
+                            <th>Thumbnail</th>
+                            <th>{!! sortLink('Business Category', 'business_name') !!}</th>
+                            <th>{!! sortLink('Category', 'category_name') !!}</th>
+                            <th>{!! sortLink('Sub Category', 'sub_category_name') !!}</th>
+                            <th>{!! sortLink('Child Category', 'child_name') !!}</th>
                             @hasPermission('admin.child-category.toggle')
                             <th>Status</th>
                             @endhasPermission
@@ -117,8 +123,8 @@
                         <input type="file" name="thumbnail" class="form-control">
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <div class="modal-footer"> 
+                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button class="btn btn-primary" id="saveChildCategoryButton">Submit</button>
                 </div>
             </form>

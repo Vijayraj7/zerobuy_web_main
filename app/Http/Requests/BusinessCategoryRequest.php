@@ -23,6 +23,7 @@ class BusinessCategoryRequest extends FormRequest
     {
         return [
            'name' => ['required', 'string', 'max:255'],
+           'thumbnail' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:2048'],
         ];
     }
 }

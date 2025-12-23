@@ -38,7 +38,7 @@ class ProductController extends Controller
             return $query->where('is_approve', true)->where('is_active', true);
         })->when($shop, function ($query) use ($shop) {
             return $query->where('shop_id', $shop);
-        })->paginate(20);
+        })->paginate(50);
 
         $shops = ShopRepository::query()->isActive()->get();
 

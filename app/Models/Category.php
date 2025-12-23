@@ -93,4 +93,29 @@ class Category extends Model
             get: fn () => $thumbnail
         );
     }
+
+    public function scopeSortByField($query, $sortBy, $sortOrder)
+    {
+        $allowedSortFields = [
+            'id',
+            'category_name',
+            'business_name',
+        ];
+
+        if (!in_array($sortBy, $allowedSortFields)) {
+            $sortBy = 'id';
+        }
+
+        if ($sortBy === 'business_name') {
+            $query->join('business_categories', 'categories.business_category_id', '=', 'business_categories.id')
+                  ->select('categories.*')
+                  ->orderBy('business_categories.name', $sortOrder);
+        } elseif ($sortBy === 'category_name') {
+            $query->orderBy('categories.name', $sortOrder);
+        } else {
+            $query->orderBy('categories.id', $sortOrder);
+        }
+
+        return $query;
+    }
 }

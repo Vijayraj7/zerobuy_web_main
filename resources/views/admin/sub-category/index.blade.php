@@ -14,7 +14,7 @@
         <div class="card-body"> 
             <div class="row mb-3 g-2">
                 <div class="col-md-4">
-                    <input type="text" id="search" class="form-control" placeholder="Search All Categories" value="{{ request('search') }}">
+                    <input type="text" id="search" class="form-control" placeholder="Search Business/Main/Sub Categories" value="{{ request('search') }}">
                 </div>
                 <div class="col-md-2">
                     <button id="resetSearch" class="btn btn-outline-secondary"><i class="fa fa-refresh"></i></button>
@@ -24,11 +24,11 @@
                 <table class="table table-bordered">
                     <thead>
                         <tr>
-                            <th class="text-center">SL</th>
-                            <th>Thumbnail</th>
-                            <th>Business Category</th>
-                            <th>Category</th>
-                            <th>Sub Category</th>
+                            <th>SL</th>
+                            <th>Thumbnail</th> 
+                            <th>{!! sortLink('Business Category', 'business_name') !!}</th>
+                            <th>{!! sortLink('Category', 'category_name') !!}</th>
+                            <th>{!! sortLink('Sub Category', 'sub_category_name') !!}</th> 
                             @hasPermission('admin.subcategory.toggle')
                             <th>Status</th>
                             @endhasPermission
@@ -112,7 +112,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button class="btn btn-primary" id="saveSubCategoryButton">Submit</button>
                 </div>
             </form>

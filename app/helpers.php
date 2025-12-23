@@ -206,3 +206,28 @@ if (! function_exists('daysToLargestUnit')) {
         return $days . ' day' . ($days > 1 ? 's' : '');
     }
 }
+
+if (!function_exists('sort_link')) {
+    function sortLink($label, $column) {
+        $currentSort = request('sort_by');
+        $currentOrder = request('sort_order') == 'asc' ? 'desc' : 'asc';
+
+        // Default icon
+        $icon = '<i class="bi bi-arrow-down-up"></i>';
+
+        // Active sorting icons
+        if ($currentSort === $column) {
+            if (request('sort_order') === 'asc') {
+                $icon = '<i class="bi bi-arrow-up"></i>';
+            } else {
+                $icon = '<i class="bi bi-arrow-down"></i>';
+            }
+        }
+
+        return '<a class="text-dark text-decoration-none" href="'.
+        request()->fullUrlWithQuery([
+            'sort_by' => $column,
+            'sort_order' => $currentOrder
+        ]).'">'.$label.' '.$icon.'</a>';
+    }
+}

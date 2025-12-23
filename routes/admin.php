@@ -152,6 +152,7 @@ Route::name('admin.')->group(function () {
         Route::controller(BusinessCategoryController::class)->group(function () {
             Route::get('/business-category', 'index')->name('business-category.index');
             Route::post('/business-category/store', 'store')->name('business-category.store');
+            Route::get('/business-category/{businessCategory}/edit', 'edit')->name('business-category.edit');
             Route::put('/business-category/{businessCategory}/update', 'update')->name('business-category.update');
             Route::post('/business-category/{businessCategory}/toggle', 'statusToggle')->name('business-category.toggle');
         });
