@@ -444,6 +444,7 @@ class ProductRepository extends Repository
 
         $product->categories()->sync($request->category ?? []);
         $product->subcategories()->sync($request->sub_category ?? []);
+        $product->childCategories()->sync($request->child_category ?? []);
 
         $product->sizes()->detach();
         if ($request->is('api/*')) {
