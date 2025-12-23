@@ -36,12 +36,11 @@ class SubCategoryController extends Controller
             ->where('is_active', 1)
             ->get();
 
-        return response()->json([
+        return $this->json('sub', [
             'status' => true,
             'data' => [
                 'sub_categories' => SubCategoryResource::collection($subCategories),
             ],
         ]);
     }
-
 }
