@@ -49,7 +49,7 @@
     </div>
 </div>
 
-<form action="{{ $isEdit ? route('admin.product.update', $product->id) : route('admin.product.store') }}" method="POST"
+<form action="{{ $isEdit ? route('shop.product.update', $product->id) : route('shop.product.store') }}" method="POST"
     enctype="multipart/form-data">
     @csrf
     @if ($isEdit)
