@@ -1,959 +1,1270 @@
 @extends('layouts.app')
-
+@section('content')
 @section('header-title', __('Add New Product'))
 
-@section('content')
-    <div class="page-title">
-        <div class="d-flex gap-2 align-items-center">
-            {{ __('Add New Product') }}
-        </div>
+<div class="page-title">
+    <div class="d-flex gap-2 align-items-center">
+        {{ __('Add New Product') }}
     </div>
-    <form action="{{ route('shop.product.store') }}" method="POST" enctype="multipart/form-data">
-        @csrf
+</div>
 
-        <div class="pb-2 fz-18 mt-3">
-            {{ __('Product Info') }}
-        </div>
-        <div class="card">
-            <div class="card-body">
+<form action="{{ route('admin.product.store') }}" method="POST" enctype="multipart/form-data">@csrf
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex justify-content-end mb-3">
+                <button type="submit" class="btn btn-success">Save Product</button>
+            </div>
+            <ul class="nav nav-tabs mt-3" id="productTabs">
+                <li class="nav-item"><a class="nav-link active" data-step="1" href="#">Product Details</a></li>
+                <li class="nav-item"><a class="nav-link" data-step="2" href="#">Price</a></li>
+                <li class="nav-item"><a class="nav-link" data-step="3" href="#">Product Variants</a></li>
+                <li class="nav-item"><a class="nav-link" data-step="4" href="#">Images</a></li>
+                <li class="nav-item"><a class="nav-link" data-step="5" href="#">SEO Information</a></li>
+                <li class="nav-item"><a class="nav-link" data-step="6" href="#" id="bulkProductTab"> Bulk Products</a></li>
+            </ul>
 
-                <div class="">
-                    <x-input label="Product Name" name="name" id="product_name" type="text"
-                        placeholder="Enter Product Name" required="true" />
-                </div>
+            <!-- STEP 1 -->
+            <div class="step-content step-1 mt-3">
+                <div class="row">
+                    <div class="col-lg-7">
+                        <div class="mb-3">
+                           <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="condition_status" value="New" checked>
+                                <label class="form-check-label">New</label>
+                            </div>
 
-                <div class="mt-3">
-                    <label for="">
-                        {{ __('Short Description') }}
-                        <span class="text-danger">*</span>
-                    </label>
-                    <textarea required name="short_description" id="short_description"
-                        class="form-control @error('short_description') is-invalid @enderror" rows="2"
-                        placeholder="Enter short description">{{ old('short_description') }}</textarea>
-                    @error('short_description')
-                        <p class="text text-danger m-0">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="mt-3">
-                    <label for="">
-                        {{ __('Description') }}
-                        <span class="text-danger">*</span>
-                    </label>
-                    @hasPermission('shop.product.generate.AI.data')
-                        <button class="btn btn-sm btn-primary rounded mb-1" id="generateAi" type="button">🧠 Generate Via
-                            Ai</button>
-                    @endhasPermission
-                    <div id="editor" style="max-height: 750px; overflow-y: auto">
-                        {!! old('description') !!}
-                    </div>
-                    <input type="hidden" id="description" name="description" value="{{ old('description') }}">
-                    @error('description')
-                        <p class="text text-danger m-0">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!--######## General Information ##########-->
-                <div class="pb-2 fz-18 mt-4">
-                    {{ __('Generale Information') }}
-                </div>
-                <div class="card">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 col-lg-4">
-                                <label class="form-label">
-                                    {{ __('Select Category') }}
-                                    <span class="text-danger">*</span>
-                                </label>
-                                <select name="category" class="form-control select2" style="width: 100%">
-                                    <option value="" selected disabled>
-                                        {{ __('Select Category') }}
-                                    </option>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="condition_status" value="Refurbished">
+                                <label class="form-check-label">Refurbished</label>
+                            </div>
+                        </div> 
+                        <div class="mb-3">
+                            <x-input label="Product Name" name="name" id="product_name" type="text" placeholder="Enter Product Name" required="true" />
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <x-select label="Main Category" name="main_category" required="true">
+                                    <option value="" selected disabled>{{ __('Select Category') }}</option>
                                     @foreach ($categories as $category)
-                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('category')
-                                    <p class="text text-danger m-0">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div class="col-md-6 col-lg-4 mt-3 mt-md-0">
-                                <label class="form-label">
-                                    {{ __('Select Sub Categories') }}
-                                </label>
-                                <select name="sub_category[]" data-placeholder="Select Sub Category"
-                                    class="form-control select2" multiple style="width: 100%">
-                                    <option value="" disabled>{{ __('Select Sub Category') }}</option>
-                                </select>
-                                @error('sub_category')
-                                    <p class="text text-danger m-0">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div class="col-md-6 col-lg-4 mt-3 mt-md-0">
-                                <x-select label="Select Brand" name="brand">
-                                    <option value="">
-                                        {{ __('Select Brand') }}
-                                    </option>
-                                    @foreach ($brands as $brand)
-                                        <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
                                     @endforeach
                                 </x-select>
+                                @error('main_category')
+                                    <p class="text text-danger m-0">{{ $message }}</p>
+                                @enderror
                             </div>
-
-                            <div class="col-md-6 col-lg-4 mt-4">
-                                <label class="form-label">{{ __('Select Color') }}</label>
-                                <select name="colorIds[]" data-placeholder="Select Color" class="form-control colorSelect"
-                                    multiple style="width: 100%">
-                                    <option value="">
-                                        {{ __('Select Color') }}
-                                    </option>
-                                    @foreach ($colors as $color)
-                                        <option value="{{ $color->id }}" data-color="{{ $color->color_code }}"
-                                            data-name="{{ $color->name }}">
-                                            {{ $color->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="col-lg-4 col-md-6 mt-4">
-                                <x-select label="Select Unit" name="unit" placeholder="Select Unit">
-                                    <option value="">
-                                        {{ __('Select Unit') }}
-                                    </option>
-                                    @foreach ($units as $unit)
-                                        <option value="{{ $unit->id }}">{{ $unit->name }}</option>
-                                    @endforeach
+                            <div class="col-md-4"> 
+                                <x-select label="Sub Category" name="sub_categories[]">
+                                    <option value="" selected disabled>Select Sub Category</option>
                                 </x-select>
+                                @error('sub_categories')
+                                    <p class="text text-danger m-0">{{ $message }}</p>
+                                @enderror
                             </div>
-
-                            <div class="col-md-6 col-lg-4 mt-4">
-                                <label class="form-label">{{ __('Select Size') }}</label>
-                                <select name="sizeIds[]" data-placeholder="Select Size" class="form-control sizeSelector"
-                                    multiple="true" style="width: 100%">
-                                    <option value="">
-                                        {{ __('Select Size') }}
-                                    </option>
-                                    @foreach ($sizes as $size)
-                                        <option value="{{ $size->id }}" data-size="{{ $size->name }}">
-                                            {{ $size->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="col-md-6 col-lg-4 mt-4">
-                                <label class="form-label d-flex align-items-center gap-2 justify-content-between">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span>
-                                            {{ __('Product SKU') }}
-                                            <span class="text-danger">*</span>
-                                        </span>
-                                        <span class="info" data-bs-toggle="tooltip" data-bs-placement="top"
-                                            data-bs-title="{{ __('Create a unique product code. This will be used generate barcode') }}">
-                                            <i class="bi bi-info"></i>
-                                        </span>
-                                    </div>
-                                    <span class="text-primary cursor-pointer" onclick="generateCode()">
-                                        {{ __('Generate Code') }}
-                                    </span>
-                                </label>
-                                <input type="text" id="barcode" name="code" placeholder="Ex: 134543"
-                                    class="form-control" value="{{ old('code') }}"
-                                    oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*?)\..*/g, '$1');" />
-                                @error('code')
+                            <div class="col-md-4">
+                                <x-select label="Child Category" name="child_categories[]" multiple>
+                                    <option value="" selected disabled>{{ __('Select Child Category') }}</option> 
+                                </x-select>
+                                @error('child_categories')
                                     <p class="text text-danger m-0">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <!--######## Price Information ##########-->
-                <div class="pb-2 fz-18 mt-4">
-                    {{ __('Price Information') }}
-                </div>
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-lg-4 col-md-6">
-                                <x-input type="text" name="buy_price" label="Buying Price" placeholder="Buying Price"
-                                    required="true" onlyNumber="true" />
-                            </div>
-
-                            <div class="col-lg-4 col-md-6">
-                                <x-input type="text" name="price" label="Selling Price" placeholder="Selling Price"
-                                    required="true" onlyNumber="true" value="10" />
-                            </div>
-
-                            <div class="col-lg-4 col-md-6 mt-3 mt-md-0">
-                                <x-input type="text" name="discount_price" label="Discount Price"
-                                    placeholder="Discount Price" onlyNumber="true" value="0" />
-                            </div>
-
-                            <div class="col-lg-4 col-md-6 mt-3">
-                                <x-input type="text" name="quantity" label="Current Stock Quantity"
-                                    placeholder="Current Stock Quantity" onlyNumber="true" />
-                            </div>
-
-                            <div class="col-lg-4 col-md-6 mt-3">
-                                <x-input type="text" onlyNumber="true" name="min_order_quantity"
-                                    label="Minimum Order Quantity" placeholder="Minimum Order Quantity" value="1" />
-                            </div>
-                        </div>
-
-                        <!--######## color wise price table ##########-->
-                        <div class="border rounded p-0 position-relative overflow-hidden" id="colorBox"
-                            style="display: none">
-                            <p class="fw-bolder box-title">
-                                {{ __('Color wise extra price') }}
-                            </p>
-                            <table class="table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>
-                                            {{ __('Name') }}
-                                        </th>
-                                        <th>
-                                            {{ __('Extra Price') }}
-                                        </th>
-                                        <th>
-                                            {{ __('Action') }}
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody id="selectedColorsTableBody"></tbody>
-                            </table>
-                        </div>
-
-                        <!--######## Size wise price table ##########-->
-                        <div class="border rounded p-0 position-relative overflow-hidden" id="sizeBox"
-                            style="display: none">
-                            <p class="fw-bold box-title">
-                                {{ __('Size wise extra price') }}
-                            </p>
-                            <table class="table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>
-                                            {{ __('Size') }}
-                                        </th>
-                                        <th>
-                                            {{ __('Extra Price') }}
-                                        </th>
-                                        <th>
-                                            {{ __('Action') }}
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody id="selectedSizesTableBody"></tbody>
-                            </table>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!--######## Thumbnail Information ##########-->
-                <div>
-                    <div class="pb-2 fz-18 mt-4">
-                        {{ __('Images') }}
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <div class="card card-body h-100">
-                            <div class="mb-2">
-                                <h5>
-                                    {{ __('Thumbnail') }}
-                                    <span class="text-primary">{{ __('(Ratio 1:1 (500 x 500 px))') }}</span>
-                                    <span class="text-danger">*</span>
-                                </h5>
-                                @error('thumbnail')
-                                    <p class="text-danger">{{ $message }}</p>
+                        <div class="row mt-3 g-2">
+                            <div class="col-md-6"> 
+                                <label class="form-label">Stock Quantity <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="quantity" placeholder="Enter Quantity" value="0">
+                                @error('quantity')
+                                    <p class="text text-danger m-0">{{ $message }}</p>
                                 @enderror
                             </div>
-
-                            <label for="thumbnail" class="additionThumbnail">
-                                <img src="https://placehold.co/500x500/f1f5f9/png" id="preview" alt=""
-                                    width="100%">
-                            </label>
-                            <input id="thumbnail" accept="image/*" type="file" name="thumbnail" class="d-none"
-                                onchange="previewFile(event, 'preview')">
-                            <small class="text-muted mt-1">{{ __('Supported formats: jpg, jpeg, png') }}</small>
-                        </div>
-                    </div>
-
-                    <div class="col-12 mt-3">
-                        <div class="card h-100">
-                            <div class="card-body">
-                                <div class="mb-2">
-                                    <h5>
-                                        {{ __('Additional Thumbnail') }}
-                                        <span class="text-primary">{{ __('(Ratio 1:1 (500 x 500 px))') }}</span>
-                                    </h5>
-                                    @error('additionThumbnail')
-                                        <p class="text-danger">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div class="d-flex flex-wrap gap-3" id="additionalElements">
-
-                                    <div id="addition">
-                                        <label for="additionThumbnail1" class="additionThumbnail">
-                                            <img src="https://placehold.co/500x500/f1f5f9/png" id="preview2"
-                                                alt="" width="100%" height="100%">
-                                            <button onclick="removeThumbnail('addition')" id="removeThumbnail1"
-                                                type="button" class="delete btn btn-sm btn-outline-danger circleIcon"
-                                                style="display: none">
-                                                <img src="{{ asset('assets/icons-admin/trash.svg') }}" loading="lazy"
-                                                    alt="trash" />
-                                            </button>
-                                        </label>
-                                        <input id="additionThumbnail1" accept="image/*" type="file"
-                                            name="additionThumbnail[]" class="d-none"
-                                            onchange="previewAdditionalFile(event, 'preview2', 'removeThumbnail1')">
-                                    </div>
-
-                                </div>
+                            <div class="col-md-6">
+                                <label class="form-label">MOQ <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="min_order_quantity" placeholder="Enter Minimum Order Quantity" min="1" value="1"> 
+                                @error('min_order_quantity')
+                                    <p class="text text-danger m-0">{{ $message }}</p>
+                                @enderror
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!--######## Product Video ##########-->
-                <div class="card mt-4">
-                    <div class="card-body">
-
-                        <div class="d-flex gap-2 border-bottom pb-2">
-                            <i class="fa-solid fa-play"></i>
-                            <h5>
-                                {{ __('Upload or Add Product Video') }}
-                            </h5>
-                        </div>
-
-                        <div class="mt-3 d-flex gap-2">
-                            <!-- Select Upload Type -->
-                            <div class="mb-3">
-                                <label for="uploadType" class="form-label">
-                                    {{ __('Select Video Type') }}
-                                </label>
-                                <select class="form-select" name="uploadVideo[type]" id="uploadType"
-                                    onchange="toggleFields()">
-                                    <option value="file" {{ old('uploadVideo.type') == 'file' ? 'selected' : '' }}>
-                                        {{ __('Upload Video File') }}
-                                    </option>
-                                    <option value="youtube" {{ old('uploadVideo.type') == 'youtube' ? 'selected' : '' }}>
-                                        {{ __('YouTube Link') }}
-                                    </option>
-                                    <option value="vimeo" {{ old('uploadVideo.type') == 'vimeo' ? 'selected' : '' }}>
-                                        {{ __('Vimeo Link') }}
-                                    </option>
-                                    <option value="dailymotion"
-                                        {{ old('uploadVideo.type') == 'dailymotion' ? 'selected' : '' }}>
-                                        {{ __('Dailymotion Link') }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <!-- Upload File Section -->
-                            <div class="mb-3 flex-grow-1" id="fileUploadField">
-                                <label for="productVideo" class="form-label">
-                                    {{ __('Upload Product Video') }}
-                                </label>
-                                <input type="file" class="form-control" name="uploadVideo[file]" id="productVideo"
-                                    accept="video/*">
-                                <small class="text-muted">
-                                    {{ __('Supported formats: MP4, AVI, MOV, WMV') }}
-                                </small>
-                            </div>
-
-                            <!-- YouTube Link Section -->
-                            <div class="mb-3 d-none flex-grow-1" id="youtubeField">
-                                <label for="youtubeLink" class="form-label">
-                                    {{ __('YouTube Video Link') }}
-                                </label>
-                                <textarea class="form-control" name="uploadVideo[youtube_url]" id="youtubeLink" rows="3"
-                                    placeholder='<iframe width="560" height="315" src="https://www.youtube.com/embed/MxcgrT_Kdxw?si=V63-aJ-4tPZUEKyk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'></textarea>
-                                <small class="text-muted">{{ __('Paste a valid YouTube video embed code') }}</small>
-                            </div>
-
-                            <!-- Vimeo Link Section -->
-                            <div class="mb-3 d-none flex-grow-1" id="vimeoField">
-                                <label for="vimeoLink" class="form-label">
-                                    {{ __('Vimeo Video Link') }}
-                                </label>
-                                <textarea name="uploadVideo[vimeo_url]" id="vimeoLink" class="form-control" rows="3"
-                                    placeholder="please enter valid vimeo video embed code"></textarea>
-                                <small class="text-muted">{{ __('Paste a valid Vimeo video embed code') }}</small>
-                            </div>
-
-                            <!-- Dailymotion Link Section -->
-                            <div class="mb-3 d-none flex-grow-1" id="dailymotionField">
-                                <label for="dailymotionLink" class="form-label">
-                                    {{ __('Dailymotion Video Link') }}
-                                </label>
-                                <textarea name="uploadVideo[dailymotion_url]" id="dailymotionLink" class="form-control" rows="3"
-                                    placeholder="please enter valid dailymotion video embed code"></textarea>
-                                <small class="text-muted">{{ __('Paste a valid Dailymotion video embed code') }}</small>
-                            </div>
-                        </div>
-                        @error('uploadVideo.file')
-                            <p class="text text-danger m-0">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
-
-                <!--######## SEO section ##########-->
-                <div class="card mt-4 mb-3">
-                    <div class="card-body">
-
-                        <div class="d-flex gap-2 border-bottom pb-2">
-                            <i class="fa-solid fa-square-poll-vertical"></i>
-                            <h5>
-                                {{ __('SEO Information') }}
-                            </h5>
                         </div>
                         <div class="mt-3">
-                            <label for="uploadType" class="form-label">
-                                {{ __('Meta Title') }}
-                            </label>
-                            <x-input name="meta_title" type="text" placeholder="Meta Title" />
-                        </div>
-
-                        <div class="mt-3">
-                            <label for="uploadType" class="form-label">
-                                {{ __('Meta Description') }}
-                            </label>
-                            <textarea name="meta_description" type="text" placeholder="{{ __('Meta Description') }}" class="form-control">{{ old('meta_description') }}</textarea>
-                            @error('meta_description')
+                            <x-select label="Return Period" name="return_period" required="true">
+                                <option value="" disabled selected>--Select Return Period--</option>
+                                <option value="0">No Return Period</option>
+                                <option value="2">2 Days</option>
+                                <option value="5">5 Days</option>
+                                <option value="7">7 Days</option>
+                                <option value="10">10 Days</option>
+                                <option value="15">15 Days</option>
+                                <option value="30">30 Days</option>
+                            </x-select>
+                            @error('return_period')
                                 <p class="text text-danger m-0">{{ $message }}</p>
                             @enderror
                         </div>
-                        <div class="mt-3">
-                            <label for="tags" class="form-label">@lang('Meta Keywords')</label>
-                            <select id="tags" name="meta_keywords[]" class="form-control selectTags" multiple
-                                style="width: 100%">
-                                @foreach (old('meta_keywords', []) as $keyword)
-                                    <option value="{{ $keyword }}" selected>{{ $keyword }}</option>
-                                @endforeach
-                            </select>
-                            <small>@lang('Write keywords and Press enter to add new one')</small>
+                    </div>
+
+                    <div class="col-lg-5">
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Product Description <span class="text-danger">*</span></label>
+                            <textarea class="form-control" name="description" id="description" placeholder="Enter Product Description" rows="8" required></textarea>
+                            @error('description')
+                                <p class="text text-danger m-0">{{ $message }}</p>
+                            @enderror
+                        </div> 
+                        <div class="row g-2">
+                            <div class="col-3">
+                                <label class="form-label">Video Type</label>
+                                <select class="form-select" name="video_type">
+                                    <option value="">None</option>
+                                    <option value="youtube">YouTube Link</option>
+                                    <option value="external">External Link</option>
+                                </select>
+                            </div>
+                            <div class="col-9">
+                                <label class="form-label">Video Link</label>
+                                <input type="text" class="form-control" name="video_link" placeholder="Enter YouTube or external video URL">
+                            </div>
+                        </div>                        
+                        <div class="mt-4">
+                            <label class="form-label">Item Details (Add multiple)</label>
+                            <div id="item-details-list">
+                                <div class="d-flex gap-2 mb-2 item-row" data-index="0">
+                                    <input type="text" name="item_details[0][name]" class="form-control" placeholder="Item Name">
+                                    <input type="text" name="item_details[0][value]" class="form-control" placeholder="Item Value">
+                                    <button type="button" class="btn btn-danger btn-sm remove-item">-</button>
+                                </div>
+
+                            </div>
+                            <button type="button" class="btn btn-primary btn-sm" id="add-item-detail">+ Add More</button>
                         </div>
                     </div>
                 </div>
+
+                <div class="mt-3">
+                    <button type="button" class="btn btn-primary next-btn float-end" data-next="2"> Next &raquo;</button>
+                </div>
+            </div>
+
+            <!-- STEP 2 - PRICE -->
+            <div class="step-content step-2 mt-3" style="display:none;">
+                <div class="row">
+                    <div class="col-md-4">
+                        <x-input label="MRP" name="mrp" type="number" step="0.01" placeholder="₹ Enter MRP" required="true" />
+                        @error('mrp')
+                            <p class="text text-danger m-0">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div class="col-md-4">
+                        <x-input label="Selling Price" name="selling_price" placeholder="₹ Enter Selling Price" type="number" step="0.01" required="true" />
+                        @error('selling_price')
+                            <p class="text text-danger m-0">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div class="col-md-4">
+                        <x-select label="TAX%" name="tax_percentage" required="true">
+                            <option value="0">0%</option>
+                            <option value="5">5%</option>
+                            <option value="12">12%</option>
+                            <option value="18">18%</option>
+                        </x-select>
+                        @error('tax_percentage')
+                            <p class="text text-danger m-0">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div> 
+
+                <div class="mt-4">
+                    <label class="form-label">Bulk Price (optional)</label>
+                    <table class="table table-sm" id="bulk-table">
+                        <thead>
+                            <tr>
+                                <th>Min Qty</th>
+                                <th>Max Qty</th>
+                                <th>Price</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead> 
+                        <tbody>
+                            <tr>
+                                <td><input id="bulk-min" class="form-control" placeholder="Min Qty" type="number" min="1"></td>
+                                <td><input id="bulk-max" class="form-control" placeholder="Max Qty" type="number" min="1"></td>
+                                <td><input id="bulk-price" class="form-control" placeholder="Price" type="number" min="1"></td>
+                                <td><button type="button" class="btn btn-primary" id="add-bulk">Add</button></td>
+                            </tr>
+                        </tbody>
+                    </table> 
+                </div>
+                <!-- Added Bulk Pricing Display Area -->
+                <div class="mt-3">
+                    <h6>Added Bulk Pricing:</h6>
+                    <div id="added-bulkprice-container">
+                        <p class="text-muted small" id="no-bulkprice-message">No Bulk Prices added yet.</p>
+                        <!-- Bulkprice will be displayed here -->
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="button" class="btn btn-secondary prev-btn" data-prev="1">&laquo; Previous</button>
+                    <button type="button" class="btn btn-primary next-btn float-end" data-next="3">Next &raquo;</button>
+                </div>
+            </div>
+
+            <!-- STEP 3 - PRODUCT VARIANTS --> 
+            <div class="step-content step-3 mt-3" style="display:none;"> 
+                <div class="mt-4">
+                    <label class="form-label">Product Variant Details</label>
+                    <div class="alert alert-info small">Add size-only, color-only, or size+color variants. Each variant row contains price & quantity.</div>
+                    <!-- Variant Input Form -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Color (optional)</th>
+                                        <th>Size (optional)</th>
+                                        <th>Price <span class="text-danger">*</span></th>
+                                        <th>Quantity <span class="text-danger">*</span></th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <!-- <select id="variant-color" class="form-select">
+                                                <option value="">-- Select Color --</option>
+                                                @foreach ($colors as $color)
+                                                    <option value="{{ $color->id }}">{{ $color->name }}</option>
+                                                @endforeach
+                                            </select> -->
+                                            <select id="variant-color" name="color_id" class="form-select colorSelect" style="width: 100%">
+                                                <option value="">-- Select Color --</option>
+                                                @foreach ($colors as $color)
+                                                    <option value="{{ $color->id }}" data-color="{{ $color->color_code }}">
+                                                        {{ $color->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select id="variant-size" class="form-select">
+                                                <option value="">-- Select Size --</option>
+                                                @foreach ($sizes as $size)
+                                                <option value="{{ $size->id }}">{{ $size->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input id="variant-price" class="form-control" placeholder="Price" type="number" min="1">
+                                        </td>
+                                        <td>
+                                            <input id="variant-qty" class="form-control" placeholder="Qty" type="number">
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-primary" id="add-variant">Add Variant</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Added Variants Display Area -->
+                    <div class="mt-3">
+                        <h6>Added Variants:</h6>
+                        <div id="added-variants-container">
+                            <p class="text-muted small" id="no-variants-message">No variants added yet.</p>
+                            <!-- Variants will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5">
+                    <button type="button" class="btn btn-secondary prev-btn" data-prev="2">&laquo; Previous</button>
+                    <button type="button" class="btn btn-primary next-btn float-end" data-next="4">Next &raquo;</button>
+                </div>
+            </div>
+
+            <!-- STEP 4 - IMAGES -->
+            <div class="step-content step-4 mt-3" style="display:none;">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card card-body">
+                            <h5>Thumbnail <small class="text-muted">(Ratio 1:1 500x500) <span class="text-danger">*</span></small></h5>
+                            <label for="thumbnail" style="cursor:pointer;display:block;">
+                                <img src="https://placehold.co/500x500/f1f5f9/png" id="preview" alt="thumbnail" style="width:100%;max-width:300px">
+                            </label>
+                            <input id="thumbnail" accept="image/*" type="file" name="thumbnail" class="d-none" onchange="previewFile(event, 'preview')">
+                            @error('thumbnail')
+                                <p class="text text-danger m-0">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="col-12 mt-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5>Additional Thumbnails <span class="text-primary">(Ratio 1:1, 500x500px)<small class="text-muted">-multiple</small></span></h5>
+                                <input type="file" id="additionalInput" name="additional_images[]" multiple accept="image/*" class="d-none" onchange="handleAddImages(event)">
+                                <button type="button" class="btn btn-primary mt-2" onclick="document.getElementById ('additionalInput').click()"><i class="fa fa-upload"></i> Choose Images</button>
+                                <div id="additionalContainer" class="d-flex flex-wrap gap-3 mt-3"></div>
+                            </div>
+                        </div>
+                    </div> 
+                    <!-- <div class="col-12 mt-4">
+                        <p class="small text-muted">If you want variant-specific images, you can upload them after saving the product (or in edit flow).</p>
+                    </div> -->
+                </div>
+                <div class="mt-3">
+                    <button type="button" class="btn btn-secondary prev-btn" data-prev="3">&laquo; Previous</button>
+                    <button type="button" class="btn btn-primary next-btn float-end" data-next="5">Next &raquo;</button> 
+                </div>
+            </div>
+
+            <!-- STEP 5 - SEO INFORMATION -->
+            <div class="step-content step-5 mt-3" style="display:none;">
+                <div class="row">
+                    <div class="card mt-4 mb-3">
+                        <div class="card-body">
+                            <div class="d-flex gap-2 border-bottom pb-2">
+                                <i class="fa-solid fa-square-poll-vertical"></i>
+                                <h5> {{ __('SEO Information') }} </h5>
+                            </div>
+                            <div class="mt-3">
+                                <label for="uploadType" class="form-label"> {{ __('Meta Title') }} </label>
+                                <x-input name="meta_title" type="text" placeholder="Meta Title" />
+                            </div>
+                            <div class="mt-3">
+                                <label for="uploadType" class="form-label"> {{ __('Meta Description') }} </label>
+                                <textarea name="meta_description" type="text" placeholder="{{ __('Meta Description') }}" class="form-control">{{ old('meta_description') }}</textarea>
+                                @error('meta_description')
+                                    <p class="text text-danger m-0">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div class="mt-3">
+                                <label for="tags" class="form-label">@lang('Meta Keywords')</label>
+                                <select id="tags" name="meta_keywords[]" class="form-control selectTags" multiple style="width: 100%">
+                                    @foreach (old('meta_keywords', []) as $keyword)
+                                        <option value="{{ $keyword }}" selected>{{ $keyword }}</option>
+                                    @endforeach
+                                </select>
+                                <small>@lang('Write keywords and Press enter to add new one')</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="button" class="btn btn-secondary prev-btn" data-prev="4">&laquo; Previous</button> 
+                </div>
+            </div>
+
+            <!-- STEP 6 -->
+            <div class="step-content step-6 mt-3" style="display:none;">
+                <div class="alert alert-info small">
+                    Bulk products can be added only if variants and bulk pricing are NOT used.
+                </div>
+
+                <!-- Field Titles -->
+                <div class="row g-2 mb-2 fw-semibold text-muted">
+                    <div class="col-md-3">Item Name <span class="text-danger">*</span></div>
+                    <div class="col-md-2">Quantity <span class="text-danger">*</span></div>
+                    <div class="col-md-2">MOQ <span class="text-danger">*</span></div>
+                    <div class="col-md-2">MRP <span class="text-danger">*</span></div>
+                    <div class="col-md-2">Selling Price <span class="text-danger">*</span></div>
+                    <div class="col-md-1"></div>
+                </div>
+
+                <div id="bulk-items-list">
+                    <div class="row g-2 mb-2 bulk-item-row">
+                        <div class="col-md-3">
+                            <input type="text" name="bulk_items[0][name]" class="form-control" placeholder="Item Name">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" name="bulk_items[0][quantity]" class="form-control" placeholder="Qty">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" name="bulk_items[0][moq]" class="form-control" placeholder="MOQ">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" name="bulk_items[0][mrp]" class="form-control" placeholder="MRP">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" name="bulk_items[0][selling_price]" class="form-control" placeholder="Selling Price">
+                        </div>
+                        <div class="col-md-1">
+                            <button type="button" class="btn btn-danger remove-bulk-item" disabled>-</button>
+                            <button type="button" class="btn btn-success add-bulk-item" id="add-bulk-item">+</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- <button type="button" class="btn btn-primary btn-sm mt-2" id="add-bulk-item">
+                    + Add More
+                </button> -->
             </div>
         </div>
+    </div>
+</form>
 
-        <div class="d-flex gap-3 justify-content-end align-items-center my-3">
-            <button type="reset" class="btn btn-lg btn-outline-secondary rounded py-2">
-                {{ __('Reset') }}
-            </button>
-            <button type="submit" class="btn btn-lg btn-primary rounded py-2 px-5">
-                {{ __('Submit') }}
-            </button>
-        </div>
-
-    </form>
 @endsection
-@push('css')
-    <style>
-        .box-title {
-            background: #f1f5f9;
-            padding: 6px 10px;
-            font-size: 18px;
-            border-bottom: 1px solid #ddd;
-        }
 
-        .app-theme-dark .box-title {
-            background: #2d2d2d;
-            border-color: #2d2d2d;
-        }
-
-        #colorBox,
-        #sizeBox {
-            margin-top: 20px;
-        }
-
-        .boxName {
-            font-size: 16px;
-            margin-bottom: 0;
-        }
-
-        .extraPriceForm {
-            padding: 4px 6px;
-            min-height: 34px;
-        }
-
-        #selectedSizesTableBody tr:last-child td,
-        #selectedColorsTableBody tr:last-child td {
-            border: 0 !important;
-        }
-    </style>
-@endpush
 @push('scripts')
-    <script>
-        function toggleFields() {
-            // Hide all fields
-            document.getElementById('fileUploadField').classList.add('d-none');
-            document.getElementById('youtubeField').classList.add('d-none');
-            document.getElementById('vimeoField').classList.add('d-none');
-            document.getElementById('dailymotionField').classList.add('d-none');
-
-            // Get selected type
-            const selectedType = document.getElementById('uploadType').value;
-
-            // Show relevant field
-            if (selectedType === 'file') {
-                document.getElementById('fileUploadField').classList.remove('d-none');
-            } else if (selectedType === 'youtube') {
-                document.getElementById('youtubeField').classList.remove('d-none');
-            } else if (selectedType === 'vimeo') {
-                document.getElementById('vimeoField').classList.remove('d-none');
-            } else if (selectedType === 'dailymotion') {
-                document.getElementById('dailymotionField').classList.remove('d-none');
-            }
+<script> 
+    // Remove +,-,e, and letters from number inputs
+    document.addEventListener('input', function(e) {
+        if (e.target.matches('input[type="number"]')) {
+            // Remove everything that's not a digit
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
         }
-        $(document).ready(function() {
-            $('.sizeSelector').select2();
+    });
 
-            $(".selectTags").select2({
-                tags: true,
-                placeholder: "{{ __('Write keywords and Press enter to add new one') }}"
-            });
+    // Summernote
+    $(document).ready(function() {
+        $('#description').summernote();
+    });
 
-            $('#price').on('input', function() {
-                var productPrice = $(this).val() ?? 0;
-                var productDiscountPrice = $('#discount_price').val() ?? 0;
-                var mainPrice = productDiscountPrice > 0 ? productDiscountPrice : productPrice;
-                $('.mainProductPrice').text(mainPrice);
-            });
+    // Tag
+    $(document).ready(function () {
+        $('.selectTags').select2({
+            tags: true,
+            tokenSeparators: [',', ' '],
+            placeholder: 'Enter keywords',
+            width: '100%'
+        });
+    });
 
-            $('#discount_price').on('input', function() {
-                var productPrice = $('#price').val() ?? 0;
-                var productDiscountPrice = $(this).val() ?? 0;
-                var mainPrice = productDiscountPrice > 0 ? productDiscountPrice : productPrice;
-                $('.mainProductPrice').text(mainPrice);
-            });
+    // Tabs navigation
+    $(document).ready(function() {
+        $('.next-btn').click(function() { // Next Button
+            let nextStep = $(this).data('next');
+            $('.step-content').hide();
+            $('.step-' + nextStep).show();
+            $('#productTabs .nav-link').removeClass('active');
+            $('#productTabs .nav-link[data-step="' + nextStep + '"]').addClass('active');
+        });
+        $('.prev-btn').click(function() { // Previous Button
+            let prevStep = $(this).data('prev');
+            $('.step-content').hide();
+            $('.step-' + prevStep).show();
+            $('#productTabs .nav-link').removeClass('active');
+            $('#productTabs .nav-link[data-step="' + prevStep + '"]').addClass('active');
+        });
+        $('#productTabs .nav-link').click(function(e) { //Tab Click Navigation
+            e.preventDefault();
+            let step = $(this).data('step');
+            $('.step-content').hide();
+            $('.step-' + step).show();
+            $('#productTabs .nav-link').removeClass('active');
+            $(this).addClass('active');
+        });
+    });
 
-            $('.sizeSelector').on('change', function() {
+    // Category-Subcategory Select
+    $(document).ready(function () {
+        const $main  = $('select[name="main_category"]');
+        const $sub   = $('select[name="sub_categories[]"]');
+        const $child = $('select[name="child_categories[]"]');
 
-                var productPrice = $('#price').val() ?? 0;
-                var productDiscountPrice = $('#discount_price').val() ?? 0;
-                var mainPrice = productDiscountPrice > 0 ? productDiscountPrice : productPrice;
+        // Helper functions
+        const resetSub = () => {
+            $sub.empty().append('<option selected disabled>Select Sub Category</option>');
+        };
+        const resetChild = () => {
+            $child.empty().append('<option selected disabled>Select Child Category</option>');
+        };
+        const notAvailable = (select, text) => {
+            select.empty().append(
+                `<option selected disabled>${text}</option>`
+            );
+        };
 
-                // Get the selected options
-                var selectedOptions = $(this).find(':selected');
+        /* ---------------- Main → Sub ---------------- */
+        $main.on('change', function () {
+            let categoryId = $(this).val();
+            resetSub();
+            resetChild();
 
-                // Check if there are selected options
-                if (selectedOptions.length > 0) {
-                    $('#sizeBox').show();
-                } else {
-                    $('#sizeBox').hide();
+            if (!categoryId) {
+                notAvailable($sub, 'Not Available');
+                return;
+            }
+
+            $.get('/api/sub-categories', { category_id: categoryId }, function (res) {
+                let subs = res?.data?.sub_categories || [];
+                if (subs.length === 0) {
+                    notAvailable($sub, 'Not Available');
+                    notAvailable($child, 'Not Available');
+                    return;
                 }
-
-                selectedOptions.each(function() {
-                    var sizeName = $(this).data('size');
-                    var sizeId = $(this).val();
-
-                    // Check if the row already exists
-                    if (!$(`#selectedSizeRow_${sizeId}`).length) {
-                        $('#selectedSizesTableBody').append(`
-                        <tr id="selectedSizeRow_${sizeId}" style="display: table-row !important">
-                            <td>
-                                <h4 class="mb-0 boxName">${sizeName}</h4>
-                                <input type="hidden" name="size[${sizeId}][name]" value="${sizeName}">
-                                <input type="hidden" name="size[${sizeId}][id]" value="${sizeId}">
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="fw-bolder mainProductPrice">${mainPrice}</span>
-                                    <span class="bg-light px-2 py-1 rounded">
-                                        <i class="fa-solid fa-plus"></i>
-                                    </span>
-                                    <input type="text" class="form-control extraPriceForm" name="size[${sizeId}][price]" value="0" style="width: 140px;" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/^(\d*\.\d{0,2}|\d*)$/, '$1');">
-                                </div>
-                            </td>
-                            <td>
-                                <button class="btn circleIcon btn-outline-danger btn-sm" type="button"
-                                    onclick="deleteSizeRow(${sizeId})">
-                                    <i class="fa-solid fa-times"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `);
-                    }
-                });
-
-                $(this).find(':not(:selected)').each(function() {
-                    var sizeId = $(this).val();
-                    $(`#selectedSizeRow_${sizeId}`).remove();
-                });
-
-                setDefaultPrice();
-            });
-
-            // Add color wise extra price
-            $('.colorSelect').on('change', function() {
-
-                var selectedOptions = $(this).find(':selected');
-
-                if (selectedOptions.length > 0) {
-                    $('#colorBox').show();
+                if (subs.length === 1) {
+                    $sub.append(
+                        `<option value="${subs[0].id}" selected>${subs[0].name}</option>`
+                    ).trigger('change');
                 } else {
-                    $('#colorBox').hide();
-                }
-
-                var productPrice = $('#price').val() ?? 0;
-                var productDiscountPrice = $('#discount_price').val() ?? 0;
-                var mainPrice = productDiscountPrice > 0 ? productDiscountPrice : productPrice;
-
-                selectedOptions.each(function() {
-                    var colorName = $(this).data('name');
-                    var colorCode = $(this).data('color');
-                    var colorId = $(this).val();
-
-                    // Check if the row already exists
-                    if (!$(`#selectedColorRow_${colorId}`).length) {
-                        $('#selectedColorsTableBody').append(`
-                            <tr id="selectedColorRow_${colorId}" style="display: table-row !important">
-                                <td>
-                                    <h4 class="mb-0 boxName d-flex align-items-center gap-1">
-                                        <span style="background-color:${colorCode};width:20px;height:19px;display:inline-block; border-radius:5px;"></span>
-                                        ${colorName}
-                                    </h4>
-                                    <input type="hidden" name="color[${colorId}][name]" value="${colorName}">
-                                    <input type="hidden" name="color[${colorId}][id]" value="${colorId}">
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="fw-bolder mainProductPrice">${mainPrice}</span>
-                                        <span class="bg-light px-2 py-1 rounded">
-                                            <i class="fa-solid fa-plus"></i>
-                                        </span>
-                                        <input type="text" class="form-control extraPriceForm" name="color[${colorId}][price]" value="0" style="width: 140px" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/^(\d*\.\d{0,2}|\d*)$/, '$1');">
-                                    </div>
-                                </td>
-                                <td>
-                                    <button class="btn circleIcon btn-outline-danger btn-sm" type="button"
-                                        onclick="deleteColorRow(${colorId})">
-                                        <i class="fa-solid fa-times"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        `);
-                    }
-                });
-
-                // Remove the row from the table
-                $(this).find(':not(:selected)').each(function() {
-                    var colorId = $(this).val();
-                    $(`#selectedColorRow_${colorId}`).remove();
-                });
-
-                setDefaultPrice();
-            });
-
-            $('select[name="category"]').on('change', function() {
-                var categoryId = $(this).val();
-
-                if (categoryId) {
-                    $.ajax({
-                        url: '/api/sub-categories?category_id=' + categoryId,
-                        type: "GET",
-                        dataType: "json",
-                        success: function(data) {
-                            var subCategorySelected = $('select[name="sub_category[]"]');
-                            subCategorySelected.empty();
-
-                            $.each(data.data.sub_categories, function(key, value) {
-                                subCategorySelected.append('<option value="' + value
-                                    .id +
-                                    '">' + value.name + '</option>');
-                            });
-                            subCategorySelected.trigger('change');
-                        },
-                        error: function() {
-                            console.log('Error retrieving subcategories. Please try again.');
-                        }
+                    subs.forEach(sub => {
+                        $sub.append(`<option value="${sub.id}">${sub.name}</option>`);
                     });
-                } else {
-                    $('select[name="subCategory[]"]').empty();
                 }
-            });
-
-            // form submit loader
-            $('form').on('submit', function() {
-                var submitButton = $(this).find('button[type="submit"]');
-
-                submitButton.prop('disabled', true);
-                submitButton.removeClass('px-5');
-
-                submitButton.html(`<div class="d-flex align-items-center gap-1">
-                    <div class="spinner-border" role="status"></div>
-                    <span>Submitting...</span>
-                </div>`)
             });
         });
 
-        // remove size from price section
-        function deleteSizeRow(id) {
-            $(`#selectedSizeRow_${id}`).remove();
+        /* ---------------- Sub → Child ---------------- */
+        $sub.on('change', function () {
+            let subCategoryId = $(this).val();
+            resetChild();
 
-            $('.sizeSelector option').each(function() {
-                if ($(this).val() == id) {
-                    $(this).prop('selected', false);
+            if (!subCategoryId) {
+                notAvailable($child, 'Not Available');
+                return;
+            }
+
+            $.get('/api/child-categories', { sub_category_id: subCategoryId }, function (res) {
+                // let childs = res?.data || [];
+                let childs = res.data?.child_categories || [];
+                if (childs.length === 0) {
+                    notAvailable($child, 'Not Available');
+                    return;
+                }
+                if (childs.length === 1) {
+                    $child.append(
+                        `<option value="${childs[0].id}" selected>${childs[0].name}</option>`
+                    );
+                } else {
+                    childs.forEach(child => {
+                        $child.append(`<option value="${child.id}">${child.name}</option>`);
+                    });
                 }
             });
-            $('.sizeSelector').trigger('change');
+        });
 
-            setDefaultPrice();
-        }
+    });  
 
-        // remove color from price section
-        function deleteColorRow(id) {
-            $(`#selectedColorRow_${id}`).remove();
+    // Item details add-more 
+    let itemIndex = 1;
+    document.getElementById('add-item-detail').addEventListener('click', function () {
+        let container = document.getElementById('item-details-list');
 
-            $('.colorSelect option').each(function() {
-                if ($(this).val() == id) {
-                    $(this).prop('selected', false);
-                }
-            });
-            $('.colorSelect').trigger('change');
+        let div = document.createElement('div');
+        div.classList.add('d-flex', 'gap-2', 'mb-2', 'item-row');
 
-            setDefaultPrice();
-        }
-
-        // set default price
-        function setDefaultPrice() {
-            $('#selectedColorsTableBody').find('tr').each(function() {
-                let index = $(this).index();
-                var rowId = $(this).attr('id').split('_')[1];
-
-                if (index == 0) {
-                    var priceInput = $(`input[name="color[${rowId}][price]"]`);
-                    priceInput.val(0);
-                    priceInput.attr('type', 'hidden');
-
-                    $('#defaultPriceColor').remove();
-                    $(`<span id="defaultPriceColor" class="defaultPrice fst-italic">Default Price</span>`)
-                        .insertAfter(priceInput);
-                }
-            });
-
-            $('#selectedSizesTableBody').find('tr').each(function() {
-                let index = $(this).index();
-                var rowId = $(this).attr('id').split('_')[1];
-
-                if (index == 0) {
-                    var priceInput = $(`input[name="size[${rowId}][price]"]`);
-                    priceInput.val(0);
-                    priceInput.attr('type', 'hidden');
-
-                    $('#defaultPriceSize').remove();
-                    $(`<span id="defaultPriceSize" class="defaultPrice fst-italic">Default Price</span>`)
-                        .insertAfter(priceInput);
-                }
-            });
-        }
-    </script>
-
-    <!-- additional thumbnail script -->
-    <script>
-        var thumbnailCount = 1;
-
-        const previewAdditionalFile = (event, id, removeId) => {
-            var reader = new FileReader();
-            reader.onload = function() {
-                var output = document.getElementById(id);
-                output.src = reader.result;
-            };
-            reader.readAsDataURL(event.target.files[0]);
-
-            // increment count
-            thumbnailCount++;
-
-            document.getElementById(removeId).style.display = 'block';
-
-            // Create a new box dynamically
-            const newThumbnailId = `additionThumbnail${thumbnailCount + 1}`;
-            const newPreviewId = `preview${thumbnailCount + 1}`;
-            const mainId = 'addition' + thumbnailCount + 1;
-
-            // Add the new box
-            const newThumbnailBox = document.createElement('div');
-            newThumbnailBox.id = mainId;
-
-            newThumbnailBox.innerHTML = `
-            <label for="${newThumbnailId}" class="additionThumbnail">
-                <img src="{{ asset('default/upload.png') }}" id="${newPreviewId}" alt="" width="100%" height="100%">
-                <button onclick="removeThumbnail('${mainId}')" type="button" id="removeThumbnail${thumbnailCount + 1}" class="delete btn btn-sm btn-outline-danger circleIcon" style="display: none"><img src="{{ asset('assets/icons-admin/trash.svg') }}" loading="lazy" alt="trash" /></button>
-                <input id="${newThumbnailId}" accept="image/*" type="file" name="additionThumbnail[]" class="d-none" onchange="previewAdditionalFile(event, '${newPreviewId}', 'removeThumbnail${thumbnailCount +1 }')">
-            </label>
+        div.innerHTML = `
+            <input type="text" name="item_details[${itemIndex}][name]" class="form-control" placeholder="Item Name">
+            <input type="text" name="item_details[${itemIndex}][value]" class="form-control" placeholder="Item Value">
+            <button type="button" class="btn btn-danger btn-sm remove-item">-</button>
         `;
 
-            document.getElementById('additionalElements').insertBefore(newThumbnailBox, document.getElementById(
-                'additionalElements').firstChild);
-
-            // get current file
-            var inputElement = event.target;
-            var newOnchangeFunction = `previewFile(event, '${id}')`;
-            // Set the new onchange attribute
-            inputElement.setAttribute("onchange", newOnchangeFunction);
-
+        container.appendChild(div);
+        itemIndex++;
+    });
+    // remove row
+    document.addEventListener('click', function (e) {
+        if (e.target.classList.contains('remove-item')) {
+            e.target.closest('.item-row').remove();
         }
+    });
 
-        const removeThumbnail = (thumbnailId) => {
-            const thumbnailToRemove = document.getElementById(thumbnailId);
-            if (thumbnailToRemove) {
-                thumbnailToRemove.parentNode.removeChild(thumbnailToRemove);
-            }
-        }
+    // Thumbnail preview
+    function previewFile(event, targetId) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById(targetId).src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
 
-        const generateCode = () => {
-            const code = document.getElementById('barcode');
-            code.value = Math.floor(Math.random() * 900000) + 100000;
-        }
-    </script>
-
-    <!-- color select2 script -->
-    <script>
-        function formatState(state) {
+    // Additional images
+    function handleAddImages(event) {
+        const files = event.target.files;
+        const container = document.getElementById('additionalContainer');
+        [...files].forEach((file) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.style.width = '120px';
+                div.style.height = '120px';
+                div.classList.add('position-relative');
+                div.innerHTML =
+                    `<img src="${e.target.result}" class="w-100 h-100 rounded border">
+                    <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" onclick="this.parentElement.remove()">×</button>`;
+                container.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+    
+    // Color code
+    $(document).ready(function() {
+        function formatColorOption(state) {
             if (!state.id) {
                 return state.text;
             }
-            var $state = $(
-                '<span class="d-flex align-items-center"> <span style="background-color:' + state.element.dataset
-                .color +
-                ';width:20px;height:20px;display:inline-block; border-radius:5px;margin-right:5px;"></span>' + state
-                .text + '</span>'
-            );
-            return $state;
-        };
+            
+            var colorCode = $(state.element).data('color');
+            
+            if (colorCode) {
+                return $(
+                    '<span>' +
+                        '<span style="display:inline-block; width:15px; height:15px; background-color:' + colorCode + 
+                        '; border-radius:3px; margin-right:8px; border:1px solid #ddd"></span>' +
+                        state.text +
+                    '</span>'
+                );
+            }
+            
+            return state.text;
+        }
+        $('.colorSelect').select2({
+            templateResult: formatColorOption,
+            templateSelection: formatColorOption
+        });
+    });
+</script> 
 
-        $(document).ready(function() {
-            $('.colorSelect').select2({
-                templateResult: formatState
+<!-- Product Variants and Bulk Prices -->
+<script>  
+    function createUniqueId() {
+        return Date.now() + Math.random().toString(36).substr(2, 9);
+    }
+
+    let addedVariants = [];
+    let addedBulkRanges = [];
+    
+    // Add Variant
+    document.getElementById('add-variant').addEventListener('click', function() {
+        const colorSelect = document.getElementById('variant-color');
+        const sizeSelect = document.getElementById('variant-size');
+        const priceInput = document.getElementById('variant-price');
+        const qtyInput = document.getElementById('variant-qty');
+        
+        const colorId = colorSelect.value;
+        const colorName = colorSelect.options[colorSelect.selectedIndex]?.text || '';
+        const sizeId = sizeSelect.value;
+        const sizeName = sizeSelect.options[sizeSelect.selectedIndex]?.text || '';
+        const price = parseFloat(priceInput.value);
+        const qty = parseInt(qtyInput.value);
+        
+        // Validations
+        if (!sizeId && !colorId) {
+            showFlash('Please choose either size or color (or both)');
+            return;
+        }
+        if (!price || price <= 0) {
+            showFlash('Please enter a valid price');
+            return;
+        }
+        if (!qty || qty < 0) {
+            showFlash('Please enter a valid quantity');
+            return;
+        }
+        const variantKey = `${colorId}-${sizeId}`;
+        if (addedVariants.includes(variantKey)) {
+            showFlash('This color and size combination already exists!');
+            return;
+        }
+        
+        // Add to tracking array
+        addedVariants.push(variantKey);
+        // Hide "no variants" message
+        document.getElementById('no-variants-message').style.display = 'none';
+        // Create display card
+        const variantId = createUniqueId();
+        const variantCard = document.createElement('div');
+        variantCard.className = 'card mb-2 variant-card';
+        variantCard.id = `variant-${variantId}`;
+        
+        variantCard.innerHTML = `
+            <div class="card-body py-2">
+                <div class="row align-items-center">
+                    <div class="col-md-10">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>Color:</strong> ${colorName || 'N/A'}
+                                <input type="hidden" name="variants[${variantId}][color_id]" value="${colorId}">
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Size:</strong> ${sizeName || 'N/A'}
+                                <input type="hidden" name="variants[${variantId}][size_id]" value="${sizeId}">
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Price:</strong> ₹${price.toFixed(2)}
+                                <input type="hidden" name="variants[${variantId}][price]" value="${price}">
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Quantity:</strong> ${qty}
+                                <input type="hidden" name="variants[${variantId}][quantity]" value="${qty}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <button type="button" class="btn btn-sm btn-danger delete-item" data-type="variant" data-id="${variantId}">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('added-variants-container').appendChild(variantCard);
+        $(colorSelect).val(null).trigger('change');
+        // Clear inputs
+        colorSelect.value = '';
+        sizeSelect.value = '';
+        priceInput.value = '';
+        qtyInput.value = '';
+        colorSelect.focus();
+    });
+    
+    // Add Bulk Price 
+    document.getElementById('add-bulk').addEventListener('click', function() {
+        const minInput = document.getElementById('bulk-min');
+        const maxInput = document.getElementById('bulk-max');
+        const priceInput = document.getElementById('bulk-price');
+        
+        const min = parseInt(minInput.value);
+        const max = parseInt(maxInput.value);
+        const price = parseFloat(priceInput.value);
+        
+        // Validation
+        if (!min || !max || !price) {
+            showFlash('Fill Min Quantity, Max Quantity and Price');
+            return;
+        }
+        
+        if (min >= max) {
+            showFlash('Min quantity must be less than Max quantity');
+            return;
+        }
+        
+        const rangeKey = `${min}-${max}`;
+        if (addedBulkRanges.includes(rangeKey)) {
+            showFlash('This quantity range already exists!');
+            return;
+        }
+        
+        // Get all existing bulk ranges
+        const existingRanges = [];
+        document.querySelectorAll('.bulk-card').forEach(card => {
+            const existingMin = parseInt(card.querySelector('input[name*="min_qty"]').value);
+            const existingMax = parseInt(card.querySelector('input[name*="max_qty"]').value);
+            existingRanges.push({ min: existingMin, max: existingMax });
+        });
+        
+        // Sort existing ranges by min quantity
+        existingRanges.sort((a, b) => a.min - b.min);
+        
+        // Check for continuity and overlapping
+        let continuityError = '';
+        
+        if (existingRanges.length > 0) {
+            // Check if new range fits in continuity
+            let prevRange = null;
+            
+            for (let i = 0; i < existingRanges.length; i++) {
+                const range = existingRanges[i];
+                
+                // Check for overlapping with any existing range
+                if ((min >= range.min && min <= range.max) ||
+                    (max >= range.min && max <= range.max) ||
+                    (min <= range.min && max >= range.max)) {
+                    showFlash(`This quantity range overlaps with existing range (${range.min}-${range.max})!`);
+                    return;
+                }
+                
+                // Check for gaps in continuity
+                if (prevRange) {
+                    // There should be no gap between previous max and current min
+                    if (prevRange.max + 1 !== range.min) {
+                        showFlash(`There's a gap in quantity ranges. After ${prevRange.max}, next range should start at ${prevRange.max + 1}`);
+                        return;
+                    }
+                }
+                
+                prevRange = range;
+            }
+            
+            // Now check where the new range fits
+            if (min < existingRanges[0].min) {
+                // New range is before all existing ranges
+                if (max + 1 !== existingRanges[0].min) {
+                    showFlash(`To add before existing range, max should be ${existingRanges[0].min - 1} for continuity`);
+                    return;
+                }
+            } else if (min > existingRanges[existingRanges.length - 1].max) {
+                // New range is after all existing ranges
+                if (min !== existingRanges[existingRanges.length - 1].max + 1) {
+                    showFlash(`To add after existing range, min should be ${existingRanges[existingRanges.length - 1].max + 1} for continuity`);
+                    return;
+                }
+            } else {
+                // New range should fit between existing ranges
+                let inserted = false;
+                for (let i = 0; i < existingRanges.length - 1; i++) {
+                    const currentRange = existingRanges[i];
+                    const nextRange = existingRanges[i + 1];
+                    
+                    if (min > currentRange.max && max < nextRange.min) {
+                        // Check continuity with both sides
+                        if (min !== currentRange.max + 1) {
+                            showFlash(`To insert between ranges, min should be ${currentRange.max + 1} for continuity`);
+                            return;
+                        }
+                        if (max + 1 !== nextRange.min) {
+                            showFlash(`To insert between ranges, max should be ${nextRange.min - 1} for continuity`);
+                            return;
+                        }
+                        inserted = true;
+                        break;
+                    }
+                }
+                
+                if (!inserted) {
+                    showFlash('Cannot determine where to insert this range. Please check continuity.');
+                    return;
+                }
+            }
+        }
+        
+        // If no existing ranges, just add the first one
+        addedBulkRanges.push(rangeKey);
+        
+        // Hide "no bulk price" message
+        document.getElementById('no-bulkprice-message').style.display = 'none';
+        
+        // Create display card
+        const bulkId = createUniqueId();
+        const bulkCard = document.createElement('div');
+        bulkCard.className = 'card mb-2 bulk-card';
+        bulkCard.id = `bulk-${bulkId}`;
+        
+        bulkCard.innerHTML = `
+            <div class="card-body py-2">
+                <div class="row align-items-center">
+                    <div class="col-md-10">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Min Qty:</strong> ${min}
+                                <input type="hidden" name="bulk[${bulkId}][min_qty]" value="${min}">
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Max Qty:</strong> ${max}
+                                <input type="hidden" name="bulk[${bulkId}][max_qty]" value="${max}">
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Price:</strong> ₹${price.toFixed(2)}
+                                <input type="hidden" name="bulk[${bulkId}][price]" value="${price}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <button type="button" class="btn btn-sm btn-danger delete-item" data-type="bulk" data-id="${bulkId}">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Insert in correct position based on min quantity
+        const container = document.getElementById('added-bulkprice-container');
+        const bulkCards = Array.from(container.querySelectorAll('.bulk-card'));
+        
+        if (bulkCards.length === 0) {
+            container.appendChild(bulkCard);
+        } else {
+            let inserted = false;
+            for (let i = 0; i < bulkCards.length; i++) {
+                const cardMin = parseInt(bulkCards[i].querySelector('input[name*="min_qty"]').value);
+                if (min < cardMin) {
+                    bulkCards[i].before(bulkCard);
+                    inserted = true;
+                    break;
+                }
+            }
+            if (!inserted) {
+                bulkCards[bulkCards.length - 1].after(bulkCard);
+            }
+        }
+        
+        // Clear inputs and suggest next min quantity
+        if (existingRanges.length > 0) {
+            const lastMax = existingRanges[existingRanges.length - 1].max;
+            minInput.value = Math.max(lastMax + 1, max + 1);
+        } else {
+            minInput.value = max + 1;
+        }
+        maxInput.value = '';
+        priceInput.value = '';
+        minInput.focus();
+    });
+    
+    // Handle deletion of both variants and bulk prices 
+    document.addEventListener('click', function(e) {
+        const deleteBtn = e.target.closest('.delete-item');
+        if (!deleteBtn) return;
+        
+        const type = deleteBtn.dataset.type;
+        const id = deleteBtn.dataset.id;
+        const card = document.getElementById(`${type}-${id}`);
+        
+        if (card) {
+            if (type === 'variant') {
+                // Remove variant from tracking
+                const colorId = card.querySelector('input[name*="color_id"]').value;
+                const sizeId = card.querySelector('input[name*="size_id"]').value;
+                const variantKey = `${colorId}-${sizeId}`;
+                addedVariants = addedVariants.filter(key => key !== variantKey);
+                
+                // Show message if no variants left
+                if (document.querySelectorAll('.variant-card').length === 1) {
+                    document.getElementById('no-variants-message').style.display = 'block';
+                }
+            } else if (type === 'bulk') {
+                // Remove bulk range from tracking
+                const min = card.querySelector('input[name*="min_qty"]').value;
+                const max = card.querySelector('input[name*="max_qty"]').value;
+                const rangeKey = `${min}-${max}`;
+                addedBulkRanges = addedBulkRanges.filter(key => key !== rangeKey);
+                
+                // Show message if no bulk prices left
+                if (document.querySelectorAll('.bulk-card').length === 1) {
+                    document.getElementById('no-bulkprice-message').style.display = 'block';
+                }
+                
+                // Update min input suggestion after deletion
+                updateMinInputSuggestion();
+            }
+            
+            card.remove();
+        }
+    });
+
+    // Helper function to update min input suggestion
+    function updateMinInputSuggestion() {
+        const bulkCards = document.querySelectorAll('.bulk-card');
+        const minInput = document.getElementById('bulk-min');
+        
+        if (bulkCards.length === 0) {
+            minInput.placeholder = "Min Qty (start with 1)";
+            return;
+        } 
+        // Get the last max value
+        const lastCard = bulkCards[bulkCards.length - 1];
+        const lastMax = parseInt(lastCard.querySelector('input[name*="max_qty"]').value);
+        
+        minInput.placeholder = `Min Qty (suggestion: ${lastMax + 1})`;
+    }
+</script>
+
+<!-- Disable Variants or Bulk Prices or Bulk Items -->
+<!-- <script>
+    function disableVariants(disable = true) {
+        $('#variant-color, #variant-size, #variant-price, #variant-qty').prop('disabled', disable);
+        $('#add-variant').prop('disabled', disable);
+
+        if (disable && !variantDisabledNotified) {
+            showFlash('Bulk pricing is added. Product variants are disabled.');
+            variantDisabledNotified = true;
+        }
+
+        if (!disable) {
+            variantDisabledNotified = false;
+        }
+    }
+
+    function disableBulkPricing(disable = true) {
+        $('#bulk-min, #bulk-max, #bulk-price').prop('disabled', disable);
+        $('#add-bulk').prop('disabled', disable);
+
+        if (disable && !bulkDisabledNotified) {
+            showFlash('Product variants are added. Bulk pricing is disabled.');
+            bulkDisabledNotified = true;
+        }
+
+        if (!disable) {
+            bulkDisabledNotified = false;
+        }
+    }
+
+    function hasVariants() {
+        return document.querySelectorAll('.variant-card').length > 0;
+    }
+
+    function hasBulkPricing() {
+        return document.querySelectorAll('.bulk-card').length > 0;
+    }
+
+    function syncExclusiveRules() {
+        if (hasBulkPricing()) {
+            disableVariants(true);
+        } else {
+            disableVariants(false);
+        }
+
+        if (hasVariants()) {
+            disableBulkPricing(true);
+        } else {
+            disableBulkPricing(false);
+        }
+    }
+
+    // Run on page load (important for edit / validation reload)
+    document.addEventListener('DOMContentLoaded', syncExclusiveRules);
+
+    // Re-check after add/remove
+    document.addEventListener('click', function (e) {
+        if (
+            e.target.id === 'add-variant' ||
+            e.target.id === 'add-bulk' ||
+            e.target.closest('.delete-item')
+        ) {
+            setTimeout(syncExclusiveRules, 100);
+        }
+    });
+</script> -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        let variantDisabledNotified = false;
+        let bulkDisabledNotified = false;
+        const bulkTab = document.getElementById('bulkProductTab');
+
+        // HELPERS
+        function hasVariants() {
+            return document.querySelectorAll('.variant-card').length > 0;
+        }
+        function hasBulkPricing() {
+            return document.querySelectorAll('.bulk-card').length > 0;
+        }
+        function hasBulkItems() {
+            let hasData = false;
+
+            document.querySelectorAll('.bulk-item-row').forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                inputs.forEach(input => {
+                    if (input.value && input.value.trim() !== '') {
+                        hasData = true;
+                    }
+                });
             });
-        });
-    </script>
 
-    <script>
-        correctULTagFromQuill = (str) => {
-            if (str) {
-                let re = /(<ol><li data-list="bullet">)(.*?)(<\/ol>)/;
-                let strArr = str.split(re);
+            return hasData;
+        }
 
-                while (
-                    strArr.findIndex((ele) => ele === '<ol><li data-list="bullet">') !== -1
-                ) {
-                    let index = strArr.findIndex(
-                        (ele) => ele === '<ol><li data-list="bullet">'
-                    );
-                    if (index) {
-                        strArr[index] = '<ul><li data-list="bullet">';
-                        let endTagIndex = strArr.findIndex((ele) => ele === "</ol>");
-                        strArr[endTagIndex] = "</ul>";
-                    }
-                }
-                return strArr.join("");
+        // DISABLE FUNCTIONS 
+        function disableVariants(disable = true) {
+            $('#variant-color, #variant-size, #variant-price, #variant-qty').prop('disabled', disable);
+            $('#add-variant').prop('disabled', disable);
+
+            if (disable && !variantDisabledNotified) {
+                // showFlash('Bulk pricing or Bulk products are added. Product variants are disabled.');
+                variantDisabledNotified = true;
             }
-            return str;
-        };
 
-        const quill = new Quill('#editor', {
-            theme: 'snow',
-            modules: {
-                toolbar: [
-                    [{
-                        'header': [1, 2, 3, 4, 5, 6, false]
-                    }],
-                    [{
-                        'font': []
-                    }],
-                    ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-                    [{
-                        'list': 'ordered'
-                    }, {
-                        'list': 'bullet'
-                    }],
-                    [{
-                        'align': []
-                    }],
-                    [{
-                        'script': 'sub'
-                    }, {
-                        'script': 'super'
-                    }],
-                    [{
-                        'indent': '-1'
-                    }, {
-                        'indent': '+1'
-                    }],
-                    [{
-                        'direction': 'rtl'
-                    }],
-                    [{
-                        'color': []
-                    }, {
-                        'background': []
-                    }],
-                    ['link', 'image', 'video', 'formula']
-                ]
+            if (!disable) variantDisabledNotified = false;
+        }
+        function disableBulkPricing(disable = true) {
+            $('#bulk-min, #bulk-max, #bulk-price').prop('disabled', disable);
+            $('#add-bulk').prop('disabled', disable);
+
+            if (disable && hasBulkItems() && !bulkDisabledNotified) {
+                // showFlash('Product variants or Bulk products are added. Bulk pricing is disabled.');
+                bulkDisabledNotified = true;
             }
+            if (!disable) bulkDisabledNotified = false;
+        }
+
+        // BULK PRODUCTS TAB 
+        function toggleBulkTab(disable = true) {
+            bulkTab.classList.toggle('disabled', disable);
+            bulkTab.style.pointerEvents = disable ? 'none' : 'auto';
+            bulkTab.style.opacity = disable ? '0.5' : '1';
+
+            // force redirect if currently inside
+            const bulkStep = document.querySelector('.step-6');
+            if (disable && bulkStep.style.display === 'block') {
+                document.querySelectorAll('.step-content').forEach(el => el.style.display = 'none');
+                document.querySelector('.step-3').style.display = 'block';
+
+                document.querySelectorAll('#productTabs .nav-link').forEach(tab => tab.classList.remove('active'));
+                document.querySelector('#productTabs .nav-link[data-step="3"]').classList.add('active');
+            }
+        }
+    
+        // MASTER RULE ENGINE 
+        function syncAllExclusiveRules() {
+            /* Rule 1: Variant ↔ Bulk Pricing */
+            if (hasVariants()) {
+                disableBulkPricing(true);
+            } else {
+                disableBulkPricing(false);
+            }
+            if (hasBulkPricing()) {
+                disableVariants(true);
+            } else {
+                disableVariants(false);
+            }
+            /* Rule 2: Bulk Products vs Others */
+            if (hasVariants() || hasBulkPricing()) {
+                toggleBulkTab(true);
+            } else {
+                toggleBulkTab(false);
+            }
+            /* Rule 3: Bulk products block others */
+            if (hasBulkItems()) {
+                disableVariants(true);
+                disableBulkPricing(true);
+                toggleBulkTab(false); // user is allowed inside
+            }
+        }
+
+        // INITIAL RUN
+        syncAllExclusiveRules(); 
+
+        // RE-CHECK ON ACTIONS 
+        document.addEventListener('click', function (e) {
+            if (
+                e.target.id === 'add-variant' ||
+                e.target.id === 'add-bulk' ||
+                e.target.id === 'add-bulk-item' ||
+                e.target.closest('.delete-item') ||
+                e.target.closest('.remove-bulk-item')
+            ) {
+                setTimeout(syncAllExclusiveRules, 100);
+            }
+
         });
 
-        quill.on('text-change', function(delta, oldDelta, source) {
-            document.getElementById('description').value = correctULTagFromQuill(quill.root.innerHTML);
+    });
+</script>
+
+<!-- Bulk Items -->
+<!-- <script>
+    let bulkItemIndex = 1;
+
+    document.getElementById('add-bulk-item').addEventListener('click', function () {
+        const container = document.getElementById('bulk-items-list');
+        const rows = container.querySelectorAll('.bulk-item-row');
+        const lastRow = rows[rows.length - 1];
+
+        let isValid = true;
+        lastRow.querySelectorAll('input').forEach(input => {
+            if (input.value.trim() === '') isValid = false;
         });
-    </script>
 
-    <script>
-        $(document).on('click', '#generateAi', function() {
-            var name = $('#product_name').val();
-            var short_description = $('#short_description').val();
-            $('#description').val("Generating description... Please wait ⏳");
-            quill.clipboard.dangerouslyPasteHTML("<p><em>Generating description... Please wait ⏳</em></p>");
-            $.ajax({
-                url: "{{ route('shop.product.generate.AI.data') }}",
-                method: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    name: name,
-                    short_description: short_description
-                },
-                success: function(response) {
-                    $('#description').val("");
-                    quill.setText("");
-                    console.log(response);
+        if (!isValid) {
+            showFlash('Please fill Item Name, Quantity, MOQ, MRP and Selling Price before adding more.');
+            return;
+        }
 
-                    let lastResponse = "";
-                    let fullText = response;
-                    let index = 0;
+        const row = document.createElement('div');
+        row.className = 'row g-2 mb-2 bulk-item-row';
 
-                    function typeStep() {
-                        if (index >= fullText.length) return;
-                        lastResponse += fullText[index++];
-                        $('#description').val(lastResponse);
-                        quill.clipboard.dangerouslyPasteHTML(lastResponse);
-                        quill.setSelection(quill.getLength(), 0);
-                        setTimeout(typeStep, 10); // 10ms delay per character
-                    }
+        row.innerHTML = `
+            <div class="col-md-3">
+                <input type="text" name="bulk_items[${bulkItemIndex}][name]" class="form-control">
+            </div>
+            <div class="col-md-2">
+                <input type="number" name="bulk_items[${bulkItemIndex}][quantity]" class="form-control">
+            </div>
+            <div class="col-md-2">
+                <input type="number" name="bulk_items[${bulkItemIndex}][moq]" class="form-control">
+            </div>
+            <div class="col-md-2">
+                <input type="number" name="bulk_items[${bulkItemIndex}][mrp]" class="form-control">
+            </div>
+            <div class="col-md-2">
+                <input type="number" name="bulk_items[${bulkItemIndex}][selling_price]" class="form-control">
+            </div>
+            <div class="col-md-1">
+                <button type="button" class="btn btn-danger remove-bulk-item">-</button>
+            </div>
+        `;
 
-                    typeStep();
-                },
-                error: function(error) {
-                    if (error.responseJSON && error.responseJSON.errors) {
-                        let firstError = Object.values(error.responseJSON.errors)[0][0];
-                        toastr.error(firstError);
-                    } else if (error.responseJSON && error.responseJSON.message) {
-                        toastr.error(error.responseJSON.message);
-                    } else {
-                        toastr.error("Something went wrong");
-                    }
-                    $('#description').val("");
-                    quill.setText("");
-                }
-            })
-        });
-    </script>
+        container.appendChild(row);
+        bulkItemIndex++;
+    });
+
+    document.addEventListener('click', function (e) {
+        if (e.target.classList.contains('remove-bulk-item')) {
+            const rows = document.querySelectorAll('.bulk-item-row');
+            if (rows.length > 1) {
+                e.target.closest('.bulk-item-row').remove();
+            }
+        }
+    });
+</script> -->
+<script>
+    let bulkItemIndex = 1;
+    document.addEventListener('click', function (e) {
+
+        /* ADD */
+        if (e.target.classList.contains('add-bulk-item')) {
+
+            const container = document.getElementById('bulk-items-list');
+            const rows = container.querySelectorAll('.bulk-item-row');
+            const lastRow = rows[rows.length - 1];
+
+            let isValid = true;
+            lastRow.querySelectorAll('input').forEach(input => {
+                if (!input.value.trim()) isValid = false;
+            });
+
+            if (!isValid) {
+                showFlash('Please fill all fields before adding more.');
+                return;
+            }
+
+            /* Hide + from all rows */
+            rows.forEach(row => {
+                row.querySelector('.add-bulk-item')?.classList.add('d-none');
+                row.querySelector('.remove-bulk-item').disabled = false;
+            });
+
+            const row = document.createElement('div');
+            row.className = 'row g-2 mb-2 bulk-item-row';
+
+            row.innerHTML = `
+                <div class="col-md-3">
+                    <input type="text" name="bulk_items[${bulkItemIndex}][name]" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="bulk_items[${bulkItemIndex}][quantity]" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="bulk_items[${bulkItemIndex}][moq]" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="bulk_items[${bulkItemIndex}][mrp]" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="bulk_items[${bulkItemIndex}][selling_price]" class="form-control">
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-danger remove-bulk-item">-</button>
+                    <button type="button" class="btn btn-success add-bulk-item">+</button>
+                </div>
+            `;
+
+            container.appendChild(row);
+            bulkItemIndex++;
+        }
+
+        /* REMOVE */
+        if (e.target.classList.contains('remove-bulk-item')) {
+
+            const container = document.getElementById('bulk-items-list');
+            const row = e.target.closest('.bulk-item-row');
+            row.remove();
+
+            const rows = container.querySelectorAll('.bulk-item-row');
+            if (!rows.length) return;
+
+            /* Show + only in last row */
+            rows.forEach(r => r.querySelector('.add-bulk-item')?.classList.add('d-none'));
+            rows[rows.length - 1].querySelector('.add-bulk-item')?.classList.remove('d-none');
+
+            if (rows.length === 1) {
+                rows[0].querySelector('.remove-bulk-item').disabled = true;
+            }
+        }
+
+    });
+</script>
+
 @endpush
