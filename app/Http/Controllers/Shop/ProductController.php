@@ -16,6 +16,7 @@ use App\Events\AdminProductRequestEvent;
 use App\Repositories\FlashSaleRepository;
 use Illuminate\Support\Facades\Validator;
 use App\Repositories\NotificationRepository;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProductController extends Controller
@@ -88,19 +89,50 @@ class ProductController extends Controller
     /**
      * store new product.
      */
+    // public function store(ProductRequest $request)
+    // {
+    //     $shop = generaleSetting('shop');
+
+    //     $skuCode = $shop?->products()->where('code', $request->code)->exists();
+
+    //     if ($skuCode) {
+    //         return back()->withInput()->withErrors(['code' => __('Product code already exists!')])->with('error', __('Product code already exists!'));
+    //     }
+
+    //     ProductRepository::storeByRequest($request);
+
+    //     /** @var User $user */
+    //     $user = auth()->user();
+    //     $isRootUser = $user?->hasRole('root');
+
+    //     // admin notification message
+    //     if (! $isRootUser && generaleSetting('setting')->shop_type != 'single') {
+    //         $message = 'New product Created Request';
+    //         try {
+    //             AdminProductRequestEvent::dispatch($message);
+    //         } catch (\Throwable $th) {
+    //         }
+
+    //         $data = (object) [
+    //             'title' => $message,
+    //             'content' => 'New product Created Request from ' . $shop->name,
+    //             'url' => '/admin/products?status=0',
+    //             'icon' => 'bi-shop',
+    //             'type' => 'success',
+    //         ];
+    //         // store notification
+    //         NotificationRepository::storeByRequest($data);
+    //     }
+
+    //     return to_route('shop.product.index')->withSuccess(__('Product created successfully!'));
+    // }
+
+
     public function store(ProductRequest $request)
     {
+        $data = $request->validated();
         $shop = generaleSetting('shop');
-
-        $skuCode = $shop?->products()->where('code', $request->code)->exists();
-
-        if ($skuCode) {
-            return back()->withInput()->withErrors(['code' => __('Product code already exists!')])->with('error', __('Product code already exists!'));
-        }
-
-        ProductRepository::storeByRequest($request);
-
-        /** @var User $user */
+        ProductRepository::storeByProductRequest($request, $data);
         $user = auth()->user();
         $isRootUser = $user?->hasRole('root');
 
@@ -122,7 +154,6 @@ class ProductController extends Controller
             // store notification
             NotificationRepository::storeByRequest($data);
         }
-
         return to_route('shop.product.index')->withSuccess(__('Product created successfully!'));
     }
 
@@ -156,42 +187,69 @@ class ProductController extends Controller
     /**
      * Update the product.
      */
+    // public function update(ProductRequest $request, Product $product)
+    // {
+    //     $shop = generaleSetting('shop');
+
+    //     $skuCode = $shop?->products()->where('code', $request->code)->where('id', '!=', $product->id)->exists();
+
+    //     if ($skuCode) {
+    //         return back()->withInput()->withErrors(['code' => __('Product code already exists!')])->with('error', __('Product code already exists!'));
+    //     }
+
+    //     ProductRepository::updateByRequest($request, $product);
+
+    //     /** @var User $user */
+    //     $user = auth()->user();
+    //     $isRootUser = $user?->hasRole('root');
+
+    //     // admin notification message
+    //     if (! $isRootUser && generaleSetting('setting')->shop_type != 'single') {
+    //         $message = 'Product Updated Request';
+    //         try {
+    //             AdminProductRequestEvent::dispatch($message);
+    //         } catch (\Throwable $th) {
+    //         }
+
+    //         $data = (object) [
+    //             'title' => $message,
+    //             'content' => 'Product Updated Request from ' . $shop->name,
+    //             'url' => '/admin/products?status=1',
+    //             'icon' => 'bi-shop',
+    //             'type' => 'success',
+    //         ];
+    //         // store notification
+    //         NotificationRepository::storeByRequest($data);
+    //     }
+
+    //     return to_route('shop.product.index')->withSuccess(__('Product updated successfully!'));
+    // }
+
+
     public function update(ProductRequest $request, Product $product)
     {
-        $shop = generaleSetting('shop');
+        $data = $request->validated();
 
-        $skuCode = $shop?->products()->where('code', $request->code)->where('id', '!=', $product->id)->exists();
+        DB::beginTransaction();
+        try {
 
-        if ($skuCode) {
-            return back()->withInput()->withErrors(['code' => __('Product code already exists!')])->with('error', __('Product code already exists!'));
+            ProductRepository::updateByProductRequest(
+                $product,
+                $request,
+                $data
+            );
+
+            DB::commit();
+
+            return to_route('shop.product.index')
+                ->withSuccess(__('Product updated successfully!'));
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => $e->getMessage()]);
         }
-
-        ProductRepository::updateByRequest($request, $product);
-
-        /** @var User $user */
-        $user = auth()->user();
-        $isRootUser = $user?->hasRole('root');
-
-        // admin notification message
-        if (! $isRootUser && generaleSetting('setting')->shop_type != 'single') {
-            $message = 'Product Updated Request';
-            try {
-                AdminProductRequestEvent::dispatch($message);
-            } catch (\Throwable $th) {
-            }
-
-            $data = (object) [
-                'title' => $message,
-                'content' => 'Product Updated Request from ' . $shop->name,
-                'url' => '/admin/products?status=1',
-                'icon' => 'bi-shop',
-                'type' => 'success',
-            ];
-            // store notification
-            NotificationRepository::storeByRequest($data);
-        }
-
-        return to_route('shop.product.index')->withSuccess(__('Product updated successfully!'));
     }
 
     /**
@@ -264,8 +322,7 @@ class ProductController extends Controller
             $response = $chat->send($question);
 
             return response()->json($response);
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'message' => $e->getMessage()
             ], 500);
