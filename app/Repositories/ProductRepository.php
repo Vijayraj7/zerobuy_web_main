@@ -1029,90 +1029,185 @@ class ProductRepository extends Repository
             /** -----------------------------
              * 4. Item Details (REPLACE)
              * ----------------------------- */
-            $product->itemDetails()->delete();
+            // $product->itemDetails()->delete();
 
-            if (!empty($data['item_details'])) {
-                foreach ($data['item_details'] as $item) {
-                    if (empty($item['name']) || empty($item['value'])) continue;
+            // if (!empty($data['item_details'])) {
+            //     foreach ($data['item_details'] as $item) {
+            //         if (empty($item['name']) || empty($item['value'])) continue;
 
-                    ProductItemDetail::create([
-                        'product_id' => $product->id,
-                        'item_name'  => $item['name'],
-                        'item_value' => $item['value'],
-                    ]);
-                }
+            //         ProductItemDetail::create([
+            //             'product_id' => $product->id,
+            //             'item_name'  => $item['name'],
+            //             'item_value' => $item['value'],
+            //         ]);
+            //     }
+            // }
+
+
+
+            $hasVariants   = $request->filled('variants');
+            $hasBulkItems  = $request->filled('bulk_items');
+            $hasBulkPrice  = $request->filled('bulk');
+
+            if ($hasVariants) {
+                DB::transaction(function () use ($product, $request) {
+
+                    // ❌ delete others
+                    $product->bulkItems()->delete();
+                    $product->bulkPrices()->delete();
+
+                    // ✅ sync variants
+                    $variants = collect($request->variants);
+
+                    $product->variants()
+                        ->whereNotIn('id', $variants->pluck('id')->filter())
+                        ->delete();
+
+                    $variants->each(function ($v) use ($product) {
+                        $product->variants()->updateOrCreate(
+                            ['id' => $v['id'] ?? null],
+                            [
+                                'size_id'    => $v['size_id'] ?? null,
+                                'color_id'   => $v['color_id'] ?? null,
+                                'price'      => $v['price'] ?? 0,
+                                'quantity'   => $v['quantity'] ?? 0,
+                            ]
+                        );
+                    });
+                });
+            } elseif ($hasBulkItems) {
+                DB::transaction(function () use ($product, $request) {
+
+                    // ❌ delete others
+                    $product->variants()->delete();
+                    $product->bulkPrices()->delete();
+
+                    // ✅ sync bulk items
+                    $bulkItems = collect($request->bulk_items);
+
+                    $product->bulkItems()
+                        ->whereNotIn('id', $bulkItems->pluck('id')->filter())
+                        ->delete();
+
+                    $bulkItems->each(function ($item) use ($product) {
+                        if (empty($item['name'])) return;
+
+                        $product->bulkItems()->updateOrCreate(
+                            ['id' => $item['id'] ?? null],
+                            [
+                                'name'          => $item['name'],
+                                'quantity'      => $item['quantity'] ?? 0,
+                                'moq'           => $item['moq'] ?? 1,
+                                'mrp'           => $item['mrp'] ?? 0,
+                                'selling_price' => $item['selling_price'] ?? 0,
+                            ]
+                        );
+                    });
+                });
+            } elseif ($hasBulkPrice) {
+                DB::transaction(function () use ($product, $request) {
+
+                    // ❌ delete others
+                    $product->variants()->delete();
+                    $product->bulkItems()->delete();
+
+                    // ✅ sync bulk price
+                    $bulkPrices = collect($request->bulk_prices);
+
+                    $product->bulkPrices()
+                        ->whereNotIn('id', $bulkPrices->pluck('id')->filter())
+                        ->delete();
+
+                    $bulkPrices->each(function ($b) use ($product) {
+                        if (!isset($b['min_qty'], $b['max_qty'], $b['price'])) return;
+
+                        $product->bulkPrices()->updateOrCreate(
+                            ['id' => $b['id'] ?? null],
+                            [
+                                'min_qty'    => (int) $b['min_qty'],
+                                'max_qty'    => (int) $b['max_qty'],
+                                'price'      => (float) $b['price'],
+                            ]
+                        );
+                    });
+                });
+            } else {
+                $product->variants()->delete();
+                $product->bulkItems()->delete();
+                $product->bulkPrices()->delete();
             }
+
 
             /** -----------------------------
              * 5. EXCLUSIVE CLEANUP
              * ----------------------------- */
-            $hasVariants  = !empty($data['variants']);
-            $hasBulkPrice = !empty($data['bulk']);
-            $hasBulkItems = !empty($data['bulk_items']);
+            // $hasVariants  = !empty($data['variants']);
+            // $hasBulkPrice = !empty($data['bulk']);
+            // $hasBulkItems = !empty($data['bulk_items']);
 
-            if ($hasVariants) {
-                $product->bulkPrices()->delete();
-                $product->bulkItems()->delete();
-            }
+            // if ($hasVariants) {
+            //     $product->bulkPrices()->delete();
+            //     $product->bulkItems()->delete();
+            // }
 
-            if ($hasBulkPrice) {
-                $product->variants()->delete();
-                $product->bulkItems()->delete();
-            }
+            // if ($hasBulkPrice) {
+            //     $product->variants()->delete();
+            //     $product->bulkItems()->delete();
+            // }
 
-            if ($hasBulkItems) {
-                $product->variants()->delete();
-                $product->bulkPrices()->delete();
-            }
+            // if ($hasBulkItems) {
+            //     $product->variants()->delete();
+            //     $product->bulkPrices()->delete();
+            // }
 
-            /** -----------------------------
-             * 6. Bulk Pricing (REPLACE)
-             * ----------------------------- */
-            if ($hasBulkPrice) {
-                foreach ($data['bulk'] as $b) {
-                    if (!isset($b['min_qty'], $b['max_qty'], $b['price'])) continue;
+            // /** -----------------------------
+            //  * 6. Bulk Pricing (REPLACE)
+            //  * ----------------------------- */
+            // if ($hasBulkPrice) {
+            //     foreach ($data['bulk'] as $b) {
+            //         if (!isset($b['min_qty'], $b['max_qty'], $b['price'])) continue;
 
-                    ProductBulkPrice::create([
-                        'product_id' => $product->id,
-                        'min_qty'    => (int) $b['min_qty'],
-                        'max_qty'    => (int) $b['max_qty'],
-                        'price'      => (float) $b['price'],
-                    ]);
-                }
-            }
+            //         ProductBulkPrice::create([
+            //             'product_id' => $product->id,
+            //             'min_qty'    => (int) $b['min_qty'],
+            //             'max_qty'    => (int) $b['max_qty'],
+            //             'price'      => (float) $b['price'],
+            //         ]);
+            //     }
+            // }
 
-            /** -----------------------------
-             * 7. Variants (REPLACE)
-             * ----------------------------- */
-            if ($hasVariants) {
-                foreach ($data['variants'] as $v) {
-                    ProductVariant::create([
-                        'product_id' => $product->id,
-                        'size_id'    => $v['size_id'] ?? null,
-                        'color_id'   => $v['color_id'] ?? null,
-                        'price'      => $v['price'] ?? 0,
-                        'quantity'   => $v['quantity'] ?? 0,
-                    ]);
-                }
-            }
+            // /** -----------------------------
+            //  * 7. Variants (REPLACE)
+            //  * ----------------------------- */
+            // if ($hasVariants) {
+            //     foreach ($data['variants'] as $v) {
+            //         ProductVariant::create([
+            //             'product_id' => $product->id,
+            //             'size_id'    => $v['size_id'] ?? null,
+            //             'color_id'   => $v['color_id'] ?? null,
+            //             'price'      => $v['price'] ?? 0,
+            //             'quantity'   => $v['quantity'] ?? 0,
+            //         ]);
+            //     }
+            // }
 
-            /** -----------------------------
-             * 8. Bulk Items (REPLACE)
-             * ----------------------------- */
-            if ($hasBulkItems) {
-                foreach ($data['bulk_items'] as $item) {
-                    if (empty($item['name'])) continue;
+            // /** -----------------------------
+            //  * 8. Bulk Items (REPLACE)
+            //  * ----------------------------- */
+            // if ($hasBulkItems) {
+            //     foreach ($data['bulk_items'] as $item) {
+            //         if (empty($item['name'])) continue;
 
-                    ProductBulkItem::create([
-                        'product_id'    => $product->id,
-                        'name'          => $item['name'],
-                        'quantity'      => $item['quantity'] ?? 0,
-                        'moq'           => $item['moq'] ?? 1,
-                        'mrp'           => $item['mrp'] ?? 0,
-                        'selling_price' => $item['selling_price'] ?? 0,
-                    ]);
-                }
-            }
+            //         ProductBulkItem::create([
+            //             'product_id'    => $product->id,
+            //             'name'          => $item['name'],
+            //             'quantity'      => $item['quantity'] ?? 0,
+            //             'moq'           => $item['moq'] ?? 1,
+            //             'mrp'           => $item['mrp'] ?? 0,
+            //             'selling_price' => $item['selling_price'] ?? 0,
+            //         ]);
+            //     }
+            // }
 
             /** -----------------------------
              * 9. Video
