@@ -704,7 +704,7 @@
         /* ---------------- Sub → Child ---------------- */
         $sub.on('change', function() {
             let subCategoryId = $(this).val();
-
+            setchildCategory(subCategoryId, null)
         });
 
     });
