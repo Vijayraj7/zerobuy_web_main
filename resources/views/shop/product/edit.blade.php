@@ -4,7 +4,7 @@
         $isEdit = false;
         if (isset($product)) {
             $isEdit = true;
-            echo $product;
+            // echo $product;
         }
     @endphp
     @if ($errors->any())
