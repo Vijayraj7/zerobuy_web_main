@@ -685,7 +685,7 @@
                 if (childId != null) {
                     childs.forEach(child => {
                         $child.append(
-                            `<option value="${child.id}" ${child.id == childId ? 'selected' : ''}>${childId.name}</option>`
+                            `<option value="${child.id}" ${child.id == childId ? 'selected' : ''}>${child.name}</option>`
                         );
                     });
                 } else if (childs.length === 1) {
