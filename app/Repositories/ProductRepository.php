@@ -962,6 +962,7 @@ class ProductRepository extends Repository
             throw $e;
         }
     }
+
     public static function updateByProductRequest(
         Product $product,
         Request $request,
