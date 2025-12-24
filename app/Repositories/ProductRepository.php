@@ -962,4 +962,190 @@ class ProductRepository extends Repository
             throw $e;
         }
     }
+    public static function updateByProductRequest(
+        Product $product,
+        Request $request,
+        array $data
+    ): Product {
+
+        $user = auth()->user();
+        $generaleSetting = generaleSetting('setting');
+
+        $keywords = null;
+        if (!empty($data['meta_keywords']) && is_array($data['meta_keywords'])) {
+            $keywords = implode(',', array_map('trim', $data['meta_keywords']));
+        }
+
+        DB::beginTransaction();
+
+        try {
+
+            /** -----------------------------
+             * 1. Thumbnail (optional)
+             * ----------------------------- */
+            if ($request->hasFile('thumbnail')) {
+                $thumbnail = MediaRepository::storeByRequest(
+                    $request->thumbnail,
+                    'products',
+                    'thumbnail'
+                );
+                $product->media_id = $thumbnail->id;
+            }
+
+            /** -----------------------------
+             * 2. Update Product
+             * ----------------------------- */
+            $product->update([
+                'name'               => $data['name'],
+                'description'        => $data['description'] ?? null,
+                'condition_status'   => $data['condition_status'],
+                'quantity'           => $data['quantity'],
+                'min_order_quantity' => $data['min_order_quantity'] ?? 1,
+                'return_period'      => $data['return_period'] ?? null,
+                'price'              => $data['mrp'],
+                'discount_price'     => $data['selling_price'] ?? null,
+                'tax_percentage'     => $data['tax_percentage'] ?? null,
+                'meta_title'         => $data['meta_title'] ?? null,
+                'meta_description'   => $data['meta_description'] ?? null,
+                'meta_keywords'      => $keywords,
+            ]);
+
+            /** -----------------------------
+             * 3. Categories
+             * ----------------------------- */
+            $product->categories()->sync(
+                !empty($data['main_category']) ? [$data['main_category']] : []
+            );
+
+            $product->subcategories()->sync(
+                $data['sub_categories'] ?? []
+            );
+
+            $product->childCategories()->sync(
+                $data['child_categories'] ?? []
+            );
+
+            /** -----------------------------
+             * 4. Item Details (REPLACE)
+             * ----------------------------- */
+            $product->itemDetails()->delete();
+
+            if (!empty($data['item_details'])) {
+                foreach ($data['item_details'] as $item) {
+                    if (empty($item['name']) || empty($item['value'])) continue;
+
+                    ProductItemDetail::create([
+                        'product_id' => $product->id,
+                        'item_name'  => $item['name'],
+                        'item_value' => $item['value'],
+                    ]);
+                }
+            }
+
+            /** -----------------------------
+             * 5. EXCLUSIVE CLEANUP
+             * ----------------------------- */
+            $hasVariants  = !empty($data['variants']);
+            $hasBulkPrice = !empty($data['bulk']);
+            $hasBulkItems = !empty($data['bulk_items']);
+
+            if ($hasVariants) {
+                $product->bulkPrices()->delete();
+                $product->bulkItems()->delete();
+            }
+
+            if ($hasBulkPrice) {
+                $product->variants()->delete();
+                $product->bulkItems()->delete();
+            }
+
+            if ($hasBulkItems) {
+                $product->variants()->delete();
+                $product->bulkPrices()->delete();
+            }
+
+            /** -----------------------------
+             * 6. Bulk Pricing (REPLACE)
+             * ----------------------------- */
+            if ($hasBulkPrice) {
+                foreach ($data['bulk'] as $b) {
+                    if (!isset($b['min_qty'], $b['max_qty'], $b['price'])) continue;
+
+                    ProductBulkPrice::create([
+                        'product_id' => $product->id,
+                        'min_qty'    => (int) $b['min_qty'],
+                        'max_qty'    => (int) $b['max_qty'],
+                        'price'      => (float) $b['price'],
+                    ]);
+                }
+            }
+
+            /** -----------------------------
+             * 7. Variants (REPLACE)
+             * ----------------------------- */
+            if ($hasVariants) {
+                foreach ($data['variants'] as $v) {
+                    ProductVariant::create([
+                        'product_id' => $product->id,
+                        'size_id'    => $v['size_id'] ?? null,
+                        'color_id'   => $v['color_id'] ?? null,
+                        'price'      => $v['price'] ?? 0,
+                        'quantity'   => $v['quantity'] ?? 0,
+                    ]);
+                }
+            }
+
+            /** -----------------------------
+             * 8. Bulk Items (REPLACE)
+             * ----------------------------- */
+            if ($hasBulkItems) {
+                foreach ($data['bulk_items'] as $item) {
+                    if (empty($item['name'])) continue;
+
+                    ProductBulkItem::create([
+                        'product_id'    => $product->id,
+                        'name'          => $item['name'],
+                        'quantity'      => $item['quantity'] ?? 0,
+                        'moq'           => $item['moq'] ?? 1,
+                        'mrp'           => $item['mrp'] ?? 0,
+                        'selling_price' => $item['selling_price'] ?? 0,
+                    ]);
+                }
+            }
+
+            /** -----------------------------
+             * 9. Video
+             * ----------------------------- */
+            if (!empty($data['video_link']) && !empty($data['video_type'])) {
+                $media = Media::create([
+                    'type'          => $data['video_type'],
+                    'name'          => basename($data['video_link']),
+                    'original_name' => basename($data['video_link']),
+                    'src'           => $data['video_link'],
+                    'extention'     => null,
+                ]);
+                $product->update(['video_id' => $media->id]);
+            }
+
+            /** -----------------------------
+             * 10. Additional Images
+             * ----------------------------- */
+            foreach ($request->file('additional_images', []) as $img) {
+                $media = MediaRepository::storeByRequest(
+                    $img,
+                    'products',
+                    'thumbnail',
+                    'image'
+                );
+                $product->medias()->attach($media->id);
+            }
+
+            DB::commit();
+            return $product;
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('ProductRepository update error: ' . $e->getMessage());
+            throw $e;
+        }
+    }
 }

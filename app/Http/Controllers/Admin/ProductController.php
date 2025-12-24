@@ -16,8 +16,8 @@ use App\Models\ProductVariant;
 use App\Models\ProductBulkPrice;
 use App\Models\ProductItemDetail;
 use App\Models\ProductVariantMedia;
-use App\Models\Media; 
-use Illuminate\Support\Facades\DB; 
+use App\Models\Media;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -73,7 +73,7 @@ class ProductController extends Controller
         $data = (object) [
             'title' => $message,
             'content' => 'Your product approved from admin',
-            'url' => '/shop/product/'.$product->id.'/show',
+            'url' => '/shop/product/' . $product->id . '/show',
             'icon' => 'bi-bag-check-fill',
             'type' => 'success',
             'shop_id' => $product->shop_id,
@@ -136,13 +136,13 @@ class ProductController extends Controller
         $colors = $shop?->colors()->isActive()->get();
         $sizes = $shop?->sizes()->isActive()->get();
 
-        return view('admin.product.create', compact('categories','colors','sizes'));
+        return view('admin.product.create', compact('categories', 'colors', 'sizes'));
     }
 
     public function store(ProductRequest $request)
     {
         $data = $request->validated();
-        $shop = generaleSetting('shop'); 
+        $shop = generaleSetting('shop');
         ProductRepository::storeByProductRequest($request, $data);
         $user = auth()->user();
         $isRootUser = $user?->hasRole('root');
@@ -166,5 +166,31 @@ class ProductController extends Controller
             NotificationRepository::storeByRequest($data);
         }
         return to_route('shop.product.index')->withSuccess(__('Product created successfully!'));
+    }
+
+    public function update(ProductRequest $request, Product $product)
+    {
+        $data = $request->validated();
+
+        DB::beginTransaction();
+        try {
+
+            ProductRepository::updateByProductRequest(
+                $product,
+                $request,
+                $data
+            );
+
+            DB::commit();
+
+            return to_route('shop.product.index')
+                ->withSuccess(__('Product updated successfully!'));
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => $e->getMessage()]);
+        }
     }
 }

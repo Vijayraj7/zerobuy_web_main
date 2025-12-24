@@ -72,8 +72,12 @@ class Product extends Model
 
     public function childCategories()
     {
-        return $this->belongsToMany(ChildCategory::class, 'product_child_categories','product_id',
-        'child_category_id');
+        return $this->belongsToMany(
+            ChildCategory::class,
+            'product_child_categories',
+            'product_id',
+            'child_category_id'
+        );
     }
 
     /**
@@ -356,6 +360,12 @@ class Product extends Model
     public function favorites()
     {
         return $this->hasMany(Favorite::class);
+    }
+
+    //added by ancy
+    public function itemDetails()
+    {
+        return $this->hasMany(ProductItemDetail::class, 'product_id');
     }
 
     //added by ancy

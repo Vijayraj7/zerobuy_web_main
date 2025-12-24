@@ -177,8 +177,8 @@ Route::name('admin.')->group(function () {
             Route::post('/subcategory/store', 'store')->name('subcategory.store');
             Route::get('/subcategory/{subCategory}/edit', 'edit')->name('subcategory.edit');
             Route::put('/subcategory/{subCategory}/update', 'update')->name('subcategory.update');
-            Route::delete('/subcategory/{subCategory}/destroy', 'destroy')->name('subcategory.destroy'); 
-            Route::post('/subcategory/{subCategory}/toggle','statusToggle')->name('subcategory.toggle');
+            Route::delete('/subcategory/{subCategory}/destroy', 'destroy')->name('subcategory.destroy');
+            Route::post('/subcategory/{subCategory}/toggle', 'statusToggle')->name('subcategory.toggle');
         });
 
         // Child Categories
@@ -195,7 +195,7 @@ Route::name('admin.')->group(function () {
         // AJAX DROPDOWNS
         Route::controller(AjaxCategoryController::class)->group(function () {
             Route::get('/get-categories/{businessCategory}', 'categories')->name('ajax.categories');
-            Route::get('/get-subcategories/{category}', 'subCategories')->name('ajax.subcategories'); 
+            Route::get('/get-subcategories/{category}', 'subCategories')->name('ajax.subcategories');
         });
 
         // Category Attribute
@@ -306,6 +306,7 @@ Route::name('admin.')->group(function () {
             Route::delete('/products/{product}/delete', 'destroy')->name('product.destroy');
 
             Route::get('/products/create', 'create')->name('product.create');
+            Route::put('/products/{product}update', 'update')->name('product.update');
             Route::post('/products', 'store')->name('product.store');
         });
 

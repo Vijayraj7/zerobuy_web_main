@@ -1,14 +1,61 @@
 @extends('layouts.app')
 @section('content')
-@section('header-title', __('Add New Product'))
+    @php
+        $isEdit = false;
+        if (isset($product)) {
+            $isEdit = true;
+            echo $product;
+        }
+    @endphp
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+@section('header-title', $isEdit ? 'Edit Product' : __('Add New Product'))
+
+@if ($isEdit)
+    <script>
+        window.EXISTING_ITEM_DETAILS = @json($product->item_details ?? []);
+        window.EXISTING_BULK_ITEMS = @json($product->bulkItems ?? []);
+    </script>
+@endif
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!window.EXISTING_ITEM_DETAILS) return;
+
+        const container = document.getElementById('item-details-list');
+        container.innerHTML = '';
+
+        EXISTING_ITEM_DETAILS.forEach((item, i) => {
+            container.insertAdjacentHTML('beforeend', `
+            <div class="d-flex gap-2 mb-2 item-row">
+                <input name="item_details[${i}][name]" value="${item.name}" class="form-control">
+                <input name="item_details[${i}][value]" value="${item.value}" class="form-control">
+                <button type="button" class="btn btn-danger btn-sm remove-item">-</button>
+            </div>
+        `);
+        });
+    });
+</script>
 
 <div class="page-title">
     <div class="d-flex gap-2 align-items-center">
-        {{ __('Add New Product') }}
+        {{ $isEdit ? 'Edit Product' : __('Add New Product') }}
     </div>
 </div>
 
-<form action="{{ route('admin.product.store') }}" method="POST" enctype="multipart/form-data">@csrf
+<form action="{{ $isEdit ? route('admin.product.update', $product->id) : route('admin.product.store') }}" method="POST"
+    enctype="multipart/form-data">
+    @csrf
+    @if ($isEdit)
+        @method('PUT')
+    @endif
+
     <div class="card">
         <div class="card-body">
             <div class="d-flex justify-content-end mb-3">
@@ -20,7 +67,8 @@
                 <li class="nav-item"><a class="nav-link" data-step="3" href="#">Product Variants</a></li>
                 <li class="nav-item"><a class="nav-link" data-step="4" href="#">Images</a></li>
                 <li class="nav-item"><a class="nav-link" data-step="5" href="#">SEO Information</a></li>
-                <li class="nav-item"><a class="nav-link" data-step="6" href="#" id="bulkProductTab"> Bulk Products</a></li>
+                <li class="nav-item"><a class="nav-link" data-step="6" href="#" id="bulkProductTab"> Bulk
+                        Products</a></li>
             </ul>
 
             <!-- STEP 1 -->
@@ -28,32 +76,44 @@
                 <div class="row">
                     <div class="col-lg-7">
                         <div class="mb-3">
-                           <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="condition_status" value="New" checked>
+                            <div class="form-check form-check-inline">
+                                <input type="radio" name="condition_status" value="New"
+                                    {{ old('condition_status', $product->condition_status ?? 'New') === 'New' ? 'checked' : '' }}>
                                 <label class="form-check-label">New</label>
                             </div>
 
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="condition_status" value="Refurbished">
+                                <input type="radio" name="condition_status" value="Refurbished"
+                                    {{ old('condition_status', $product->condition_status ?? 'Refurbished') === 'Refurbished' ? 'checked' : '' }}>
                                 <label class="form-check-label">Refurbished</label>
                             </div>
-                        </div> 
+                        </div>
                         <div class="mb-3">
-                            <x-input label="Product Name" name="name" id="product_name" type="text" placeholder="Enter Product Name" required="true" />
+                            <x-input label="Product Name" name="name"
+                                value="{{ old('name', $isEdit ? $product->name : '') }}" required />
                         </div>
                         <div class="row g-2">
                             <div class="col-md-4">
-                                <x-select label="Main Category" name="main_category" required="true">
-                                    <option value="" selected disabled>{{ __('Select Category') }}</option>
+                                <x-select label="Main Category" name="main_category">
                                     @foreach ($categories as $category)
-                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                        <option value="{{ $category->id }}"
+                                            {{ $isEdit && optional($product->categories->first())->id == $category->id ? 'selected' : '' }}>
+                                            {{ $category->name }}
+                                        </option>
                                     @endforeach
                                 </x-select>
+                                @if ($isEdit)
+                                    @php
+                                        $catId = optional($product->categories->first())->id;
+                                        $subId = optional($product->subCategories->first())->id;
+                                        $childId = optional($product->childCategories->first())->id;
+                                    @endphp
+                                @endif
                                 @error('main_category')
                                     <p class="text text-danger m-0">{{ $message }}</p>
                                 @enderror
                             </div>
-                            <div class="col-md-4"> 
+                            <div class="col-md-4">
                                 <x-select label="Sub Category" name="sub_categories[]">
                                     <option value="" selected disabled>Select Sub Category</option>
                                 </x-select>
@@ -63,7 +123,7 @@
                             </div>
                             <div class="col-md-4">
                                 <x-select label="Child Category" name="child_categories[]" multiple>
-                                    <option value="" selected disabled>{{ __('Select Child Category') }}</option> 
+                                    <option value="" selected disabled>{{ __('Select Child Category') }}</option>
                                 </x-select>
                                 @error('child_categories')
                                     <p class="text text-danger m-0">{{ $message }}</p>
@@ -71,31 +131,31 @@
                             </div>
                         </div>
                         <div class="row mt-3 g-2">
-                            <div class="col-md-6"> 
+                            <div class="col-md-6">
                                 <label class="form-label">Stock Quantity <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" name="quantity" placeholder="Enter Quantity" value="0">
+                                <input type="number" name="quantity" class="form-control"
+                                    value="{{ old('quantity', $isEdit ? $product->quantity : 0) }}">
                                 @error('quantity')
                                     <p class="text text-danger m-0">{{ $message }}</p>
                                 @enderror
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">MOQ <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" name="min_order_quantity" placeholder="Enter Minimum Order Quantity" min="1" value="1"> 
+                                <input type="number" class="form-control" name="min_order_quantity"
+                                    placeholder="Enter Minimum Order Quantity" min="1" value="1">
                                 @error('min_order_quantity')
                                     <p class="text text-danger m-0">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
                         <div class="mt-3">
-                            <x-select label="Return Period" name="return_period" required="true">
-                                <option value="" disabled selected>--Select Return Period--</option>
-                                <option value="0">No Return Period</option>
-                                <option value="2">2 Days</option>
-                                <option value="5">5 Days</option>
-                                <option value="7">7 Days</option>
-                                <option value="10">10 Days</option>
-                                <option value="15">15 Days</option>
-                                <option value="30">30 Days</option>
+                            <x-select label="Return Period" name="return_period">
+                                @foreach ([0, 2, 5, 7, 10, 15, 30] as $days)
+                                    <option value="{{ $days }}"
+                                        {{ old('return_period', $product->return_period ?? '') == $days ? 'selected' : '' }}>
+                                        {{ $days == 0 ? 'No Return Period' : $days . ' Days' }}
+                                    </option>
+                                @endforeach
                             </x-select>
                             @error('return_period')
                                 <p class="text text-danger m-0">{{ $message }}</p>
@@ -105,43 +165,57 @@
 
                     <div class="col-lg-5">
                         <div class="mb-3">
-                            <label for="description" class="form-label">Product Description <span class="text-danger">*</span></label>
-                            <textarea class="form-control" name="description" id="description" placeholder="Enter Product Description" rows="8" required></textarea>
+                            <label for="description" class="form-label">Product Description <span
+                                    class="text-danger">*</span></label>
+                            <textarea name="description" id="description">
+{{ old('description', $isEdit ? $product->description : '') }}
+</textarea>
                             @error('description')
                                 <p class="text text-danger m-0">{{ $message }}</p>
                             @enderror
-                        </div> 
+                        </div>
                         <div class="row g-2">
                             <div class="col-3">
                                 <label class="form-label">Video Type</label>
-                                <select class="form-select" name="video_type">
+                                <select name="video_type" class="form-select">
                                     <option value="">None</option>
-                                    <option value="youtube">YouTube Link</option>
-                                    <option value="external">External Link</option>
+                                    <option value="youtube"
+                                        {{ old('video_type', $product->video_type ?? '') === 'youtube' ? 'selected' : '' }}>
+                                        YouTube
+                                    </option>
+                                    <option value="external"
+                                        {{ old('video_type', $product->video_type ?? '') === 'external' ? 'selected' : '' }}>
+                                        External
+                                    </option>
                                 </select>
                             </div>
                             <div class="col-9">
                                 <label class="form-label">Video Link</label>
-                                <input type="text" class="form-control" name="video_link" placeholder="Enter YouTube or external video URL">
+                                <input type="text" name="video_link" class="form-control"
+                                    value="{{ old('video_link', $isEdit ? $product->video_link : '') }}">
                             </div>
-                        </div>                        
+                        </div>
                         <div class="mt-4">
                             <label class="form-label">Item Details (Add multiple)</label>
                             <div id="item-details-list">
                                 <div class="d-flex gap-2 mb-2 item-row" data-index="0">
-                                    <input type="text" name="item_details[0][name]" class="form-control" placeholder="Item Name">
-                                    <input type="text" name="item_details[0][value]" class="form-control" placeholder="Item Value">
+                                    <input type="text" name="item_details[0][name]" class="form-control"
+                                        placeholder="Item Name">
+                                    <input type="text" name="item_details[0][value]" class="form-control"
+                                        placeholder="Item Value">
                                     <button type="button" class="btn btn-danger btn-sm remove-item">-</button>
                                 </div>
 
                             </div>
-                            <button type="button" class="btn btn-primary btn-sm" id="add-item-detail">+ Add More</button>
+                            <button type="button" class="btn btn-primary btn-sm" id="add-item-detail">+ Add
+                                More</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="mt-3">
-                    <button type="button" class="btn btn-primary next-btn float-end" data-next="2"> Next &raquo;</button>
+                    <button type="button" class="btn btn-primary next-btn float-end" data-next="2"> Next
+                        &raquo;</button>
                 </div>
             </div>
 
@@ -149,29 +223,33 @@
             <div class="step-content step-2 mt-3" style="display:none;">
                 <div class="row">
                     <div class="col-md-4">
-                        <x-input label="MRP" name="mrp" type="number" step="0.01" placeholder="₹ Enter MRP" required="true" />
+                        <x-input label="MRP" name="mrp" type="number" step="0.01"
+                            value="{{ old('mrp', $isEdit ? $product->price : '') }}" required />
                         @error('mrp')
                             <p class="text text-danger m-0">{{ $message }}</p>
                         @enderror
                     </div>
                     <div class="col-md-4">
-                        <x-input label="Selling Price" name="selling_price" placeholder="₹ Enter Selling Price" type="number" step="0.01" required="true" />
+                        <x-input label="Selling Price" name="selling_price" type="number" step="0.01"
+                            value="{{ old('selling_price', $isEdit ? $product->discount_price : '') }}" required />
                         @error('selling_price')
                             <p class="text text-danger m-0">{{ $message }}</p>
                         @enderror
                     </div>
                     <div class="col-md-4">
-                        <x-select label="TAX%" name="tax_percentage" required="true">
-                            <option value="0">0%</option>
-                            <option value="5">5%</option>
-                            <option value="12">12%</option>
-                            <option value="18">18%</option>
+                        <x-select label="TAX%" name="tax_percentage">
+                            @foreach ([0, 5, 12, 18, 28, 40] as $tax)
+                                <option value="{{ $tax }}"
+                                    {{ old('tax_percentage', $product->tax_percentage ?? 0) == $tax ? 'selected' : '' }}>
+                                    {{ $tax }}%
+                                </option>
+                            @endforeach
                         </x-select>
                         @error('tax_percentage')
                             <p class="text text-danger m-0">{{ $message }}</p>
                         @enderror
                     </div>
-                </div> 
+                </div>
 
                 <div class="mt-4">
                     <label class="form-label">Bulk Price (optional)</label>
@@ -183,16 +261,19 @@
                                 <th>Price</th>
                                 <th>Action</th>
                             </tr>
-                        </thead> 
+                        </thead>
                         <tbody>
                             <tr>
-                                <td><input id="bulk-min" class="form-control" placeholder="Min Qty" type="number" min="1"></td>
-                                <td><input id="bulk-max" class="form-control" placeholder="Max Qty" type="number" min="1"></td>
-                                <td><input id="bulk-price" class="form-control" placeholder="Price" type="number" min="1"></td>
+                                <td><input id="bulk-min" class="form-control" placeholder="Min Qty" type="number"
+                                        min="1"></td>
+                                <td><input id="bulk-max" class="form-control" placeholder="Max Qty" type="number"
+                                        min="1"></td>
+                                <td><input id="bulk-price" class="form-control" placeholder="Price" type="number"
+                                        min="1"></td>
                                 <td><button type="button" class="btn btn-primary" id="add-bulk">Add</button></td>
                             </tr>
                         </tbody>
-                    </table> 
+                    </table>
                 </div>
                 <!-- Added Bulk Pricing Display Area -->
                 <div class="mt-3">
@@ -204,16 +285,19 @@
                 </div>
 
                 <div class="mt-3">
-                    <button type="button" class="btn btn-secondary prev-btn" data-prev="1">&laquo; Previous</button>
-                    <button type="button" class="btn btn-primary next-btn float-end" data-next="3">Next &raquo;</button>
+                    <button type="button" class="btn btn-secondary prev-btn" data-prev="1">&laquo;
+                        Previous</button>
+                    <button type="button" class="btn btn-primary next-btn float-end" data-next="3">Next
+                        &raquo;</button>
                 </div>
             </div>
 
-            <!-- STEP 3 - PRODUCT VARIANTS --> 
-            <div class="step-content step-3 mt-3" style="display:none;"> 
+            <!-- STEP 3 - PRODUCT VARIANTS -->
+            <div class="step-content step-3 mt-3" style="display:none;">
                 <div class="mt-4">
                     <label class="form-label">Product Variant Details</label>
-                    <div class="alert alert-info small">Add size-only, color-only, or size+color variants. Each variant row contains price & quantity.</div>
+                    <div class="alert alert-info small">Add size-only, color-only, or size+color variants. Each variant
+                        row contains price & quantity.</div>
                     <!-- Variant Input Form -->
                     <div class="card mb-3">
                         <div class="card-body">
@@ -233,13 +317,15 @@
                                             <!-- <select id="variant-color" class="form-select">
                                                 <option value="">-- Select Color --</option>
                                                 @foreach ($colors as $color)
-                                                    <option value="{{ $color->id }}">{{ $color->name }}</option>
-                                                @endforeach
+<option value="{{ $color->id }}">{{ $color->name }}</option>
+@endforeach
                                             </select> -->
-                                            <select id="variant-color" name="color_id" class="form-select colorSelect" style="width: 100%">
+                                            <select id="variant-color" name="color_id"
+                                                class="form-select colorSelect" style="width: 100%">
                                                 <option value="">-- Select Color --</option>
                                                 @foreach ($colors as $color)
-                                                    <option value="{{ $color->id }}" data-color="{{ $color->color_code }}">
+                                                    <option value="{{ $color->id }}"
+                                                        data-color="{{ $color->color_code }}">
                                                         {{ $color->name }}
                                                     </option>
                                                 @endforeach
@@ -249,18 +335,21 @@
                                             <select id="variant-size" class="form-select">
                                                 <option value="">-- Select Size --</option>
                                                 @foreach ($sizes as $size)
-                                                <option value="{{ $size->id }}">{{ $size->name }}</option>
+                                                    <option value="{{ $size->id }}">{{ $size->name }}</option>
                                                 @endforeach
                                             </select>
                                         </td>
                                         <td>
-                                            <input id="variant-price" class="form-control" placeholder="Price" type="number" min="1">
+                                            <input id="variant-price" class="form-control" placeholder="Price"
+                                                type="number" min="1">
                                         </td>
                                         <td>
-                                            <input id="variant-qty" class="form-control" placeholder="Qty" type="number">
+                                            <input id="variant-qty" class="form-control" placeholder="Qty"
+                                                type="number">
                                         </td>
                                         <td>
-                                            <button type="button" class="btn btn-primary" id="add-variant">Add Variant</button>
+                                            <button type="button" class="btn btn-primary" id="add-variant">Add
+                                                Variant</button>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -277,8 +366,10 @@
                     </div>
                 </div>
                 <div class="mt-5">
-                    <button type="button" class="btn btn-secondary prev-btn" data-prev="2">&laquo; Previous</button>
-                    <button type="button" class="btn btn-primary next-btn float-end" data-next="4">Next &raquo;</button>
+                    <button type="button" class="btn btn-secondary prev-btn" data-prev="2">&laquo;
+                        Previous</button>
+                    <button type="button" class="btn btn-primary next-btn float-end" data-next="4">Next
+                        &raquo;</button>
                 </div>
             </div>
 
@@ -287,11 +378,15 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="card card-body">
-                            <h5>Thumbnail <small class="text-muted">(Ratio 1:1 500x500) <span class="text-danger">*</span></small></h5>
+                            <h5>Thumbnail <small class="text-muted">(Ratio 1:1 500x500) <span
+                                        class="text-danger">*</span></small></h5>
                             <label for="thumbnail" style="cursor:pointer;display:block;">
-                                <img src="https://placehold.co/500x500/f1f5f9/png" id="preview" alt="thumbnail" style="width:100%;max-width:300px">
+                                <img height="200"
+                                    src="{{ $isEdit ? $product->thumbnail : 'https://placehold.co/500x500' }}"
+                                    id="preview">
                             </label>
-                            <input id="thumbnail" accept="image/*" type="file" name="thumbnail" class="d-none" onchange="previewFile(event, 'preview')">
+                            <input id="thumbnail" accept="image/*" type="file" name="thumbnail" class="d-none"
+                                onchange="previewFile(event, 'preview')">
                             @error('thumbnail')
                                 <p class="text text-danger m-0">{{ $message }}</p>
                             @enderror
@@ -300,20 +395,53 @@
                     <div class="col-12 mt-3">
                         <div class="card h-100">
                             <div class="card-body">
-                                <h5>Additional Thumbnails <span class="text-primary">(Ratio 1:1, 500x500px)<small class="text-muted">-multiple</small></span></h5>
-                                <input type="file" id="additionalInput" name="additional_images[]" multiple accept="image/*" class="d-none" onchange="handleAddImages(event)">
-                                <button type="button" class="btn btn-primary mt-2" onclick="document.getElementById ('additionalInput').click()"><i class="fa fa-upload"></i> Choose Images</button>
-                                <div id="additionalContainer" class="d-flex flex-wrap gap-3 mt-3"></div>
+                                <h5>Additional Thumbnails <span class="text-primary">(Ratio 1:1, 500x500px)<small
+                                            class="text-muted">-multiple</small></span></h5>
+                                <input type="file" id="additionalInput" name="additional_images[]" multiple
+                                    accept="image/*" class="d-none" onchange="handleAddImages(event)">
+                                <button type="button" class="btn btn-primary mt-2"
+                                    onclick="document.getElementById ('additionalInput').click()"><i
+                                        class="fa fa-upload"></i> Choose Images</button>
+                                <div id="additionalContainer" class="d-flex flex-wrap gap-3 mt-3">
+                                </div>
+                                @if ($isEdit)
+                                    <script>
+                                        function handleAdditionalImages(src) {
+                                            const container = document.getElementById('additionalContainer');
+                                            const div = document.createElement('div');
+                                            div.style.width = '120px';
+                                            div.style.height = '120px';
+                                            div.classList.add('position-relative');
+                                            div.innerHTML =
+                                                `<img src="${src}" class="w-100 h-100 rounded border">
+                    <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" onclick="this.parentElement.remove()">×</button>`;
+                                            container.appendChild(div);
+                                        }
+                                    </script>
+                                    @foreach ($product->medias as $media)
+                                        @php
+                                            $source = asset('default/upload.png');
+                                            if (Storage::exists($media->src)) {
+                                                $source = Storage::url($media->src);
+                                            }
+                                        @endphp
+                                        <script>
+                                            handleAdditionalImages('{{ $source }}')
+                                        </script>
+                                    @endforeach
+                                @endif
                             </div>
                         </div>
-                    </div> 
+                    </div>
                     <!-- <div class="col-12 mt-4">
                         <p class="small text-muted">If you want variant-specific images, you can upload them after saving the product (or in edit flow).</p>
                     </div> -->
                 </div>
                 <div class="mt-3">
-                    <button type="button" class="btn btn-secondary prev-btn" data-prev="3">&laquo; Previous</button>
-                    <button type="button" class="btn btn-primary next-btn float-end" data-next="5">Next &raquo;</button> 
+                    <button type="button" class="btn btn-secondary prev-btn" data-prev="3">&laquo;
+                        Previous</button>
+                    <button type="button" class="btn btn-primary next-btn float-end" data-next="5">Next
+                        &raquo;</button>
                 </div>
             </div>
 
@@ -328,19 +456,23 @@
                             </div>
                             <div class="mt-3">
                                 <label for="uploadType" class="form-label"> {{ __('Meta Title') }} </label>
-                                <x-input name="meta_title" type="text" placeholder="Meta Title" />
+                                <x-input name="meta_title"
+                                    value="{{ old('meta_title', $isEdit ? $product->meta_title : '') }}" />
                             </div>
                             <div class="mt-3">
                                 <label for="uploadType" class="form-label"> {{ __('Meta Description') }} </label>
-                                <textarea name="meta_description" type="text" placeholder="{{ __('Meta Description') }}" class="form-control">{{ old('meta_description') }}</textarea>
+                                <textarea name="meta_description" class="form-control">
+{{ old('meta_description', $isEdit ? $product->meta_description : '') }}
+</textarea>
                                 @error('meta_description')
                                     <p class="text text-danger m-0">{{ $message }}</p>
                                 @enderror
                             </div>
                             <div class="mt-3">
                                 <label for="tags" class="form-label">@lang('Meta Keywords')</label>
-                                <select id="tags" name="meta_keywords[]" class="form-control selectTags" multiple style="width: 100%">
-                                    @foreach (old('meta_keywords', []) as $keyword)
+                                <select id="tags" name="meta_keywords[]" class="form-control selectTags"
+                                    multiple style="width: 100%">
+                                    @foreach (old('meta_keywords', $product->meta_keywords ?? []) as $keyword)
                                         <option value="{{ $keyword }}" selected>{{ $keyword }}</option>
                                     @endforeach
                                 </select>
@@ -350,7 +482,8 @@
                     </div>
                 </div>
                 <div class="mt-3">
-                    <button type="button" class="btn btn-secondary prev-btn" data-prev="4">&laquo; Previous</button> 
+                    <button type="button" class="btn btn-secondary prev-btn" data-prev="4">&laquo;
+                        Previous</button>
                 </div>
             </div>
 
@@ -373,10 +506,12 @@
                 <div id="bulk-items-list">
                     <div class="row g-2 mb-2 bulk-item-row">
                         <div class="col-md-3">
-                            <input type="text" name="bulk_items[0][name]" class="form-control" placeholder="Item Name">
+                            <input type="text" name="bulk_items[0][name]" class="form-control"
+                                placeholder="Item Name">
                         </div>
                         <div class="col-md-2">
-                            <input type="number" name="bulk_items[0][quantity]" class="form-control" placeholder="Qty">
+                            <input type="number" name="bulk_items[0][quantity]" class="form-control"
+                                placeholder="Qty">
                         </div>
                         <div class="col-md-2">
                             <input type="number" name="bulk_items[0][moq]" class="form-control" placeholder="MOQ">
@@ -385,11 +520,13 @@
                             <input type="number" name="bulk_items[0][mrp]" class="form-control" placeholder="MRP">
                         </div>
                         <div class="col-md-2">
-                            <input type="number" name="bulk_items[0][selling_price]" class="form-control" placeholder="Selling Price">
+                            <input type="number" name="bulk_items[0][selling_price]" class="form-control"
+                                placeholder="Selling Price">
                         </div>
                         <div class="col-md-1">
                             <button type="button" class="btn btn-danger remove-bulk-item" disabled>-</button>
-                            <button type="button" class="btn btn-success add-bulk-item" id="add-bulk-item">+</button>
+                            <button type="button" class="btn btn-success add-bulk-item"
+                                id="add-bulk-item">+</button>
                         </div>
                     </div>
                 </div>
@@ -404,7 +541,7 @@
 @endsection
 
 @push('scripts')
-<script> 
+<script>
     // Remove +,-,e, and letters from number inputs
     document.addEventListener('input', function(e) {
         if (e.target.matches('input[type="number"]')) {
@@ -419,7 +556,7 @@
     });
 
     // Tag
-    $(document).ready(function () {
+    $(document).ready(function() {
         $('.selectTags').select2({
             tags: true,
             tokenSeparators: [',', ' '],
@@ -455,9 +592,9 @@
     });
 
     // Category-Subcategory Select
-    $(document).ready(function () {
-        const $main  = $('select[name="main_category"]');
-        const $sub   = $('select[name="sub_categories[]"]');
+    $(document).ready(function() {
+        const $main = $('select[name="main_category"]');
+        const $sub = $('select[name="sub_categories[]"]');
         const $child = $('select[name="child_categories[]"]');
 
         // Helper functions
@@ -473,9 +610,18 @@
             );
         };
 
+
+        @if ($isEdit)
+            setSubCategory(Number('{{ $catId }}'), Number('{{ $subId }}'));
+        @endif
+
         /* ---------------- Main → Sub ---------------- */
-        $main.on('change', function () {
+        $main.on('change', function() {
             let categoryId = $(this).val();
+            setSubCategory(categoryId, null);
+        });
+
+        function setSubCategory(categoryId, subId) {
             resetSub();
             resetChild();
 
@@ -484,14 +630,30 @@
                 return;
             }
 
-            $.get('/api/sub-categories', { category_id: categoryId }, function (res) {
+            $.get('/api/sub-categories', {
+                category_id: categoryId
+            }, function(res) {
                 let subs = res?.data?.sub_categories || [];
+                console.log(subs);
+                console.log(subId);
                 if (subs.length === 0) {
                     notAvailable($sub, 'Not Available');
                     notAvailable($child, 'Not Available');
                     return;
                 }
-                if (subs.length === 1) {
+                if (subId != null) {
+                    subs.forEach(sub => {
+                        $sub.append(
+                            `<option value="${sub.id}" ${sub.id == subId ? 'selected' : ''}>${sub.name}</option>`
+                        );
+                    });
+                    setchildCategory(subId,
+                        @if (isset($childId))
+                            Number('{{ $childId }}')
+                        @else
+                            null
+                        @endif )
+                } else if (subs.length === 1) {
                     $sub.append(
                         `<option value="${subs[0].id}" selected>${subs[0].name}</option>`
                     ).trigger('change');
@@ -501,11 +663,9 @@
                     });
                 }
             });
-        });
+        }
 
-        /* ---------------- Sub → Child ---------------- */
-        $sub.on('change', function () {
-            let subCategoryId = $(this).val();
+        function setchildCategory(subCategoryId, childId) {
             resetChild();
 
             if (!subCategoryId) {
@@ -513,30 +673,45 @@
                 return;
             }
 
-            $.get('/api/child-categories', { sub_category_id: subCategoryId }, function (res) {
+            $.get('/api/child-categories', {
+                sub_category_id: subCategoryId
+            }, function(res) {
                 // let childs = res?.data || [];
                 let childs = res.data?.child_categories || [];
                 if (childs.length === 0) {
                     notAvailable($child, 'Not Available');
                     return;
                 }
-                if (childs.length === 1) {
+                if (childId != null) {
+                    childs.forEach(child => {
+                        $child.append(
+                            `<option value="${child.id}" ${child.id == childId ? 'selected' : ''}>${childId.name}</option>`
+                        );
+                    });
+                } else if (childs.length === 1) {
                     $child.append(
                         `<option value="${childs[0].id}" selected>${childs[0].name}</option>`
                     );
                 } else {
                     childs.forEach(child => {
-                        $child.append(`<option value="${child.id}">${child.name}</option>`);
+                        $child.append(
+                            `<option value="${child.id}">${child.name}</option>`);
                     });
                 }
             });
+        }
+
+        /* ---------------- Sub → Child ---------------- */
+        $sub.on('change', function() {
+            let subCategoryId = $(this).val();
+
         });
 
-    });  
+    });
 
     // Item details add-more 
     let itemIndex = 1;
-    document.getElementById('add-item-detail').addEventListener('click', function () {
+    document.getElementById('add-item-detail').addEventListener('click', function() {
         let container = document.getElementById('item-details-list');
 
         let div = document.createElement('div');
@@ -552,7 +727,7 @@
         itemIndex++;
     });
     // remove row
-    document.addEventListener('click', function (e) {
+    document.addEventListener('click', function(e) {
         if (e.target.classList.contains('remove-item')) {
             e.target.closest('.item-row').remove();
         }
@@ -588,26 +763,27 @@
             reader.readAsDataURL(file);
         });
     }
-    
+
     // Color code
     $(document).ready(function() {
         function formatColorOption(state) {
             if (!state.id) {
                 return state.text;
             }
-            
+
             var colorCode = $(state.element).data('color');
-            
+
             if (colorCode) {
                 return $(
                     '<span>' +
-                        '<span style="display:inline-block; width:15px; height:15px; background-color:' + colorCode + 
-                        '; border-radius:3px; margin-right:8px; border:1px solid #ddd"></span>' +
-                        state.text +
+                    '<span style="display:inline-block; width:15px; height:15px; background-color:' +
+                    colorCode +
+                    '; border-radius:3px; margin-right:8px; border:1px solid #ddd"></span>' +
+                    state.text +
                     '</span>'
                 );
             }
-            
+
             return state.text;
         }
         $('.colorSelect').select2({
@@ -615,31 +791,31 @@
             templateSelection: formatColorOption
         });
     });
-</script> 
+</script>
 
 <!-- Product Variants and Bulk Prices -->
-<script>  
+<script>
     function createUniqueId() {
         return Date.now() + Math.random().toString(36).substr(2, 9);
     }
 
     let addedVariants = [];
     let addedBulkRanges = [];
-    
+
     // Add Variant
     document.getElementById('add-variant').addEventListener('click', function() {
         const colorSelect = document.getElementById('variant-color');
         const sizeSelect = document.getElementById('variant-size');
         const priceInput = document.getElementById('variant-price');
         const qtyInput = document.getElementById('variant-qty');
-        
+
         const colorId = colorSelect.value;
         const colorName = colorSelect.options[colorSelect.selectedIndex]?.text || '';
         const sizeId = sizeSelect.value;
         const sizeName = sizeSelect.options[sizeSelect.selectedIndex]?.text || '';
         const price = parseFloat(priceInput.value);
         const qty = parseInt(qtyInput.value);
-        
+
         // Validations
         if (!sizeId && !colorId) {
             showFlash('Please choose either size or color (or both)');
@@ -658,7 +834,7 @@
             showFlash('This color and size combination already exists!');
             return;
         }
-        
+
         // Add to tracking array
         addedVariants.push(variantKey);
         // Hide "no variants" message
@@ -668,7 +844,7 @@
         const variantCard = document.createElement('div');
         variantCard.className = 'card mb-2 variant-card';
         variantCard.id = `variant-${variantId}`;
-        
+
         variantCard.innerHTML = `
             <div class="card-body py-2">
                 <div class="row align-items-center">
@@ -700,7 +876,7 @@
                 </div>
             </div>
         `;
-        
+
         document.getElementById('added-variants-container').appendChild(variantCard);
         $(colorSelect).val(null).trigger('change');
         // Clear inputs
@@ -710,55 +886,58 @@
         qtyInput.value = '';
         colorSelect.focus();
     });
-    
+
     // Add Bulk Price 
     document.getElementById('add-bulk').addEventListener('click', function() {
         const minInput = document.getElementById('bulk-min');
         const maxInput = document.getElementById('bulk-max');
         const priceInput = document.getElementById('bulk-price');
-        
+
         const min = parseInt(minInput.value);
         const max = parseInt(maxInput.value);
         const price = parseFloat(priceInput.value);
-        
+
         // Validation
         if (!min || !max || !price) {
             showFlash('Fill Min Quantity, Max Quantity and Price');
             return;
         }
-        
+
         if (min >= max) {
             showFlash('Min quantity must be less than Max quantity');
             return;
         }
-        
+
         const rangeKey = `${min}-${max}`;
         if (addedBulkRanges.includes(rangeKey)) {
             showFlash('This quantity range already exists!');
             return;
         }
-        
+
         // Get all existing bulk ranges
         const existingRanges = [];
         document.querySelectorAll('.bulk-card').forEach(card => {
             const existingMin = parseInt(card.querySelector('input[name*="min_qty"]').value);
             const existingMax = parseInt(card.querySelector('input[name*="max_qty"]').value);
-            existingRanges.push({ min: existingMin, max: existingMax });
+            existingRanges.push({
+                min: existingMin,
+                max: existingMax
+            });
         });
-        
+
         // Sort existing ranges by min quantity
         existingRanges.sort((a, b) => a.min - b.min);
-        
+
         // Check for continuity and overlapping
         let continuityError = '';
-        
+
         if (existingRanges.length > 0) {
             // Check if new range fits in continuity
             let prevRange = null;
-            
+
             for (let i = 0; i < existingRanges.length; i++) {
                 const range = existingRanges[i];
-                
+
                 // Check for overlapping with any existing range
                 if ((min >= range.min && min <= range.max) ||
                     (max >= range.min && max <= range.max) ||
@@ -766,30 +945,36 @@
                     showFlash(`This quantity range overlaps with existing range (${range.min}-${range.max})!`);
                     return;
                 }
-                
+
                 // Check for gaps in continuity
                 if (prevRange) {
                     // There should be no gap between previous max and current min
                     if (prevRange.max + 1 !== range.min) {
-                        showFlash(`There's a gap in quantity ranges. After ${prevRange.max}, next range should start at ${prevRange.max + 1}`);
+                        showFlash(
+                            `There's a gap in quantity ranges. After ${prevRange.max}, next range should start at ${prevRange.max + 1}`
+                        );
                         return;
                     }
                 }
-                
+
                 prevRange = range;
             }
-            
+
             // Now check where the new range fits
             if (min < existingRanges[0].min) {
                 // New range is before all existing ranges
                 if (max + 1 !== existingRanges[0].min) {
-                    showFlash(`To add before existing range, max should be ${existingRanges[0].min - 1} for continuity`);
+                    showFlash(
+                        `To add before existing range, max should be ${existingRanges[0].min - 1} for continuity`
+                    );
                     return;
                 }
             } else if (min > existingRanges[existingRanges.length - 1].max) {
                 // New range is after all existing ranges
                 if (min !== existingRanges[existingRanges.length - 1].max + 1) {
-                    showFlash(`To add after existing range, min should be ${existingRanges[existingRanges.length - 1].max + 1} for continuity`);
+                    showFlash(
+                        `To add after existing range, min should be ${existingRanges[existingRanges.length - 1].max + 1} for continuity`
+                    );
                     return;
                 }
             } else {
@@ -798,41 +983,45 @@
                 for (let i = 0; i < existingRanges.length - 1; i++) {
                     const currentRange = existingRanges[i];
                     const nextRange = existingRanges[i + 1];
-                    
+
                     if (min > currentRange.max && max < nextRange.min) {
                         // Check continuity with both sides
                         if (min !== currentRange.max + 1) {
-                            showFlash(`To insert between ranges, min should be ${currentRange.max + 1} for continuity`);
+                            showFlash(
+                                `To insert between ranges, min should be ${currentRange.max + 1} for continuity`
+                            );
                             return;
                         }
                         if (max + 1 !== nextRange.min) {
-                            showFlash(`To insert between ranges, max should be ${nextRange.min - 1} for continuity`);
+                            showFlash(
+                                `To insert between ranges, max should be ${nextRange.min - 1} for continuity`
+                            );
                             return;
                         }
                         inserted = true;
                         break;
                     }
                 }
-                
+
                 if (!inserted) {
                     showFlash('Cannot determine where to insert this range. Please check continuity.');
                     return;
                 }
             }
         }
-        
+
         // If no existing ranges, just add the first one
         addedBulkRanges.push(rangeKey);
-        
+
         // Hide "no bulk price" message
         document.getElementById('no-bulkprice-message').style.display = 'none';
-        
+
         // Create display card
         const bulkId = createUniqueId();
         const bulkCard = document.createElement('div');
         bulkCard.className = 'card mb-2 bulk-card';
         bulkCard.id = `bulk-${bulkId}`;
-        
+
         bulkCard.innerHTML = `
             <div class="card-body py-2">
                 <div class="row align-items-center">
@@ -860,11 +1049,11 @@
                 </div>
             </div>
         `;
-        
+
         // Insert in correct position based on min quantity
         const container = document.getElementById('added-bulkprice-container');
         const bulkCards = Array.from(container.querySelectorAll('.bulk-card'));
-        
+
         if (bulkCards.length === 0) {
             container.appendChild(bulkCard);
         } else {
@@ -881,7 +1070,7 @@
                 bulkCards[bulkCards.length - 1].after(bulkCard);
             }
         }
-        
+
         // Clear inputs and suggest next min quantity
         if (existingRanges.length > 0) {
             const lastMax = existingRanges[existingRanges.length - 1].max;
@@ -893,16 +1082,16 @@
         priceInput.value = '';
         minInput.focus();
     });
-    
+
     // Handle deletion of both variants and bulk prices 
     document.addEventListener('click', function(e) {
         const deleteBtn = e.target.closest('.delete-item');
         if (!deleteBtn) return;
-        
+
         const type = deleteBtn.dataset.type;
         const id = deleteBtn.dataset.id;
         const card = document.getElementById(`${type}-${id}`);
-        
+
         if (card) {
             if (type === 'variant') {
                 // Remove variant from tracking
@@ -910,7 +1099,7 @@
                 const sizeId = card.querySelector('input[name*="size_id"]').value;
                 const variantKey = `${colorId}-${sizeId}`;
                 addedVariants = addedVariants.filter(key => key !== variantKey);
-                
+
                 // Show message if no variants left
                 if (document.querySelectorAll('.variant-card').length === 1) {
                     document.getElementById('no-variants-message').style.display = 'block';
@@ -921,16 +1110,16 @@
                 const max = card.querySelector('input[name*="max_qty"]').value;
                 const rangeKey = `${min}-${max}`;
                 addedBulkRanges = addedBulkRanges.filter(key => key !== rangeKey);
-                
+
                 // Show message if no bulk prices left
                 if (document.querySelectorAll('.bulk-card').length === 1) {
                     document.getElementById('no-bulkprice-message').style.display = 'block';
                 }
-                
+
                 // Update min input suggestion after deletion
                 updateMinInputSuggestion();
             }
-            
+
             card.remove();
         }
     });
@@ -939,15 +1128,15 @@
     function updateMinInputSuggestion() {
         const bulkCards = document.querySelectorAll('.bulk-card');
         const minInput = document.getElementById('bulk-min');
-        
+
         if (bulkCards.length === 0) {
             minInput.placeholder = "Min Qty (start with 1)";
             return;
-        } 
+        }
         // Get the last max value
         const lastCard = bulkCards[bulkCards.length - 1];
         const lastMax = parseInt(lastCard.querySelector('input[name*="max_qty"]').value);
-        
+
         minInput.placeholder = `Min Qty (suggestion: ${lastMax + 1})`;
     }
 </script>
@@ -1008,7 +1197,7 @@
     document.addEventListener('DOMContentLoaded', syncExclusiveRules);
 
     // Re-check after add/remove
-    document.addEventListener('click', function (e) {
+    document.addEventListener('click', function(e) {
         if (
             e.target.id === 'add-variant' ||
             e.target.id === 'add-bulk' ||
@@ -1019,7 +1208,7 @@
     });
 </script> -->
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         let variantDisabledNotified = false;
         let bulkDisabledNotified = false;
         const bulkTab = document.getElementById('bulkProductTab');
@@ -1028,9 +1217,11 @@
         function hasVariants() {
             return document.querySelectorAll('.variant-card').length > 0;
         }
+
         function hasBulkPricing() {
             return document.querySelectorAll('.bulk-card').length > 0;
         }
+
         function hasBulkItems() {
             let hasData = false;
 
@@ -1058,6 +1249,7 @@
 
             if (!disable) variantDisabledNotified = false;
         }
+
         function disableBulkPricing(disable = true) {
             $('#bulk-min, #bulk-max, #bulk-price').prop('disabled', disable);
             $('#add-bulk').prop('disabled', disable);
@@ -1081,11 +1273,12 @@
                 document.querySelectorAll('.step-content').forEach(el => el.style.display = 'none');
                 document.querySelector('.step-3').style.display = 'block';
 
-                document.querySelectorAll('#productTabs .nav-link').forEach(tab => tab.classList.remove('active'));
+                document.querySelectorAll('#productTabs .nav-link').forEach(tab => tab.classList.remove(
+                    'active'));
                 document.querySelector('#productTabs .nav-link[data-step="3"]').classList.add('active');
             }
         }
-    
+
         // MASTER RULE ENGINE 
         function syncAllExclusiveRules() {
             /* Rule 1: Variant ↔ Bulk Pricing */
@@ -1114,10 +1307,10 @@
         }
 
         // INITIAL RUN
-        syncAllExclusiveRules(); 
+        syncAllExclusiveRules();
 
         // RE-CHECK ON ACTIONS 
-        document.addEventListener('click', function (e) {
+        document.addEventListener('click', function(e) {
             if (
                 e.target.id === 'add-variant' ||
                 e.target.id === 'add-bulk' ||
@@ -1137,7 +1330,7 @@
 <!-- <script>
     let bulkItemIndex = 1;
 
-    document.getElementById('add-bulk-item').addEventListener('click', function () {
+    document.getElementById('add-bulk-item').addEventListener('click', function() {
         const container = document.getElementById('bulk-items-list');
         const rows = container.querySelectorAll('.bulk-item-row');
         const lastRow = rows[rows.length - 1];
@@ -1180,7 +1373,7 @@
         bulkItemIndex++;
     });
 
-    document.addEventListener('click', function (e) {
+    document.addEventListener('click', function(e) {
         if (e.target.classList.contains('remove-bulk-item')) {
             const rows = document.querySelectorAll('.bulk-item-row');
             if (rows.length > 1) {
@@ -1191,7 +1384,7 @@
 </script> -->
 <script>
     let bulkItemIndex = 1;
-    document.addEventListener('click', function (e) {
+    document.addEventListener('click', function(e) {
 
         /* ADD */
         if (e.target.classList.contains('add-bulk-item')) {
@@ -1266,5 +1459,53 @@
 
     });
 </script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
 
+        if (!window.EXISTING_BULK_ITEMS || !EXISTING_BULK_ITEMS.length) return;
+
+        const container = document.getElementById('bulk-items-list');
+        container.innerHTML = '';
+        bulkItemIndex = 0;
+
+        EXISTING_BULK_ITEMS.forEach((item, index) => {
+
+            const row = document.createElement('div');
+            row.className = 'row g-2 mb-2 bulk-item-row';
+
+            row.innerHTML = `
+            <div class="col-md-3">
+                <input type="text" name="bulk_items[${index}][name]" class="form-control"
+                    value="${item.name ?? ''}">
+            </div>
+            <div class="col-md-2">
+                <input type="number" name="bulk_items[${index}][quantity]" class="form-control"
+                    value="${item.quantity ?? ''}">
+            </div>
+            <div class="col-md-2">
+                <input type="number" name="bulk_items[${index}][moq]" class="form-control"
+                    value="${item.moq ?? ''}">
+            </div>
+            <div class="col-md-2">
+                <input type="number" name="bulk_items[${index}][mrp]" class="form-control"
+                    value="${item.mrp ?? ''}">
+            </div>
+            <div class="col-md-2">
+                <input type="number" name="bulk_items[${index}][selling_price]" class="form-control"
+                    value="${item.selling_price ?? ''}">
+            </div>
+            <div class="col-md-1">
+                <button type="button" class="btn btn-danger remove-bulk-item"
+                    ${index === 0 ? 'disabled' : ''}>-</button>
+                <button type="button" class="btn btn-success add-bulk-item
+                    ${index === EXISTING_BULK_ITEMS.length - 1 ? '' : 'd-none'}">+</button>
+            </div>
+        `;
+
+            container.appendChild(row);
+            bulkItemIndex++;
+        });
+
+    });
+</script>
 @endpush
