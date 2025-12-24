@@ -88,6 +88,8 @@ class ProductDetailsResource extends JsonResource
             ),
             'variants' => ProductVariantResource::collection($this->variants),
             'brand' => $brandName,
+            'gst' => $this->tax_percentage,
+            'return_period' => $this->return_period,
             'unit' => $this->unit ? UnitResource::make($this->unit) : null,
             'description' => $description,
             'shop' => ProductShopResource::make($this->shop),
