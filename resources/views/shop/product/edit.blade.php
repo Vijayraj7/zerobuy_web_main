@@ -1474,9 +1474,9 @@
             row.className = 'row g-2 mb-2 bulk-item-row';
 
             row.innerHTML = `
-            <div class="col-md-3">
                 <input type="hidden" name="bulk_items[${index}][id]" class="form-control"
                     value="${item.id ?? ''}">
+            <div class="col-md-3">
                 <input type="text" name="bulk_items[${index}][name]" class="form-control"
                     value="${item.name ?? ''}">
             </div>
