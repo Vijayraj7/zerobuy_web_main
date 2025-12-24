@@ -1475,6 +1475,8 @@
 
             row.innerHTML = `
             <div class="col-md-3">
+                <input type="hidden" name="bulk_items[${index}][id]" class="form-control"
+                    value="${item.id ?? ''}">
                 <input type="text" name="bulk_items[${index}][name]" class="form-control"
                     value="${item.name ?? ''}">
             </div>
