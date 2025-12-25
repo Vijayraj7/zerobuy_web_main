@@ -932,6 +932,10 @@
         const price = parseFloat(priceInput.value);
 
         // Validation
+        if (!min) {
+            showFlash('Fill Min Quantity');
+            return;
+        }
         if (!min || !max || !price) {
             showFlash('Fill Min Quantity, Max Quantity and Price');
             return;
@@ -1051,6 +1055,32 @@
             }
         }
 
+        // 🔒 PRICE MUST DECREASE WITH QUANTITY
+        if (existingRanges.length > 0) {
+
+            // Get highest max range (last quantity slab)
+            const highestRange = existingRanges.reduce((a, b) => {
+                return a.max > b.max ? a : b;
+            });
+
+            // Get its price
+            const lastPriceInput = Array.from(document.querySelectorAll('.bulk-card'))
+                .find(card => {
+                    return parseInt(card.querySelector('input[name*="max_qty"]').value) === highestRange
+                        .max;
+                })
+                ?.querySelector('input[name*="price"]');
+
+            const lastPrice = lastPriceInput ? parseFloat(lastPriceInput.value) : null;
+
+            if (lastPrice !== null && price >= lastPrice) {
+                showFlash(
+                    `Bulk price must be lower than (${lastPrice})`
+                );
+                return;
+            }
+        }
+
         // If no existing ranges, just add the first one
         addedBulkRanges.push(rangeKey);
 
@@ -1137,6 +1167,7 @@
         maxInput.value = '';
         priceInput.value = '';
         minInput.focus();
+        updateBulkDeleteButtons();
     });
 
     // Handle deletion of both variants and bulk prices 
@@ -1178,8 +1209,22 @@
             }
 
             card.remove();
+            updateBulkDeleteButtons();
         }
     });
+
+    function updateBulkDeleteButtons() {
+        const bulkCards = document.querySelectorAll('.bulk-card');
+
+        bulkCards.forEach((card, index) => {
+            const btn = card.querySelector('.delete-item');
+            if (!btn) return;
+
+            // Only last card can be deleted
+            btn.disabled = index !== bulkCards.length - 1;
+            btn.style.opacity = index !== bulkCards.length - 1 ? '0.4' : '1';
+        });
+    }
 
     // Helper function to update min input suggestion
     function updateMinInputSuggestion() {
@@ -1388,9 +1433,30 @@
                 disableBulkPricing(false);
             }
 
-            if (!hasBulkPricing()) {
+            if (hasBulkPricing()) {
+                const existingRanges = [];
+                document.querySelectorAll('.bulk-card').forEach(card => {
+                    const existingMin = parseInt(card.querySelector('input[name*="min_qty"]')
+                        .value);
+                    const existingMax = parseInt(card.querySelector('input[name*="max_qty"]')
+                        .value);
+                    existingRanges.push({
+                        min: existingMin,
+                        max: existingMax
+                    });
+                });
+                var lastmax = 0;
+                for (let i = 0; i < existingRanges.length; i++) {
+                    const range = existingRanges[i];
+                    lastmax = range.max;
+                }
                 const minInput = document.getElementById('bulk-min');
-                if (minInput && !minInput.value) {
+                if (minInput) {
+                    minInput.value = lastmax + 1;
+                }
+            } else {
+                const minInput = document.getElementById('bulk-min');
+                if (minInput) {
                     minInput.value = 1;
                 }
             }
@@ -1775,6 +1841,7 @@
             container.appendChild(card);
         });
         syncAllExclusiveRules();
+        updateBulkDeleteButtons();
     });
 </script>
 @endpush
