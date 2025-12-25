@@ -20,6 +20,7 @@
 
 @if ($isEdit)
     <script>
+        window.EXISTING_BULK_PRICES = @json($product->bulkPrices ?? []);
         window.EXISTING_ITEM_DETAILS = @json($product->item_details ?? []);
         window.EXISTING_BULK_ITEMS = @json($product->bulkItems ?? []);
         window.EXISTING_VARIANTS = @json($product->variants ?? []);
@@ -1051,32 +1052,46 @@
         bulkCard.id = `bulk-${bulkId}`;
 
         bulkCard.innerHTML = `
-            <div class="card-body py-2">
-                <div class="row align-items-center">
-                    <div class="col-md-10">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <strong>Min Qty:</strong> ${min}
-                                <input type="hidden" name="bulk[${bulkId}][min_qty]" value="${min}">
-                            </div>
-                            <div class="col-md-4">
-                                <strong>Max Qty:</strong> ${max}
-                                <input type="hidden" name="bulk[${bulkId}][max_qty]" value="${max}">
-                            </div>
-                            <div class="col-md-4">
-                                <strong>Price:</strong> ₹${price.toFixed(2)}
-                                <input type="hidden" name="bulk[${bulkId}][price]" value="${price}">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-2 text-end">
-                        <button type="button" class="btn btn-sm btn-danger delete-item" data-type="bulk" data-id="${bulkId}">
-                            <i class="fas fa-trash"></i> Remove
-                        </button>
-                    </div>
+<div class="card-body py-2">
+    <div class="row align-items-center">
+        <div class="col-md-10">
+            <div class="row g-2">
+
+                <div class="col-md-4">
+                    <strong>Min Qty:</strong> ${min}
+                    <input type="hidden" name="bulk[${bulkId}][min_qty]" value="${min}">
                 </div>
+
+                <div class="col-md-4">
+                    <strong>Max Qty:</strong> ${max}
+                    <input type="hidden" name="bulk[${bulkId}][max_qty]" value="${max}">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="small fw-bold">Price</label>
+                    <input type="number"
+                        class="form-control form-control-sm"
+                        name="bulk[${bulkId}][price]"
+                        value="${price}"
+                        min="1"
+                        required>
+                </div>
+
             </div>
-        `;
+        </div>
+
+        <div class="col-md-2 text-end">
+            <button type="button"
+                class="btn btn-sm btn-danger delete-item"
+                data-type="bulk"
+                data-id="${bulkId}">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+</div>
+`;
+
 
         // Insert in correct position based on min quantity
         const container = document.getElementById('added-bulkprice-container');
@@ -1622,6 +1637,75 @@
             container.appendChild(card);
         });
 
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+        if (!window.EXISTING_BULK_PRICES || !EXISTING_BULK_PRICES.length) return;
+
+        const container = document.getElementById('added-bulkprice-container');
+        if (!container) return;
+
+        container.innerHTML = '';
+        document.getElementById('no-bulkprice-message')?.style.display = 'none';
+
+        EXISTING_BULK_PRICES.forEach(price => {
+
+            const rangeKey = `${price.min_qty}-${price.max_qty}`;
+            addedBulkRanges.push(rangeKey);
+
+            const bulkId = createUniqueId();
+            const card = document.createElement('div');
+
+            card.className = 'card mb-2 bulk-card';
+            card.id = `bulk-${bulkId}`;
+
+            card.innerHTML = `
+        <div class="card-body py-2">
+            <div class="row align-items-center">
+                <div class="col-md-10">
+                    <div class="row g-2">
+
+                        <input type="hidden" name="bulk[${bulkId}][id]" value="${price.id}">
+
+                        <div class="col-md-4">
+                            <strong>Min Qty:</strong> ${price.min_qty}
+                            <input type="hidden" name="bulk[${bulkId}][min_qty]" value="${price.min_qty}">
+                        </div>
+
+                        <div class="col-md-4">
+                            <strong>Max Qty:</strong> ${price.max_qty}
+                            <input type="hidden" name="bulk[${bulkId}][max_qty]" value="${price.max_qty}">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="small fw-bold">Price</label>
+                            <input type="number"
+                                class="form-control form-control-sm"
+                                name="bulk[${bulkId}][price]"
+                                value="${price.price}"
+                                min="1"
+                                required>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="col-md-2 text-end">
+                    <button type="button"
+                        class="btn btn-sm btn-danger delete-item"
+                        data-type="bulk"
+                        data-id="${bulkId}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        `;
+
+            container.appendChild(card);
+        });
     });
 </script>
 @endpush
