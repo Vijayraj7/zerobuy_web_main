@@ -92,12 +92,12 @@ class ProductRepository extends Repository
 
         $keywords = implode(',', $request->meta_keywords ?? []);
 
-        $details = $request->details;
-        if (isset($details)) {
-            if (is_string($details)) {
-                $details = json_decode($details, true) ?: null;
-            }
-        }
+        // $details = $request->details;
+        // if (isset($details)) {
+        //     if (is_string($details)) {
+        //         $details = json_decode($details, true) ?: null;
+        //     }
+        // }
 
         $product = self::create([
             'shop_id' => $shop?->id,
@@ -108,7 +108,7 @@ class ProductRepository extends Repository
             'unit_id' => $request->unit,
             'price' => $request->price,
             'discount_price' => $request->discount_price,
-            'details' => $details,
+            // 'details' => $details,
             'quantity' => $request->quantity ?? 0,
             'min_order_quantity' => $request->min_order_quantity ?? 1,
             'media_id' => $thumbnail->id,
@@ -153,6 +153,24 @@ class ProductRepository extends Repository
             }
         }
 
+
+        $hasDetails   = $request->filled('details');
+        if ($hasDetails) {
+            DB::transaction(function () use ($product, $request) {
+
+                $details = collect($request->details);
+
+                $details->each(function ($v) use ($product) {
+                    $product->itemDetails()->updateOrCreate(
+                        ['id' => $v['id'] ?? null],
+                        [
+                            'name'    => $v['name'],
+                            'value'   => $v['value'],
+                        ]
+                    );
+                });
+            });
+        }
 
         $hasVariants   = $request->filled('variants');
         $hasBulkItems  = $request->filled('bulk_items');
