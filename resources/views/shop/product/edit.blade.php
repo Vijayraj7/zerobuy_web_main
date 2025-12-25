@@ -501,7 +501,7 @@
                 </div>
 
                 <!-- Field Titles -->
-                <div class="row g-2 mb-2 fw-semibold text-muted">
+                {{-- <div class="row g-2 mb-2 fw-semibold text-muted">
                     <div class="col-md-3">Item Name <span class="text-danger">*</span></div>
                     <div class="col-md-2">Quantity <span class="text-danger">*</span></div>
                     <div class="col-md-2">MOQ <span class="text-danger">*</span></div>
@@ -531,12 +531,49 @@
                                 placeholder="Selling Price">
                         </div>
                         <div class="col-md-1">
-                            <button type="button" class="btn btn-danger remove-bulk-item" disabled>-</button>
+                            <button type="button" class="btn btn-danger remove-bulk-item">-</button>
                             <button type="button" class="btn btn-success add-bulk-item"
                                 id="add-bulk-item">+</button>
                         </div>
                     </div>
+                </div> --}}
+
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Qty</th>
+                            <th>MOQ</th>
+                            <th>MRP</th>
+                            <th>Selling</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input id="bulkitem-name" class="form-control"></td>
+                            <td><input id="bulkitem-qty" class="form-control" type="number"></td>
+                            <td><input id="bulkitem-moq" class="form-control" type="number"></td>
+                            <td><input id="bulkitem-mrp" class="form-control" type="number"></td>
+                            <td><input id="bulkitem-price" class="form-control" type="number"></td>
+                            <td>
+                                <button type="button" class="btn btn-primary" id="add-bulk-item">
+                                    Add
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="mt-3">
+                    <h6>Added Bulk Items</h6>
+                    <div id="added-bulkitems-container">
+                        <p class="text-muted small" id="no-bulkitem-message">
+                            No bulk items added yet.
+                        </p>
+                    </div>
                 </div>
+
                 <!-- <button type="button" class="btn btn-primary btn-sm mt-2" id="add-bulk-item">
                     + Add More
                 </button> -->
@@ -1189,7 +1226,8 @@
 
                 // Show message if no variants left
                 if (document.querySelectorAll('.variant-card').length === 1) {
-                    document.getElementById('no-variants-message').style.display = 'block';
+                    const noVariantMsg = document.getElementById('no-variants-message');
+                    if (noVariantMsg) noVariantMsg.style.display = 'none';
                 }
             } else if (type === 'bulk') {
                 // Remove bulk range from tracking
@@ -1206,6 +1244,16 @@
 
                 // Update min input suggestion after deletion
                 updateMinInputSuggestion();
+            } else if (type === 'bulkitem') {
+
+                const card = document.getElementById(`bulkitem-${id}`);
+                const name = card.querySelector('input[name*="[name]"]').value;
+
+                addedBulkItems = addedBulkItems.filter(n => n !== name.toLowerCase());
+
+                if (document.querySelectorAll('.bulkitem-card').length === 1) {
+                    document.getElementById('no-bulkitem-message').style.display = 'block';
+                }
             }
 
             card.remove();
@@ -1325,19 +1373,17 @@
         }
 
         function hasBulkItems() {
-            let hasData = false;
-
-            document.querySelectorAll('.bulk-item-row').forEach(row => {
-                const inputs = row.querySelectorAll('input');
-                inputs.forEach(input => {
-                    if (input.value && input.value.trim() !== '') {
-                        hasData = true;
-                    }
-                });
+            return Array.from(document.querySelectorAll('.bulkitem-card')).some(card => {
+                return (
+                    card.querySelector('input[name*="[name]"]')?.value &&
+                    card.querySelector('input[name*="[quantity]"]')?.value &&
+                    card.querySelector('input[name*="[moq]"]')?.value &&
+                    card.querySelector('input[name*="[mrp]"]')?.value &&
+                    card.querySelector('input[name*="[selling_price]"]')?.value
+                );
             });
-
-            return hasData;
         }
+
 
         // DISABLE FUNCTIONS 
         function disableVariants(disable = true) {
@@ -1492,11 +1538,101 @@
 
         /* ALSO WATCH INPUT CHANGES (bulk items typing) */
         document.addEventListener('input', function(e) {
-            if (e.target.closest('.bulk-item-row')) {
-                resolvePriceType();
+            if (e.target.closest('.bulkitem-card') || e.target.id.startsWith('bulkitem-')) {
+                syncAllExclusiveRules();
             }
         });
 
+    });
+</script>
+
+<script>
+    let addedBulkItems = [];
+
+    document.getElementById('add-bulk-item').addEventListener('click', function() {
+        const bulkitemName = document.getElementById('bulkitem-name');
+        const bulkitemQty = document.getElementById('bulkitem-qty');
+        const bulkitemMoq = document.getElementById('bulkitem-moq');
+        const bulkitemMrp = document.getElementById('bulkitem-mrp');
+        const bulkitemPrice = document.getElementById('bulkitem-price');
+
+        const name = bulkitemName.value.trim();
+        const qty = bulkitemQty.value;
+        const moq = bulkitemMoq.value;
+        const mrp = bulkitemMrp.value;
+        const price = bulkitemPrice.value;
+
+        if (!name || !qty || !moq || !mrp || !price) {
+            showFlash('Fill all bulk item fields');
+            return;
+        }
+
+        if (addedBulkItems.includes(name.toLowerCase())) {
+            showFlash('Bulk item name must be unique');
+            return;
+        }
+
+        addedBulkItems.push(name.toLowerCase());
+        document.getElementById('no-bulkitem-message').style.display = 'none';
+
+        const id = createUniqueId();
+
+        const card = document.createElement('div');
+        card.className = 'card mb-2 bulkitem-card';
+        card.id = `bulkitem-${id}`;
+
+        card.innerHTML = `
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-center">
+
+                <input type="hidden" name="bulk_items[${id}][name]" value="${name}">
+
+
+                <div class="col-md-3">
+                    <input readonly class="form-control form-control-sm"
+                        name="bulk_items[${id}][name]" value="${name}">
+                </div>
+
+                <div class="col-md-2">
+                    <input type="number" class="form-control form-control-sm"
+                        name="bulk_items[${id}][quantity]" value="${qty}">
+                </div>
+
+                <div class="col-md-2">
+                    <input type="number" class="form-control form-control-sm"
+                        name="bulk_items[${id}][moq]" value="${moq}">
+                </div>
+
+                <div class="col-md-2">
+                    <input type="number" class="form-control form-control-sm"
+                        name="bulk_items[${id}][mrp]" value="${mrp}">
+                </div>
+
+                <div class="col-md-2">
+                    <input type="number" class="form-control form-control-sm"
+                        name="bulk_items[${id}][selling_price]" value="${price}">
+                </div>
+
+                <div class="col-md-1 text-end">
+                    <button type="button"
+                        class="btn btn-sm btn-danger delete-item"
+                        data-type="bulkitem"
+                        data-id="${id}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    `;
+
+        document.getElementById('added-bulkitems-container').appendChild(card);
+
+        bulkitemName.value = '';
+        bulkitemQty.value = '';
+        bulkitemMoq.value = '';
+        bulkitemMrp.value = '';
+        bulkitemPrice.value = '';
     });
 </script>
 
@@ -1567,10 +1703,25 @@
             const rows = container.querySelectorAll('.bulk-item-row');
             const lastRow = rows[rows.length - 1];
 
+            // let isValid = true;
+            // lastRow.querySelectorAll('input').forEach(input => {
+            //     if (!input.value.trim()) isValid = false;
+            // });
+
             let isValid = true;
+
             lastRow.querySelectorAll('input').forEach(input => {
                 if (!input.value.trim()) isValid = false;
             });
+
+            // 🔒 CHECK DUPLICATE NAME
+            const nameInput = lastRow.querySelector('input[name*="[name]"]');
+            if (isDuplicateBulkItemName(nameInput)) {
+                showFlash('Bulk item name must be unique');
+                nameInput.focus();
+                return;
+            }
+
 
             if (!isValid) {
                 showFlash('Please fill all fields before adding more.');
@@ -1619,70 +1770,162 @@
             const row = e.target.closest('.bulk-item-row');
             row.remove();
 
-            const rows = container.querySelectorAll('.bulk-item-row');
-            if (!rows.length) return;
+            let rows = container.querySelectorAll('.bulk-item-row');
 
-            /* Show + only in last row */
-            rows.forEach(r => r.querySelector('.add-bulk-item')?.classList.add('d-none'));
-            rows[rows.length - 1].querySelector('.add-bulk-item')?.classList.remove('d-none');
+            /* 🟢 IF ALL ROWS REMOVED → ADD EMPTY ROW */
+            if (rows.length === 0) {
+                container.insertAdjacentHTML('beforeend', `
+            <div class="row g-2 mb-2 bulk-item-row">
+                <div class="col-md-3">
+                    <input type="text" name="bulk_items[0][name]" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="bulk_items[0][quantity]" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="bulk_items[0][moq]" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="bulk_items[0][mrp]" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="bulk_items[0][selling_price]" class="form-control">
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-danger remove-bulk-item">-</button>
+                    <button type="button" class="btn btn-success add-bulk-item">+</button>
+                </div>
+            </div>
+        `);
 
-            if (rows.length === 1) {
-                rows[0].querySelector('.remove-bulk-item').disabled = true;
+                bulkItemIndex = 1;
+                return;
             }
+
+            /* 🔁 SHOW + ONLY ON LAST ROW */
+            rows = container.querySelectorAll('.bulk-item-row');
+            rows.forEach(r => r.querySelector('.add-bulk-item')?.classList.add('d-none'));
+            rows[rows.length - 1]
+                .querySelector('.add-bulk-item')
+                ?.classList.remove('d-none');
         }
 
     });
 </script>
 <script>
+    function isDuplicateBulkItemName(currentInput) {
+        const currentValue = currentInput.value.trim().toLowerCase();
+        if (!currentValue) return false;
+
+        let count = 0;
+
+        document.querySelectorAll('.bulk-item-row input[name*="[name]"]').forEach(input => {
+            if (input.value.trim().toLowerCase() === currentValue) {
+                count++;
+            }
+        });
+
+        return count > 1;
+    }
+
+    document.addEventListener('blur', function(e) {
+        if (!e.target.matches('.bulk-item-row input[name*="[name]"]')) return;
+
+        const input = e.target;
+        const value = input.value.trim();
+
+        if (!value) return;
+
+        if (isDuplicateBulkItemName(input)) {
+            showFlash('Bulk item name must be unique');
+            input.focus();
+        }
+    }, true); // 👈 CAPTURE MODE REQUIRED
+</script>
+
+<script>
     document.addEventListener('DOMContentLoaded', function() {
 
         if (!window.EXISTING_BULK_ITEMS || !EXISTING_BULK_ITEMS.length) return;
 
-        const container = document.getElementById('bulk-items-list');
+        const container = document.getElementById('added-bulkitems-container');
+        const emptyMsg = document.getElementById('no-bulkitem-message');
+
         container.innerHTML = '';
+        if (emptyMsg) emptyMsg.style.display = 'none';
+
         bulkItemIndex = 0;
 
         EXISTING_BULK_ITEMS.forEach((item, index) => {
 
-            const row = document.createElement('div');
-            row.className = 'row g-2 mb-2 bulk-item-row';
+            const id = createUniqueId();
 
-            row.innerHTML = `
-                <input type="hidden" name="bulk_items[${index}][id]" class="form-control"
-                    value="${item.id ?? ''}">
-            <div class="col-md-3">
-                <input type="text" name="bulk_items[${index}][name]" class="form-control"
-                    value="${item.name ?? ''}">
-            </div>
-            <div class="col-md-2">
-                <input type="number" name="bulk_items[${index}][quantity]" class="form-control"
-                    value="${item.quantity ?? ''}">
-            </div>
-            <div class="col-md-2">
-                <input type="number" name="bulk_items[${index}][moq]" class="form-control"
-                    value="${item.moq ?? ''}">
-            </div>
-            <div class="col-md-2">
-                <input type="number" name="bulk_items[${index}][mrp]" class="form-control"
-                    value="${item.mrp ?? ''}">
-            </div>
-            <div class="col-md-2">
-                <input type="number" name="bulk_items[${index}][selling_price]" class="form-control"
-                    value="${item.selling_price ?? ''}">
-            </div>
-            <div class="col-md-1">
-                <button type="button" class="btn btn-danger remove-bulk-item"
-                    ${index === 0 ? 'disabled' : ''}>-</button>
-                <button type="button" class="btn btn-success add-bulk-item
-                    ${index === EXISTING_BULK_ITEMS.length - 1 ? '' : 'd-none'}">+</button>
+            const card = document.createElement('div');
+            card.className = 'card mb-2 bulkitem-card';
+            card.id = `bulkitem-${id}`;
+
+            card.innerHTML = `
+            <div class="card-body py-2">
+                <div class="row g-2 align-items-center">
+
+                    <input type="hidden" name="bulk_items[${id}][id]" value="${item.id ?? ''}">
+
+                    <div class="col-md-3">
+                        <input type="text" readonly
+                            class="form-control form-control-sm"
+                            name="bulk_items[${id}][name]"
+                            value="${item.name ?? ''}">
+                    </div>
+
+                    <div class="col-md-2">
+                        <input type="number"
+                            class="form-control form-control-sm"
+                            name="bulk_items[${id}][quantity]"
+                            value="${item.quantity ?? ''}">
+                    </div>
+
+                    <div class="col-md-2">
+                        <input type="number"
+                            class="form-control form-control-sm"
+                            name="bulk_items[${id}][moq]"
+                            value="${item.moq ?? ''}">
+                    </div>
+
+                    <div class="col-md-2">
+                        <input type="number"
+                            class="form-control form-control-sm"
+                            name="bulk_items[${id}][mrp]"
+                            value="${item.mrp ?? ''}">
+                    </div>
+
+                    <div class="col-md-2">
+                        <input type="number"
+                            class="form-control form-control-sm"
+                            name="bulk_items[${id}][selling_price]"
+                            value="${item.selling_price ?? ''}">
+                    </div>
+
+                    <div class="col-md-1 text-end">
+                        <button type="button"
+                            class="btn btn-sm btn-danger delete-item"
+                            data-type="bulkitem"
+                            data-id="${id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+
+                </div>
             </div>
         `;
 
-            container.appendChild(row);
+            container.appendChild(card);
             bulkItemIndex++;
         });
+
         syncAllExclusiveRules();
     });
+</script>
+
 </script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
