@@ -13,6 +13,7 @@ use App\Http\Requests\ProductRequest;
 use App\Repositories\ProductRepository;
 use Illuminate\Support\Facades\Storage;
 use App\Events\AdminProductRequestEvent;
+use App\Http\Resources\ProductVariantResource;
 use App\Repositories\FlashSaleRepository;
 use Illuminate\Support\Facades\Validator;
 use App\Repositories\NotificationRepository;
@@ -180,8 +181,11 @@ class ProductController extends Controller
         })->isActive()->get();
 
         $metaKeywords = explode(',', $product->meta_keywords) ?: [];
-
-        return view('shop.product.edit', compact('product', 'brands', 'colors', 'categories', 'units', 'sizes', 'subCategories', 'metaKeywords'));
+        $product->load([
+            'variants.color',
+            'variants.size',
+        ]);
+        return view('shop.product.edit', compact('product', 'brands', 'colors', 'categories', 'units', 'sizes', 'subCategories', 'metaKeywords',));
     }
 
     /**

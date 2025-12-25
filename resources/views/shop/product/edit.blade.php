@@ -22,6 +22,7 @@
     <script>
         window.EXISTING_ITEM_DETAILS = @json($product->item_details ?? []);
         window.EXISTING_BULK_ITEMS = @json($product->bulkItems ?? []);
+        window.EXISTING_VARIANTS = @json($product->variants ?? []);
     </script>
 @endif
 <script>
@@ -830,6 +831,8 @@
             return;
         }
         const variantKey = `${colorId}-${sizeId}`;
+        console.log(variantKey);
+        console.log(addedVariants);
         if (addedVariants.includes(variantKey)) {
             showFlash('This color and size combination already exists!');
             return;
@@ -838,7 +841,9 @@
         // Add to tracking array
         addedVariants.push(variantKey);
         // Hide "no variants" message
-        document.getElementById('no-variants-message').style.display = 'none';
+        const noVariantMsg = document.getElementById('no-variants-message');
+        if (noVariantMsg) noVariantMsg.style.display = 'none';
+
         // Create display card
         const variantId = createUniqueId();
         const variantCard = document.createElement('div');
@@ -846,36 +851,59 @@
         variantCard.id = `variant-${variantId}`;
 
         variantCard.innerHTML = `
-            <div class="card-body py-2">
-                <div class="row align-items-center">
-                    <div class="col-md-10">
-                        <div class="row">
+<div class="card-body py-2">
+    <div class="row align-items-center">
+        <div class="col-md-10">
+            <div class="row g-2">
+
                             <div class="col-md-3">
-                                <strong>Color:</strong> ${colorName || 'N/A'}
+                                <label class="small fw-bold">Color</label>
+                                <div>${colorName}</div>
                                 <input type="hidden" name="variants[${variantId}][color_id]" value="${colorId}">
                             </div>
+                            
                             <div class="col-md-3">
-                                <strong>Size:</strong> ${sizeName || 'N/A'}
+                                <label class="small fw-bold">Size</label>
+                                <div>${sizeName}</div>
                                 <input type="hidden" name="variants[${variantId}][size_id]" value="${sizeId}">
                             </div>
-                            <div class="col-md-3">
-                                <strong>Price:</strong> ₹${price.toFixed(2)}
-                                <input type="hidden" name="variants[${variantId}][price]" value="${price}">
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Quantity:</strong> ${qty}
-                                <input type="hidden" name="variants[${variantId}][quantity]" value="${qty}">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-2 text-end">
-                        <button type="button" class="btn btn-sm btn-danger delete-item" data-type="variant" data-id="${variantId}">
-                            <i class="fas fa-trash"></i> Remove
-                        </button>
-                    </div>
+                            
+
+                <div class="col-md-3">
+                    <label class="small fw-bold">Price</label>
+                    <input type="number"
+                        class="form-control form-control-sm"
+                        name="variants[${variantId}][price]"
+                        value="${price}"
+                        min="1"
+                        required>
                 </div>
+
+                <div class="col-md-3">
+                    <label class="small fw-bold">Quantity</label>
+                    <input type="number"
+                        class="form-control form-control-sm"
+                        name="variants[${variantId}][quantity]"
+                        value="${qty}"
+                        min="0"
+                        required>
+                </div>
+
             </div>
-        `;
+        </div>
+
+        <div class="col-md-2 text-end">
+            <button type="button"
+                class="btn btn-sm btn-danger delete-item"
+                data-type="variant"
+                data-id="${variantId}">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+</div>
+`;
+
 
         document.getElementById('added-variants-container').appendChild(variantCard);
         $(colorSelect).val(null).trigger('change');
@@ -1506,6 +1534,92 @@
 
             container.appendChild(row);
             bulkItemIndex++;
+        });
+
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+        if (!window.EXISTING_VARIANTS || !EXISTING_VARIANTS.length) return;
+
+        const container = document.getElementById('added-variants-container');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        const noVariantMsg = document.getElementById('no-variants-message');
+        if (noVariantMsg) noVariantMsg.style.display = 'none';
+
+        EXISTING_VARIANTS.forEach((variant) => {
+
+            const colorId = variant.color_id ?? '';
+            const sizeId = variant.size_id ?? '';
+
+            const variantKey = `${colorId}-${sizeId}`;
+            addedVariants.push(variantKey);
+
+            const id = createUniqueId();
+
+            const card = document.createElement('div');
+            card.className = 'card mb-2 variant-card';
+            card.id = `variant-${id}`;
+
+            card.innerHTML = `
+            <div class="card-body py-2">
+                <div class="row align-items-center">
+                    <div class="col-md-10">
+                        <div class="row g-2">
+
+                            <div class="col-md-3">
+                                <label class="small fw-bold">Color</label>
+                                <div>${variant.color?.name ?? 'N/A'}</div>
+                                <input type="hidden" name="variants[${id}][id]" value="${variant.id}">
+                                <input type="hidden" name="variants[${id}][color_id]" value="${colorId}">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="small fw-bold">Size</label>
+                                <div>${variant.size?.name ?? 'N/A'}</div>
+                                <input type="hidden" name="variants[${id}][size_id]" value="${sizeId}">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="small fw-bold">Price</label>
+                                <input type="number"
+                                    class="form-control form-control-sm"
+                                    name="variants[${id}][price]"
+                                    value="${variant.price}"
+                                    min="1"
+                                    required>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="small fw-bold">Quantity</label>
+                                <input type="number"
+                                    class="form-control form-control-sm"
+                                    name="variants[${id}][quantity]"
+                                    value="${variant.quantity}"
+                                    min="0"
+                                    required>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="col-md-2 text-end">
+                        <button type="button"
+                            class="btn btn-sm btn-danger delete-item"
+                            data-type="variant"
+                            data-id="${id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+            container.appendChild(card);
         });
 
     });
