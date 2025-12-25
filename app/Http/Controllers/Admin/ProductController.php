@@ -136,7 +136,7 @@ class ProductController extends Controller
         $colors = $shop?->colors()->isActive()->get();
         $sizes = $shop?->sizes()->isActive()->get();
 
-        return view('admin.product.create', compact('categories', 'colors', 'sizes'));
+        return view('shop.product.edit', compact('categories', 'colors', 'sizes'));
     }
 
     public function store(ProductRequest $request)

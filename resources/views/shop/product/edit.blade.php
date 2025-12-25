@@ -58,6 +58,8 @@
         @method('PUT')
     @endif
 
+    <input type="hidden" name="pricetype" value="null" id="pricetype">
+
     <div class="card">
         <div class="card-body">
             <div class="d-flex justify-content-end mb-3">
@@ -65,8 +67,10 @@
             </div>
             <ul class="nav nav-tabs mt-3" id="productTabs">
                 <li class="nav-item"><a class="nav-link active" data-step="1" href="#">Product Details</a></li>
-                <li class="nav-item"><a class="nav-link" data-step="2" href="#">Price</a></li>
-                <li class="nav-item"><a class="nav-link" data-step="3" href="#">Product Variants</a></li>
+                <li class="nav-item"><a class="nav-link" data-step="2" href="#" id="priceProductTab">Price</a>
+                </li>
+                <li class="nav-item"><a class="nav-link" data-step="3" href="#" id="variantProductTab">Product
+                        Variants</a></li>
                 <li class="nav-item"><a class="nav-link" data-step="4" href="#">Images</a></li>
                 <li class="nav-item"><a class="nav-link" data-step="5" href="#">SEO Information</a></li>
                 <li class="nav-item"><a class="nav-link" data-step="6" href="#" id="bulkProductTab"> Bulk
@@ -86,7 +90,7 @@
 
                             <div class="form-check form-check-inline">
                                 <input type="radio" name="condition_status" value="Refurbished"
-                                    {{ old('condition_status', $product->condition_status ?? 'Refurbished') === 'Refurbished' ? 'checked' : '' }}>
+                                    {{ old('condition_status', $product->condition_status ?? '') === 'Refurbished' ? 'checked' : '' }}>
                                 <label class="form-check-label">Refurbished</label>
                             </div>
                         </div>
@@ -1043,7 +1047,8 @@
         addedBulkRanges.push(rangeKey);
 
         // Hide "no bulk price" message
-        document.getElementById('no-bulkprice-message').style.display = 'none';
+        const noVariantMsg = document.getElementById('no-bulkprice-message');
+        if (noVariantMsg) noVariantMsg.style.display = 'none';
 
         // Create display card
         const bulkId = createUniqueId();
@@ -1156,7 +1161,8 @@
 
                 // Show message if no bulk prices left
                 if (document.querySelectorAll('.bulk-card').length === 1) {
-                    document.getElementById('no-bulkprice-message').style.display = 'block';
+                    const noVariantMsg = document.getElementById('no-bulkprice-message');
+                    if (noVariantMsg) noVariantMsg.style.display = 'none';
                 }
 
                 // Update min input suggestion after deletion
@@ -1322,38 +1328,69 @@
             }
         }
 
+        function toggleTab(tabid, tabno, disable = true) {
+            const bulkTab = document.getElementById(tabid);
+            bulkTab.classList.toggle('disabled', disable);
+            bulkTab.style.pointerEvents = disable ? 'none' : 'auto';
+            bulkTab.style.opacity = disable ? '0.5' : '1';
+
+            // force redirect if currently inside
+            // const bulkStep = document.querySelector('.step-' + tabno);
+            // if (disable && bulkStep.style.display === 'block') {
+            //     document.querySelectorAll('.step-content').forEach(el => el.style.display = 'none');
+            //     document.querySelector('.step-3').style.display = 'block';
+
+            //     document.querySelectorAll('#productTabs .nav-link').forEach(tab => tab.classList.remove(
+            //         'active'));
+            //     document.querySelector('#productTabs .nav-link[data-step="3"]').classList.add('active');
+            // }
+        }
+
         // MASTER RULE ENGINE 
-        function syncAllExclusiveRules() {
+        window.syncAllExclusiveRules = function() {
+            let type = 'null';
             /* Rule 1: Variant ↔ Bulk Pricing */
             if (hasVariants()) {
+                type = 'variant';
+                toggleTab('bulkProductTab', '6', true);
+                toggleTab('variantProductTab', '3', false);
+                // toggleTab('priceProductTab', '2', true);
+                disableBulkPricing(true);
+                // disableBulkPricing(true);
+            } else
+            if (hasBulkPricing()) {
+                type = 'bulkprice';
+                // alert(type);
+                toggleTab('bulkProductTab', '6', true);
+                toggleTab('variantProductTab', '3', true);
+                // toggleTab('priceProductTab', '2', false);
+                disableBulkPricing(false);
+                // disableVariants(true);
+            } else
+            if (hasBulkItems()) {
+                type = 'bulkitem';
+                toggleTab('bulkProductTab', '6', false);
+                toggleTab('variantProductTab', '3', true);
+                // toggleTab('priceProductTab', '2', true);
                 disableBulkPricing(true);
             } else {
+                toggleTab('bulkProductTab', '6', false);
+                toggleTab('variantProductTab', '3', false);
+                // toggleTab('priceProductTab', '2', false);
                 disableBulkPricing(false);
             }
-            if (hasBulkPricing()) {
-                disableVariants(true);
-            } else {
-                disableVariants(false);
-            }
-            /* Rule 2: Bulk Products vs Others */
-            if (hasVariants() || hasBulkPricing()) {
-                toggleBulkTab(true);
-            } else {
-                toggleBulkTab(false);
-            }
-            /* Rule 3: Bulk products block others */
-            if (hasBulkItems()) {
-                disableVariants(true);
-                disableBulkPricing(true);
-                toggleBulkTab(false); // user is allowed inside
-            }
+
+            const priceTypeInput = document.getElementById('pricetype');
+            priceTypeInput.value = type;
+            console.log('PriceType:', type);
         }
 
         // INITIAL RUN
-        syncAllExclusiveRules();
+        // syncAllExclusiveRules();
 
         // RE-CHECK ON ACTIONS 
         document.addEventListener('click', function(e) {
+            console.log(e.target.id);
             if (
                 e.target.id === 'add-variant' ||
                 e.target.id === 'add-bulk' ||
@@ -1364,6 +1401,19 @@
                 setTimeout(syncAllExclusiveRules, 100);
             }
 
+        });
+
+
+
+
+        // /* INITIAL SET (EDIT / CREATE LOAD) */
+        // resolvePriceType();
+
+        /* ALSO WATCH INPUT CHANGES (bulk items typing) */
+        document.addEventListener('input', function(e) {
+            if (e.target.closest('.bulk-item-row')) {
+                resolvePriceType();
+            }
         });
 
     });
@@ -1550,7 +1600,7 @@
             container.appendChild(row);
             bulkItemIndex++;
         });
-
+        syncAllExclusiveRules();
     });
 </script>
 <script>
@@ -1636,7 +1686,7 @@
 
             container.appendChild(card);
         });
-
+        syncAllExclusiveRules();
     });
 </script>
 <script>
@@ -1644,11 +1694,14 @@
 
         if (!window.EXISTING_BULK_PRICES || !EXISTING_BULK_PRICES.length) return;
 
+        // console.log('window.EXISTING_BULK_PRICES');
+        // console.log(window.EXISTING_BULK_PRICES);
         const container = document.getElementById('added-bulkprice-container');
         if (!container) return;
 
         container.innerHTML = '';
-        document.getElementById('no-bulkprice-message')?.style.display = 'none';
+        const noVariantMsg = document.getElementById('no-bulkprice-message');
+        if (noVariantMsg) noVariantMsg.style.display = 'none';
 
         EXISTING_BULK_PRICES.forEach(price => {
 
@@ -1706,6 +1759,7 @@
 
             container.appendChild(card);
         });
+        syncAllExclusiveRules();
     });
 </script>
 @endpush

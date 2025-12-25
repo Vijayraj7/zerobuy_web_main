@@ -84,7 +84,7 @@ class ProductController extends Controller
         $units = $shop?->units()->isActive()->get();
         $sizes = $shop?->sizes()->isActive()->get();
 
-        return view('shop.product.create', compact('brands', 'colors', 'categories', 'units', 'sizes'));
+        return view('shop.product.edit', compact('brands', 'colors', 'categories', 'units', 'sizes'));
     }
 
     /**

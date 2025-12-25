@@ -1049,7 +1049,10 @@ class ProductRepository extends Repository
             $hasBulkItems  = $request->filled('bulk_items');
             $hasBulkPrice  = $request->filled('bulk');
 
-            if ($hasVariants) {
+            $pricetype = $request->pricetype;
+            // dd($pricetype);
+
+            if ($hasVariants && $pricetype == 'variant') {
                 DB::transaction(function () use ($product, $request) {
 
                     // ❌ delete others
@@ -1075,7 +1078,7 @@ class ProductRepository extends Repository
                         );
                     });
                 });
-            } elseif ($hasBulkItems) {
+            } elseif ($hasBulkItems && $pricetype == 'bulkitem') {
                 DB::transaction(function () use ($product, $request) {
 
                     // ❌ delete others
@@ -1104,7 +1107,7 @@ class ProductRepository extends Repository
                         );
                     });
                 });
-            } elseif ($hasBulkPrice) {
+            } elseif ($hasBulkPrice && $pricetype == 'bulkprice') {
                 DB::transaction(function () use ($product, $request) {
 
                     // ❌ delete others
@@ -1112,7 +1115,7 @@ class ProductRepository extends Repository
                     $product->bulkItems()->delete();
 
                     // ✅ sync bulk price
-                    $bulkPrices = collect($request->bulk_prices);
+                    $bulkPrices = collect($request->bulk);
 
                     $product->bulkPrices()
                         ->whereNotIn('id', $bulkPrices->pluck('id')->filter())
