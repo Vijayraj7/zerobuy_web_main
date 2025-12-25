@@ -21,7 +21,7 @@
 @if ($isEdit)
     <script>
         window.EXISTING_BULK_PRICES = @json($product->bulkPrices ?? []);
-        window.EXISTING_ITEM_DETAILS = @json($product->item_details ?? []);
+        window.EXISTING_ITEM_DETAILS = @json($product->itemDetails ?? []);
         window.EXISTING_BULK_ITEMS = @json($product->bulkItems ?? []);
         window.EXISTING_VARIANTS = @json($product->variants ?? []);
     </script>
@@ -36,8 +36,9 @@
         EXISTING_ITEM_DETAILS.forEach((item, i) => {
             container.insertAdjacentHTML('beforeend', `
             <div class="d-flex gap-2 mb-2 item-row">
-                <input name="item_details[${i}][name]" value="${item.name}" class="form-control">
-                <input name="item_details[${i}][value]" value="${item.value}" class="form-control">
+                <input name="item_details[${i}][id]" type="hidden" value="${item.id}">
+                <input name="item_details[${i}][name]" value="${item.item_name}" class="form-control">
+                <input name="item_details[${i}][value]" value="${item.item_value}" class="form-control">
                 <button type="button" class="btn btn-danger btn-sm remove-item">-</button>
             </div>
         `);

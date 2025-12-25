@@ -154,11 +154,11 @@ class ProductRepository extends Repository
         }
 
 
-        $hasDetails   = $request->filled('details');
+        $hasDetails   = $request->filled('item_details');
         if ($hasDetails) {
             DB::transaction(function () use ($product, $request) {
 
-                $details = collect($request->details);
+                $details = collect($request->item_details);
 
                 $details->each(function ($v) use ($product) {
                     $product->itemDetails()->updateOrCreate(
@@ -368,11 +368,11 @@ class ProductRepository extends Repository
             }
         }
 
-        $hasDetails   = $request->filled('details');
+        $hasDetails   = $request->filled('item_details');
         if ($hasDetails) {
             DB::transaction(function () use ($product, $request) {
 
-                $details = collect($request->details);
+                $details = collect($request->item_details);
 
                 $details->each(function ($v) use ($product) {
                     $product->itemDetails()->updateOrCreate(
@@ -1080,6 +1080,23 @@ class ProductRepository extends Repository
             // }
 
 
+            $hasDetails   = $request->filled('item_details');
+            if ($hasDetails) {
+                DB::transaction(function () use ($product, $request) {
+
+                    $details = collect($request->item_details);
+
+                    $details->each(function ($v) use ($product) {
+                        $product->itemDetails()->updateOrCreate(
+                            ['id' => $v['id'] ?? null],
+                            [
+                                'item_name'    => $v['name'],
+                                'item_value'   => $v['value'],
+                            ]
+                        );
+                    });
+                });
+            }
 
             $hasVariants   = $request->filled('variants');
             $hasBulkItems  = $request->filled('bulk_items');
