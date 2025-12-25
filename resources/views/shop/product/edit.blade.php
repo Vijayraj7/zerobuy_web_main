@@ -270,8 +270,8 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td><input id="bulk-min" class="form-control" placeholder="Min Qty" type="number"
-                                        min="1"></td>
+                                <td><input id="bulk-min" readonly class="form-control" placeholder="Min Qty"
+                                        type="number" min="1"></td>
                                 <td><input id="bulk-max" class="form-control" placeholder="Max Qty" type="number"
                                         min="1"></td>
                                 <td><input id="bulk-price" class="form-control" placeholder="Price" type="number"
@@ -936,6 +936,13 @@
             return;
         }
 
+        if (addedBulkRanges.length == 0) {
+            if (min != 1) {
+                showFlash('First minimum quantity must be 1');
+                return;
+            }
+        }
+
         if (min >= max) {
             showFlash('Min quantity must be less than Max quantity');
             return;
@@ -1380,13 +1387,20 @@
                 disableBulkPricing(false);
             }
 
+            if (!hasBulkPricing()) {
+                const minInput = document.getElementById('bulk-min');
+                if (minInput && !minInput.value) {
+                    minInput.value = 1;
+                }
+            }
+
             const priceTypeInput = document.getElementById('pricetype');
             priceTypeInput.value = type;
             console.log('PriceType:', type);
         }
 
         // INITIAL RUN
-        // syncAllExclusiveRules();
+        syncAllExclusiveRules();
 
         // RE-CHECK ON ACTIONS 
         document.addEventListener('click', function(e) {

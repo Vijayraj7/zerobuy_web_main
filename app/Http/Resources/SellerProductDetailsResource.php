@@ -19,7 +19,7 @@ class SellerProductDetailsResource extends JsonResource
             'name' => $this->name,
             'price' => (float) $this->price,
             'discount_price' => (float) $this->discount_price,
-            'details' =>  $this->details,
+            'details' =>  ProductItemDetailResource::collection($this->details),
             'quantity' => (int) $this->quantity,
             'code' => (int) $this->code,
             'min_order_quantity' => (int) $this->min_order_quantity,
