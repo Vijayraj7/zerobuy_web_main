@@ -283,12 +283,12 @@ class ProductRepository extends Repository
         $description = Purifier::clean(self::sanitizeUnicode($request->description));
         $keywords = implode(',', $request->meta_keywords ?? []);
 
-        $details = $request->details;
-        if (isset($details)) {
-            if (is_string($details)) {
-                $details = json_decode($details, true) ?: null;
-            }
-        }
+        // $details = $request->details;
+        // if (isset($details)) {
+        //     if (is_string($details)) {
+        //         $details = json_decode($details, true) ?: null;
+        //     }
+        // }
 
         self::update($product, [
             'name' => $request->name,
@@ -298,7 +298,7 @@ class ProductRepository extends Repository
             'unit_id' => $request->unit ?? null,
             'price' => $request->price,
             'discount_price' => $request->discount_price,
-            'details' => $details,
+            // 'details' => $details,
             'quantity' => $request->quantity ?? 0,
             'min_order_quantity' => $request->min_order_quantity ?? 1,
             'media_id' => $thumbnail ? $thumbnail->id : null,
@@ -348,6 +348,24 @@ class ProductRepository extends Repository
             foreach ($request->color ?? [] as $color) {
                 $product->colors()->attach($color['id'], ['price' => $color['price']]);
             }
+        }
+
+        $hasDetails   = $request->filled('details');
+        if ($hasDetails) {
+            DB::transaction(function () use ($product, $request) {
+
+                $details = collect($request->details);
+
+                $details->each(function ($v) use ($product) {
+                    $product->itemDetails()->updateOrCreate(
+                        ['id' => $v['id'] ?? null],
+                        [
+                            'name'    => $v['name'],
+                            'value'   => $v['value'],
+                        ]
+                    );
+                });
+            });
         }
 
         $hasVariants   = $request->filled('variants');
