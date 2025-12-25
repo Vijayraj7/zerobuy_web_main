@@ -10,9 +10,9 @@ class ProductItemDetailResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'id'            => $this->id,
-            'name'          => $this->item_name,
-            'value'      => (int) $this->item_value,
+            'id' => $this->id,
+            'name' => $this->item_name,
+            'value' =>  $this->item_value,
         ];
     }
 }
