@@ -1252,7 +1252,8 @@
                 addedBulkItems = addedBulkItems.filter(n => n !== name.toLowerCase());
 
                 if (document.querySelectorAll('.bulkitem-card').length === 1) {
-                    document.getElementById('no-bulkitem-message').style.display = 'block';
+                    const noVariantMsg = document.getElementById('no-bulkitem-message');
+                    if (noVariantMsg) noVariantMsg.style.display = 'block';
                 }
             }
 
@@ -1573,7 +1574,8 @@
         }
 
         addedBulkItems.push(name.toLowerCase());
-        document.getElementById('no-bulkitem-message').style.display = 'none';
+        const noVariantMsg = document.getElementById('no-bulkitem-message');
+        if (noVariantMsg) noVariantMsg.style.display = 'none';
 
         const id = createUniqueId();
 
