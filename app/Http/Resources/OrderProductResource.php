@@ -31,12 +31,18 @@ class OrderProductResource extends JsonResource
         $orderCreatedAt = $this->pivot?->order?->created_at;
         $returnable = false;
 
-        if ($orderCreatedAt && $this->return_period) {
-            $lastReturnDate = $orderCreatedAt
-                ->copy()
-                ->addDays((int) $this->return_period);
+        $returnPeriod = !empty($this->return_period)
+            ? (int) $this->return_period
+            : null;
 
-            $returnable = now()->lessThanOrEqualTo($lastReturnDate);
+        if ($orderCreatedAt && $returnPeriod != null) {
+            if ($returnPeriod != 0) {
+                $lastReturnDate = $orderCreatedAt
+                    ->copy()
+                    ->addDays((int) $this->return_period);
+
+                $returnable = now()->lessThanOrEqualTo($lastReturnDate);
+            }
         }
 
         return [
@@ -53,8 +59,8 @@ class OrderProductResource extends JsonResource
             'rating' => $review ? (float) $review->rating : null,
             'unit' => $this->pivot->unit ?? null,
             'is_returned' => $isReturnable,
-            'return_period' => $this->return_period,
-            'order_date' => $this->pivot->order?->id,
+            'return_period' => $returnPeriod,
+            'order_date' => $this->pivot->order?->created_at,
             'is_returnable' => $returnable,
         ];
     }
