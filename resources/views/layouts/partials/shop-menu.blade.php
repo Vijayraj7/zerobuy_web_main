@@ -119,10 +119,10 @@
     </a>
 </li>
 
-@hasPermission(['shop.category.index', 'shop.subcategory.index'])
+@hasPermission(['shop.category.index', 'shop.subcategory.index', 'shop.child-category.index'])
     <!--- categories--->
     <li>
-        <a class="menu {{ request()->routeIs('shop.category.*', 'shop.subcategory.*') ? 'active' : '' }}"
+        <a class="menu {{ request()->routeIs('shop.category.*', 'shop.subcategory.*', 'shop.child-category.*') ? 'active' : '' }}"
             data-bs-toggle="collapse" href="#categoryMenu">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/category.svg') }}" alt="icon"
@@ -131,7 +131,7 @@
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="" class="downIcon" loading="lazy" />
         </a>
-        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('shop.category.*', 'shop.subcategory.*') ? 'show' : '' }}"
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('shop.category.*', 'shop.subcategory.*', 'shop.child-category.*') ? 'show' : '' }}"
             id="categoryMenu">
             <div class="listBar">
                 <!---  categories--->
@@ -148,6 +148,11 @@
                         {{ __('Sub Category') }}
                     </a>
                 @endhasPermission
+                @hasPermission('shop.child-category.index')
+                    <a href="{{ route('shop.child-category.index') }}" class="subMenu hasCount {{ request()->routeIs('shop.child-category.index') ? 'active' : '' }}">
+                        {{ __('Child Category') }}
+                    </a>
+                @endhasPermission 
             </div>
         </div>
     </li>

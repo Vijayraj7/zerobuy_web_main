@@ -24,6 +24,7 @@ use App\Http\Controllers\Shop\SubscriptionController;
 use App\Http\Controllers\Shop\UnitController;
 use App\Http\Controllers\Shop\VoucherController;
 use App\Http\Controllers\Shop\WithdrawController;
+use App\Http\Controllers\Shop\ChildCategoryController;
 use Illuminate\Support\Facades\Route;
 use Twilio\Rest\Chat;
 
@@ -114,6 +115,10 @@ Route::name('shop.')->group(function () {
 
             // // STATUS TOGGLE
             // Route::get('/subcategory/{subCategory}/toggle', 'statusToggle')->name('subcategory.toggle');
+        });
+
+        Route::controller(ChildCategoryController::class)->group(function () {
+            Route::get('/child-category', 'index')->name('child-category.index');
         });
 
 

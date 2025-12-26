@@ -52,6 +52,17 @@ class ShopRepository extends Repository
             'address' => $request->address,
             'description' => $request->description,
             'status' => true,
+
+            'store_type' => $request->store_type,
+            'whatsapp_number' => $request->whatsapp_number,
+            'state' => $request->state,
+            'district' => $request->district,
+            'pincode' => $request->pincode,
+            'min_order_amount' => $request->min_order_amount,
+            'gst_number' => $request->gst_number,
+            'store_since' => $request->store_since,
+            'return_policy' => $request->return_policy,
+            'phone_number' => $request->phone,
         ]);
     }
 
@@ -82,6 +93,16 @@ class ShopRepository extends Repository
             'opening_time' => $request->opening_time ?? $shop->opening_time,
             'closing_time' => $request->closing_time ?? $shop->closing_time,
             'estimated_delivery_time' => $request->estimated_delivery_time ?? $shop->estimated_delivery_time,
+
+            'store_type' => $request->store_type,
+            'whatsapp_number' => $request->whatsapp_number,
+            'state' => $request->state,
+            'district' => $request->district,
+            'pincode' => $request->pincode,
+            'min_order_amount' => $request->min_order_amount,
+            'gst_number' => $request->gst_number,
+            'store_since' => $request->store_since,
+            'return_policy' => $request->return_policy, 
         ]);
 
         return $shop;
