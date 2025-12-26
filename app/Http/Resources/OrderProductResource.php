@@ -57,7 +57,7 @@ class OrderProductResource extends JsonResource
             'unit' => $this->pivot->unit ?? null,
             'is_returned' => $isReturnable,
             'return_period' => $this->return_period,
-            'order_date' => $this->additional['order_created_at'],
+            'order_date' => $this->pivot->created_at,
             'is_returnable' => $returnable,
         ];
     }
