@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\ChildCategory;
+use Illuminate\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ProductRequest extends FormRequest
@@ -20,30 +22,32 @@ class ProductRequest extends FormRequest
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
-    { 
+    {
         $thumbnail = $this->product?->media ? 'nullable' : 'required';
 
         if ($this->is('api/*')) {
             $thumbnail = 'nullable';
         }
 
-        return [ 
+        return [
             'condition_status'   => 'required|string',
             'name'               => 'required|string|max:191',
-            'description'        => 'required|string', 
+            'description'        => 'required|string',
 
             'main_category'      => 'required|exists:categories,id',
-            'sub_categories'     => 'nullable|array',
+            // 'sub_categories'     => 'required|exists:sub_categories,id',
+            // 'child_categories'   => 'nullable|exists:child_categories,id',
+            'sub_categories'     => 'required|array',
             'sub_categories.*'   => 'exists:sub_categories,id',
             'child_categories'   => 'nullable|array',
-            'child_categories.*' => 'exists:child_categories,id', 
+            'child_categories.*' => 'exists:child_categories,id',
 
             'quantity'           => 'required|integer|min:1',
             'min_order_quantity' => 'nullable|integer|min:1',
             'return_period'      => 'nullable|integer',
             'mrp'                => 'required|numeric|min:0',
             'selling_price'      => 'nullable|numeric|min:0',
-            'tax_percentage'     => 'nullable|numeric|min:0', 
+            'tax_percentage'     => 'nullable|numeric|min:0',
 
             'item_details'         => 'nullable|array',
             'item_details.*.name'  => 'nullable|string|max:191',
@@ -69,7 +73,7 @@ class ProductRequest extends FormRequest
 
             'thumbnail'          => "$thumbnail|image|mimes:png,jpg,jpeg,webp|max:2048",
             'additional_images'   => 'nullable|array',
-            'additional_images.*' => 'image|mimes:png,jpg,jpeg,webp|max:2048', 
+            'additional_images.*' => 'image|mimes:png,jpg,jpeg,webp|max:2048',
 
             'video_type'         => 'nullable|string|in:youtube,external',
             'video_link'         => 'nullable|string',
@@ -88,7 +92,7 @@ class ProductRequest extends FormRequest
             $header = strtolower($request->header('accept-language'));
             $lan = (preg_match('/^[a-z]+$/', $header)) ? $header : 'en';
             app()->setLocale($lan);
-        } 
+        }
         return [
             'name.required'            => __('The name field is required.'),
             'name.max'                 => __('The name may not be greater than 191 characters.'),
@@ -117,5 +121,37 @@ class ProductRequest extends FormRequest
             'additional_images.*.image' => __('Each additional image must be an image file.'),
             'additional_images.*.mimes' => __('Additional images must be png, jpg, jpeg or webp.'),
         ];
+    }
+
+    public function withValidator(Validator $validator)
+    {
+        $validator->after(function ($validator) {
+
+            $subCategoryId = $this->input('sub_categories.0');
+
+            if (! $subCategoryId) {
+                return;
+            }
+
+            // Does this sub category have child categories?
+            $hasChildren = ChildCategory::where('sub_category_id', $subCategoryId)
+                ->active()
+                ->exists();
+
+            if (! $hasChildren) {
+                // ✅ No child categories → no validation needed
+                return;
+            }
+
+            // Child categories exist → at least one must be selected
+            $children = $this->input('child_categories');
+
+            if (empty($children) || count($children) === 0) {
+                $validator->errors()->add(
+                    'child_categories',
+                    'Child category is required for the selected sub category.'
+                );
+            }
+        });
     }
 }

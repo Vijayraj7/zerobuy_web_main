@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Casts\Attribute; 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
@@ -20,6 +20,11 @@ class ChildCategory extends Model
         'slug',
         'status'
     ];
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', 1);
+    }
 
     public function businessCategory()
     {
@@ -68,16 +73,16 @@ class ChildCategory extends Model
 
         if ($sortBy === 'business_name') {
             $query->join('business_categories', 'child_categories.business_category_id', '=', 'business_categories.id')
-                  ->select('child_categories.*')
-                  ->orderBy('business_categories.name', $sortOrder);
+                ->select('child_categories.*')
+                ->orderBy('business_categories.name', $sortOrder);
         } elseif ($sortBy === 'category_name') {
             $query->join('categories', 'child_categories.category_id', '=', 'categories.id')
-                  ->select('child_categories.*')
-                  ->orderBy('categories.name', $sortOrder);
+                ->select('child_categories.*')
+                ->orderBy('categories.name', $sortOrder);
         } elseif ($sortBy === 'sub_category_name') {
             $query->join('sub_categories', 'child_categories.sub_category_id', '=', 'sub_categories.id')
-                  ->select('child_categories.*')
-                  ->orderBy('sub_categories.name', $sortOrder);
+                ->select('child_categories.*')
+                ->orderBy('sub_categories.name', $sortOrder);
         } elseif ($sortBy === 'child_name') {
             $query->orderBy('child_categories.name', $sortOrder);
         } else {

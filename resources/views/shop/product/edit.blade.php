@@ -101,7 +101,7 @@
                         </div>
                         <div class="row g-2">
                             <div class="col-md-4">
-                                <x-select label="Main Category" name="main_category">
+                                <x-select label="Main Category" required name="main_category">
                                     @foreach ($categories as $category)
                                         <option value="{{ $category->id }}"
                                             {{ $isEdit && optional($product->categories->first())->id == $category->id ? 'selected' : '' }}>
@@ -121,7 +121,7 @@
                                 @enderror
                             </div>
                             <div class="col-md-4">
-                                <x-select label="Sub Category" name="sub_categories[]">
+                                <x-select label="Sub Category" required name="sub_categories[]">
                                     <option value="" selected disabled>Select Sub Category</option>
                                 </x-select>
                                 @error('sub_categories')
@@ -129,7 +129,7 @@
                                 @enderror
                             </div>
                             <div class="col-md-4">
-                                <x-select label="Child Category" name="child_categories[]" multiple>
+                                <x-select label="Child Category" id="child-category" name="child_categories[]" multiple>
                                     <option value="" selected disabled>{{ __('Select Child Category') }}</option>
                                 </x-select>
                                 @error('child_categories')
@@ -156,7 +156,7 @@
                             </div>
                         </div>
                         <div class="mt-3">
-                            <x-select label="Return Period" name="return_period">
+                            <x-select label="Return Period" required name="return_period">
                                 @foreach ([0, 2, 5, 7, 10, 15, 30] as $days)
                                     <option value="{{ $days }}"
                                         {{ old('return_period', $product->return_period ?? '') == $days ? 'selected' : '' }}>
@@ -244,7 +244,7 @@
                         @enderror
                     </div>
                     <div class="col-md-4">
-                        <x-select label="TAX%" name="tax_percentage">
+                        <x-select label="GST(include)" required name="tax_percentage">
                             @foreach ([0, 5, 12, 18, 28, 40] as $tax)
                                 <option value="{{ $tax }}"
                                     {{ old('tax_percentage', $product->tax_percentage ?? 0) == $tax ? 'selected' : '' }}>
@@ -259,7 +259,7 @@
                 </div>
 
                 <div class="mt-4">
-                    <label class="form-label">Bulk Price (optional)</label>
+                    <label class="form-label">Bulk Price (optional) - Maximum 5 tier</label>
                     <table class="table table-sm" id="bulk-table">
                         <thead>
                             <tr>
@@ -713,6 +713,7 @@
             resetChild();
 
             if (!subCategoryId) {
+                toggleChildRequired(false); // ❌ not required
                 notAvailable($child, 'Not Available');
                 return;
             }
@@ -724,6 +725,7 @@
                 let childs = res.data?.child_categories || [];
                 if (childs.length === 0) {
                     notAvailable($child, 'Not Available');
+                    toggleChildRequired(false); // ❌ not required
                     return;
                 }
                 if (childId != null) {
@@ -742,6 +744,8 @@
                             `<option value="${child.id}">${child.name}</option>`);
                     });
                 }
+
+                toggleChildRequired(true); // 🔒 REQUIRED ONLY WHEN DATA EXISTS
             });
         }
 
@@ -752,6 +756,21 @@
         });
 
     });
+
+    function toggleChildRequired(isRequired) {
+        const childSelect = document.getElementById('child-category');
+        if (!childSelect) return;
+
+        if (isRequired) {
+            childSelect.required = true;
+            childSelect.disabled = false;
+        } else {
+            childSelect.required = false;
+            childSelect.disabled = true;
+            childSelect.innerHTML = '<option value="">Not Available</option>';
+        }
+    }
+
 
     // Item details add-more 
     let itemIndex = 1;
@@ -985,6 +1004,11 @@
             }
         }
 
+        if (addedBulkRanges.length > 4) {
+            showFlash('Maximum 5 tier allowed');
+            return;
+        }
+
         if (min >= max) {
             showFlash('Min quantity must be less than Max quantity');
             return;
@@ -1148,13 +1172,8 @@
                 </div>
 
                 <div class="col-md-4">
-                    <label class="small fw-bold">Price</label>
-                    <input type="number"
-                        class="form-control form-control-sm"
-                        name="bulk[${bulkId}][price]"
-                        value="${price}"
-                        min="1"
-                        required>
+                    <strong>Price</strong> ${price}
+                    <input type="hidden" name="bulk[${bulkId}][price]" value="${price}">
                 </div>
 
             </div>
@@ -2058,15 +2077,10 @@
                             <input type="hidden" name="bulk[${bulkId}][max_qty]" value="${price.max_qty}">
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="small fw-bold">Price</label>
-                            <input type="number"
-                                class="form-control form-control-sm"
-                                name="bulk[${bulkId}][price]"
-                                value="${price.price}"
-                                min="1"
-                                required>
-                        </div>
+                <div class="col-md-4">
+                    <strong>Price</strong> ${price.price}
+                    <input type="hidden" name="bulk[${bulkId}][price]" value="${price.price}">
+                </div>
 
                     </div>
                 </div>
