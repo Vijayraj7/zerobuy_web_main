@@ -28,6 +28,13 @@ class OrderProductResource extends JsonResource
             ->exists();
         $isReturnable = ! $isReturned;
 
+        $returnable = false;
+        $returnPeriod = (int) $this->return_period;
+
+        $lastReturnDate = $this->created_at->copy()->addDays($returnPeriod);
+
+        $returnable = now()->lessThanOrEqualTo($lastReturnDate);
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -42,6 +49,7 @@ class OrderProductResource extends JsonResource
             'rating' => $review ? (float) $review->rating : null,
             'unit' => $this->pivot->unit ?? null,
             'is_returned' => $isReturnable,
+            'is_returnable' => $returnable,
         ];
     }
 }
