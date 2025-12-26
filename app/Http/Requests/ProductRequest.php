@@ -38,7 +38,7 @@ class ProductRequest extends FormRequest
             // 'sub_categories'     => 'required|exists:sub_categories,id',
             // 'child_categories'   => 'nullable|exists:child_categories,id',
 
-            'sub_category'     => 'required',
+            'sub_category'     => 'nullable',
             'child_category'   => 'nullable',
 
             'sub_categories'     => 'required|array',
