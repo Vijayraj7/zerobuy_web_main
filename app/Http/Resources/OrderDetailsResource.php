@@ -50,8 +50,6 @@ class OrderDetailsResource extends JsonResource
             'shop' => ShopResource::make($this->shop),
             'products' => OrderProductResource::collection($this->products)->additional([
                 'order_created_at' => $this->created_at,
-                'order_status' => $this->order_status->value,
-                'return_period' => $generaleSetting?->return_order_within_days ?? 3,
             ]),
             'invoice_url' => route('shop.download-invoice', $this->id),
             'payment_receipt_url' => route('shop.payment-slip', $this->id),

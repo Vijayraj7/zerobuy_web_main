@@ -29,13 +29,17 @@ class OrderProductResource extends JsonResource
         $isReturnable = ! $isReturned;
 
         $orderCreatedAt = $this->additional['order_created_at'] ?? null;
-        $returnPeriod   = (int) ($this->additional['return_period'] ?? 3);
+        if ($this->return_period == null) {
+            $returnable = false;
+        } else {
+            $returnPeriod = (int) ($this->return_period);
 
-        $returnable = false;
+            $returnable = false;
 
-        if ($orderCreatedAt) {
-            $lastReturnDate = $orderCreatedAt->copy()->addDays($returnPeriod);
-            $returnable = now()->lessThanOrEqualTo($lastReturnDate);
+            if ($orderCreatedAt) {
+                $lastReturnDate = $orderCreatedAt->copy()->addDays($returnPeriod);
+                $returnable = now()->lessThanOrEqualTo($lastReturnDate);
+            }
         }
 
         return [
