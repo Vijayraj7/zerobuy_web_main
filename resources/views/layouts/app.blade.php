@@ -596,6 +596,8 @@
     <!-- Summernote JS - added by ancy -->
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
+    <!-- Custom JS - Created by ancy -->
+    <script src="{{ asset('assets/scripts/custom.js') }}"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -1042,32 +1044,6 @@
             }
         });
     </script>
-
-    <!-- Flash Message  -->
-    <script> 
-        function showFlash(message) {
-            // remove existing flash if any
-            const existingFlash = document.querySelector('.bulk-flash-message');
-            if (existingFlash) {
-                existingFlash.remove();
-            }
-
-            const flash = document.createElement('div');
-            flash.className = 'alert alert-danger bulk-flash-message';
-            flash.innerHTML = `
-                ${message}
-                <button class="btn-close btn-sm float-end" onclick="this.parentElement.remove()"></button>
-            `;
-            flash.style.cssText = 'position:fixed; top:10px; right:10px; z-index:9999;';
-
-            document.body.appendChild(flash);
-
-            setTimeout(() => {
-                if (flash) flash.remove();
-            }, 5000);
-        }
-    </script>
-
 </body>
 
 </html>

@@ -58,6 +58,16 @@ class ShopCreateRequest extends FormRequest
             'shop_logo' => [$required, 'image', 'mimes:jpg,png,jpeg,gif', 'max:2048'],
             'shop_banner' => [$required, 'image', 'mimes:jpg,png,jpeg,gif', 'max:2048'],
             'description' => ['nullable', 'string', 'max:200'],
+
+            'store_type' => ['required'],
+            'whatsapp_number' => ['required', 'string', 'max:15', 'min:10'],
+            'state' => ['required', 'string', 'max:50'],
+            'district' => ['required', 'string', 'max:50'],
+            'pincode' => ['required', 'string', 'max:10'],
+            'min_order_amount' => ['required'],
+            'gst_number' => ['nullable', 'string'],
+            'store_since' => ['nullable', 'string'],
+            'return_policy' => ['required', 'string', 'max:300'],
         ];
     }
 

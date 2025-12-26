@@ -28,7 +28,8 @@ class ShopController extends Controller
      */
     public function create()
     {
-        return view('admin.shop.create');
+        // return view('admin.shop.create');
+        return view('admin.shop.create-edit');
     }
 
     /**
@@ -57,7 +58,8 @@ class ShopController extends Controller
      */
     public function edit(Shop $shop)
     {
-        return view('admin.shop.edit', compact('shop'));
+        // return view('admin.shop.edit', compact('shop'));
+        return view('admin.shop.create-edit', compact('shop'));
     }
 
     /**

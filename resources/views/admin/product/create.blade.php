@@ -418,15 +418,15 @@
         $('#description').summernote();
     });
 
-    // Tag
-    $(document).ready(function () {
-        $('.selectTags').select2({
-            tags: true,
-            tokenSeparators: [',', ' '],
-            placeholder: 'Enter keywords',
-            width: '100%'
-        });
-    });
+    // Tag-add to custome.js file
+    // $(document).ready(function () {
+    //     $('.selectTags').select2({
+    //         tags: true,
+    //         tokenSeparators: [',', ' '],
+    //         placeholder: 'Enter keywords',
+    //         width: '100%'
+    //     });
+    // });
 
     // Tabs navigation
     $(document).ready(function() {

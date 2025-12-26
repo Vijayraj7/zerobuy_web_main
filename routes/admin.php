@@ -113,6 +113,7 @@ Route::name('admin.')->group(function () {
             Route::get('/vendors/{shop}/edit', 'edit')->name('shop.edit');
             Route::post('/vendors/{shop}/update', 'update')->name('shop.update');
             Route::get('/vendors/{shop}', 'show')->name('shop.show');
+            
             Route::get('/vendors/{shop}/status-toggle', 'statusToggle')->name('shop.status.toggle');
             Route::get('/vendors/{shop}/branded-toggle', 'brandedToggle')->name('shop.branded.toggle');
             Route::get('/vendors/{shop}/verify-toggle', 'verifyToggle')->name('shop.verify.toggle');

@@ -141,12 +141,12 @@
         <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.brand.*', 'admin.color.*', 'admin.size.*', 'admin.unit.*') ? 'show' : '' }}"
             id="productVarientMenu">
             <div class="listBar">
-                @hasPermission('admin.brand.index')
+                <!-- @hasPermission('admin.brand.index')
                     <a href="{{ route('admin.brand.index') }}"
                         class="subMenu hasCount {{ request()->routeIs('admin.brand.index') ? 'active' : '' }}">
                         {{ __('Brand') }}
                     </a>
-                @endhasPermission
+                @endhasPermission -->
                 @hasPermission('admin.color.index')
                     <a href="{{ route('admin.color.index') }}"
                         class="subMenu hasCount {{ request()->routeIs('admin.color.index') ? 'active' : '' }}">
@@ -159,12 +159,12 @@
                         {{ __('Size') }}
                     </a>
                 @endhasPermission
-                @hasPermission('admin.unit.index')
+                <!-- @hasPermission('admin.unit.index')
                     <a href="{{ route('admin.unit.index') }}"
                         class="subMenu hasCount {{ request()->routeIs('admin.unit.index') ? 'active' : '' }}">
                         {{ __('Unit') }}
                     </a>
-                @endhasPermission
+                @endhasPermission -->
             </div>
         </div>
     </li>
