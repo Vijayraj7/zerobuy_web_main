@@ -61,7 +61,7 @@ class OrderProductResource extends JsonResource
             'is_returned' => $isReturnable,
             'return_period' => $returnPeriod,
             'order_date' => $this->pivot->order?->created_at,
-            'is_returnable' => $returnable,
+            'is_returnable' => $returnable && $isReturnable,
         ];
     }
 }
