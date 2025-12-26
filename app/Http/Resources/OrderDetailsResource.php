@@ -33,7 +33,7 @@ class OrderDetailsResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'order_code' => (string) '#'.$this->prefix.''.$this->order_code,
+            'order_code' => (string) '#' . $this->prefix . '' . $this->order_code,
             'order_status' => $this->order_status->value,
             'created_at' => $this->created_at,
             'placed_at' => $this->created_at->format('d M, Y h:i A'),
@@ -48,7 +48,11 @@ class OrderDetailsResource extends JsonResource
             'quantity' => (int) $this->products->sum('pivot.quantity'),
             'delivery_charge' => (float) number_format(($this->delivery_charge ?? 0), 2, '.', ''),
             'shop' => ShopResource::make($this->shop),
-            'products' => OrderProductResource::collection($this->products),
+            'products' => OrderProductResource::collection($this->products)->additional([
+                'order_created_at' => $this->created_at,
+                'order_status' => $this->order_status->value,
+                'return_period' => $generaleSetting?->return_order_within_days ?? 3,
+            ]),
             'invoice_url' => route('shop.download-invoice', $this->id),
             'payment_receipt_url' => route('shop.payment-slip', $this->id),
             'address' => AddressResource::make($this->address),
