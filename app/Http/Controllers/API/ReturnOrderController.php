@@ -48,7 +48,7 @@ class ReturnOrderController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(ReturnOrderRequest $request)
     {
         $order = Order::where('id', $request->order_id)->first();
         $days = generaleSetting()->return_order_within_days;
