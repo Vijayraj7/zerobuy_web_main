@@ -16,4 +16,9 @@ class OrderProduct extends Model
     {
         return $this->hasOne(ShopOrder::class, 'shop_order_id');
     }
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class, 'order_id');
+    }
 }

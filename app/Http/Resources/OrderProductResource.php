@@ -28,18 +28,15 @@ class OrderProductResource extends JsonResource
             ->exists();
         $isReturnable = ! $isReturned;
 
-        $orderCreatedAt = $this->additional['order_created_at'] ?? null;
-        if ($this->return_period == null) {
-            $returnable = false;
-        } else {
-            $returnPeriod = (int) ($this->return_period);
+        $orderCreatedAt = $this->pivot?->order?->created_at;
+        $returnable = false;
 
-            $returnable = false;
+        if ($orderCreatedAt && $this->return_period) {
+            $lastReturnDate = $orderCreatedAt
+                ->copy()
+                ->addDays((int) $this->return_period);
 
-            if ($orderCreatedAt) {
-                $lastReturnDate = $orderCreatedAt->copy()->addDays($returnPeriod);
-                $returnable = now()->lessThanOrEqualTo($lastReturnDate);
-            }
+            $returnable = now()->lessThanOrEqualTo($lastReturnDate);
         }
 
         return [
@@ -57,7 +54,7 @@ class OrderProductResource extends JsonResource
             'unit' => $this->pivot->unit ?? null,
             'is_returned' => $isReturnable,
             'return_period' => $this->return_period,
-            'order_date' => $this->pivot->order?->created_at,
+            'order_date' => $this->pivot->order?->id,
             'is_returnable' => $returnable,
         ];
     }

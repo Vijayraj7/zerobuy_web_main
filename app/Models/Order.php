@@ -31,7 +31,7 @@ class Order extends Model
      */
     public function products(): BelongsToMany
     {
-        return $this->belongsToMany(Product::class, 'order_products')->withPivot('quantity', 'color', 'unit', 'size', 'price')->withoutGlobalScopes();
+        return $this->belongsToMany(Product::class, 'order_products')->using(OrderProduct::class)->withPivot('quantity', 'color', 'unit', 'size', 'price')->withoutGlobalScopes();
     }
 
     public function orderProducts(): HasMany    //added by ancy
@@ -129,8 +129,8 @@ class Order extends Model
         ];
 
         foreach (OrderStatus::cases() as $status) {
-            $cacheKeys[] = 'admin_status_'.Str::camel($status->value);
-            $cacheKeys[] = 'shop_status_'.Str::camel($status->value);
+            $cacheKeys[] = 'admin_status_' . Str::camel($status->value);
+            $cacheKeys[] = 'shop_status_' . Str::camel($status->value);
         }
 
         foreach ($cacheKeys as $key) {
