@@ -37,6 +37,10 @@ class ProductRequest extends FormRequest
             'main_category'      => 'required|exists:categories,id',
             // 'sub_categories'     => 'required|exists:sub_categories,id',
             // 'child_categories'   => 'nullable|exists:child_categories,id',
+
+            'sub_category'     => 'required',
+            'child_category'   => 'nullable',
+
             'sub_categories'     => 'required|array',
             'sub_categories.*'   => 'exists:sub_categories,id',
             'child_categories'   => 'nullable|array',
@@ -153,5 +157,39 @@ class ProductRequest extends FormRequest
                 );
             }
         });
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->input('sub_category') != null) {
+            $this->merge([
+                'sub_categories' => $this->normalizeArray($this->input('sub_category')),
+                'child_categories' => $this->normalizeArray($this->input('child_category')),
+            ]);
+        }
+    }
+
+    private function normalizeArray($value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (is_null($value) || $value === '') {
+            return [];
+        }
+
+        // Handle "1" or "1,2,3"
+        if (is_string($value)) {
+            return array_values(
+                array_filter(
+                    explode(',', $value),
+                    fn($v) => $v !== ''
+                )
+            );
+        }
+
+        // Handle single integer
+        return [(int) $value];
     }
 }
