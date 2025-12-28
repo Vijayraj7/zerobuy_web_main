@@ -33,7 +33,7 @@ class ProductController extends Controller
         $color = $request->color;
         $search = $request->search;
 
-        $rootShop = generaleSetting('shop');
+        $rootShop = generaleSetting('rootShop');
         $shop = generaleSetting('shop');
 
         // filter products based on category, brand, color and search
