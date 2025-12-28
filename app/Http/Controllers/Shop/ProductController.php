@@ -172,7 +172,8 @@ class ProductController extends Controller
         // get brands, colors, units, sizes and categories
         $brands = $rootShop?->brands()->isActive()->get();
         $colors = $rootShop?->colors()->isActive()->get();
-        $categories = $rshop?->categories()->active()->get();
+        $categories = Category::all();
+        // $categories = $rshop?->categories()->active()->get();
         $units = $rootShop?->units()->isActive()->get();
         $sizes = $rootShop?->sizes()->isActive()->get();
 
