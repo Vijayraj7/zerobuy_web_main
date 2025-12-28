@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 use App\Http\Requests\ProductRequest;
+use App\Models\Category;
 use App\Repositories\ProductRepository;
 use App\Models\ProductVariant;
 use App\Models\ProductBulkPrice;
@@ -132,7 +133,8 @@ class ProductController extends Controller
         $shop = generaleSetting('shop');
         $rshop = generaleSetting('rootShop');
 
-        $categories = $rshop?->categories()->active()->get();
+        $categories = Category::all();
+        // $categories = $rshop?->categories()->active()->get();
         $colors = $shop?->colors()->isActive()->get();
         $sizes = $shop?->sizes()->isActive()->get();
 
