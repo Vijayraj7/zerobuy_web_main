@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\AdminProductRequestEvent;
 use App\Events\ProductApproveEvent;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
