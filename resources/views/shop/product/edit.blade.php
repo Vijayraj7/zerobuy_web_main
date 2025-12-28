@@ -102,6 +102,7 @@
                         <div class="row g-2">
                             <div class="col-md-4">
                                 <x-select label="Main Category" required name="main_category">
+                                    <option value="" selected disabled>Select Main Category</option>
                                     @foreach ($categories as $category)
                                         <option value="{{ $category->id }}"
                                             {{ $isEdit && optional($product->categories->first())->id == $category->id ? 'selected' : '' }}>
