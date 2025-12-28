@@ -14,6 +14,7 @@ use App\Repositories\ProductRepository;
 use Illuminate\Support\Facades\Storage;
 use App\Events\AdminProductRequestEvent;
 use App\Http\Resources\ProductVariantResource;
+use App\Models\Category;
 use App\Repositories\FlashSaleRepository;
 use Illuminate\Support\Facades\Validator;
 use App\Repositories\NotificationRepository;
@@ -80,7 +81,8 @@ class ProductController extends Controller
         // get brands, colors and categories
         $brands = $shop?->brands()->isActive()->get();
         $colors = $shop?->colors()->isActive()->get();
-        $categories = $rshop?->categories()->active()->get();
+        $categories = Category::all();
+        // $categories = $rshop?->categories()->active()->get();
         $units = $shop?->units()->isActive()->get();
         $sizes = $shop?->sizes()->isActive()->get();
 
