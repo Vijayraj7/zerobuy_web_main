@@ -31,4 +31,14 @@ class Cart extends Model
     {
         return $this->belongsTo(Address::class);
     }
+
+    public function variants()
+    {
+        return $this->hasMany(CartVariant::class);
+    }
+
+    public function bulkItems()
+    {
+        return $this->hasMany(CartBulkItem::class);
+    }
 }

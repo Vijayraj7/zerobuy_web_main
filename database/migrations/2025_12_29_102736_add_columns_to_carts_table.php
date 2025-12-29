@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::table('carts', function (Blueprint $table) {
             //
-            $table->string('bulk_price_id')->nullable();
-            $table->string('variant_id')->nullable();
+            $table->longText('bulk_prices')->nullable();
+            $table->longText('variants')->nullable();
             $table->longText('bulk_items')->nullable();
         });
     }
@@ -26,8 +26,8 @@ return new class extends Migration
     {
         Schema::table('carts', function (Blueprint $table) {
             //
-            $table->dropColumn('bulk_price_id');
-            $table->dropColumn('variant_id');
+            $table->dropColumn('bulk_prices');
+            $table->dropColumn('variants');
             $table->dropColumn('bulk_items');
         });
     }

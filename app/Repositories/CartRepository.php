@@ -7,7 +7,11 @@ use App\Http\Requests\CartRequest;
 use App\Http\Resources\ColorResource;
 use App\Http\Resources\SizeResource;
 use App\Models\Cart;
+use App\Models\CartBulkItem;
+use App\Models\CartVariant;
 use App\Models\Product;
+use App\Models\ProductBulkItem;
+use App\Models\ProductVariant;
 use Illuminate\Support\Number;
 
 class CartRepository extends Repository
@@ -168,19 +172,75 @@ class CartRepository extends Repository
             return $cart;
         }
 
-        return self::create([
-            'product_id' => $request->product_id,
-            'shop_id' => $product->shop->id,
-            'is_buy_now' => $isBuyNow,
+        $variant_id = $request->variant_id;
+        $variant = ProductVariant::find($variant_id);
+        $bulkitems = $request->bulk_items;
+        foreach ($bulkitems as $bulkitem) {
+            $bulk = ProductBulkItem::find($bulkitem->id);
+            $quantity = $bulkitem->buyqnty;
+        }
+
+        //here need logic to store CartVariant and CartBulkItem 
+
+        // return self::create([
+        //     'product_id' => $request->product_id,
+        //     'shop_id' => $product->shop->id,
+        //     'is_buy_now' => $isBuyNow,
+        //     'customer_id' => $customer->id,
+        //     'quantity' => $product->min_order_quantity ?? 1,
+        //     'size' => $size,
+        //     'color' => $color,
+        //     'unit' => $unit,
+        // ]);
+
+        $cart = self::create([
+            'product_id'  => $product->id,
+            'shop_id'     => $product->shop->id,
+            'is_buy_now'  => $isBuyNow,
             'customer_id' => $customer->id,
-            'quantity' => $product->min_order_quantity ?? 1,
-            'size' => $size,
-            'color' => $color,
-            'unit' => $unit,
-            'bulk_price_id' => $request->bulk_price_id,
-            'variant_id' => $request->variant_id,
-            'bulk_items' => $request->bulk_items,
+            'quantity'    => $product->min_order_quantity ?? 1,
+            'size'        => $size,
+            'color'       => $color,
+            'unit'        => $unit,
         ]);
+
+        /**
+         * ---------------------------
+         * STORE CART VARIANT
+         * ---------------------------
+         */
+        if ($request->filled('variant_id')) {
+            $variant = ProductVariant::findOrFail($request->variant_id);
+
+            CartVariant::create([
+                'cart_id' => $cart->id,
+                'product_variants_id' => $variant->id,
+                'quantity' => $cart->quantity,
+                'price' => $variant->price,
+            ]);
+        }
+
+        /**
+         * ---------------------------
+         * STORE CART BULK ITEMS
+         * ---------------------------
+         */
+        if ($request->filled('bulk_items')) {
+            foreach ($request->bulk_items as $bulkitem) {
+
+                $bulk = ProductBulkItem::findOrFail($bulkitem['id']);
+                $qty  = (int) $bulkitem['buyqnty'];
+
+                CartBulkItem::create([
+                    'cart_id' => $cart->id,
+                    'product_bulk_items_id' => $bulk->id,
+                    'quantity' => $qty,
+                    'price' => $bulk->price,
+                ]);
+            }
+        }
+
+        return $cart->load(['variants.variant', 'bulkItems.bulkItem']);
     }
 
     public static function checkoutByRequest($request, $carts)
