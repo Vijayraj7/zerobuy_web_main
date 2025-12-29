@@ -117,7 +117,7 @@ class CartController extends Controller
             $cart->update([
                 'quantity' => $quantity + 1,
             ]);
-            if ($request->varient_id != null) {
+            if ($request->variant_id != null) {
                 CartRepository::syncvariant($cart, $request);
             }
         } else {
