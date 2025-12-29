@@ -26,6 +26,9 @@ return new class extends Migration
     {
         Schema::table('carts', function (Blueprint $table) {
             //
+            $table->dropColumn('bulk_price_id');
+            $table->dropColumn('variant_id');
+            $table->dropColumn('bulk_items');
         });
     }
 };
