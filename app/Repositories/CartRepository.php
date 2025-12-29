@@ -174,14 +174,6 @@ class CartRepository extends Repository
             return $cart;
         }
 
-        $variant_id = $request->variant_id;
-        $variant = ProductVariant::find($variant_id);
-        $bulkitems = $request->bulk_items;
-        foreach ($bulkitems as $bulkitem) {
-            $bulk = ProductBulkItem::find($bulkitem->id);
-            $quantity = $bulkitem->buyqnty;
-        }
-
         //here need logic to store CartVariant and CartBulkItem 
 
         // return self::create([
