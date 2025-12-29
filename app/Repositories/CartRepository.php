@@ -236,17 +236,29 @@ class CartRepository extends Repository
          * ---------------------------
          */
         if ($request->filled('bulk_items')) {
+
             foreach ($request->bulk_items as $bulkitem) {
 
-                $bulk = ProductBulkItem::findOrFail($bulkitem['id']);
-                $qty  = (int) $bulkitem['buyqnty'];
+                // ✅ Find only (no exception)
+                $bulk = ProductBulkItem::find($bulkitem['id']);
 
-                CartBulkItem::create([
-                    'cart_id' => $cart->id,
-                    'product_bulk_items_id' => $bulk->id,
-                    'quantity' => $qty,
-                    'price' => $bulk->selling_price,
-                ]);
+                // ✅ Skip if bulk item not found
+                if (! $bulk) {
+                    continue;
+                }
+
+                $qty = (int) $bulkitem['buyqnty'];
+
+                CartBulkItem::updateOrCreate(
+                    [
+                        'cart_id' => $cart->id,
+                        'product_bulk_items_id' => $bulk->id,
+                    ],
+                    [
+                        'quantity' => $qty,
+                        'price' => $bulk->selling_price, // ✅ REQUIRED
+                    ]
+                );
             }
         }
     }
