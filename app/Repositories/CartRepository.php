@@ -177,6 +177,9 @@ class CartRepository extends Repository
             'size' => $size,
             'color' => $color,
             'unit' => $unit,
+            'bulk_price_id' => $request->bulk_price_id,
+            'variant_id' => $request->variant_id,
+            'bulk_items' => $request->bulk_items,
         ]);
     }
 
