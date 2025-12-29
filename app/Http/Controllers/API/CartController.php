@@ -44,7 +44,7 @@ class CartController extends Controller
         }
 
         $quantity = $product->min_order_quantity ?? 1;
-    
+
         $customer = auth()->user()->customer;
         $cart = $customer->carts()->where('product_id', $product->id)->first();
 
@@ -117,6 +117,9 @@ class CartController extends Controller
             $cart->update([
                 'quantity' => $quantity + 1,
             ]);
+            if ($request->varient_id != null) {
+                CartRepository::syncvariant($cart, $request);
+            }
         } else {
             return $this->json('Sorry! product cart quantity is limited. No more stock', [], 422);
         }

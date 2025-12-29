@@ -208,7 +208,7 @@ class CartRepository extends Repository
         return $cart->load(['variants.variant', 'bulkItems.bulkItem']);
     }
 
-    public static function syncvariant($cart, $request)
+    public static function syncvariant($cart, $request, $inc = true)
     {
         /**
          * ---------------------------
@@ -224,7 +224,11 @@ class CartRepository extends Repository
                 ->first();
 
             if ($cartVariant) {
-                $cartVariant->increment('quantity');
+                if ($inc) {
+                    $cartVariant->increment('quantity');
+                } else {
+                    $cartVariant->decrement('quantity');
+                }
             } else {
                 CartVariant::create([
                     'cart_id' => $cart->id,
