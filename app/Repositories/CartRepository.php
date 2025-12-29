@@ -214,16 +214,20 @@ class CartRepository extends Repository
 
             $variant = ProductVariant::findOrFail($request->variant_id);
 
-            CartVariant::updateOrCreate(
-                [
+            $cartVariant = CartVariant::where('cart_id', $cart->id)
+                ->where('product_variants_id', $variant->id)
+                ->first();
+
+            if ($cartVariant) {
+                $cartVariant->increment('quantity');
+            } else {
+                CartVariant::create([
                     'cart_id' => $cart->id,
                     'product_variants_id' => $variant->id,
-                ],
-                [
-                    'quantity' => DB::raw('quantity + 1'),
+                    'quantity' => 1,
                     'price' => $variant->price,
-                ]
-            );
+                ]);
+            }
         }
 
         /**
