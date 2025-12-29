@@ -21,8 +21,8 @@ class CartVariantResource extends JsonResource
             'quantity' => (int) $this->quantity,
             // 'color' => $this->color,
             // 'size' => $this->size,
-            'color' => ColorResource::make($this->color),
-            'size' => SizeResource::make($this->size),
+            'color' => ColorResource::make($this->variant->color),
+            'size' => SizeResource::make($this->variant->size),
         ];
     }
 }
