@@ -4,7 +4,10 @@ namespace App\Repositories;
 
 use Abedin\Maker\Repositories\Repository;
 use App\Http\Requests\CartRequest;
+use App\Http\Resources\CartBulkItemResource;
+use App\Http\Resources\CartVariantResource;
 use App\Http\Resources\ColorResource;
+use App\Http\Resources\ProductBulkItemResource;
 use App\Http\Resources\SizeResource;
 use App\Models\Cart;
 use App\Models\CartBulkItem;
@@ -102,6 +105,8 @@ class CartRepository extends Repository
                     'product_quantity' => (int) $product->quantity,
                     'name' => $product->name,
                     'thumbnail' => $product->thumbnail,
+                    'variants' => CartVariantResource::collection($cart->variants),
+                    'bulk_items' => CartBulkItemResource::collection($cart->bulkItems),
                     'brand' => $product->brand?->name ?? null,
                     'price' => (float) number_format($mainPrice, 2, '.', ''),
                     'discount_price' => (float) number_format($discountPrice, 2, '.', ''),

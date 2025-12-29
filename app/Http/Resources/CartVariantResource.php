@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ProductVariantResource extends JsonResource
+class CartVariantResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,7 +16,7 @@ class ProductVariantResource extends JsonResource
     {
         return [
             'id' => $this->id ?? null,
-            'product_id' => $this->product_id == null ? null : (int) $this->product_id,
+            'product_id' => (int) $this->cart->product_id,
             'price' => (float) $this->price,
             'quantity' => (int) $this->quantity,
             // 'color' => $this->color,
