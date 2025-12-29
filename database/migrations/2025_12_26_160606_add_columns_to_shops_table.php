@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('shops', function (Blueprint $table) {
             $table->string('store_type')->after('name')->nullable(); 
-            $table->foreignId('bussiness_categories_id')->nullable()->after('banner_id'); 
+            // $table->foreignId('bussiness_categories_id')->nullable()->after('banner_id'); 
             $table->string('phone_number', 20)->after('prefix')->nullable(); 
             $table->string('whatsapp_number', 20)->nullable()->after('phone_number')->nullable(); 
             $table->string('pincode', 10)->after('district')->nullable(); 

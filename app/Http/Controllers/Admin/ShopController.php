@@ -8,8 +8,10 @@ use App\Http\Requests\ShopPasswordResetRequest;
 use App\Models\Notification;
 use App\Models\Review;
 use App\Models\Shop;
+use App\Models\State;
 use App\Repositories\ShopRepository;
 use Illuminate\Support\Facades\Hash;
+use App\Models\BusinessCategory;
 
 class ShopController extends Controller
 {
@@ -29,7 +31,9 @@ class ShopController extends Controller
     public function create()
     {
         // return view('admin.shop.create');
-        return view('admin.shop.create-edit');
+        $states = State::orderBy('name')->get();
+        $businessCategories = BusinessCategory::where('status', 1)->get();
+        return view('admin.shop.create-edit', compact('states','businessCategories'));
     }
 
     /**
@@ -59,7 +63,9 @@ class ShopController extends Controller
     public function edit(Shop $shop)
     {
         // return view('admin.shop.edit', compact('shop'));
-        return view('admin.shop.create-edit', compact('shop'));
+        $states = State::orderBy('name')->get();
+        $businessCategories = BusinessCategory::where('status', 1)->get();
+        return view('admin.shop.create-edit', compact('shop', 'states','businessCategories'));
     }
 
     /**

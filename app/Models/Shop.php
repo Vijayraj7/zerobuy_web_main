@@ -245,4 +245,18 @@ class Shop extends Model
     {
         return $this->hasMany(ShopFollower::class);
     }
+
+    public function state()
+    {
+        return $this->belongsTo(State::class);
+    }
+
+    public function district()
+    {
+        return $this->belongsTo(District::class);
+    }
+    public function businessCategories()
+    {
+        return $this->belongsToMany(BusinessCategory::class, 'shop_business_category');
+    }
 }

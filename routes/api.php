@@ -31,6 +31,7 @@ use App\Http\Controllers\API\ShopFollowerController;
 use App\Http\Controllers\API\SubCategoryController;
 use App\Http\Controllers\API\SupportTicketMessageController;
 use App\Http\Controllers\API\ChildCategoryController;
+use App\Http\Controllers\API\LocationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -141,6 +142,8 @@ Route::controller(BlogController::class)->group(function () {
     Route::get('/blogs', 'index');
     Route::get('/blog/{blog}/details', 'show');
 });
+
+Route::get('/get-districts/{stateId}', [LocationController::class, 'getDistricts']);
 
 // auth middleware route
 Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
