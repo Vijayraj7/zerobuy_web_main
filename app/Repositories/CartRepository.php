@@ -12,6 +12,7 @@ use App\Models\CartVariant;
 use App\Models\Product;
 use App\Models\ProductBulkItem;
 use App\Models\ProductVariant;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Number;
 
 class CartRepository extends Repository
@@ -218,14 +219,19 @@ class CartRepository extends Repository
          * ---------------------------
          */
         if ($request->filled('variant_id')) {
+
             $variant = ProductVariant::findOrFail($request->variant_id);
 
-            CartVariant::create([
-                'cart_id' => $cart->id,
-                'product_variants_id' => $variant->id,
-                'quantity' => $cart->quantity,
-                'price' => $variant->price,
-            ]);
+            CartVariant::updateOrCreate(
+                [
+                    'cart_id' => $cart->id,
+                    'product_variants_id' => $variant->id,
+                ],
+                [
+                    'quantity' => DB::raw('quantity + 1'),
+                    'price' => $variant->price,
+                ]
+            );
         }
 
         /**
