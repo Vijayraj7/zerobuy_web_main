@@ -245,7 +245,7 @@ class CartRepository extends Repository
                     'cart_id' => $cart->id,
                     'product_bulk_items_id' => $bulk->id,
                     'quantity' => $qty,
-                    'price' => $bulk->price,
+                    'price' => $bulk->selling_price,
                 ]);
             }
         }
