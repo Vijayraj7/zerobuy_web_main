@@ -20,7 +20,7 @@ class CartBulkItem extends Model
         return $this->belongsTo(Cart::class, 'cart_id');
     }
 
-    public function variant()
+    public function bulkItem()
     {
         return $this->belongsTo(ProductBulkItem::class, 'product_bulk_items_id');
     }
