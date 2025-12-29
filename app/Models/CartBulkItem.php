@@ -12,8 +12,7 @@ class CartBulkItem extends Model
         'cart_id',
         'product_bulk_items_id',
         'quantity',
-        'unit_price',
-        'total_price',
+        'price'
     ];
 
     public function cart()
