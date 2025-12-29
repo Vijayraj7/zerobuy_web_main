@@ -225,7 +225,9 @@ class CartRepository extends Repository
 
             if ($cartVariant) {
                 if ($inc) {
-                    $cartVariant->increment('quantity');
+                    if ((int)$variant->quantity > $cartVariant->quantity) {
+                        $cartVariant->increment('quantity');
+                    }
                 } else {
                     $cartVariant->decrement('quantity');
                 }

@@ -113,13 +113,13 @@ class CartController extends Controller
             }
         }
 
+        if ($request->variant_id != null) {
+            CartRepository::syncvariant($cart, $request);
+        }
         if ($productQty > $quantity) {
             $cart->update([
                 'quantity' => $quantity + 1,
             ]);
-            if ($request->variant_id != null) {
-                CartRepository::syncvariant($cart, $request);
-            }
         } else {
             return $this->json('Sorry! product cart quantity is limited. No more stock', [], 422);
         }
