@@ -15,7 +15,7 @@ class CartVariantResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id ?? null,
+            'id' => $this->variant->id ?? null,
             'product_id' => (int) $this->cart->product_id,
             'price' => (float) $this->price,
             'quantity' => (int) $this->quantity,
