@@ -162,6 +162,7 @@ class CartRepository extends Repository
         $cart = $customer->carts()?->where('product_id', $product->id)->where('is_buy_now', $isBuyNow)->first();
 
         if ($cart) {
+            CartRepository::syncvariant($cart, $request);
             $cart->update([
                 'quantity' => $isBuyNow ?  $product->min_order_quantity ?? 1  : $cart->quantity + 1,
                 'size' => $request->size ?? $cart->size,
@@ -204,6 +205,13 @@ class CartRepository extends Repository
             'unit'        => $unit,
         ]);
 
+        CartRepository::syncvariant($cart, $request);
+
+        return $cart->load(['variants.variant', 'bulkItems.bulkItem']);
+    }
+
+    public static function syncvariant($cart, $request)
+    {
         /**
          * ---------------------------
          * STORE CART VARIANT
@@ -239,8 +247,6 @@ class CartRepository extends Repository
                 ]);
             }
         }
-
-        return $cart->load(['variants.variant', 'bulkItems.bulkItem']);
     }
 
     public static function checkoutByRequest($request, $carts)
