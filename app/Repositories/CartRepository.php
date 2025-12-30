@@ -100,11 +100,13 @@ class CartRepository extends Repository
                     $discountPercentage = ($mainPrice - $discountPrice) / $mainPrice * 100;
                 }
 
+                $pname = $product->name;
                 $dprice = 0;
                 $mprice = (float) number_format($mainPrice, 2, '.', '');
                 if ($cart->variant) {
                     $dprice =  (float) number_format($cart->variant->price, 2, '.', '');
                 } else if ($cart->bulk_item) {
+                    $pname = $cart->bulk_item->name;
                     $mprice = (float) number_format($cart->bulk_item->mrp, 2, '.', '');
                     $dprice =  (float) number_format($cart->bulk_item->selling_price, 2, '.', '');
                 } else {
@@ -115,7 +117,7 @@ class CartRepository extends Repository
                     'cart_id' => (int) $cart->id,
                     'quantity' => (int) $cart->quantity,
                     'product_quantity' => (int) $product->quantity,
-                    'name' => $product->name,
+                    'name' => $pname,
                     'thumbnail' => $product->thumbnail,
                     'variant' => $cart->variant ? ProductVariantResource::make($cart->variant) : null,
                     'bulk_item' => $cart->bulkItem ? ProductBulkItemResource::make($cart->bulkItem) : null,
