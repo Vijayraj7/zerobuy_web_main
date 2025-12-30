@@ -110,7 +110,7 @@ class CartRepository extends Repository
                     'variant' => $cart->variant ? ProductVariantResource::make($cart->variant) : null,
                     'bulk_item' => $cart->bulkItem ? ProductBulkItemResource::make($cart->bulkItem) : null,
                     'brand' => $product->brand?->name ?? null,
-                    'price' => (float) number_format($mainPrice, 2, '.', ''),
+                    'price' => $cart->variant ? (float) number_format($cart->variant->price, 2, '.', '')  : (float) number_format($mainPrice, 2, '.', ''),
                     'discount_price' => (float) number_format($discountPrice, 2, '.', ''),
                     'discount_percentage' => (float) number_format($discountPercentage, 2, '.', ''),
                     'rating' => (float) $product->averageRating,
