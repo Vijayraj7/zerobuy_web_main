@@ -25,7 +25,7 @@ return new class extends Migration
             // $table->string('variant_id')->nullable();
             // $table->string('bulk_item_id')->nullable();
 
-            $table->unique(['variant_id', 'bulk_item_id']);
+            // $table->unique(['variant_id', 'bulk_item_id']);
         });
     }
 
