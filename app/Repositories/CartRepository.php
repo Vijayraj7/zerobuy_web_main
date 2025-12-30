@@ -347,6 +347,8 @@ class CartRepository extends Repository
 
             if ($cart->variant != null) {
                 $price = (float)$cart->variant->price;
+            } else if ($cart->bulkItem) {
+                $price = (float)$cart->bulkItem->selling_price;
             }
 
             if ($flashSale) {
