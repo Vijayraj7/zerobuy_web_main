@@ -14,8 +14,18 @@ return new class extends Migration
         Schema::table('carts', function (Blueprint $table) {
             //
             // $table->longText('bulk_prices')->nullable();
-            $table->string('variant_id')->nullable();
-            $table->string('bulk_item_id')->nullable();
+            $table->foreignId('variant_id')
+                ->constrained('variant_id')
+                ->cascadeOnDelete();
+
+            $table->foreignId('bulk_item_id')
+                ->constrained('bulk_item_id')
+                ->cascadeOnDelete();
+
+            // $table->string('variant_id')->nullable();
+            // $table->string('bulk_item_id')->nullable();
+
+            $table->unique(['variant_id', 'bulk_item_id']);
         });
     }
 
