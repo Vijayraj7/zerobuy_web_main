@@ -226,7 +226,7 @@ class CartController extends Controller
 
         $customer = auth()->user()->customer;
 
-        $carts = $customer->carts()->where('product_id', $request->product_id)->get();
+        $carts = $customer->carts()->where('id', $request->product_id)->get();
 
         if ($carts->isEmpty()) {
             return $this->json('Sorry product not found in cart', [], 422);
