@@ -100,6 +100,16 @@ class CartRepository extends Repository
                     $discountPercentage = ($mainPrice - $discountPrice) / $mainPrice * 100;
                 }
 
+                $dprice = 0;
+                $mprice = (float) number_format($mainPrice, 2, '.', '');
+                if ($cart->variant) {
+                    $dprice =  (float) number_format($cart->variant->price, 2, '.', '');
+                } else if ($cart->bulk_item) {
+                    $mprice = (float) number_format($cart->bulk_item->mrp, 2, '.', '');
+                    $dprice =  (float) number_format($cart->bulk_item->selling_price, 2, '.', '');
+                } else {
+                    $dprice = (float) number_format($discountPrice, 2, '.', '');
+                }
                 $productArray[] = (object) [
                     'id' => $product->id,
                     'cart_id' => (int) $cart->id,
@@ -110,8 +120,8 @@ class CartRepository extends Repository
                     'variant' => $cart->variant ? ProductVariantResource::make($cart->variant) : null,
                     'bulk_item' => $cart->bulkItem ? ProductBulkItemResource::make($cart->bulkItem) : null,
                     'brand' => $product->brand?->name ?? null,
-                    'price' => (float) number_format($mainPrice, 2, '.', ''),
-                    'discount_price' => $cart->variant ? (float) number_format($cart->variant->price, 2, '.', '')  : (float) number_format($discountPrice, 2, '.', ''),
+                    'price' => $mprice,
+                    'discount_price' => $dprice,
                     'discount_percentage' => (float) number_format($discountPercentage, 2, '.', ''),
                     'rating' => (float) $product->averageRating,
                     'total_reviews' => (string) Number::abbreviate($product->reviews->count(), maxPrecision: 2),
