@@ -41,4 +41,14 @@ class Cart extends Model
     {
         return $this->hasMany(CartBulkItem::class);
     }
+
+    public function variant()
+    {
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
+    }
+
+    public function bulkItem()
+    {
+        return $this->belongsTo(ProductBulkItem::class, 'bulk_item_id');
+    }
 }

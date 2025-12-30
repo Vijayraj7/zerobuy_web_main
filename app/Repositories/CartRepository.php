@@ -8,6 +8,7 @@ use App\Http\Resources\CartBulkItemResource;
 use App\Http\Resources\CartVariantResource;
 use App\Http\Resources\ColorResource;
 use App\Http\Resources\ProductBulkItemResource;
+use App\Http\Resources\ProductVariantResource;
 use App\Http\Resources\SizeResource;
 use App\Models\Cart;
 use App\Models\CartBulkItem;
@@ -105,8 +106,8 @@ class CartRepository extends Repository
                     'product_quantity' => (int) $product->quantity,
                     'name' => $product->name,
                     'thumbnail' => $product->thumbnail,
-                    'variants' => CartVariantResource::collection($cart->variants),
-                    'bulk_items' => CartBulkItemResource::collection($cart->bulkItems),
+                    'variant' => $cart->variant ? ProductVariantResource::make($cart->variant) : null,
+                    'bulk_item' => $cart->bulkItem ? ProductBulkItemResource::make($cart->bulkItem) : null,
                     'brand' => $product->brand?->name ?? null,
                     'price' => (float) number_format($mainPrice, 2, '.', ''),
                     'discount_price' => (float) number_format($discountPrice, 2, '.', ''),
@@ -165,10 +166,14 @@ class CartRepository extends Repository
 
         $customer = auth()->user()->customer;
 
-        $cart = $customer->carts()?->where('product_id', $product->id)->where('is_buy_now', $isBuyNow)->first();
+        $cart = $customer->carts()
+            ?->where('is_buy_now', $isBuyNow)
+            ->where('variant_id',  $request->variant_id)
+            ->where('bulk_item_id',  $request->bulk_item_id)
+            ->first();
 
         if ($cart) {
-            CartRepository::syncvariant($cart, $request);
+            // CartRepository::syncvariant($cart, $request);
             $cart->update([
                 'quantity' => $isBuyNow ?  $product->min_order_quantity ?? 1  : $cart->quantity + 1,
                 'size' => $request->size ?? $cart->size,
@@ -201,11 +206,13 @@ class CartRepository extends Repository
             'size'        => $size,
             'color'       => $color,
             'unit'        => $unit,
+            'variant_id' => $request->variant_id,
+            'bulk_item_id' => $request->bulk_item_id,
         ]);
 
-        CartRepository::syncvariant($cart, $request);
+        // CartRepository::syncvariant($cart, $request);
 
-        return $cart->load(['variants.variant', 'bulkItems.bulkItem']);
+        return $cart;
     }
 
     public static function syncvariant($cart, $request, $inc = true)
