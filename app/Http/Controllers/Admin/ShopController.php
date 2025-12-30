@@ -9,6 +9,7 @@ use App\Models\Notification;
 use App\Models\Review;
 use App\Models\Shop;
 use App\Models\State;
+use App\Models\Page;
 use App\Repositories\ShopRepository;
 use Illuminate\Support\Facades\Hash;
 use App\Models\BusinessCategory;
@@ -32,20 +33,34 @@ class ShopController extends Controller
     {
         // return view('admin.shop.create');
         $states = State::orderBy('name')->get();
+        $sellerTerms = Page::where('slug', 'seller-terms-of-service')
+                        ->where('is_active', 1)
+                        ->first();
         $businessCategories = BusinessCategory::where('status', 1)->get();
-        return view('admin.shop.create-edit', compact('states','businessCategories'));
+        return view('admin.shop.create-edit', compact('states','businessCategories','sellerTerms'));
     }
 
     /**
      * Store a newly created shop.
-     */
+     */ 
     public function store(ShopCreateRequest $request)
-    {
-        // store shop from shopRepository
-        ShopRepository::storeByRequest($request);
+    { 
+        if ($request->terms_condition_status != 1) {
+            return response()->json([
+                'status' => 'terms_required'
+            ]);
+        }
 
-        return to_route('admin.shop.index')->withSuccess(__('Shop created successfully'));
+        ShopRepository::storeByRequest($request); 
+
+        return response()->json([
+            'status'   => 'success',
+            'message'  => 'Shop created successfully',
+            'redirect' => route('admin.shop.index')
+        ]);
+
     }
+
 
     /**
      * Display the specified shop.
@@ -63,6 +78,7 @@ class ShopController extends Controller
     public function edit(Shop $shop)
     {
         // return view('admin.shop.edit', compact('shop'));
+        $shop->load('deliverySetting');
         $states = State::orderBy('name')->get();
         $businessCategories = BusinessCategory::where('status', 1)->get();
         return view('admin.shop.create-edit', compact('shop', 'states','businessCategories'));
@@ -78,9 +94,14 @@ class ShopController extends Controller
         }
 
         // store shop from shopRepository
-        ShopRepository::updateByRequest($shop, $request);
+        ShopRepository::updateByRequest($shop, $request); 
 
-        return to_route('admin.shop.index')->withSuccess(__('Shop updated successfully'));
+        return response()->json([
+            'status'   => 'success',
+            'message'  => 'Shop updated successfully',
+            'redirect' => route('admin.shop.index')
+        ]);
+
     }
 
     /**

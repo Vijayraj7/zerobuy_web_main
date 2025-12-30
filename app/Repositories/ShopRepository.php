@@ -7,6 +7,7 @@ use App\Http\Requests\ShopCreateRequest;
 use App\Models\Shop;
 use App\Models\State;
 use App\Models\District;
+use App\Models\DeliverySetting;
 use Carbon\Carbon;
 
 class ShopRepository extends Repository
@@ -60,7 +61,6 @@ class ShopRepository extends Repository
             'district_id' => $district->id,
             'state' => $state->name,
             'district' => $district->name,
-
             'pincode' => $request->pincode,
             'min_order_amount' => $request->min_order_amount,
             'gst_number' => $request->gst_number,
@@ -68,60 +68,23 @@ class ShopRepository extends Repository
             'return_policy' => $request->return_policy,
             'phone_number' => $request->phone,
             'terms_condition_status' => 1,
+            'estimated_delivery_time' => $request->delivery_days,
         ]);
 
         $shop->businessCategories()->sync($request->bussiness_categories_id);
+
+        $stateIds = array_map('intval', $request->delivery_state_ids);
+        DeliverySetting::updateOrCreate(
+            ['shop_id' => $shop->id],
+            ['selected_state_ids' => $stateIds]
+        );
 
         return $shop;
     }
 
     /**
      * update shop by request.
-     */
-    // public static function updateByRequest($shop, $request): Shop
-    // {
-    //     $state = State::find($request->state_id);
-    //     $district = District::find($request->district_id);
-    //     // update shop user
-    //     UserRepository::updateByRequest($request, $shop->user);
-
-    //     // shop logo
-    //     $thumbnail = self::updateLogo($shop, $request);
-
-    //     // shop banner
-    //     $banner = self::updateBanner($shop, $request);
-
-    //     // update shop
-    //     self::update($shop, [
-    //         'name' => $request->shop_name,
-    //         'logo_id' => $thumbnail ? $thumbnail->id : null,
-    //         'banner_id' => $banner ? $banner->id : null,
-    //         'delivery_charge' => $request->delivery_charge ?? 0,
-    //         'address' => $request->address,
-    //         'description' => $request->description,
-    //         'min_order_amount' => $request->min_order_amount ?? $shop->min_order_amount,
-    //         'prefix' => $request->prefix ?? $shop->prefix,
-    //         'opening_time' => $request->opening_time ?? $shop->opening_time,
-    //         'closing_time' => $request->closing_time ?? $shop->closing_time,
-    //         'estimated_delivery_time' => $request->estimated_delivery_time ?? $shop->estimated_delivery_time,
-
-    //         'store_type' => $request->store_type,
-    //         'whatsapp_number' => $request->whatsapp_number,
-    //         // 'state' => $request->state,
-    //         // 'district' => $request->district,
-    //         'state_id' => $state->id,
-    //         'district_id' => $district->id,
-    //         'state' => $state->name,
-    //         'district' => $district->name,
-    //         'pincode' => $request->pincode,
-    //         'min_order_amount' => $request->min_order_amount,
-    //         'gst_number' => $request->gst_number,
-    //         'store_since' => $request->store_since,
-    //         'return_policy' => $request->return_policy, 
-    //     ]);
-    //     $shop->businessCategories()->sync($request->bussiness_categories_id);
-    //     return $shop;
-    // }
+    */
     public static function updateByRequest($shop, $request): Shop
     {
         $state = State::find($request->state_id);
@@ -156,10 +119,16 @@ class ShopRepository extends Repository
             'store_since' => $request->store_since,
             'return_policy' => $request->return_policy,
             'terms_condition_status' => 1,
+            'estimated_delivery_time' => $request->delivery_days,
         ]);
 
         $shop->businessCategories()->sync($request->bussiness_categories_id);
 
+        $stateIds = array_map('intval', $request->delivery_state_ids);
+        DeliverySetting::updateOrCreate(
+            ['shop_id' => $shop->id],
+            ['selected_state_ids' => $stateIds]
+        );
         return $shop;
     }
 

@@ -50,12 +50,14 @@ class ShopCreateRequest extends FormRequest
 
         // validation rules
         return [
-            'first_name' => [$required, 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['nullable', 'string', 'max:255'],
-            'phone' => [$required, 'string', 'max:15', 'min:10'],
-            'email' => [$required, 'email', 'max:255', 'unique:users,email,'.$user?->id],
+            'phone' => [$required, 'string', 'max:15', 'min:10', 'unique:users,phone,'.$user?->id],
+            // 'phone' => $phoneValidate,
+            'email' => [$isUpdate ? 'nullable' : 'required', 'string', 'email', 'max:255', 'unique:users,email,'.$user?->id, new EmailRule],
             'password' => [$isUpdate ? 'nullable' : 'required', 'min:6', 'confirmed'],
             'password_confirmation' => [$isUpdate ? 'nullable' : 'required', 'min:6'],
+            'address' => ['required', 'string', 'max:150'],
 
             // Shop images not required on update
             'profile_photo' => [$isUpdate ? 'nullable' : 'required', 'image', 'mimes:jpg,png,jpeg,gif', 'max:2048'],
@@ -71,43 +73,17 @@ class ShopCreateRequest extends FormRequest
             'min_order_amount' => ['required'],
             'return_policy' => ['required', 'string', 'max:300'],
             'description' => ['nullable', 'string', 'max:200'],
-            'store_since' => ['nullable', 'string'],
+            'store_since' => ['required', 'string'],
             'gst_number' => ['nullable', 'string'],
 
             'bussiness_categories_id' => ['required', 'array', 'min:1'],
             'bussiness_categories_id.*' => ['exists:business_categories,id'],
-            'terms_condition_status' => [$isUpdate ? 'nullable' : 'required', 'in:1'],
+            // 'terms_condition_status' => [$isUpdate ? 'nullable' : 'required', 'in:1'],
 
+            'delivery_days' => ['required', 'string'],
+            'delivery_state_ids' => ['required', 'array', 'min:1'],
+            'delivery_state_ids.*' => ['integer', 'exists:states,id'],
         ];
-        // return [
-        //     'first_name' => ['required', 'string', 'max:255'],
-        //     'last_name' => ['nullable', 'string', 'max:255'],
-        //     'phone' => $phoneValidate,
-        //     'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user?->id, new EmailRule],
-        //     'Gender' => ['nullable', 'string'],
-        //     'password' => [$required, 'min:6', 'confirmed'],
-        //     'password_confirmation' => [$required, 'min:6'],
-        //     'address' => ['nullable', 'string'],
-        //     'profile_photo' => [$required, 'image', 'mimes:jpg,png,jpeg,gif', 'max:2048'],
-        //     'shop_name' => ['required', 'string', 'max:100'],
-        //     'shop_logo' => [$required, 'image', 'mimes:jpg,png,jpeg,gif', 'max:2048'],
-        //     'shop_banner' => [$required, 'image', 'mimes:jpg,png,jpeg,gif', 'max:2048'],
-        //     'description' => ['nullable', 'string', 'max:200'],
-
-        //     'store_type' => ['required'],
-        //     'whatsapp_number' => ['required', 'string', 'max:15', 'min:10'], 
-        //     'state_id'    => ['required', 'exists:states,id'],
-        //     'district_id' => ['required', 'exists:districts,id'],
-        //     'pincode' => ['required', 'string', 'max:10'],
-        //     'min_order_amount' => ['required'],
-        //     'gst_number' => ['nullable', 'string'],
-        //     'store_since' => ['nullable', 'string'],
-        //     'return_policy' => ['required', 'string', 'max:300'],
-
-        //     'bussiness_categories_id' => ['required', 'array', 'min:1'],
-        //     'bussiness_categories_id.*' => ['exists:business_categories,id'],
-
-        // ];
     }
 
     public function messages(): array

@@ -1,0 +1,115 @@
+/* DataTable */
+.datatableCustomCSS {
+    display: table !important;
+}
+.datatableCustomCSS tbody tr {
+    display: table-row !important;
+}
+.datatableCustomCSS tbody td {
+    display: table-cell !important;
+}
+
+/* Product Variants and Bulk Cards */
+.variant-card, .bulk-card {
+    border-left: 4px solid;
+    transition: background-color 0.2s;
+}
+.variant-card {
+    border-left-color: #007bff;
+}
+.bulk-card {
+    border-left-color: #28a745;
+}
+.variant-card:hover, .bulk-card:hover {
+    background-color: #f8f9fa;
+}
+#no-variants-message, #no-bulkprice-message {
+    font-style: italic;
+    padding: 20px;
+    text-align: center;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+
+/* Add Shop-Business Category Cards */
+.category-card {
+    display: block;
+}
+.category-box {
+    cursor: pointer;
+    height: 140px;              
+    border: 1px solid #e3e3e3;
+    border-radius: 10px;
+    padding: 5px;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.category-img {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    margin-bottom: 10px;
+}
+.category-name {
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.2;
+} 
+.category-card input:checked + .category-box {
+    border: 2px solid #0d6efd;
+    background-color: #eef5ff;
+}
+.category-box:hover {
+    border-color: #0d6efd;
+    transform: translateY(-2px);
+}
+
+/* Shop-Delivery Days Buttons */
+.delivery-card {
+    border: 1.5px solid var(--theme-color);
+    border-radius: 6px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--theme-color);
+    background: #fff;
+    transition: 0.2s;
+}
+.delivery-card input {
+    display: none;
+}
+.delivery-card:has(input:checked) {
+    background: var(--theme-color);
+    color: #fff;
+}
+
+/* Shop-State Grid and Checkbox */
+.state-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px 20px;
+} 
+.state-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--theme-color);
+}
+.state-check input {
+    width: 26px;
+    height: 26px;
+    border: 1.5px solid #20b2aa;
+    border-radius: 4px;
+    cursor: pointer;
+}
+input[type="checkbox"],
+input[type="radio"] {
+    accent-color: var(--theme-color);
+}
+
