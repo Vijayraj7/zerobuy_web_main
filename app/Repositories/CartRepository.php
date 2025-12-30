@@ -306,6 +306,10 @@ class CartRepository extends Repository
 
             $price = $product->discount_price > 0 ? $product->discount_price : $product->price;
 
+            if ($cart->variant != null) {
+                $price = (float)$cart->variant->price;
+            }
+
             if ($flashSale) {
                 $flashSaleProduct = $flashSale?->products()->where('id', $product->id)->first();
 
