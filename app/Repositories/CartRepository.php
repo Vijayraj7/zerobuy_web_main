@@ -105,11 +105,10 @@ class CartRepository extends Repository
                 $mprice = (float) number_format($mainPrice, 2, '.', '');
                 if ($cart->variant) {
                     $dprice =  (float) number_format($cart->variant->price, 2, '.', '');
-                }
-                if ($cart->bulk_item) {
-                    $pname = $cart->bulk_item->name;
-                    $mprice = (float) number_format($cart->bulk_item->mrp, 2, '.', '');
-                    $dprice =  (float) number_format($cart->bulk_item->selling_price, 2, '.', '');
+                } else if ($cart->bulkItem) {
+                    $pname = $cart->bulkItem->name;
+                    $mprice = (float) number_format($cart->bulkItem->mrp, 2, '.', '');
+                    $dprice =  (float) number_format($cart->bulkItem->selling_price, 2, '.', '');
                 } else {
                     $dprice = (float) number_format($discountPrice, 2, '.', '');
                 }
