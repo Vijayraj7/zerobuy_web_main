@@ -37,8 +37,8 @@ return new class extends Migration
         Schema::table('carts', function (Blueprint $table) {
             //
             // $table->dropColumn('bulk_prices');
-            $table->dropColumn('variant_id');
-            $table->dropColumn('bulk_item_id');
+            // $table->dropColumn('variant_id');
+            // $table->dropColumn('bulk_item_id');
         });
     }
 };
