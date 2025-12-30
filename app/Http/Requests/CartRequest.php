@@ -22,8 +22,8 @@ class CartRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'product_id' => 'required|exists:products,id',
-            'cart_id' => 'required|exists:carts,id',
+            'product_id' => 'nullable|exists:products,id',
+            'cart_id' => 'nullable|exists:carts,id',
             'quantity' => 'nullable|integer',
             'color' => 'nullable|exists:colors,id',
             'size' => 'nullable|exists:sizes,id',
