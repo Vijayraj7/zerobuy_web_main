@@ -197,19 +197,46 @@ class CartRepository extends Repository
         //     'color' => $color,
         //     'unit' => $unit,
         // ]);
+        if ($request->filled('bulk_items')) {
 
-        $cart = self::create([
-            'product_id'  => $product->id,
-            'shop_id'     => $product->shop->id,
-            'is_buy_now'  => $isBuyNow,
-            'customer_id' => $customer->id,
-            'quantity'    => $product->min_order_quantity ?? 1,
-            'size'        => $size,
-            'color'       => $color,
-            'unit'        => $unit,
-            'variant_id' => $request->variant_id,
-            'bulk_item_id' => $request->bulk_item_id,
-        ]);
+            foreach ($request->bulk_items as $bulkitem) {
+
+                // ✅ Find only (no exception)
+                $bulk = ProductBulkItem::find($bulkitem['id']);
+
+                // ✅ Skip if bulk item not found
+                if (! $bulk) {
+                    continue;
+                }
+                $qty = (int) $bulkitem['buyqnty'];
+
+                $cart = self::create([
+                    'product_id'  => $product->id,
+                    'shop_id'     => $product->shop->id,
+                    'is_buy_now'  => $isBuyNow,
+                    'customer_id' => $customer->id,
+                    'quantity'    => $qty,
+                    'size'        => $size,
+                    'color'       => $color,
+                    'unit'        => $unit,
+                    'variant_id' => null,
+                    'bulk_item_id' => $bulk->id,
+                ]);
+            }
+        } else {
+            $cart = self::create([
+                'product_id'  => $product->id,
+                'shop_id'     => $product->shop->id,
+                'is_buy_now'  => $isBuyNow,
+                'customer_id' => $customer->id,
+                'quantity'    => $product->min_order_quantity ?? 1,
+                'size'        => $size,
+                'color'       => $color,
+                'unit'        => $unit,
+                'variant_id' => $request->variant_id,
+                'bulk_item_id' => $request->bulk_item_id,
+            ]);
+        }
 
         // CartRepository::syncvariant($cart, $request);
 
