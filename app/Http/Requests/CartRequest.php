@@ -23,6 +23,7 @@ class CartRequest extends FormRequest
     {
         return [
             'product_id' => 'required|exists:products,id',
+            'cart_id' => 'required|exists:carts,id',
             'quantity' => 'nullable|integer',
             'color' => 'nullable|exists:colors,id',
             'size' => 'nullable|exists:sizes,id',
