@@ -15,11 +15,11 @@ return new class extends Migration
             //
             // $table->longText('bulk_prices')->nullable();
             $table->foreignId('variant_id')
-                ->constrained('variant_id')
+                ->constrained('product_variants')
                 ->cascadeOnDelete();
 
             $table->foreignId('bulk_item_id')
-                ->constrained('bulk_item_id')
+                ->constrained('product_bulk_items')
                 ->cascadeOnDelete();
 
             // $table->string('variant_id')->nullable();
