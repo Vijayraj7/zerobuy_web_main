@@ -34,31 +34,32 @@ class ShopController extends Controller
         // return view('admin.shop.create');
         $states = State::orderBy('name')->get();
         $sellerTerms = Page::where('slug', 'seller-terms-of-service')
-                        ->where('is_active', 1)
-                        ->first();
+            ->where('is_active', 1)
+            ->first();
         $businessCategories = BusinessCategory::where('status', 1)->get();
-        return view('admin.shop.create-edit', compact('states','businessCategories','sellerTerms'));
+        return view('admin.shop.create-edit', compact('states', 'businessCategories', 'sellerTerms'));
     }
 
     /**
      * Store a newly created shop.
-     */ 
+     */
     public function store(ShopCreateRequest $request)
-    { 
+    {
         if ($request->terms_condition_status != 1) {
             return response()->json([
                 'status' => 'terms_required'
             ]);
         }
 
-        ShopRepository::storeByRequest($request); 
+        dd($request);
+
+        ShopRepository::storeByRequest($request);
 
         return response()->json([
             'status'   => 'success',
             'message'  => 'Shop created successfully',
             'redirect' => route('admin.shop.index')
         ]);
-
     }
 
 
@@ -81,7 +82,7 @@ class ShopController extends Controller
         $shop->load('deliverySetting');
         $states = State::orderBy('name')->get();
         $businessCategories = BusinessCategory::where('status', 1)->get();
-        return view('admin.shop.create-edit', compact('shop', 'states','businessCategories'));
+        return view('admin.shop.create-edit', compact('shop', 'states', 'businessCategories'));
     }
 
     /**
@@ -93,15 +94,15 @@ class ShopController extends Controller
             return back()->with('demoMode', 'You can not update the shop in demo mode');
         }
 
+        dd($request);
         // store shop from shopRepository
-        ShopRepository::updateByRequest($shop, $request); 
+        ShopRepository::updateByRequest($shop, $request);
 
         return response()->json([
             'status'   => 'success',
             'message'  => 'Shop updated successfully',
             'redirect' => route('admin.shop.index')
         ]);
-
     }
 
     /**
