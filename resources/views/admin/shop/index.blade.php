@@ -36,7 +36,6 @@
     </div>
 
     <div class="container-fluid">
-
         <div class="row row-gap mb-4 d-none" id="gridItem">
             @foreach ($shops as $key => $shop)
                 <div class="col-12 col-md-6 col-xl-4 col-xxl-3">
@@ -138,118 +137,149 @@
                 </div>
             @endforeach
         </div>
-
-        <div class="mb-4 d-none" id="listItem">
-            <div class="table-responsive">
-
-                <table class="table shopTable table-striped table-responsive-lg">
-                    <thead>
-                        <tr>
-                            <th>{{ __('SL') }}</th>
-                            <th>{{ __('Logo') }}</th>
-                            <th>{{ __('Name') }}</th>
-                            @hasPermission('admin.shop.status.toggle')
-                            <th>Branded</th>
-                            @endhasPermission
-                            @hasPermission('admin.shop.status.toggle')
-                            <th>Verified</th>
-                            @endhasPermission
-                            @hasPermission('admin.shop.status.toggle')
-                            <th>{{ __('Status') }}</th>
-                            @endhasPermission
-                            @hasPermission('admin.shop.products')
-                            <th class="text-center">{{ __('Products') }}</th>
-                            @endhasPermission
-                            @hasPermission('admin.shop.orders')
-                            <th class="text-center">{{ __('Orders') }}</th>
-                            @endhasPermission
-                            <th class="text-center">{{ __('Action') }}</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        @foreach ($shops as $key => $shop)
+        <div class="mb-3 card">
+            <div class="card-body">
+                <div class="d-flex flex-wrap align-items-center gap-3 mt-3 px-2">
+                    <!-- Date Filters -->
+                    <div class="d-flex align-items-center gap-2">
+                        <label>From:</label>
+                        <input type="date" id="startDate" class="form-control form-control-sm">
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <label>To:</label>
+                        <input type="date" id="endDate" class="form-control form-control-sm">
+                    </div>
+                    <!-- Reload Button -->
+                    <button id="reloadBtn" class="btn btn-secondary">
+                        <i class="fa fa-rotate-right"></i>
+                    </button>
+                    <!-- Export Buttons -->
+                    <div id="exportButtons"></div>
+                </div> 
+                <div class="mt-3 table-responsive">
+                    <table id="shopTable" class="table table-bordered mt-3 datatableCustomCSS">
+                        <thead>
                             <tr>
-                                <td>{{ ++$key }}</td>
-                                <td>
-                                    <div class="payment-image">
-                                        <img class="img-fit" src="{{ $shop->logo }}" />
-                                    </div>
-                                </td>
-                                <td>{{ $shop->name }}</td>
-                                @hasPermission('admin.shop.status.toggle')
-                                <td>
-                                    <label class="switch mb-0" data-bs-toggle="tooltip" data-bs-placement="top" title="Click here to change branded">
-                                        <a href="{{ route('admin.shop.branded.toggle', $shop->id) }}">
-                                            <input type="checkbox" {{ $shop->is_branded ? 'checked' : '' }}>
-                                            <span class="slider round"></span>
-                                        </a>
-                                    </label>
-                                </td>
-                                @endhasPermission
-                                @hasPermission('admin.shop.status.toggle')
-                                <td>
-                                    <label class="switch mb-0" data-bs-toggle="tooltip" data-bs-placement="top" title="Click here to change verified">
-                                        <a href="{{ route('admin.shop.verify.toggle', $shop->id) }}">
-                                            <input type="checkbox" {{ $shop->is_verified ? 'checked' : '' }}>
-                                            <span class="slider round"></span>
-                                        </a>
-                                    </label>
-                                </td>
-                                @endhasPermission
-                                @hasPermission('admin.shop.status.toggle')
-                                <td>
-                                    <label class="switch mb-0" data-bs-toggle="tooltip" data-bs-placement="top" title="{{__('Click here to change status')}}">
-                                        <a href="{{ route('admin.shop.status.toggle', $shop->id) }}">
-                                            <input type="checkbox" {{ $shop->user?->is_active ? 'checked' : '' }}>
-                                            <span class="slider round"></span>
-                                        </a>
-                                    </label>
-                                </td>
-                                @endhasPermission
+                                <th>{{ __('SL') }}</th>
+                                <th>{{ __('Created Date') }}</th>
+                                <th>{{ __('Store ID') }}</th>
+                                <th>{{ __('Name') }}</th> 
+                                <th>{{ __('Logo') }}</th>
+                                <th>{{ __('Mobile Number') }}</th> 
+                                <th>{{ __('State') }}</th>
+                                <th>{{ __('Store Type') }}</th>
+                                <!-- <th>{{ __('Subscription') }}</th>  -->
                                 @hasPermission('admin.shop.products')
-                                <td class="text-center">
-                                    <a href="{{ route('admin.shop.products', $shop->id) }}" class="badge badge-square badge-primary" data-bs-toggle="tooltip"
-                                        data-bs-placement="top" title="{{__('Click here to view total products')}}">
-                                        {{ $shop->products->count() }}
-                                    </a>
-                                </td>
+                                <th>{{ __('Products') }}</th>
                                 @endhasPermission
                                 @hasPermission('admin.shop.orders')
-                                <td class="text-center">
-                                    <a href="{{ route('admin.shop.orders', $shop->id) }}"
-                                        class="badge badge-square badge-info" data-bs-toggle="tooltip"
-                                        data-bs-placement="top" title="{{__('Click here to view total orders')}}">
-                                        {{ $shop->orders->count() }}
-                                    </a>
-                                </td>
+                                <th>{{ __('Orders') }}</th>
                                 @endhasPermission
-                                <td class="text-center">
-                                    @hasPermission('admin.shop.show')
-                                    <a class="svg-bg circleIcon"
-                                        href="{{ route('admin.shop.show', $shop->id) }}" data-bs-toggle="tooltip"
-                                        data-bs-placement="top" title="View">
-                                        <img src="{{ asset('assets/icons-admin/eye.svg') }}" alt="edit" loading="lazy" />
-                                    </a>
-                                    @endhasPermission
-                                    @hasPermission('admin.shop.edit')
-                                    <a href="{{ route('admin.shop.edit', $shop->id) }}"
-                                        class="btn-outline-info circleIcon" data-bs-toggle="tooltip"
-                                        data-bs-placement="top" title="Edit">
-                                        <img src="{{ asset('assets/icons-admin/edit.svg') }}" alt="edit" loading="lazy" />
-                                    </a>
-                                    @endhasPermission
-                                </td>
+                                @hasPermission('admin.shop.status.toggle')
+                                <th>Branded</th>
+                                @endhasPermission
+                                @hasPermission('admin.shop.status.toggle')
+                                <th>Verified</th>
+                                @endhasPermission
+                                @hasPermission('admin.shop.status.toggle')
+                                <th>{{ __('Status') }}</th>
+                                @endhasPermission 
+                                <th>{{ __('Action') }}</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
 
+                </div> 
             </div>
-        </div>
-
-        <div class="my-3">
-            {{ $shops->links() }}
         </div>
     </div>
 @endsection
+
+
+@push('scripts') 
+
+<script>
+    $(function() {  
+        let startDate = "";
+        let endDate = "";
+
+        let table = $('#shopTable').DataTable({
+            responsive: true,
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: "{{ route('admin.shop.index') }}",
+                data: function(d) { 
+                    d.startDate = startDate;
+                    d.endDate = endDate;
+                }
+            },
+             columns: [
+                { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                { data: 'created_at', name: 'created_at' },
+                { data: 'shop_id_display', name: 'shop_id_display' },
+                { data: 'name', name: 'name' },
+                { data: 'logo', name: 'logo', orderable: false, searchable: false },
+                { data: 'phone', name: 'phone' },
+                { 
+                    data: 'state', name: 'state',
+                    render: function(data) {
+                        return data ? data : '<span class="text-muted">-</span>';
+                    }
+                },
+                { 
+                    data: 'store_type', name: 'store_type', 
+                    render: function(data) {
+                        return data ? data : '<span class="text-muted">-</span>';
+                    } 
+                },
+                // { data: 'subscription_days', name: 'subscription_days' },
+                { data: 'products', name: 'products' },
+                { data: 'orders', name: 'orders' },
+                { data: 'branded', name: 'branded', orderable: false, searchable: false },
+                { data: 'verified', name: 'verified', orderable: false, searchable: false },
+                { data: 'status', name: 'status', orderable: false, searchable: false },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
+            ],
+            order: [[2, 'desc']],
+            dom:'<"row"' + '<"col-md-6 d-flex align-items-center" l>' + '<"col-md-6 d-flex justify-content-end" f>' + '>' + 'rtip',
+            buttons: [
+                {
+                    extend: 'collection',
+                    className: 'btn btn-primary',
+                    text: '<i class="fas fa-download"></i> Export',
+                    buttons: [
+                        { extend: 'copy', text: '<i class="fas fa-copy"></i> Copy' },
+                        { extend: 'csv', text: '<i class="fas fa-file-csv"></i> CSV' },
+                        { extend: 'excel', text: '<i class="fas fa-file-excel"></i> Excel' },
+                        { extend: 'pdf', text: '<i class="fas fa-file-pdf"></i> PDF' },
+                        { extend: 'print', text: '<i class="fas fa-print"></i> Print' }
+                    ]
+                }
+            ],
+            initComplete: function () {
+                table.buttons().container().appendTo('#exportButtons');
+            },
+        }); 
+ 
+        // Auto Date Filtering
+        $('#startDate, #endDate').change(function() {
+            startDate = $('#startDate').val();
+            endDate   = $('#endDate').val();
+            table.ajax.reload(null, false);
+        });
+
+        // Reload Button
+        $('#reloadBtn').click(function () {
+            $('#startDate').val('');
+            $('#endDate').val('');
+            startDate = "";
+            endDate = ""; 
+            table.ajax.reload();
+        });
+    });
+</script>
+
+
+@endpush

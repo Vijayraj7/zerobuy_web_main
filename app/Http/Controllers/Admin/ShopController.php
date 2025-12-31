@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin; 
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ShopCreateRequest;
@@ -14,15 +14,123 @@ use App\Repositories\ShopRepository;
 use Illuminate\Support\Facades\Hash;
 use App\Models\BusinessCategory;
 use Illuminate\Http\Request;
+use DataTables;
 
 class ShopController extends Controller
 {
     /**
      * Display a listing of the shops.
      */
-    public function index()
+    public function index(Request $request)
     {
         $shops = Shop::paginate(20);
+
+        if ($request->ajax()) {
+            // $query = Shop::with(['user', 'products', 'orders']);
+            $query = Shop::with('user')->withCount(['products', 'orders']);
+
+            if ($request->startDate) {
+                $query->whereDate('shops.created_at', '>=', $request->startDate);
+            }
+            if ($request->endDate) {
+                $query->whereDate('shops.created_at', '<=', $request->endDate);
+            }
+
+            return DataTables::of($query)
+                ->addIndexColumn()
+                ->editColumn('created_at', fn($shop) =>
+                    $shop->created_at?->format('d-m-Y | h:i A')
+                )
+                ->addColumn('logo', function ($shop) {
+                    return '<div class="payment-image"><img class="img-fit" src="'.$shop->logo.'"></div>';
+                })
+
+                ->addColumn('shop_id_display', fn($shop) =>
+                    'STR0' . $shop->id
+                ) 
+                ->filterColumn('shop_id_display', function ($query, $keyword) {
+                    $keyword = str_replace('STR0', '', $keyword);
+                    $query->where('shops.id', 'LIKE', "%$keyword%");
+                }) 
+                ->orderColumn('shop_id_display', fn($query, $keyword) =>
+                    $query->orderBy('shops.id', $keyword)
+                )
+
+                ->addColumn('phone', function ($shop) {
+                    return $shop->user?->phone ?? '-';
+                })
+                ->orderColumn('phone', function ($query, $keyword) {
+                    $query->join('users', 'shops.user_id', '=', 'users.id')
+                        ->orderBy('users.phone', $keyword)
+                        ->select('shops.*');
+                })
+                ->filterColumn('phone', function ($query, $keyword) {
+                    $query->whereHas('user', function ($q) use ($keyword) {
+                        $q->where('phone', 'LIKE', "%{$keyword}%");
+                    });
+                }) 
+                ->addColumn('branded', function ($shop) { 
+                    return '
+                    <label class="switch mb-0">
+                        <a href="'.route('admin.shop.branded.toggle', $shop->id).'">
+                            <input type="checkbox" '.($shop->is_branded ? 'checked' : '').'>
+                            <span class="slider round"></span>
+                        </a>
+                    </label>';
+                })
+                ->addColumn('verified', function ($shop) { 
+                    return '
+                    <label class="switch mb-0">
+                        <a href="'.route('admin.shop.verify.toggle', $shop->id).'">
+                            <input type="checkbox" '.($shop->is_verified ? 'checked' : '').'>
+                            <span class="slider round"></span>
+                        </a>
+                    </label>';
+                })
+                ->addColumn('status', function ($shop) { 
+                    return '
+                    <label class="switch mb-0">
+                        <a href="'.route('admin.shop.status.toggle', $shop->id).'">
+                            <input type="checkbox" '.($shop->user?->is_active ? 'checked' : '').'>
+                            <span class="slider round"></span>
+                        </a>
+                    </label>';
+                }) 
+                ->addColumn('products', function ($shop) {
+                    return '<a href="'.route('admin.shop.products', $shop->id).'" class="badge badge-square badge-primary" data-bs-toggle="tooltip" title="Click here to view total products">
+                        '.$shop->products_count.'
+                    </a>';
+                })
+                
+                ->addColumn('orders', function ($shop) {
+                    return '<a href="'.route('admin.shop.orders', $shop->id).'" class="badge badge-square badge-info" data-bs-toggle="tooltip" title="Click here to view total orders">
+                        '.$shop->orders_count.'
+                    </a>';
+                })
+
+                ->orderColumn('products', 'products_count $1')
+                ->orderColumn('orders', 'orders_count $1') 
+
+                ->addColumn('action', function ($shop) {
+                    $btn = '';
+                    // if (auth()->user()->can('admin.shop.show')) {
+                    $btn .= '
+                    <a class="circleIcon" href="'.route('admin.shop.show', $shop->id).'">
+                        <img src="'.asset('assets/icons-admin/eye.svg').'">
+                    </a>';
+                    // }
+                    // if (auth()->user()->can('admin.shop.edit')) {
+                    $btn .= '
+                    <a class="circleIcon" href="'.route('admin.shop.edit', $shop->id).'">
+                        <img src="'.asset('assets/icons-admin/edit.svg').'">
+                    </a>';
+                    // }
+                    return $btn;
+                })
+
+                ->rawColumns(['logo', 'phone', 'branded', 'verified', 'status', 'products', 'orders', 'shop_id_display', 'action'])
+                ->make(true);
+        }
 
         return view('admin.shop.index', compact('shops'));
     }
