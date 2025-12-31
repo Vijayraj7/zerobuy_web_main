@@ -111,7 +111,7 @@
                                     </div>
                                     <div class="col-md-6 mt-3">
                                         <x-input type="text" name="pincode" label="PIN Code"
-                                            placeholder="Enter State"
+                                            placeholder="Enter Pin Code"
                                             value="{{ old('pincode', $isEdit ? $shop->pincode : '') }}"
                                             required="true" />
                                     </div>
