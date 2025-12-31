@@ -376,36 +376,38 @@
             loadDistricts(initialStateId, SELECTED_DISTRICT_ID);
         }
 
+
         function loadDistricts(stateId, selectedDistrictId = null) {
+            $('#district_id').prop('disabled', true);
+
             if (!stateId) {
                 $('#district_id').html('<option value="">-- Select District --</option>');
                 return;
             }
 
-            $('#district_id').html('<option value="">Loading...</option>');
+            $.get(`/get-districts/${stateId}`, function(response) {
 
-            $.ajax({
-                url: `/get-districts/${stateId}`,
-                type: 'GET',
-                success: function(districts) {
-                    let options = '<option value="">-- Select District --</option>';
+                // ✅ SUPPORT BOTH RESPONSE TYPES
+                const districts = Array.isArray(response) ? response : response.data;
 
-                    districts.forEach(function(district) {
-                        let selected =
-                            selectedDistrictId && selectedDistrictId == district.id ?
-                            'selected' :
-                            '';
-                        options +=
-                            `<option value="${district.id}" ${selected}>${district.name}</option>`;
-                    });
+                let options = '<option value="">-- Select District --</option>';
 
-                    $('#district_id').html(options);
-                },
-                error: function() {
-                    $('#district_id').html('<option value="">Failed to load districts</option>');
-                }
+                districts.forEach(function(district) {
+                    options += `
+                <option value="${district.id}"
+                    ${district.id == selectedDistrictId ? 'selected' : ''}>
+                    ${district.name}
+                </option>`;
+                });
+
+                $('#district_id')
+                    .html(options)
+                    .prop('disabled', false);
+            }).fail(function() {
+                $('#district_id').html('<option value="">Failed to load districts</option>');
             });
         }
+
 
         $('#state_id').on('change', function() {
             const stateId = $(this).val();
@@ -413,24 +415,6 @@
         });
 
         $('#district_id').prop('disabled', true);
-
-        function loadDistricts(stateId, selectedDistrictId = null) {
-            $('#district_id').prop('disabled', true);
-
-            if (!stateId) return;
-
-            $.get(`/get-districts/${stateId}`, function(districts) {
-                let options = '<option value="">-- Select District --</option>';
-                districts.forEach(d => {
-                    options +=
-                        `<option value="${d.id}" ${d.id == selectedDistrictId ? 'selected' : ''}>${d.name}</option>`;
-                });
-
-                $('#district_id')
-                    .html(options)
-                    .prop('disabled', false);
-            });
-        }
 
 
 

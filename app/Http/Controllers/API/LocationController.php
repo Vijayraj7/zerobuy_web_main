@@ -10,10 +10,10 @@ class LocationController extends Controller
 {
     public function getDistricts($stateId)
     {
-        return response()->json(
-            District::where('state_id', $stateId)
+        return response()->json([
+            'data' => District::where('state_id', $stateId)
                 ->orderBy('name')
                 ->get()
-        );
+        ]);
     }
 }
