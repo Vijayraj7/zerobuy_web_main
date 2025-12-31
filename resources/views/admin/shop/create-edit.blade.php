@@ -383,10 +383,12 @@
                 return;
             }
 
-            $.get(`/get-districts/${stateId}`)
+            $.get(`/api/get-districts/${stateId}`)
                 .done(function(response) {
 
                     let districts = [];
+
+                    console.log(response.data);
 
                     // ✅ SAFELY extract districts
                     if (Array.isArray(response)) {
@@ -449,8 +451,11 @@
                 data: formData,
                 processData: false,
                 contentType: false,
-
                 success: function(res) {
+                    console.log(res);
+                },
+                success: function(res) {
+                    console.log(res);
                     if (res.message) { // SHOW TOAST
                         Toast.fire({
                             icon: 'success',

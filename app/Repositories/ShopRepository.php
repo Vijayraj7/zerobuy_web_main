@@ -56,7 +56,7 @@ class ShopRepository extends Repository
             'status' => true,
 
             'store_type' => $request->store_type,
-            'whatsapp_number' => $request->whatsapp_number, 
+            'whatsapp_number' => $request->whatsapp_number,
             'state_id' => $state->id,
             'district_id' => $district->id,
             'state' => $state->name,
@@ -84,14 +84,14 @@ class ShopRepository extends Repository
 
     /**
      * update shop by request.
-    */
+     */
     public static function updateByRequest($shop, $request): Shop
     {
         $state = State::find($request->state_id);
-        $district = District::find($request->district_id);
+        $district = District::findOrFail($request->district_id);
 
         // Update user only if fields provided
-        if ($request->filled(['first_name','email','password'])) {
+        if ($request->filled(['first_name', 'email', 'password'])) {
             UserRepository::updateByRequest($request, $shop->user);
         }
         UserRepository::updateByRequest($request, $shop->user);
