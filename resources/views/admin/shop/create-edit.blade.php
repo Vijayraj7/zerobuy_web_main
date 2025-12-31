@@ -13,11 +13,9 @@
     </div>
 </div>
 
-@if ($isEdit)
-    <script>
-        const SELECTED_DISTRICT_ID = @json(old('district_id', $shop->district_id ?? null));
-    </script>
-@endif
+<script>
+    const SELECTED_DISTRICT_ID = @json(old('district_id', $shop->district_id ?? null));
+</script>
 
 <form id="shopForm" action="{{ $isEdit ? route('admin.shop.update', $shop->id) : route('admin.shop.store') }}"
     method="POST" enctype="multipart/form-data">@csrf
@@ -385,37 +383,46 @@
                 return;
             }
 
-            $.get(`/get-districts/${stateId}`, function(response) {
+            $.get(`/get-districts/${stateId}`)
+                .done(function(response) {
 
-                // ✅ SUPPORT BOTH RESPONSE TYPES
-                const districts = Array.isArray(response) ? response : response.data;
+                    let districts = [];
 
-                let options = '<option value="">-- Select District --</option>';
+                    // ✅ SAFELY extract districts
+                    if (Array.isArray(response)) {
+                        districts = response;
+                    } else if (response && Array.isArray(response.data)) {
+                        districts = response.data;
+                    }
 
-                districts.forEach(function(district) {
-                    options += `
-                <option value="${district.id}"
-                    ${district.id == selectedDistrictId ? 'selected' : ''}>
-                    ${district.name}
-                </option>`;
+                    // 🛑 HARD GUARD
+                    if (!districts.length) {
+                        $('#district_id').html('<option value="">No districts found</option>');
+                        return;
+                    }
+
+                    let options = '<option value="">-- Select District --</option>';
+
+                    districts.forEach(function(district) {
+                        options += `
+                    <option value="${district.id}"
+                        ${district.id == selectedDistrictId ? 'selected' : ''}>
+                        ${district.name}
+                    </option>`;
+                    });
+
+                    $('#district_id')
+                        .html(options)
+                        .prop('disabled', false);
+                })
+                .fail(function() {
+                    $('#district_id').html('<option value="">Failed to load districts</option>');
                 });
-
-                $('#district_id')
-                    .html(options)
-                    .prop('disabled', false);
-            }).fail(function() {
-                $('#district_id').html('<option value="">Failed to load districts</option>');
-            });
         }
 
-
         $('#state_id').on('change', function() {
-            const stateId = $(this).val();
-            loadDistricts(stateId, null);
+            loadDistricts(this.value, null);
         });
-
-        $('#district_id').prop('disabled', true);
-
 
 
         function showErrors(errors) {
