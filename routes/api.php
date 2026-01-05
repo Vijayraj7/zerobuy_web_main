@@ -122,6 +122,12 @@ Route::controller(ReviewController::class)->group(function () {
     Route::get('/reviews', 'index');
 });
 
+// Shops
+Route::controller(App\Http\Controllers\Admin\ShopController::class)->group(function () {
+    // Route::get('/vendors', 'index')->name('shop.index');
+    Route::get('/shop/store', 'store')->name('api.shop.store');
+    // Route::post('/vendors/store', 'store')->name('shop.store');
+});
 // shop route
 Route::controller(ShopController::class)->group(function () {
     Route::get('/shops', 'index');

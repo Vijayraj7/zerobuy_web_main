@@ -54,6 +54,7 @@ class ShopController extends Controller
     {
         return $this->json('shop details', [
             'shop' => ShopDetailsResource::make($shop),
+            's' => $shop,
         ]);
     }
 
