@@ -6,30 +6,31 @@
 
     <div class="container-fluid">
 
-        <div class="card">
-            {{-- <div class="card-header py-3 d-flex align-items-center justify-content-between flex-wrap">
-                <h4 class="m-0">{{ __('Shop Details') }}</h4>
-                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#ResetPasswordModal">
-                    <i class="bi bi-shield-lock-fill"></i>
-                    {{ __('Reset Password') }}
-                </button>
-            </div> --}}
+        <div class="card"> 
             <div class="card-body">
                 @include('admin.shop.header-nav')
 
                 <div class="row mb-3">
-                    <div class="col-lg-8 mt-3">
+                    <div class="col-lg-4 mt-3">
                         <div class="card rounded-12 position-relative overflow-hidden">
-                            <div class="card-body shop details p-2 border-bottom pb-3">
-                                <div class="banner">
-                                    <img class="img-fit" src="{{ $shop->banner }}" />
-                                </div>
-                                <div class="main-content d-flex align-items-center">
+
+                            <div class="card-body shop p-2">
+                                <div class="banner"><img class="img-fit" src="{{ $shop->banner }}" /></div>
+                                <div class="main-content">
                                     <div class="logo">
-                                        <img class="img-fit" src="{{ $shop->logo }}" />
+                                        <img class="img-fit" src="{{ $shop->logo }}" /><br>
                                     </div>
-                                    <div class="personal">
-                                        <span class="name h4 mb-1">{{ $shop->name }}</span>
+                                    <div class="personal"> 
+                                        <span class="name h5 mb-1 d-flex justify-content-between align-items-center w-100 gap-2">
+                                            {{ $shop->name }}  
+                                            <i class="fa fa-check-circle" style="color:green"></i>
+                                            <!-- <span class="ms-auto">sss</span> -->
+                                            @if($shop->status==1)
+                                            <span class="ms-auto badge bg-success">Active</span>
+                                            @else
+                                            <span class="ms-auto badge bg-danger">Banned</span>
+                                            @endif
+                                        </span>
                                         <div class="d-flex gap-2 align-items-center ">
                                             <div>
                                                 @foreach (range(1, 5) as $rating)
@@ -45,6 +46,10 @@
                                                 ({{ $shop->reviews->count() }} {{ __('Reviews') }})
                                             </div>
                                         </div>
+                                        <div class="joindate text-muted small">
+                                            <i class="fa fa-calendar me-1"></i>
+                                            Join Date : {{$shop->created_at->format('d-m-Y | h:i A')}}
+                                        </div>
                                         <div class="mt-2">
                                             <a href="/shops/{{ $shop->id }}" target="blank"
                                                 class="btn btn-outline-primary btn-sm">
@@ -54,73 +59,211 @@
                                                 <i class="bi bi-shield-lock-fill"></i>
                                                 {{ __('Reset Password') }}
                                             </button>
+                                            @hasPermission('admin.shop.edit')
+                                                <a href="{{ route('admin.shop.edit', $shop->id) }}" class="btn btn-outline-primary btn-sm" data-bs-toggle-tooltip="tooltip" data-bs-placement="top" data-bs-title="Edit">
+                                                <i class="fa fa-edit"></i>
+                                                </a> 
+                                            @endhasPermission
+
+                                            @hasPermission('admin.shop.show')
+                                                <a href="javascript:void(0);" class="btn btn-outline-primary btn-sm"  data-bs-toggle="modal" data-bs-target="#viewCredentials" data-bs-toggle-tooltip="tooltip" data-bs-placement="top" data-bs-title="View">
+                                                <i class="fa fa-eye"></i>
+                                                </a>  
+                                            @endhasPermission
+                                        </div>
+                                    </div>
+                                </div> 
+                            </div>  
+                        </div> 
+                        <div class="card mt-3">
+                            <div class="card-header d-flex align-items-center justify-content-start gap-2 py-3">
+                                <i class="bi bi-shop fz-18"></i>
+                                <h4 class="fz-20 m-0"> {{ __('Shop Information') }}</h4>
+                            </div>
+                            <div class="card-body">
+                                <div>
+                                    <span class="fw-medium"><b>{{ ucfirst(strtolower($shop->store_type)) }} Store</b> | </span>
+                                    <span><b>{{ $shop->district }} , {{ $shop->state }}</b></span>
+                                </div>
+
+                                <div class="mt-2">
+                                    <span class="fw-medium">{{ __('Estimated Delivery') }} : </span>
+                                    <span><b>{{ $shop->estimated_delivery_time }}</b></span>
+                                </div>
+
+                                <div class="mt-2">
+                                    <span class="fw-medium">{{ __('Shop ID') }} : <b>STR0{{ $shop->id }}</b></span> | 
+                                    <span class="fw-medium">{{ __('GST No.') }} : <b>{{ $shop->gst_number }}</b></span>
+                                    <span></span>
+                                </div> 
+
+                                <div class="mt-2">
+                                    <span class="fw-medium">{{ __('Shop Description') }} :</span>
+                                    <span><b>{{ $shop->description }}</b></span>
+                                </div>
+
+                                <div class="mt-2">
+                                    <span class="badge badge-primary">₹{{ $shop->min_order_amount }} Min, Order</span>
+                                    <span class="badge badge-info"><i class="fa fa-refresh"></i> Return Policy</span>
+                                    <span class="badge badge-success"><i class="fa fa-sack-dollar"></i> GST Available</span>
+                                    <span class="badge badge-danger"><i class="fa fa-award"></i> Truste</span>  
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card mt-3">
+                            <div class="row mb-3">
+                                <div class="col-lg-12 mt-3">
+                                    <div class="card-header d-flex align-items-center justify-content-start gap-2 py-3">
+                                        <i class="fas fa-crown fz-18"></i>
+                                        <h4 class="fz-20 m-0"> {{ __('Subscription Details') }}</h4>
+                                    </div>
+                                    @php
+                                        $percent = $totalDays > 0 ? round(($daysLeft / $totalDays) * 100) : 0;
+                                    @endphp 
+                                    <div class="card-body">
+                                        @if($subscription)
+                                            <div class="mt-2">
+                                                <span class="fw-medium">Status :
+                                                    <b class="text-success">Active</b> |
+                                                </span>
+                                                <span class="fw-medium">Plan :
+                                                    <b>{{ $subscription->plan?->name ?? 'N/A' }}</b>
+                                                </span>
+                                            </div>
+
+                                            <div class="mt-2">
+                                                <span class="fw-medium">Activation :
+                                                    <b>{{ optional($subscription->starts_at)->format('d-m-Y') }}</b> |
+                                                </span>
+                                                <span class="fw-medium">Expire :
+                                                    <b>{{ optional($subscription->ends_at)->format('d-m-Y') }}</b>
+                                                </span>
+                                            </div>
+                                        @else
+                                            <div class="alert alert-warning mb-0">
+                                                No Active Subscription
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>  
+                                <div class="d-flex justify-content-center align-items-center">
+                                    <div id="daysLeftChart"></div>
+                                </div>
+
+                            </div>  
+                        </div>   
+                    </div>
+                    <div class="col-lg-8 mt-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6 col-lg-4 col-xl-3">
+                                        <div class="dashboard-box item-1">
+                                            <h2 class="count">{{ showCurrency($totalSales) }}</h2>
+                                            <h3 class="title">{{ __('Total Sales') }}</h3>
+                                            <div class="icon">
+                                                <img src="{{ asset('assets/icons-admin/chart-trend-up-green.svg') }}" alt="icon" loading="lazy" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 col-lg-4 col-xl-3">
+                                        <div class="dashboard-box item-2">
+                                            <h2 class="count">{{ $shop->products->count() }}</h2>
+                                            <h3 class="title">{{ __('Total Products') }}</h3>
+                                            <div class="icon">
+                                                <img src="{{ asset('assets/icons-admin/dashboard-product.svg') }}" alt="icon" loading="lazy" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 col-lg-4 col-xl-3">
+                                        <div class="dashboard-box item-3">
+                                            <h2 class="count">{{ $shop->orders->count() }}</h2>
+                                            <h3 class="title">{{ __('Total Orders') }}</h3>
+                                            <div class="icon">
+                                                <img src="{{ asset('assets/icons-admin/dashboard-order.svg') }}" alt="icon" loading="lazy" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 col-lg-4 col-xl-3">
+                                        <div class="dashboard-box item-4">
+                                            <h2 class="count">{{ showCurrency($shop->user?->wallet?->balance) }}</h2>
+                                            <h3 class="title">{{ __('Wallet Balance') }}</h3>
+                                            <div class="icon">
+                                                <img src="{{ asset('assets/icons-admin/wallet.svg') }}" alt="icon" loading="lazy" />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <h4 class="m-0 p-3 border-bottom">{{ __('User Information') }}</h4>
-                            <div class="card-body pt-0">
-                                <table class="table mb-0">
-                                    <tr>
-                                        <td style="width: 180px">{{ __('Name') }}:</td>
-                                        <td>{{ $shop->user?->name }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 180px">{{ __('Phone') }}:</td>
-                                        <td>{{ $shop->user?->phone }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 180px">{{ __('Email') }}:</td>
-                                        <td>{{ $shop->user?->email }}</td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </div>
+                        </div> 
+                        @php
+                            $orderIcons = [
+                                'pending'   => asset('assets/icons-admin/clock.svg'),
+                                'shipped'   => asset('assets/icons-admin/truck.svg'),
+                                'delivered' => asset('assets/icons-admin/box-check.svg'),
+                                'cancelled' => asset('assets/icons-admin/shopping-cart-times.svg'),
+                                'returned'  => asset('assets/icons-admin/rotate-circle.svg'),
+                            ];
 
-                        <div class="card mt-3">
-                            <h4 class="m-0 p-3 border-bottom">{{ __('Shop Information') }}</h4>
-                            <div class="card-body pt-0">
-                                <table class="table mb-0">
-                                    <tr>
-                                        <td style="width: 180px">{{ __('Name') }}:</td>
-                                        <td>{{ $shop->name }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 180px">{{ __('Estimated Delivery') }}:</td>
-                                        <td>{{ $shop->estimated_delivery_time }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 180px">{{ __('Shop Description') }}:</td>
-                                        <td>{{ $shop->description }}</td>
-                                    </tr>
-                                </table>
+                            $orderLabels = [
+                                'pending'   => __('Pending'),
+                                'shipped'   => __('Shipped'),
+                                'delivered' => __('Delivered'),
+                                'cancelled' => __('Cancelled'),
+                                'returned'  => __('Returned'),
+                            ];
+                        @endphp
+
+                        <div class="row">
+                            <div class="col-lg-3">
+                                <div class="card mt-3">
+                                    <div class="card-body">
+                                        <div class="cardTitleBox">
+                                            <h5 class="card-title chartTitle">
+                                                {{ __('Order Overview') }}
+                                            </h5>
+                                        </div>
+                                        <div class="orderOverviewList">
+                                            @foreach($orderOverview as $key => $count)
+                                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <img src="{{ $orderIcons[$key] }}" width="36">
+                                                        <span>{{ $orderLabels[$key] }}</span>
+                                                    </div>
+                                                    <span class="fw-semibold">{{ $count }}</span>
+                                                </div>
+                                            @endforeach
+                                        </div>    
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 mt-3">
-                        <div class="card h-100">
-                            <h4 class="m-0 p-3 border-bottom">{{ __('Product Information') }}</h4>
-                            <div class="card-body pt-0">
-                                <table class="table mb-0">
-                                    <tr>
-                                        <td style="width: 180px">{{ __('Total Products') }}:</td>
-                                        <td>
-                                            <span class="fw-bold">{{ $shop->products->count() }}</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 180px">{{ __('Total Orders') }}:</td>
-                                        <td>
-                                            <span class="fw-bold">{{ $shop->orders->count() }}</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 180px; text-transform: capitalize">{{ __('reviews') }}</td>
-                                        <td>
-                                            <span class="fw-bold">{{ $shop->reviews->count() }}</span>
-                                        </td>
-                                    </tr>
-                                </table>
+                            <div class="col-lg-9">
+                               <div class="card shadow-sm p-4 mt-3"> 
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+
+                                            <h6 class="fw-bold mb-0">Sales & Order Summary</h6>
+
+                                            <div class="d-flex gap-2">
+                                                <span class="badge bg-primary px-3 py-2">Sales</span>
+                                                <span class="badge bg-success px-3 py-2">Order</span>
+                                                <span class="badge bg-danger px-3 py-2">Return</span>
+                                            </div>
+
+                                            <div class="btn-group">
+                                                <button class="btn btn-outline-secondary btn-sm">Today</button>
+                                                <button class="btn btn-outline-secondary btn-sm">Week</button>
+                                                <button class="btn btn-outline-secondary btn-sm">Month</button>
+                                                <button class="btn btn-success btn-sm">Year</button>
+                                            </div>
+                                        </div>
+                                    </div> 
+
+                                    <div id="salesOrderChart"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -129,6 +272,7 @@
         </div>
     </div>
 
+    <!-- RESET PASSWORD -->
     <form action="{{ route('admin.shop.reset.password', $shop->id) }}" method="POST">
         @csrf
         <div class="modal fade" id="ResetPasswordModal" tabindex="-1">
@@ -182,9 +326,205 @@
                 </div>
             </div>
         </div>
-    </form>
+    </form> 
+
+    <!-- VIEW CUSTOMER CREDENTIALS MODAL -->
+    <div class="modal fade" id="viewCredentials" tabindex="-1" aria-labelledby="viewCredentialsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewCredentialsLabel">{{ __('View Credentials') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <!-- MOBILE -->
+                <div id="copyFlash" style="display:none; background:white; color:#28a745; padding:2px 2px; z-index:9999;text-align:center;"> Copied! </div> 
+                <div class="input-group mb-2">
+                    <input type="text" id="copyMobile" value="{{ $shop->user?->phone }}" class="form-control" readonly>
+                    <button class="btn btn-outline-primary" onclick="copyField('copyMobile')">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+
+                <!-- EMAIL -->
+                <div class="input-group mb-2">
+                    <input type="text" id="copyEmail" value="{{ $shop->user?->email }}" class="form-control" readonly>
+                    <button class="btn btn-outline-primary" onclick="copyField('copyEmail')">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
 @endsection
 @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <!-- <script>
+        var daysLeft = 354;
+        var totalDays = 365;
+        var percent = Math.round((daysLeft / totalDays) * 100);
+        
+        var options = {
+            series: [percent],
+            chart: {
+                type: 'radialBar',
+                height: 200,
+                sparkline: { enabled: true }
+            },
+            plotOptions: {
+                radialBar: {
+                    startAngle: 0,
+                    endAngle: 360,
+                    hollow: {
+                        size: '65%'
+                    },
+                    track: {
+                        background: '#EAF6F1',
+                        strokeWidth: '100%'
+                    },
+                    dataLabels: {
+                        name: {
+                            show: false
+                        },
+                        value: {
+                            show: true,
+                            formatter: function () {
+                                return daysLeft;
+                            },
+                            fontSize: '36px',
+                            fontWeight: 700,
+                            color: '#000',
+                            offsetY: -5
+                        },
+                        total: {
+                            show: true,
+                            label: 'Days Left',
+                            fontSize: '14px',
+                            fontWeight: 500,
+                            color: '#6c757d'
+                        }
+                    }
+                }
+            },
+            stroke: {
+                lineCap: 'round'
+            },
+            colors: ['#0A8F6A']
+        };
+
+        new ApexCharts(
+            document.querySelector("#daysLeftChart"),
+            options
+        ).render();
+    </script> -->
+    <script>
+        var daysLeft  = {{ $daysLeft }};
+        var totalDays = {{ $totalDays }};
+        var percent   = totalDays > 0 ? Math.round((daysLeft / totalDays) * 100) : 0;
+
+        new ApexCharts(document.querySelector("#daysLeftChart"), {
+            series: [percent],
+            chart: { type: 'radialBar', height: 200, sparkline: { enabled: true }},
+            plotOptions: {
+                radialBar: {
+                    hollow: { size: '65%' },
+                    dataLabels: {
+                        value: {
+                            formatter: () => daysLeft,
+                            fontSize: '36px',
+                            fontWeight: 700
+                        },
+                        total: {
+                            show: true,
+                            label: 'Days Left'
+                        }
+                    }
+                }
+            },
+            colors: ['#0A8F6A']
+        }).render();
+    </script>
+
+    <!-- <script>
+        var options = {
+            series: [
+                {
+                    name: 'Sales',
+                    data: [45000, 52000, 95000, 60000, 72000, 38000, 52000, 42000, 30000, 98000, 76000, 62000]
+                },
+                {
+                    name: 'Order',
+                    data: [28000, 35000, 62000, 42000, 52000, 30000, 46000, 28000, 22000, 56000, 42000, 36000]
+                },
+                {
+                    name: 'Return',
+                    data: [3000, 4500, 7000, 5000, 6000, 3500, 4200, 3200, 2500, 6200, 4800, 3900]
+                }
+            ],
+            chart: {
+                type: 'bar',
+                height: 350,
+                toolbar: { show: false }
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: false,
+                    columnWidth: '45%',
+                    borderRadius: 6
+                }
+            },
+            colors: ['#1E88E5', '#43A047', '#E53935'],
+            dataLabels: { enabled: false },
+            stroke: { show: false },
+            xaxis: {
+                categories: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+                axisBorder: { show: false },
+                axisTicks: { show: false }
+            },
+            yaxis: {
+                labels: {
+                    formatter: val => '₹ ' + val
+                }
+            },
+            grid: {
+                borderColor: '#e0e0e0',
+                strokeDashArray: 5
+            },
+            legend: {
+                show: false
+            },
+            tooltip: {
+                y: {
+                    formatter: val => '₹ ' + val
+                }
+            }
+        };
+
+        new ApexCharts(
+            document.querySelector("#salesOrderChart"),
+            options
+        ).render();
+    </script> -->
+    <script>
+        new ApexCharts(document.querySelector("#salesOrderChart"), {
+            series: [
+                { name: 'Sales',  data: @json($chartData['sales']) },
+                { name: 'Order',  data: @json($chartData['orders']) },
+                { name: 'Return', data: @json($chartData['returns']) }
+            ],
+            chart: { type: 'bar', height: 350, toolbar: { show: false }},
+            plotOptions: { bar: { borderRadius: 6, columnWidth: '45%' }},
+            colors: ['#1E88E5', '#43A047', '#E53935'],
+            xaxis: {
+                categories: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+            },
+            dataLabels: { enabled: false }
+        }).render();
+    </script>
+
+
     <script>
         function showHidePassword(num) {
             const toggle = document.getElementById("togglePassword" + num);
@@ -214,5 +554,12 @@
                 document.getElementById('submit').disabled = true;
             }
         });
+
+        function copyField(id) {
+            let input = document.getElementById(id);
+            input.select();
+            navigator.clipboard.writeText(input.value);
+            showFlash();
+        }
     </script>
 @endpush
