@@ -160,7 +160,13 @@ Route::controller(BlogController::class)->group(function () {
     Route::get('/blog/{blog}/details', 'show');
 });
 
-Route::get('/get-districts/{stateId}', [LocationController::class, 'getDistricts']);
+// Route::get('/get-districts/{stateId}', [LocationController::class, 'getDistricts']);
+
+// flash sale route
+Route::controller(LocationController::class)->group(function () {
+    Route::get('/get-districts/{stateId}', 'getDistricts');
+    Route::get('/get-states', 'getStates');
+});
 
 // auth middleware route
 Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
