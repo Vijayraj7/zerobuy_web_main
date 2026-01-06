@@ -26,6 +26,7 @@ use App\Http\Controllers\API\SupportTicketController;
 use App\Http\Controllers\Admin\WhatsAppChatController;
 use App\Http\Controllers\API\TicketIssueTypeController;
 use App\Http\Controllers\API\Auth\ForgotPasswordController;
+use App\Http\Controllers\API\BusinessCategoryController;
 use App\Http\Controllers\API\ReturnOrderController;
 use App\Http\Controllers\API\ShopFollowerController;
 use App\Http\Controllers\API\SubCategoryController;
@@ -135,6 +136,15 @@ Route::controller(ShopController::class)->group(function () {
     Route::get('/shops/top', 'topShops');
     Route::get('/shops/popular-products', 'popularProducts');
     Route::get('/shops/{shop}', 'show');
+});
+
+// Business Categories
+Route::controller(BusinessCategoryController::class)->group(function () {
+    Route::get('/business-category', 'index')->name('business-category.index');
+    Route::post('/business-category/store', 'store')->name('business-category.store');
+    Route::get('/business-category/{businessCategory}/edit', 'edit')->name('business-category.edit');
+    Route::put('/business-category/{businessCategory}/update', 'update')->name('business-category.update');
+    Route::post('/business-category/{businessCategory}/toggle', 'statusToggle')->name('business-category.toggle');
 });
 
 // flash sale route
