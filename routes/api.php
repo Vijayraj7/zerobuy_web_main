@@ -127,6 +127,7 @@ Route::controller(ReviewController::class)->group(function () {
 Route::controller(App\Http\Controllers\Admin\ShopController::class)->group(function () {
     // Route::get('/vendors', 'index')->name('shop.index');
     Route::post('/shop/store', 'store')->name('api.shop.store');
+    Route::post('/shop/{shop}/update', 'update')->name('api.shop.update');
     // Route::post('/vendors/store', 'store')->name('shop.store');
 });
 // shop route
