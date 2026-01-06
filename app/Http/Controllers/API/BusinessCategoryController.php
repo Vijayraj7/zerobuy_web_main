@@ -35,7 +35,7 @@ class BusinessCategoryController extends Controller
 
         $categories = $categories->when($perPage && $page, function ($query) use ($perPage, $skip) {
             return $query->skip($skip)->take($perPage);
-        })->with('subCategories')->get();
+        })->with('categories')->get();
 
         return $this->json('categories', [
             'total' => $total,
