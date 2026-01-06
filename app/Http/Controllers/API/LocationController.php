@@ -22,7 +22,7 @@ class LocationController extends Controller
 
     public function getStates()
     {
-        return response()->json([
+        return response()->json('okay', [
             'data' => StateResource::collection(State::all())
         ]);
     }
