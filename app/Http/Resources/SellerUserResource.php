@@ -70,7 +70,7 @@ class SellerUserResource extends JsonResource
                 // 'state' => $shop->state,
                 'district' => $shop->district,
                 // 'address' => $shop->address,
-                'gst' => $shop->gst,
+                'gst' => $shop->gst_number,
                 'open_time' => $openingTime,
                 'close_time' => $closingTime,
                 'off_day' => $offDay,
