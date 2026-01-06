@@ -21,10 +21,10 @@
         </li>
     @endhasPermission
 
-    @hasPermission('admin.shop.show')
+    @hasPermission('admin.shop.return')
         <li class="nav-item">
-            <a class="nav-link"
-                href="{{ route('admin.shop.show', $shop->id) }}">
+            <a class="nav-link {{ request()->routeIs('admin.shop.return') ? 'active' : '' }}"
+                href="{{ route('admin.shop.return', $shop->id) }}">
                 {{ __('Return') }}
             </a>
         </li>

@@ -401,12 +401,105 @@ class ShopController extends Controller
     /**
      * Display the shop orders.
      */
-    public function orders(Shop $shop)
+    public function orders(Request $request, Shop $shop)
     {
-        $orders = $shop->orders()->paginate(20);
+        // dd($shopId);
+        $query = Order::query()
+            ->select('orders.*') 
+            ->with(['shop', 'address', 'orderProducts'])
+            ->where('orders.shop_id', $shop->id);
+        if ($request->status) {
+            $query->where('orders.order_status', $request->status);
+        }
+        if ($request->startDate) {
+            $query->whereDate('orders.created_at', '>=', $request->startDate);
+        }
+        if ($request->endDate) {
+            $query->whereDate('orders.created_at', '<=', $request->endDate);
+        }
 
-        return view('admin.shop.orders', compact('shop', 'orders'));
+        if ($request->ajax()) {
+            return datatables()->eloquent($query)
+            ->addIndexColumn()
+            ->editColumn('created_at', fn($row) =>
+                $row->created_at?->format('d-m-Y | h:i A')
+            )
+            ->addColumn('order_id_display', fn($row) =>
+                'ORD0' . $row->id
+            )  
+            ->addColumn('customer_name', fn($row) =>
+                $row->address?->name ?? '-'
+            )
+            ->addColumn('customer_phone', fn($row) =>
+                $row->address?->phone ?? '-'
+            )
+            ->addColumn('total_quantity', fn($row) =>
+                $row->orderProducts->sum('quantity')
+            )
+            ->editColumn('payable_amount', fn($row) =>
+                number_format($row->payable_amount, 2)
+            )
+
+            // ✔ SEARCH — ORDER ID
+            ->filterColumn('order_id_display', function ($query, $keyword) {
+                $keyword = str_replace('ORD0', '', $keyword);
+                $query->where('orders.id', 'LIKE', "%$keyword%");
+            }) 
+
+            // ✔ SORT BY RELEVANT FIELDS
+            ->orderColumn('order_id_display', fn($query, $order) =>
+                $query->orderBy('orders.id', $order)
+            ) 
+            ->orderColumn('customer_name', function ($query, $order) {
+                $query->join('addresses', 'orders.address_id', '=', 'addresses.id')
+                    ->orderBy('addresses.name', $order)
+                    ->select('orders.*');
+            })
+            ->orderColumn('customer_phone', function ($query, $order) {
+                $query->join('addresses', 'orders.address_id', '=', 'addresses.id')
+                    ->orderBy('addresses.phone', $order)
+                    ->select('orders.*');
+            })
+            ->orderColumn('total_quantity', function ($query, $order) {
+                $query->withSum('orderProducts as qty_sum', 'quantity')
+                    ->orderBy('qty_sum', $order);
+            })
+            ->addColumn('order_status_badge', function ($row) {
+                return match (strtolower($row->order_status->value)) {
+                    'pending'     => '<span class="badge bg-warning">Pending</span>',
+                    'confirm'     => '<span class="badge bg-info">Confirm</span>',
+                    'shipped'     => '<span class="badge bg-primary">Shipped</span>',
+                    'delivered'   => '<span class="badge bg-success">Delivered</span>',
+                    'cancelled'   => '<span class="badge bg-danger">Cancelled</span>',
+                    default       => '<span class="badge bg-secondary">'.$row->order_status->value.'</span>',
+                };
+            })
+
+            ->addColumn('actions', function ($row) {
+                $downloadUrl = route('shop.download-invoice', $row->id);
+                return '<a href="'.route('shop.order.show',$row->id).'"
+                        class="btn btn-primary btn-sm"><i class="fa fa-eye"></i></a>
+
+                        <a href="'.$downloadUrl.'" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" data-bs-title="Download Invoice">  <i class="fa fa-download"></i> </a>
+                        
+                        ';
+            })
+
+            ->rawColumns(['order_status_badge', 'actions'])
+            ->toJson();
+        }
+
+        return view('admin.shop.orders', [
+            'shop'   => $shop,
+            'shopId' => $shop->id,
+        ]);
     }
+    // public function orders(Shop $shop)
+    // {
+    //     $orders = $shop->orders()->paginate(20);
+
+    //     return view('admin.shop.orders', compact('shop', 'orders'));
+    // }
 
     /**
      * Display the shop products.
@@ -463,5 +556,144 @@ class ShopController extends Controller
         $message = $review->is_active ? __('Review activated successfully') : __('Review deactivated successfully');
 
         return back()->withSuccess($message);
+    } 
+
+    public function returnOrders(Request $request, Shop $shop)
+    {
+        $query = ReturnOrder::query()
+            ->with([
+                'order:id,order_code,created_at',
+                'customer.user:id,name,phone',
+                'returnProducts'
+            ])
+            ->where('shop_id', $shop->id);
+
+        // FILTERS
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->startDate) {
+            $query->whereDate('created_at', '>=', $request->startDate);
+        }
+
+        if ($request->endDate) {
+            $query->whereDate('created_at', '<=', $request->endDate);
+        }
+
+        if ($request->ajax()) {
+            return datatables()->eloquent($query)
+                ->addIndexColumn()
+
+                // RETURN DATE
+                ->editColumn('created_at', fn($row) =>
+                    $row->created_at->format('d-m-Y')
+                )
+
+                // RETURN ID
+                ->addColumn('return_id', fn($row) =>
+                    'RTN0' . $row->id
+                )
+                ->filterColumn('return_id', function ($query, $keyword) {
+                    $keyword = str_replace('RTN0', '', $keyword);
+                    $query->where('id', 'LIKE', "%$keyword%");
+                }) 
+
+                // ORDER DATE
+                ->addColumn('order_date', fn($row) =>
+                    optional($row->order)->created_at?->format('d-m-Y') ?? '-'
+                )
+
+                // ORDER NAME / CODE
+                ->addColumn('order_id', fn($row) =>
+                    'ORD0' . $row->order_id
+                )
+                ->filterColumn('order_id', function ($query, $keyword) {
+                    $keyword = str_replace('ORD0', '', $keyword);
+                    $query->where('order_id', 'LIKE', "%$keyword%");
+                })
+
+                // CUSTOMER NAME
+                ->addColumn('customer_name', fn($row) =>
+                    $row->customer?->user?->name ?? '-'
+                )
+
+                ->filterColumn('customer_name', function ($query, $keyword) {
+                    $query->whereHas('customer.user', function ($q) use ($keyword) {
+                        $q->where('name', 'like', "%{$keyword}%");
+                    });
+                })
+
+                ->orderColumn('customer_name', function ($query, $order) {
+                    $query->join('customers', 'customers.id', '=', 'return_orders.customer_id')
+                        ->join('users', 'users.id', '=', 'customers.user_id')
+                        ->orderBy('users.name', $order)
+                        ->select('return_orders.*');
+                })
+
+                // MOBILE NUMBER
+                ->addColumn('customer_phone', fn($row) =>
+                    $row->customer?->user?->phone ?? '-'
+                )
+
+                // QUANTITY (SUM)
+                ->addColumn('quantity', fn($row) =>
+                    $row->returnProducts->sum('quantity')
+                )
+
+                // AMOUNT (DETAILS TOTAL)
+                ->addColumn('amount', fn($row) =>
+                    number_format(
+                        $row->returnProducts->sum(fn($p) => $p->price * $p->quantity),
+                        2
+                    )
+                )
+
+                // TOTAL AMOUNT
+                ->editColumn('amount', fn($row) =>
+                    number_format($row->amount, 2)
+                )
+
+                // STATUS BADGE
+                ->addColumn('status_badge', function ($row) {
+                    return match ($row->status) {
+                        'pending'   => '<span class="badge bg-warning">Pending</span>',
+                        'approved'  => '<span class="badge bg-success">Approved</span>',
+                        'rejected'  => '<span class="badge bg-danger">Rejected</span>',
+                        default     => '<span class="badge bg-secondary">'.ucfirst($row->status).'</span>',
+                    };
+                })
+
+                // ACTIONS
+                ->addColumn('actions', function ($row) {
+                    $downloadUrl = route('shop.download-invoice', $row->id);
+                    return '<a href="'.route('shop.order.show',$row->id).'"
+                            class="btn btn-primary btn-sm"><i class="fa fa-eye"></i></a>
+
+                            <a href="'.$downloadUrl.'" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" data-bs-title="Download Invoice">  <i class="fa fa-download"></i> </a>
+                            
+                            ';
+                })
+            
+                ->rawColumns(['status_badge', 'actions'])
+                ->toJson();
+        }
+
+        return view('admin.shop.return-orders', compact('shop'));
+    }
+
+
+    public function address(Shop $shop)
+    {
+        $products = $shop->products()->paginate(20);
+
+        return view('admin.shop.address', compact('shop', 'products'));
+    }
+
+    public function followers(Shop $shop)
+    {
+        $products = $shop->products()->paginate(20);
+
+        return view('admin.shop.followers', compact('shop', 'products'));
     }
 }

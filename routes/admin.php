@@ -113,13 +113,18 @@ Route::name('admin.')->group(function () {
             Route::get('/vendors/{shop}/edit', 'edit')->name('shop.edit');
             Route::post('/vendors/{shop}/update', 'update')->name('shop.update');
             Route::get('/vendors/{shop}', 'show')->name('shop.show');
-            
-            Route::get('/vendors/{shop}/status-toggle', 'statusToggle')->name('shop.status.toggle');
-            Route::get('/vendors/{shop}/branded-toggle', 'brandedToggle')->name('shop.branded.toggle');
-            Route::get('/vendors/{shop}/verify-toggle', 'verifyToggle')->name('shop.verify.toggle');
+
             Route::get('/vendors/{shop}/orders', 'orders')->name('shop.orders');
             Route::get('/vendors/{shop}/products', 'products')->name('shop.products');
             Route::get('/vendors/{shop}/categories', 'categories')->name('shop.category');
+
+            Route::get('/vendors/{shop}/return', 'returnOrders')->name('shop.return'); 
+            Route::get('/vendors/{shop}/address', 'address')->name('shop.address');
+            Route::get('/vendors/{shop}/followers', 'followers')->name('shop.followers');
+            
+            Route::get('/vendors/{shop}/status-toggle', 'statusToggle')->name('shop.status.toggle');
+            Route::get('/vendors/{shop}/branded-toggle', 'brandedToggle')->name('shop.branded.toggle');
+            Route::get('/vendors/{shop}/verify-toggle', 'verifyToggle')->name('shop.verify.toggle'); 
             Route::get('/vendors/{shop}/reviews', 'reviews')->name('shop.reviews');
             Route::post('/vendors/{shop}/reset-password', 'resetPassword')->name('shop.reset.password');
         });
