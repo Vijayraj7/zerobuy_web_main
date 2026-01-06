@@ -7,6 +7,7 @@ use App\Http\Requests\ShopInfoUpdateRequest;
 use App\Http\Requests\ShopSettingUpdateRequest;
 use App\Http\Requests\ShopUserUpdateRequest;
 use App\Http\Resources\SellerUserResource;
+use App\Http\Resources\ShopDetailsResource;
 use App\Repositories\ShopRepository;
 use App\Repositories\UserRepository;
 
@@ -23,6 +24,17 @@ class UserController extends Controller
             'user' => SellerUserResource::make($user),
         ]);
     }
+
+    public function getShop()
+    {
+        // $user = auth()->user();
+        $shop = generaleSetting('shop');
+
+        return $this->json('shop details', [
+            'shop' => ShopDetailsResource::make($shop),
+        ]);
+    }
+
 
     /**
      * update user profile.

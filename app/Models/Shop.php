@@ -210,11 +210,11 @@ class Shop extends Model
             ->where('status', SubscriptionStatus::ACTIVE)
             ->where(function ($q) {
                 $q->whereNull('ends_at')
-                ->orWhere('ends_at', '>', now());
+                    ->orWhere('ends_at', '>', now());
             })
             ->where(function ($q) {
                 $q->whereNull('remaining_sales')
-                ->orWhere('remaining_sales', '>', 0);
+                    ->orWhere('remaining_sales', '>', 0);
             })
             ->latest();
     }
@@ -247,10 +247,21 @@ class Shop extends Model
         return $this->belongsTo(State::class);
     }
 
+    public function states()
+    {
+        return $this->belongsTo(State::class, 'state_id');
+    }
+
     public function district()
     {
         return $this->belongsTo(District::class);
     }
+
+    public function districts()
+    {
+        return $this->belongsTo(District::class, 'district_id');
+    }
+
     public function businessCategories()
     {
         return $this->belongsToMany(BusinessCategory::class, 'shop_business_category');
