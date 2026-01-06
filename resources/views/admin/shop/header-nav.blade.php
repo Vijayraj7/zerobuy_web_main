@@ -21,6 +21,15 @@
         </li>
     @endhasPermission
 
+    @hasPermission('admin.shop.show')
+        <li class="nav-item">
+            <a class="nav-link"
+                href="{{ route('admin.shop.show', $shop->id) }}">
+                {{ __('Return') }}
+            </a>
+        </li>
+    @endhasPermission
+
     @hasPermission('admin.shop.products')
         <li class="nav-item">
             <a class="nav-link {{ request()->routeIs('admin.shop.products') ? 'active' : '' }}"
@@ -30,12 +39,39 @@
         </li>
     @endhasPermission
 
-    @hasPermission('admin.shop.reviews')
+    @hasPermission('admin.shop.show')
+        <li class="nav-item">
+            <a class="nav-link"
+                href="{{ route('admin.shop.show', $shop->id) }}">
+                {{ __('Category') }}
+            </a>
+        </li>
+    @endhasPermission
+
+    @hasPermission('admin.shop.show')
+        <li class="nav-item">
+            <a class="nav-link"
+                href="{{ route('admin.shop.show', $shop->id) }}">
+                {{ __('Address') }}
+            </a>
+        </li>
+    @endhasPermission
+
+    @hasPermission('admin.shop.show')
+        <li class="nav-item">
+            <a class="nav-link"
+                href="{{ route('admin.shop.show', $shop->id) }}">
+                {{ __('Followers') }}
+            </a>
+        </li>
+    @endhasPermission
+
+    <!-- @hasPermission('admin.shop.reviews')
         <li class="nav-item">
             <a class="nav-link {{ request()->routeIs('admin.shop.reviews') ? 'active' : '' }}"
                 href="{{ route('admin.shop.reviews', $shop->id) }}">
                 {{ __('Review') }}
             </a>
         </li>
-    @endhasPermission
+    @endhasPermission -->
 </ul>

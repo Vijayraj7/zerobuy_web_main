@@ -14,6 +14,11 @@ use App\Repositories\ShopRepository;
 use Illuminate\Support\Facades\Hash;
 use App\Models\BusinessCategory;
 use Illuminate\Http\Request;
+use App\Models\Order;
+use App\Models\ReturnOrder;
+use App\Enums\OrderStatus; 
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 use DataTables;
 
 class ShopController extends Controller
@@ -174,11 +179,125 @@ class ShopController extends Controller
     /**
      * Display the specified shop.
      */
+    
+    // public function show(Shop $shop)
+    // {
+    //     Notification::where('url', '/admin/shops/' . $shop->id)->whereNull('shop_id')->where('is_read', false)->update(['is_read' => true]);
+
+    //     // Orders count by status for this shop
+    //     $orderCounts = Order::where('shop_id', $shop->id)
+    //         ->select('order_status', DB::raw('COUNT(*) as total'))
+    //         ->groupBy('order_status')
+    //         ->pluck('total', 'order_status');
+
+    //     // Returned orders (from return_orders table)
+    //     $returnedCount = ReturnOrder::where('shop_id', $shop->id)->count();
+
+    //     // Order overview
+    //     $orderOverview = [
+    //         'pending'   => $orderCounts[OrderStatus::PENDING->value] ?? 0,
+    //         'shipped'   => $orderCounts[OrderStatus::SHIPPED->value] ?? 0,
+    //         'delivered' => $orderCounts[OrderStatus::DELIVERED->value] ?? 0,
+    //         'cancelled' => $orderCounts[OrderStatus::CANCELLED->value] ?? 0,
+    //         'returned'  => $returnedCount,
+    //     ];
+    //     return view('admin.shop.show', compact('shop', 'orderOverview'));
+    // }
+
     public function show(Shop $shop)
     {
-        Notification::where('url', '/admin/shops/' . $shop->id)->whereNull('shop_id')->where('is_read', false)->update(['is_read' => true]);
+        // Mark notification read
+        Notification::where('url', '/admin/shops/' . $shop->id)
+            ->whereNull('shop_id')
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
 
-        return view('admin.shop.show', compact('shop'));
+        /* ---------------- TOTAL SALES ---------------- */
+        $totalSales = $shop->orders()
+            ->where('order_status', OrderStatus::DELIVERED->value)
+            ->sum('payable_amount');
+
+        // $totalSales = $shop->orders()   //consider shipped + delivered as sales
+        //     ->whereIn('order_status', [
+        //         OrderStatus::SHIPPED->value,
+        //         OrderStatus::DELIVERED->value
+        //     ])->sum('payable_amount');
+        
+        // $totalSales = $shop->orders()   //TODAY / MONTH / YEAR SALES
+        //     ->where('order_status', OrderStatus::DELIVERED->value)
+        //     ->whereMonth('created_at', now()->month)
+        //     ->whereYear('created_at', now()->year)
+        //     ->sum('payable_amount');
+
+        /* ---------------- ORDER OVERVIEW ---------------- */
+        $orderCounts = $shop->orders()
+            ->select('order_status', DB::raw('COUNT(*) as total'))
+            ->groupBy('order_status')
+            ->pluck('total', 'order_status');
+
+        $orderOverview = [
+            'pending'   => $orderCounts[OrderStatus::PENDING->value] ?? 0,
+            'shipped'   => $orderCounts[OrderStatus::SHIPPED->value] ?? 0,
+            'delivered' => $orderCounts[OrderStatus::DELIVERED->value] ?? 0,
+            'cancelled' => $orderCounts[OrderStatus::CANCELLED->value] ?? 0,
+            'returned'  => $shop->returnOrders()->count(),
+        ];
+
+        /* ---------------- SUBSCRIPTION ---------------- */
+        // $subscription = $shop->currentSubscription;
+        $subscription = $shop->currentSubscription()->with('plan')->first();
+
+
+        $daysLeft = 0;
+        $totalDays = 0;
+
+        // if ($subscription && $subscription->ends_at) {
+        //     $daysLeft  = now()->diffInDays(Carbon::parse($subscription->ends_at), false);
+        //     $totalDays = Carbon::parse($subscription->starts_at)
+        //                     ->diffInDays(Carbon::parse($subscription->ends_at));
+        // }
+        if ($subscription && $subscription->ends_at && $subscription->starts_at) {
+            $daysLeft  = now()->diffInDays($subscription->ends_at, false);
+            $totalDays = $subscription->starts_at->diffInDays($subscription->ends_at);
+        }
+
+        /* ---------------- SALES & ORDER CHART (YEAR) ---------------- */
+        $salesData = $shop->orders()
+            ->whereYear('created_at', now()->year)
+            ->selectRaw('MONTH(created_at) month, SUM(payable_amount) total')
+            ->groupBy('month')
+            ->pluck('total', 'month');
+
+        $orderData = $shop->orders()
+            ->whereYear('created_at', now()->year)
+            ->selectRaw('MONTH(created_at) month, COUNT(*) total')
+            ->groupBy('month')
+            ->pluck('total', 'month');
+
+        $returnData = $shop->returnOrders()
+            ->whereYear('created_at', now()->year)
+            ->selectRaw('MONTH(created_at) month, COUNT(*) total')
+            ->groupBy('month')
+            ->pluck('total', 'month');
+
+        // Fill missing months
+        $months = collect(range(1, 12));
+
+        $chartData = [
+            'sales'  => $months->map(fn($m) => (int) ($salesData[$m] ?? 0)),
+            'orders' => $months->map(fn($m) => (int) ($orderData[$m] ?? 0)),
+            'returns'=> $months->map(fn($m) => (int) ($returnData[$m] ?? 0)),
+        ];
+
+        return view('admin.shop.show', compact(
+            'totalSales',
+            'shop',
+            'orderOverview',
+            'subscription',
+            'daysLeft',
+            'totalDays',
+            'chartData'
+        ));
     }
 
     /**

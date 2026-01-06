@@ -204,24 +204,20 @@ class Shop extends Model
         return $this->hasMany(Review::class, 'shop_id');
     }
 
-    public function currentSubscription(): Attribute
+    public function currentSubscription()
     {
-        $subscription = $this->subscriptions()->where('status', SubscriptionStatus::ACTIVE)
+        return $this->hasOne(ShopSubscription::class)
+            ->where('status', SubscriptionStatus::ACTIVE)
             ->where(function ($q) {
                 $q->whereNull('ends_at')
-                    ->orWhere('ends_at', '>', now());
+                ->orWhere('ends_at', '>', now());
             })
             ->where(function ($q) {
                 $q->whereNull('remaining_sales')
-                    ->orWhere('remaining_sales', '>', 0);
+                ->orWhere('remaining_sales', '>', 0);
             })
-            ->first();
-
-        return new Attribute(
-            get: fn() => $subscription,
-        );
+            ->latest();
     }
-
     /**
      * Calculates the average rating of the reviews.
      *
