@@ -53,7 +53,7 @@ class SellerUserResource extends JsonResource
             'shop' => [
                 'id' => $shop->id,
                 'state' => $shop->states ? $shop->states->name : null,
-                'state_id' => (int)$shop->states ? $shop->states->id : null,
+                'state_id' => $shop->states ? (int)$shop->states->id : null,
                 'store_type' => $shop->store_type,
                 'phone' => $shop->phone_number,
                 'whatsapp' => $shop->whatsapp_number,
@@ -63,7 +63,7 @@ class SellerUserResource extends JsonResource
                 'address' => $shop->address,
                 'pincode' => $shop->pincode,
                 'district' => $shop->districts ? $shop->districts->name : null,
-                'district_id' => (int)$shop->districts ? $shop->districts->id : null,
+                'district_id' => $shop->districts ? (int)$shop->districts->id : null,
                 'name' => $shop->name,
                 'logo' => $shop->logo,
                 'banner' => $shop->banner,
