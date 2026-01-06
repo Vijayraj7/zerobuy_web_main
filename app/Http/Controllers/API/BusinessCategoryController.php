@@ -13,16 +13,16 @@ class BusinessCategoryController extends Controller
 {
     public function index(Request $request)
     {
-        $query = BusinessCategory::query();
+        $query = BusinessCategory::with('media');
 
         if ($request->filled('search')) {
             $query->where('name', 'like', "%{$request->search}%");
         }
 
-        $categories = $query->select('id', 'name')->paginate(50);
+        $categories = $query->paginate(50);
 
         return response()->json([
-            'data' => $categories->items(), // 👈 important
+            'data' => $categories->items(),
             'meta' => [
                 'current_page' => $categories->currentPage(),
                 'last_page' => $categories->lastPage(),
