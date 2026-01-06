@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use App\Http\Requests\BusinessCategoryRequest;
 use App\Http\Resources\BusinessCategoryResource;
 use App\Models\BusinessCategory;
+use App\Repositories\BusinessCategoryRepository;
 use App\Repositories\MediaRepository;
 
 class BusinessCategoryController extends Controller
@@ -20,7 +21,7 @@ class BusinessCategoryController extends Controller
 
         $shop = generaleSetting('rootShop');
 
-        $categories = BusinessCategoryResource::query()->active()
+        $categories = BusinessCategoryRepository::query()->active()
             // ->whereHas('shops', function ($query) use ($shop) {
             //     $query->where('id', $shop->id);
             // })->whereHas('products', function ($query) {
