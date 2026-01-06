@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Http\Requests\BusinessCategoryRequest;
+use App\Http\Resources\BusinessCategoryResource;
 use App\Models\BusinessCategory;
 use App\Repositories\MediaRepository;
 
@@ -13,30 +14,31 @@ class BusinessCategoryController extends Controller
 {
     public function index(Request $request)
     {
-        $sortBy    = $request->input('sort_by', 'id');
-        $sortOrder = $request->input('sort_order', 'desc');
-        $allowedSortFields = ['id', 'name', 'status'];
-        if (!in_array($sortBy, $allowedSortFields)) {
-            $sortBy = 'id';
-        }
+        $page = $request->page;
+        $perPage = $request->per_page;
+        $skip = ($page * $perPage) - $perPage;
 
-        $query = BusinessCategory::query();
+        $shop = generaleSetting('rootShop');
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where('name', 'like', "%{$search}%");
-        }
+        $categories = BusinessCategoryResource::query()->active()
+            // ->whereHas('shops', function ($query) use ($shop) {
+            //     $query->where('id', $shop->id);
+            // })->whereHas('products', function ($query) {
+            //     $query->whereHas('shop', function ($query) {
+            //         return $query->isActive();
+            //     });
+            // })
+            ->latest('id');
 
-        // $categories = $query->paginate(50); 
-        $query->orderBy($sortBy, $sortOrder);
-        $categories = $query->paginate(50)->withQueryString();
+        $total = $categories->count();
 
-        return response()->json([
-            'data' => $categories->items(),
-            'meta' => [
-                'current_page' => $categories->currentPage(),
-                'last_page' => $categories->lastPage(),
-            ]
+        $categories = $categories->when($perPage && $page, function ($query) use ($perPage, $skip) {
+            return $query->skip($skip)->take($perPage);
+        })->with('subCategories')->get();
+
+        return $this->json('categories', [
+            'total' => $total,
+            'categories' => BusinessCategoryResource::collection($categories),
         ]);
     }
 

@@ -20,7 +20,7 @@ class BusinessCategoryResource extends JsonResource
         return [
             'id' => $this->id ?? null,
             'name' => $translation ? $translation->name : ($this->name ?? null),
-            // 'thumbnail' => $this->thumbnail ?? null,
+            'thumbnail' => $this->thumbnail ?? null,
             'categories' => CategoryResource::collection($this->categories ?? []),
         ];
     }
