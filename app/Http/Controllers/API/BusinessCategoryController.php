@@ -13,13 +13,23 @@ class BusinessCategoryController extends Controller
 {
     public function index(Request $request)
     {
-        $query = BusinessCategory::with('media');
-
-        if ($request->filled('search')) {
-            $query->where('name', 'like', "%{$request->search}%");
+        $sortBy    = $request->input('sort_by', 'id');
+        $sortOrder = $request->input('sort_order', 'desc');
+        $allowedSortFields = ['id', 'name', 'status'];
+        if (!in_array($sortBy, $allowedSortFields)) {
+            $sortBy = 'id';
         }
 
-        $categories = $query->paginate(50);
+        $query = BusinessCategory::query();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        // $categories = $query->paginate(50); 
+        $query->orderBy($sortBy, $sortOrder);
+        $categories = $query->paginate(50)->withQueryString();
 
         return response()->json([
             'data' => $categories->items(),
