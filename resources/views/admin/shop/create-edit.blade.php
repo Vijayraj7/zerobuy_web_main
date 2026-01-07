@@ -30,8 +30,9 @@
                 <li class="nav-item"><a class="nav-link active" data-step="1" href="#">Store Details</a></li>
                 <li class="nav-item"><a class="nav-link" data-step="2" href="#">Business Category</a></li>
                 <li class="nav-item"><a class="nav-link" data-step="3" href="#">Shipping Settings</a></li>
+                <li class="nav-item"><a class="nav-link" data-step="4" href="#">Delivery Charges</a></li>
                 @if (!$isEdit)
-                    <li class="nav-item"><a class="nav-link" data-step="4" href="#">Account Information</a></li>
+                    <li class="nav-item"><a class="nav-link" data-step="5" href="#">Account Information</a></li>
                 @endif
             </ul>
 
@@ -288,8 +289,194 @@
                 </div>
             </div>
 
-            <!-- STEP 4 - Account Information -->
+            <!-- STEP 4 - Delivery Charges -->
             <div class="step-content step-4 mt-3" style="display:none;">
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5><i class="fa-solid fa-truck"></i> Delivery Charges</h5>
+                    </div>
+
+                    <div class="card-body">
+                        <!-- Delivery Mode -->
+                        <div class="mb-4">
+                            <label class="fw-bold mb-2 d-block">Choose Delivery Charge Method</label>
+
+                            <div class="btn-group" role="group">
+
+                                <input type="radio" class="btn-check" id="delivery_amount" name="delivery_mode"
+                                    value="amount_based"
+                                    {{ old('delivery_mode', $shop->deliverySetting->delivery_mode ?? 'amount_based') === 'amount_based' ? 'checked' : '' }}>
+                                <label class="btn btn-outline-primary" for="delivery_amount">
+                                    Amount Based
+                                </label>
+
+                                <input type="radio" class="btn-check" id="delivery_state" name="delivery_mode"
+                                    value="state_wise"
+                                    {{ old('delivery_mode', $shop->deliverySetting->delivery_mode ?? '') === 'state_wise' ? 'checked' : '' }}>
+                                <label class="btn btn-outline-primary" for="delivery_state">
+                                    State Wise
+                                </label>
+
+                                <input type="radio" class="btn-check" id="delivery_manual" name="delivery_mode"
+                                    value="manual"
+                                    {{ old('delivery_mode', $shop->deliverySetting->delivery_mode ?? '') === 'manual' ? 'checked' : '' }}>
+                                <label class="btn btn-outline-primary" for="delivery_manual">
+                                    Manual
+                                </label>
+
+                            </div>
+                        </div>
+
+                        <!-- Amount Based -->
+                        <div id="amount_based_box" class="delivery-box">
+                            <div class="d-flex justify-content-between mb-2">
+                                <h6>Amount Ranges</h6>
+                                <button type="button" class="btn btn-sm btn-primary" id="addAmountRow">
+                                    <i class="fa fa-plus"></i> Add Range
+                                </button>
+                            </div>
+
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Min (₹)</th>
+                                        <th>Max (₹)</th>
+                                        <th>Charge (₹)</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="amountRows">
+
+                                    @php
+                                        $amountRules = old('amount_rules', $setting->amountRules ?? []);
+                                    @endphp
+
+                                    @if (count($amountRules))
+                                        @foreach ($amountRules as $i => $rule)
+                                            <tr>
+                                                <td>
+                                                    <input type="number" step="0.01"
+                                                        name="amount_rules[{{ $i }}][min_amount]"
+                                                        value="{{ $rule['min_amount'] ?? ($rule->min_amount ?? '') }}"
+                                                        class="form-control" required>
+                                                </td>
+
+                                                <td>
+                                                    <input type="number" step="0.01"
+                                                        name="amount_rules[{{ $i }}][max_amount]"
+                                                        value="{{ $rule['max_amount'] ?? ($rule->max_amount ?? '') }}"
+                                                        class="form-control" required>
+                                                </td>
+
+                                                <td>
+                                                    <input type="number" step="0.01"
+                                                        name="amount_rules[{{ $i }}][charge]"
+                                                        value="{{ $rule['charge'] ?? ($rule->charge ?? '') }}"
+                                                        class="form-control" required>
+                                                </td>
+
+                                                <td>
+                                                    <button type="button"
+                                                        class="btn btn-danger btn-sm removeRow">✕</button>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @else
+                                        {{-- CREATE MODE → INITIAL FIRST ROW --}}
+                                        {{-- <tr>
+                                            <td>
+                                                <input type="number" step="0.01"
+                                                    name="amount_rules[0][min_amount]" value="1"
+                                                    class="form-control" required>
+                                            </td>
+
+                                            <td>
+                                                <input type="number" step="0.01"
+                                                    name="amount_rules[0][max_amount]" class="form-control" required>
+                                            </td>
+
+                                            <td>
+                                                <input type="number" step="0.01" name="amount_rules[0][charge]"
+                                                    class="form-control" required>
+                                            </td>
+
+                                            <td>
+                                                <button type="button"
+                                                    class="btn btn-danger btn-sm removeRow">✕</button>
+                                            </td>
+                                        </tr> --}}
+                                    @endif
+
+                                </tbody>
+
+                            </table>
+                        </div>
+
+                        <!-- State Wise -->
+                        <div id="state_wise_box" class="delivery-box d-none">
+                            <div class="row">
+                                @php
+                                    $selectedStates = collect(
+                                        old('delivery_state_ids', $shop->deliverySetting?->selected_state_ids ?? []),
+                                    )->map(fn($v) => (int) $v);
+                                @endphp
+
+                                @foreach ($states->whereIn('id', $selectedStates) as $state)
+                                    @php
+                                        $stateCharge = $setting->stateCharges->firstWhere('state_id', $state->id);
+                                        $charge = $stateCharge?->charge;
+
+                                    @endphp
+
+                                    <div class="col-md-4 mb-3 state-charge-item" data-state-id="{{ $state->id }}">
+
+                                        <label class="fw-bold">{{ $state->name }}</label>
+
+                                        <input type="hidden" name="state_charges[{{ $loop->index }}][state]"
+                                            value="{{ $state->id }}" class="state-id-input">
+
+                                        <input type="number" step="0.01"
+                                            name="state_charges[{{ $loop->index }}][charge]"
+                                            value="{{ old("state_charges.$loop->index.charge", $charge) }}"
+                                            class="form-control state-charge-input" placeholder="₹ Delivery Charge">
+                                    </div>
+                                @endforeach
+                            </div>
+                            {{-- STATE ROW TEMPLATE --}}
+                            <template id="stateChargeTemplate">
+                                <div class="col-md-4 mb-3 state-charge-item" data-state-id="">
+                                    <label class="fw-bold state-name"></label>
+
+                                    <input type="hidden" name="" class="state-id-input">
+
+                                    <input type="number" step="0.01" name=""
+                                        class="form-control state-charge-input" placeholder="₹ Delivery Charge">
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Manual -->
+                        <div id="manual_box" class="delivery-box d-none">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="update_when_shipped"
+                                    value="1"
+                                    {{ old('update_when_shipped', $shop->deliverySetting->update_when_shipped ?? false) ? 'checked' : '' }}>
+                                <label class="form-check-label fw-bold">
+                                    Update delivery charge when shipped
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="button" class="btn btn-secondary prev-btn" data-prev="3">« Previous</button>
+                </div>
+            </div>
+
+
+            <!-- STEP 5 - Account Information -->
+            <div class="step-content step-5 mt-3" style="display:none;">
                 <div class="card mt-4">
                     <div class="card-body">
                         <div class="d-flex gap-2 border-bottom pb-2">
@@ -320,6 +507,8 @@
                         Previous</button>
                 </div>
             </div>
+
+
         </div>
     </div>
 </form>
@@ -360,6 +549,126 @@
 @endsection
 
 @push('scripts')
+<script>
+    $(document).ready(function() {
+
+        function updateStateWiseCharges() {
+            const container = $('#state_wise_box .row');
+            const template = $('#stateChargeTemplate').html();
+
+            // ✅ collect existing charges from BOTH blade + js rows
+            let existingCharges = {};
+            container.find('.state-charge-item').each(function() {
+                const stateId = $(this).data('state-id');
+                const charge = $(this).find('.state-charge-input').val();
+                if (stateId) {
+                    existingCharges[stateId] = charge;
+                }
+            });
+
+            container.empty();
+
+            let index = 0;
+
+            $('input[name="delivery_state_ids[]"]:checked').each(function() {
+                const stateId = $(this).val();
+                const stateName = $(this).siblings('span').text();
+                const charge = existingCharges[stateId] ?? '';
+
+                let $row = $(template);
+
+                $row.attr('data-state-id', stateId);
+                $row.find('.state-name').text(stateName);
+
+                $row.find('.state-id-input')
+                    .attr('name', `state_charges[${index}][state]`)
+                    .val(stateId);
+
+                $row.find('.state-charge-input')
+                    .attr('name', `state_charges[${index}][charge]`)
+                    .val(charge);
+
+                container.append($row);
+                index++;
+            });
+
+            if (index === 0) {
+                container.append(
+                    `<p class="text-muted ms-2">No states selected.</p>`
+                );
+            }
+        }
+
+
+        // Initial load (edit mode)
+        // updateStateWiseCharges();
+
+        // Live updates
+        $(document).on('change', 'input[name="delivery_state_ids[]"]', updateStateWiseCharges);
+
+        // Select all support
+        $('#selectAllStates').on('change', function() {
+            $('input[name="delivery_state_ids[]"]').prop('checked', this.checked);
+            updateStateWiseCharges();
+        });
+
+    });
+</script>
+
+<script>
+    $(document).ready(function() {
+
+        function toggleDeliveryBoxes() {
+            let mode = $('input[name="delivery_mode"]:checked').val();
+            $('.delivery-box').addClass('d-none');
+            $('#' + mode + '_box').removeClass('d-none');
+        }
+
+        toggleDeliveryBoxes();
+        $('input[name="delivery_mode"]').on('change', toggleDeliveryBoxes);
+
+        // Add amount row
+        $('#addAmountRow').on('click', function() {
+            let index = $('#amountRows tr').length;
+            let lastMax = $('#amountRows tr:last input[name$="[max_amount]"]').val();
+            if (lastMax) nextMin = parseFloat(lastMax) + 1;
+
+            $('#amountRows').append(`
+            <tr>
+                <td>
+                    <input type="number" step="0.01"
+                    value="${nextMin || 1}"
+                        name="amount_rules[${index}][min_amount]"
+                        class="form-control" required>
+                </td>
+
+                <td>
+                    <input type="number" step="0.01"
+                        name="amount_rules[${index}][max_amount]"
+                        class="form-control" required>
+                </td>
+
+                <td>
+                    <input type="number" step="0.01"
+                        name="amount_rules[${index}][charge]"
+                        class="form-control" required>
+                </td>
+
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm removeRow">✕</button>
+                </td>
+            </tr>
+        `);
+        });
+
+        // Remove row
+        $(document).on('click', '.removeRow', function() {
+            $(this).closest('tr').remove();
+        });
+
+    });
+</script>
+
 <script>
     const IS_EDIT = @json($isEdit);
     $(document).ready(function() {

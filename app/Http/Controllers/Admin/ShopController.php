@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin; 
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ShopCreateRequest;
@@ -16,7 +16,8 @@ use App\Models\BusinessCategory;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\ReturnOrder;
-use App\Enums\OrderStatus; 
+use App\Enums\OrderStatus;
+use App\Models\DeliverySetting;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use DataTables;
@@ -43,21 +44,27 @@ class ShopController extends Controller
 
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->editColumn('created_at', fn($shop) =>
+                ->editColumn(
+                    'created_at',
+                    fn($shop) =>
                     $shop->created_at?->format('d-m-Y | h:i A')
                 )
                 ->addColumn('logo', function ($shop) {
-                    return '<div class="payment-image"><img class="img-fit" src="'.$shop->logo.'"></div>';
+                    return '<div class="payment-image"><img class="img-fit" src="' . $shop->logo . '"></div>';
                 })
 
-                ->addColumn('shop_id_display', fn($shop) =>
+                ->addColumn(
+                    'shop_id_display',
+                    fn($shop) =>
                     'STR0' . $shop->id
-                ) 
+                )
                 ->filterColumn('shop_id_display', function ($query, $keyword) {
                     $keyword = str_replace('STR0', '', $keyword);
                     $query->where('shops.id', 'LIKE', "%$keyword%");
-                }) 
-                ->orderColumn('shop_id_display', fn($query, $keyword) =>
+                })
+                ->orderColumn(
+                    'shop_id_display',
+                    fn($query, $keyword) =>
                     $query->orderBy('shops.id', $keyword)
                 )
 
@@ -73,61 +80,61 @@ class ShopController extends Controller
                     $query->whereHas('user', function ($q) use ($keyword) {
                         $q->where('phone', 'LIKE', "%{$keyword}%");
                     });
-                }) 
-                ->addColumn('branded', function ($shop) { 
+                })
+                ->addColumn('branded', function ($shop) {
                     return '
                     <label class="switch mb-0">
-                        <a href="'.route('admin.shop.branded.toggle', $shop->id).'">
-                            <input type="checkbox" '.($shop->is_branded ? 'checked' : '').'>
+                        <a href="' . route('admin.shop.branded.toggle', $shop->id) . '">
+                            <input type="checkbox" ' . ($shop->is_branded ? 'checked' : '') . '>
                             <span class="slider round"></span>
                         </a>
                     </label>';
                 })
-                ->addColumn('verified', function ($shop) { 
+                ->addColumn('verified', function ($shop) {
                     return '
                     <label class="switch mb-0">
-                        <a href="'.route('admin.shop.verify.toggle', $shop->id).'">
-                            <input type="checkbox" '.($shop->is_verified ? 'checked' : '').'>
+                        <a href="' . route('admin.shop.verify.toggle', $shop->id) . '">
+                            <input type="checkbox" ' . ($shop->is_verified ? 'checked' : '') . '>
                             <span class="slider round"></span>
                         </a>
                     </label>';
                 })
-                ->addColumn('status', function ($shop) { 
+                ->addColumn('status', function ($shop) {
                     return '
                     <label class="switch mb-0">
-                        <a href="'.route('admin.shop.status.toggle', $shop->id).'">
-                            <input type="checkbox" '.($shop->user?->is_active ? 'checked' : '').'>
+                        <a href="' . route('admin.shop.status.toggle', $shop->id) . '">
+                            <input type="checkbox" ' . ($shop->user?->is_active ? 'checked' : '') . '>
                             <span class="slider round"></span>
                         </a>
                     </label>';
-                }) 
+                })
                 ->addColumn('products', function ($shop) {
-                    return '<a href="'.route('admin.shop.products', $shop->id).'" class="badge badge-square badge-primary" data-bs-toggle="tooltip" title="Click here to view total products">
-                        '.$shop->products_count.'
+                    return '<a href="' . route('admin.shop.products', $shop->id) . '" class="badge badge-square badge-primary" data-bs-toggle="tooltip" title="Click here to view total products">
+                        ' . $shop->products_count . '
                     </a>';
                 })
-                
+
                 ->addColumn('orders', function ($shop) {
-                    return '<a href="'.route('admin.shop.orders', $shop->id).'" class="badge badge-square badge-info" data-bs-toggle="tooltip" title="Click here to view total orders">
-                        '.$shop->orders_count.'
+                    return '<a href="' . route('admin.shop.orders', $shop->id) . '" class="badge badge-square badge-info" data-bs-toggle="tooltip" title="Click here to view total orders">
+                        ' . $shop->orders_count . '
                     </a>';
                 })
 
                 ->orderColumn('products', 'products_count $1')
-                ->orderColumn('orders', 'orders_count $1') 
+                ->orderColumn('orders', 'orders_count $1')
 
                 ->addColumn('action', function ($shop) {
                     $btn = '';
                     // if (auth()->user()->can('admin.shop.show')) {
                     $btn .= '
-                    <a class="circleIcon" href="'.route('admin.shop.show', $shop->id).'">
-                        <img src="'.asset('assets/icons-admin/eye.svg').'">
+                    <a class="circleIcon" href="' . route('admin.shop.show', $shop->id) . '">
+                        <img src="' . asset('assets/icons-admin/eye.svg') . '">
                     </a>';
                     // }
                     // if (auth()->user()->can('admin.shop.edit')) {
                     $btn .= '
-                    <a class="circleIcon" href="'.route('admin.shop.edit', $shop->id).'">
-                        <img src="'.asset('assets/icons-admin/edit.svg').'">
+                    <a class="circleIcon" href="' . route('admin.shop.edit', $shop->id) . '">
+                        <img src="' . asset('assets/icons-admin/edit.svg') . '">
                     </a>';
                     // }
                     return $btn;
@@ -148,38 +155,37 @@ class ShopController extends Controller
         // return view('admin.shop.create');
         $states = State::orderBy('name')->get();
         $sellerTerms = Page::where('slug', 'seller-terms-of-service')
-                        ->where('is_active', 1)
-                        ->first();
+            ->where('is_active', 1)
+            ->first();
         $businessCategories = BusinessCategory::where('status', 1)->get();
-        return view('admin.shop.create-edit', compact('states','businessCategories','sellerTerms'));
+        return view('admin.shop.create-edit', compact('states', 'businessCategories', 'sellerTerms'));
     }
 
     /**
      * Store a newly created shop.
-     */ 
+     */
     public function store(ShopCreateRequest $request)
-    { 
+    {
         if ($request->terms_condition_status != 1) {
             return response()->json([
                 'status' => 'terms_required'
             ]);
         }
 
-        ShopRepository::storeByRequest($request); 
+        ShopRepository::storeByRequest($request);
 
         return response()->json([
             'status'   => 'success',
             'message'  => 'Shop created successfully',
             'redirect' => route('admin.shop.index')
         ]);
-
     }
 
 
     /**
      * Display the specified shop.
      */
-    
+
     // public function show(Shop $shop)
     // {
     //     Notification::where('url', '/admin/shops/' . $shop->id)->whereNull('shop_id')->where('is_read', false)->update(['is_read' => true]);
@@ -222,7 +228,7 @@ class ShopController extends Controller
         //         OrderStatus::SHIPPED->value,
         //         OrderStatus::DELIVERED->value
         //     ])->sum('payable_amount');
-        
+
         // $totalSales = $shop->orders()   //TODAY / MONTH / YEAR SALES
         //     ->where('order_status', OrderStatus::DELIVERED->value)
         //     ->whereMonth('created_at', now()->month)
@@ -286,7 +292,7 @@ class ShopController extends Controller
         $chartData = [
             'sales'  => $months->map(fn($m) => (int) ($salesData[$m] ?? 0)),
             'orders' => $months->map(fn($m) => (int) ($orderData[$m] ?? 0)),
-            'returns'=> $months->map(fn($m) => (int) ($returnData[$m] ?? 0)),
+            'returns' => $months->map(fn($m) => (int) ($returnData[$m] ?? 0)),
         ];
 
         return view('admin.shop.show', compact(
@@ -309,7 +315,13 @@ class ShopController extends Controller
         $shop->load('deliverySetting');
         $states = State::orderBy('name')->get();
         $businessCategories = BusinessCategory::where('status', 1)->get();
-        return view('admin.shop.create-edit', compact('shop', 'states','businessCategories'));
+        $setting = DeliverySetting::with([
+            'amountRules',
+            'stateCharges.state',
+        ])->where('shop_id', $shop->id)->first();
+        // dd(json_encode($setting->stateCharges));
+
+        return view('admin.shop.create-edit', compact('shop', 'states', 'businessCategories', 'setting'));
     }
 
     /**
@@ -320,16 +332,15 @@ class ShopController extends Controller
         if (app()->environment() == 'local' && $shop->user->email == 'shop@readyecommerce.com') {
             return back()->with('demoMode', 'You can not update the shop in demo mode');
         }
-
+        // dd($request->all());
         // store shop from shopRepository
-        ShopRepository::updateByRequest($shop, $request); 
+        ShopRepository::updateByRequest($shop, $request);
 
         return response()->json([
             'status'   => 'success',
             'message'  => 'Shop updated successfully',
             'redirect' => route('admin.shop.index')
         ]);
-
     }
 
     /**
