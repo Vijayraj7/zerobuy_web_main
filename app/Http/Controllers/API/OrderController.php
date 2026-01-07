@@ -66,7 +66,7 @@ class OrderController extends Controller
                 'delivered' => $statusWiseOrders[OrderStatus::DELIVERED->value],
                 'cancelled' => $statusWiseOrders[OrderStatus::CANCELLED->value],
             ],
-            'orders' => OrderResource::collection($orders),
+            'orders' => OrderResource::collection($customer->orders()),
         ]);
     }
 
