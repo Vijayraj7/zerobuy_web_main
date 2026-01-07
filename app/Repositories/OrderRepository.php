@@ -12,6 +12,7 @@ use App\Http\Requests\OrderRequest;
 use App\Models\AdminCoupon;
 use App\Models\GeneraleSetting;
 use App\Models\Order;
+use App\Models\OrderVariant;
 use App\Models\OrderVatTax;
 use App\Models\Payment;
 use App\Models\Shop;
@@ -97,27 +98,31 @@ class OrderRepository extends Repository
 
                 $size = $product->sizes()?->where('id', $cart->size)->first();
                 $color = $product->colors()?->where('id', $cart->color)->first();
+                $order_variant_id = null;
+                $order_bulk_item_id = null;
                 if ($cart->variant) {
-                    $order->orderProducts()->create([
-                        // 'order_variants_id' => $cart->variant->id,
-                        'color_name'        => $cart->variant->color->name,
-                        'color_code'        => $cart->variant->color->name,
-                        'size_name'         => $cart->variant->size?->name,
-                        'price'             => $cart->variant->price,
-                        'quantity'          => $cart->quantity,
-                    ]);
+                    $order_variant_id = OrderVariant::create([
+                        'color_name' => $cart->variant->color->name,
+                        'color_code' => $cart->variant->color->code,
+                        'size_name' => $cart->variant->size?->name,
+                        'price' => $cart->variant->price,
+                        'quantity' => $cart->quantity,
+                    ])->id;
                 }
 
                 if ($cart->bulkItem) {
-                    $order->orderProducts()->create([
-                        // 'order_bulk_items_id' => $cart->bulkItem->id,
-                        'name'                => $cart->bulkItem->name,
-                        'mrp'                 => $cart->bulkItem->mrp,
-                        'selling_price'       => $cart->bulkItem->selling_price,
-                        'quantity'            => $cart->quantity,
-                    ]);
+                    $order_bulk_item_id = OrderVariant::create([
+                        'color_name' => null,
+                        'color_code' => null,
+                        'size_name' => null,
+                        'price' => 0,
+                        'quantity' => $cart->quantity,
+                    ])->id;
                 }
+
                 $order->products()->attach($product->id, [
+                    'order_variant_id' => $order_variant_id,
+                    'order_bulk_item_id' => $order_bulk_item_id,
                     'quantity' => $cart->quantity,
                     'color' => $color?->name,
                     'size' => $size?->name,
