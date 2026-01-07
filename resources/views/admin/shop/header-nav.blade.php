@@ -39,28 +39,28 @@
         </li>
     @endhasPermission
 
-    @hasPermission('admin.shop.show')
+    @hasPermission('admin.shop.category')
         <li class="nav-item">
-            <a class="nav-link"
-                href="{{ route('admin.shop.show', $shop->id) }}">
+            <a class="nav-link {{ request()->routeIs('admin.shop.category') ? 'active' : '' }}"
+                href="{{ route('admin.shop.category', $shop->id) }}">
                 {{ __('Category') }}
             </a>
         </li>
     @endhasPermission
 
-    @hasPermission('admin.shop.show')
+    @hasPermission('admin.shop.address')
         <li class="nav-item">
-            <a class="nav-link"
-                href="{{ route('admin.shop.show', $shop->id) }}">
+            <a class="nav-link {{ request()->routeIs('admin.shop.address') ? 'active' : '' }}"
+                href="{{ route('admin.shop.address', $shop->id) }}">
                 {{ __('Address') }}
             </a>
         </li>
     @endhasPermission
 
-    @hasPermission('admin.shop.show')
+    @hasPermission('admin.shop.followers')
         <li class="nav-item">
-            <a class="nav-link"
-                href="{{ route('admin.shop.show', $shop->id) }}">
+            <a class="nav-link {{ request()->routeIs('admin.shop.followers') ? 'active' : '' }}"
+                href="{{ route('admin.shop.followers', $shop->id) }}">
                 {{ __('Followers') }}
             </a>
         </li>

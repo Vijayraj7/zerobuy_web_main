@@ -22,15 +22,26 @@
                                     </div>
                                     <div class="personal"> 
                                         <span class="name h5 mb-1 d-flex justify-content-between align-items-center w-100 gap-2">
-                                            {{ $shop->name }}  
+                                            {{ $shop->name }}
+                                            @if($shop->is_verified==1)  
                                             <i class="fa fa-check-circle" style="color:green"></i>
-                                            <!-- <span class="ms-auto">sss</span> -->
-                                            @if($shop->status==1)
-                                            <span class="ms-auto badge bg-success">Active</span>
-                                            @else
-                                            <span class="ms-auto badge bg-danger">Banned</span>
-                                            @endif
+                                            @else 
+
+                                            @endif 
                                         </span>
+                                        <div class="mt-0">
+                                            @if($shop->user?->is_active==1)
+                                            <span class="badge bg-success">Active</span> 
+                                            @else
+                                            <span class="badge bg-danger">Inactive</span>
+                                            @endif
+
+                                            @if($shop->is_branded==1)
+                                            <span class="badge bg-success"><i class="bi bi-shop"></i> Branded Store</span> 
+                                            @else 
+                                            
+                                            @endif
+                                        </div>
                                         <div class="d-flex gap-2 align-items-center ">
                                             <div>
                                                 @foreach (range(1, 5) as $rating)
@@ -78,7 +89,7 @@
                         <div class="card mt-3">
                             <div class="card-header d-flex align-items-center justify-content-start gap-2 py-3">
                                 <i class="bi bi-shop fz-18"></i>
-                                <h4 class="fz-20 m-0"> {{ __('Shop Information') }}</h4>
+                                <h4 class="fz-20 m-0"> {{ __('Shop Information') }}</h4> 
                             </div>
                             <div class="card-body">
                                 <div>

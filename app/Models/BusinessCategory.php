@@ -50,8 +50,17 @@ class BusinessCategory extends Model
     //     return $this->belongsToMany(Product::class, 'product_business_categories');
     // }
 
+    // public function shops()
+    // {
+    //     return $this->belongsToMany(Shop::class, 'shop_business_category');
+    // }
     public function shops()
     {
-        return $this->belongsToMany(Shop::class, 'shop_business_category');
+        return $this->belongsToMany(
+            Shop::class,
+            'shop_business_category',
+            'business_category_id',
+            'shop_id'
+        );
     }
 }

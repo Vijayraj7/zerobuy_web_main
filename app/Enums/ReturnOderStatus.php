@@ -12,4 +12,16 @@ enum ReturnOderStatus: string
 
     case DAMAGED = 'Damaged';
     case MISMATCH = 'Mismatch';
+
+
+    public static function visibleStatuses(): array
+    {
+        return array_filter(self::cases(), function ($status) {
+            return !in_array($status, [
+                self::DAMAGED,
+                self::MISMATCH
+            ]);
+        });
+    }
+
 }

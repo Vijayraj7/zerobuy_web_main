@@ -378,4 +378,18 @@ class Product extends Model
     {
         return $this->hasMany(ProductBulkPrice::class, 'product_id');
     }
+    public function orderItems()
+    {
+        return $this->hasMany(OrderProduct::class, 'product_id');
+    }
+
+    public function products()
+    {
+        return $this->belongsToMany(
+            Product::class,
+            'product_categories',
+            'category_id',
+            'product_id'
+        );
+    }
 }

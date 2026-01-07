@@ -9,12 +9,12 @@
         <div class="card-body"> 
             @include('admin.shop.header-nav')
             <h4 class="m-0 mt-4">{{ __('Return Orders') }}</h4>
-            <ul class="nav nav-tabs" id="statusTabs">
+            <ul class="nav nav-tabs mt-1" id="statusTabs">
                 <li class="nav-item">
                     <a href="#" data-status="" class="nav-link active">All</a>
                 </li>
 
-                @foreach(\App\Enums\OrderStatus::cases() as $status)
+                @foreach(\App\Enums\ReturnOderStatus::visibleStatuses() as $status)
                     <li class="nav-item">
                         <a href="#" data-status="{{ $status->value }}" class="nav-link">
                             {{ $status->value }}
@@ -75,7 +75,7 @@
 
 <script>
     $(function() { 
-        let orderStatus = "";
+        let returnStatus = "";
         let startDate = "";
         let endDate = "";
 
@@ -86,24 +86,24 @@
             ajax: {
                 url: "{{ route('admin.shop.return', $shop->id) }}",
                 data: function(d) {
-                    d.status = orderStatus; 
+                    d.status = returnStatus; 
                     d.startDate = startDate;
                     d.endDate = endDate;
                 }
             },
             columns: [
                 { data: 'DT_RowIndex', orderable: false, searchable: false },
-                { data: 'created_at', name: 'created_at' },          // Return Date
-                { data: 'return_id', name: 'return_id' },            // Return ID
-                { data: 'order_id', name: 'order_id' },             // Order id
-                { data: 'order_date', name: 'order.created_at' },    // Order Date
-                { data: 'customer_name', name: 'customer.user.name' },
-                { data: 'customer_phone', name: 'customer.user.phone' },
+                { data: 'created_at', name: 'created_at' },          
+                { data: 'return_id', name: 'return_id' }, 
+                { data: 'order_id', name: 'order_id' }, 
+                { data: 'order_date', name: 'order_date' }, 
+                { data: 'customer_name', name: 'customer_name' },
+                { data: 'customer_phone', name: 'customer_phone' },
 
                 { data: 'quantity', orderable: false },
                 { data: 'amount', orderable: false },
                 { data: 'reason', name: 'reason' },
-                { data: 'amount', name: 'amount' },                  // Total Amount
+                { data: 'amount', name: 'amount' }, 
                 { data: 'status_badge', orderable: false, searchable: false },
                 { data: 'actions', orderable: false, searchable: false },
             ],
@@ -134,7 +134,7 @@
             e.preventDefault();
             $('#statusTabs a').removeClass('active');
             $(this).addClass('active');
-            orderStatus = $(this).data('status'); 
+            returnStatus = $(this).data('status'); 
             table.ajax.reload(null, false); // reload without resetting pagination
         });
         // Auto Date Filtering
@@ -150,7 +150,7 @@
             $('#endDate').val('');
             startDate = "";
             endDate = "";
-            orderStatus = "";
+            returnStatus = "";
 
             $('#statusTabs a').removeClass('active');
             $('#statusTabs a[data-status=""]').addClass('active');
