@@ -51,7 +51,7 @@ class OrderProductResource extends JsonResource
         }
 
 
-        $pivot = $this->pivot;
+        $pivot = $this;
 
         $pname  = $this->name;
         $dprice = 0;
