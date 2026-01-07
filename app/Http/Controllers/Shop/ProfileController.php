@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Shop;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\ShopProfileRequest;
+use App\Models\BusinessCategory;
+use App\Models\DeliverySetting;
+use App\Models\State;
 use App\Repositories\ShopRepository;
 use Illuminate\Support\Facades\Hash;
 
@@ -26,8 +29,12 @@ class ProfileController extends Controller
     public function edit()
     {
         $shop = generaleSetting('shop');
+        $shop->load('deliverySetting');
+        $states = State::orderBy('name')->get();
+        $businessCategories = BusinessCategory::where('status', 1)->get();
+        $setting = DeliverySetting::with(['amountRules', 'stateCharges.state',])->where('shop_id', $shop->id)->first();
 
-        return view('shop.profile.edit', compact('shop'));
+        return view('admin.shop.create-edit', compact('shop', 'states', 'businessCategories', 'setting'));
     }
 
     /**
@@ -37,6 +44,8 @@ class ProfileController extends Controller
     {
         /** @var \App\Models\Shop $shop */
         $shop = generaleSetting('shop');
+
+        dd($request->all());
 
         ShopRepository::updateByRequest($shop, $request);
 

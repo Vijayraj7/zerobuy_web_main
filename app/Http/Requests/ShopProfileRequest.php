@@ -55,7 +55,7 @@ class ShopProfileRequest extends FormRequest
             'shop_banner' => ['nullable', 'image', 'mimes:jpg,png,jpeg,gif', 'max:2048'],
             'description' => ['nullable', 'string', 'max:255'],
             'min_order_amount' => 'nullable|numeric|min:0|max:99999999',
-            'estimated_delivery_time' => 'required|integer|min:1|max:120',
+            'estimated_delivery_time' => 'required|string',
             'prefix' => 'nullable|string|min:2|max:2',
             'opening_time' => 'required',
             'closing_time' => 'required|after:opening_time',

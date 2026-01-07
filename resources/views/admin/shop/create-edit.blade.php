@@ -629,7 +629,7 @@
 
         // Add amount row
         $('#addAmountRow').on('click', function() {
-            // let index = $('#amountRows tr').length;
+            let index = $('#amountRows tr').length;
             // let lastMax = $('#amountRows tr:last input[name$="[max_amount]"]').val();
             // if (lastMax) nextMin = parseFloat(lastMax) + 1;
 
