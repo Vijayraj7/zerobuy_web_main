@@ -34,6 +34,16 @@ class Order extends Model
         return $this->belongsToMany(Product::class, 'order_products')->using(OrderProduct::class)->withPivot('quantity', 'color', 'unit', 'size', 'price')->withoutGlobalScopes();
     }
 
+    public function orderVariant(): BelongsTo
+    {
+        return $this->belongsTo(OrderVariant::class, 'order_variants_id');
+    }
+
+    public function orderBulkItem(): BelongsTo
+    {
+        return $this->belongsTo(OrderBulkItem::class, 'order_bulk_items_id');
+    }
+
     public function orderProducts(): HasMany    //added by ancy
     {
         return $this->hasMany(OrderProduct::class, 'order_id');
