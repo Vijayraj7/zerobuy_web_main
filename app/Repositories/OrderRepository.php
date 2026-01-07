@@ -221,6 +221,12 @@ class OrderRepository extends Repository
             $product = $cart->product;
             $price = $product->discount_price > 0 ? $product->discount_price : $product->price;
 
+            if ($cart->variant != null) {
+                $price = (float)$cart->variant->price;
+            } else if ($cart->bulkItem) {
+                $price = (float)$cart->bulkItem->selling_price;
+            }
+
             $flashSale = $product->flashSales?->first();
             $flashSaleProduct = null;
             $quantity = 0;
