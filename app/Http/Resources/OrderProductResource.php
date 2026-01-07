@@ -16,7 +16,7 @@ class OrderProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         $this->load('brand', 'reviews');
-        $this->pivot->loadMissing(['orderVariant', 'orderBulkItem']);
+        // $this->pivot->loadMissing(['orderVariant', 'orderBulkItem']);
 
         $review = $this->reviews()->where('customer_id', auth()->user()->customer?->id)->where('product_id', $this->id)->where('order_id', $request->order_id)->first();
 
@@ -51,22 +51,35 @@ class OrderProductResource extends JsonResource
         }
 
 
-        $pname = $this->name;
+        $pivot = $this->pivot;
+
+        $pname  = $this->name;
         $dprice = 0;
         $mprice = (float) number_format((float) $this->price, 2, '.', '');
-        $color = $this->pivot->color ?? null;
-        $size = $this->pivot->size ?? null;
-        if ($this->pivot->orderVariant) {
-            $dprice =  (float) number_format($this->pivot->orderVariant->price, 2, '.', '');
-            $color =  $this->pivot->orderVariant->color_name;
-            $size =  $this->pivot->orderVariant->size_name;
-        } else if ($this->pivot->orderBulkItem) {
-            $pname = $this->pivot->orderBulkItem->name;
-            $mprice = (float) number_format($this->pivot->orderBulkItem->mrp, 2, '.', '');
-            $dprice =  (float) number_format($this->pivot->orderBulkItem->selling_price, 2, '.', '');
+
+        $color = $pivot->color ?? null;
+        $size  = $pivot->size ?? null;
+
+        if ($pivot->order_variants_id) {
+            $variant = \App\Models\OrderVariant::find($pivot->order_variants_id);
+
+            if ($variant) {
+                $dprice = (float) number_format($variant->price, 2, '.', '');
+                $color  = $variant->color_name;
+                $size   = $variant->size_name;
+            }
+        } elseif ($pivot->order_bulk_items_id) {
+            $bulk = \App\Models\OrderBulkItem::find($pivot->order_bulk_items_id);
+
+            if ($bulk) {
+                $pname  = $bulk->name;
+                $mprice = (float) number_format($bulk->mrp, 2, '.', '');
+                $dprice = (float) number_format($bulk->selling_price, 2, '.', '');
+            }
         } else {
             $dprice = (float) number_format($this->discount_price, 2, '.', '');
         }
+
 
         return [
             'id' => $this->id,
