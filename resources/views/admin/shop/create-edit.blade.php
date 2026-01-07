@@ -578,6 +578,14 @@
                     return;
                 }
 
+                /* 🔒 FIRST MIN MUST BE 1 */
+                const existingCards = document.querySelectorAll('.amount-card');
+                if (existingCards.length === 0 && min !== 1) {
+                    showFlash('First minimum amount must be 1');
+                    minInput.focus();
+                    return;
+                }
+
                 const key = `${min}-${max}`;
                 if (addedAmountRanges.includes(key)) {
                     showFlash('This amount range already exists');
