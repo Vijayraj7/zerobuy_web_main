@@ -98,20 +98,23 @@ class OrderRepository extends Repository
                 $size = $product->sizes()?->where('id', $cart->size)->first();
                 $color = $product->colors()?->where('id', $cart->color)->first();
                 if ($cart->variant) {
-                    $order->orderVariant()->attach([
-                        'color_name' => $cart->variant->color->name,
-                        'color_code' => $cart->variant->color->name,
-                        'size_name' => $cart->variant->size?->name,
-                        'price' => $cart->variant->price,
-                        'quantity' => $cart->quantity,
+                    $order->orderProducts()->create([
+                        'order_variants_id' => $cart->variant->id,
+                        'color_name'        => $cart->variant->color->name,
+                        'color_code'        => $cart->variant->color->name,
+                        'size_name'         => $cart->variant->size?->name,
+                        'price'             => $cart->variant->price,
+                        'quantity'          => $cart->quantity,
                     ]);
                 }
+
                 if ($cart->bulkItem) {
-                    $order->orderBulkItem()->attach([
-                        'name' => $cart->bulkItem->name,
-                        'mrp' => $cart->bulkItem->mrp,
-                        'selling_price' => $cart->bulkItem->selling_price,
-                        'quantity' => $cart->quantity,
+                    $order->orderProducts()->create([
+                        'order_bulk_items_id' => $cart->bulkItem->id,
+                        'name'                => $cart->bulkItem->name,
+                        'mrp'                 => $cart->bulkItem->mrp,
+                        'selling_price'       => $cart->bulkItem->selling_price,
+                        'quantity'            => $cart->quantity,
                     ]);
                 }
                 $order->products()->attach($product->id, [
