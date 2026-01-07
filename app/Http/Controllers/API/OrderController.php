@@ -241,8 +241,8 @@ class OrderController extends Controller
 
         // Find the order
         $order = Order::with([
-            'orderProducts.orderVariant',
-            'orderProducts.orderBulkItem',
+            'products.pivot.orderVariant',
+            'products.pivot.orderBulkItem',
         ])->find($request->order_id);
 
         return $this->json('order details', [
