@@ -629,15 +629,14 @@
 
         // Add amount row
         $('#addAmountRow').on('click', function() {
-            let index = $('#amountRows tr').length;
-            let lastMax = $('#amountRows tr:last input[name$="[max_amount]"]').val();
-            if (lastMax) nextMin = parseFloat(lastMax) + 1;
+            // let index = $('#amountRows tr').length;
+            // let lastMax = $('#amountRows tr:last input[name$="[max_amount]"]').val();
+            // if (lastMax) nextMin = parseFloat(lastMax) + 1;
 
             $('#amountRows').append(`
             <tr>
                 <td>
                     <input type="number" step="0.01"
-                    value="${nextMin || 1}"
                         name="amount_rules[${index}][min_amount]"
                         class="form-control" required>
                 </td>
