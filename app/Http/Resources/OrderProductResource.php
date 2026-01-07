@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources;
 
+use App\Models\OrderBulkItem;
+use App\Models\OrderVariant;
 use Illuminate\Http\Request;
 use App\Models\ReturnOrderDetail;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -51,7 +53,7 @@ class OrderProductResource extends JsonResource
         }
 
 
-        $pivot = $this;
+        // $pivot = $this;
 
         $pname  = $this->name;
         $dprice = 0;
@@ -60,16 +62,16 @@ class OrderProductResource extends JsonResource
         $color = $pivot->color ?? null;
         $size  = $pivot->size ?? null;
 
-        if ($pivot->order_variants_id) {
-            $variant = \App\Models\OrderVariant::find($pivot->order_variants_id);
+        if ($this->order_variants_id) {
+            $variant = OrderVariant::where('id', $this->order_variants_id)->first();
 
             if ($variant) {
                 $dprice = (float) number_format($variant->price, 2, '.', '');
                 $color  = $variant->color_name;
                 $size   = $variant->size_name;
             }
-        } elseif ($pivot->order_bulk_items_id) {
-            $bulk = \App\Models\OrderBulkItem::find($pivot->order_bulk_items_id);
+        } elseif ($this->order_bulk_items_id) {
+            $bulk = OrderBulkItem::where('id', $this->order_bulk_items_id)->first();
 
             if ($bulk) {
                 $pname  = $bulk->name;
@@ -83,6 +85,8 @@ class OrderProductResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'v_id' => $this->order_variants_id,
+            'b_id' => $this->order_bulk_items_id,
             'name' => $pname,
             'brand' => $this->brand?->name ?? null,
             'thumbnail' => $this->thumbnail,
