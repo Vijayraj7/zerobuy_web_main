@@ -87,6 +87,8 @@ class OrderProductResource extends JsonResource
             'id' => $this->id,
             'v_id' => $this->order_variants_id,
             'b_id' => $this->order_bulk_items_id,
+            'vv_id' => $this->pivot->order_variants_id,
+            'bb_id' => $this->pivot->order_bulk_items_id,
             'name' => $pname,
             'brand' => $this->brand?->name ?? null,
             'thumbnail' => $this->thumbnail,
