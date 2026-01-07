@@ -245,7 +245,7 @@ class ShopController extends Controller
         if (app()->environment() == 'local' && $shop->user->email == 'shop@readyecommerce.com') {
             return back()->with('demoMode', 'You can not update the shop in demo mode');
         } 
-
+// dd($request->all());
         ShopRepository::updateByRequest($shop, $request);
 
         return response()->json([

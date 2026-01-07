@@ -329,88 +329,82 @@
 
                         <!-- Amount Based -->
                         <div id="amount_based_box" class="delivery-box">
+
                             <div class="d-flex justify-content-between mb-2">
                                 <h6>Amount Ranges</h6>
-                                <button type="button" class="btn btn-sm btn-primary" id="addAmountRow">
-                                    <i class="fa fa-plus"></i> Add Range
-                                </button>
                             </div>
 
-                            <table class="table table-bordered">
+                            <table class="table table-sm">
                                 <thead>
                                     <tr>
-                                        <th>Min (₹)</th>
-                                        <th>Max (₹)</th>
-                                        <th>Charge (₹)</th>
+                                        <th>Min ₹</th>
+                                        <th>Max ₹</th>
+                                        <th>Charge ₹</th>
                                         <th></th>
                                     </tr>
                                 </thead>
-                                <tbody id="amountRows">
+                                <tbody>
+                                    <tr>
+                                        <td><input id="amt-min" class="form-control" type="number"></td>
+                                        <td><input id="amt-max" class="form-control" type="number"></td>
+                                        <td><input id="amt-charge" class="form-control" type="number"></td>
+                                        <td>
+                                            <button type="button" class="btn btn-primary" id="addAmountRow">
+                                                Add
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
 
+                            <div class="mt-3">
+                                <h6>Added Amount Ranges</h6>
+                                <div id="added-amount-container">
+                                    {{-- <p class="text-muted small" id="no-amount-msg">
+                                        No amount ranges added yet.
+                                    </p> --}}
                                     @php
                                         $amountRules = old('amount_rules', $setting->amountRules ?? []);
                                     @endphp
 
                                     @if (count($amountRules))
                                         @foreach ($amountRules as $i => $rule)
-                                            <tr>
-                                                <td>
-                                                    <input type="number" step="0.01"
-                                                        name="amount_rules[{{ $i }}][min_amount]"
-                                                        value="{{ $rule['min_amount'] ?? ($rule->min_amount ?? '') }}"
-                                                        class="form-control" required>
-                                                </td>
-
-                                                <td>
-                                                    <input type="number" step="0.01"
-                                                        name="amount_rules[{{ $i }}][max_amount]"
-                                                        value="{{ $rule['max_amount'] ?? ($rule->max_amount ?? '') }}"
-                                                        class="form-control" required>
-                                                </td>
-
-                                                <td>
-                                                    <input type="number" step="0.01"
-                                                        name="amount_rules[{{ $i }}][charge]"
-                                                        value="{{ $rule['charge'] ?? ($rule->charge ?? '') }}"
-                                                        class="form-control" required>
-                                                </td>
-
-                                                <td>
-                                                    <button type="button"
-                                                        class="btn btn-danger btn-sm removeRow">✕</button>
-                                                </td>
-                                            </tr>
+                                            <div class="card mb-2 amount-card" id="amount-{{ $i }}">
+                                                <div class="card-body py-2">
+                                                    <div class="row align-items-center">
+                                                        <div class="col-md-9">
+                                                            <strong>₹
+                                                                {{ $rule['min_amount'] ?? ($rule->min_amount ?? '') }}
+                                                                – ₹
+                                                                {{ $rule['max_amount'] ?? ($rule->max_amount ?? '') }}</strong>
+                                                            → ₹
+                                                            {{ $rule['charge'] }}
+                                                            <input type="hidden"
+                                                                name="amount_rules[{{ $i }}][min_amount]"
+                                                                value="{{ $rule['min_amount'] ?? ($rule->min_amount ?? '') }}">
+                                                            <input type="hidden"
+                                                                name="amount_rules[{{ $i }}][max_amount]"
+                                                                value="{{ $rule['max_amount'] ?? ($rule->max_amount ?? '') }}">
+                                                            <input type="hidden"
+                                                                name="amount_rules[{{ $i }}][charge]"
+                                                                value="{{ $rule['charge'] ?? ($rule->charge ?? '') }}">
+                                                        </div>
+                                                        <div class="col-md-3 text-end">
+                                                            <button type="button"
+                                                                class="btn btn-sm btn-danger delete-item"
+                                                                data-type="amount" data-id="{{ $i }}">
+                                                                ✕
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         @endforeach
-                                    @else
-                                        {{-- CREATE MODE → INITIAL FIRST ROW --}}
-                                        {{-- <tr>
-                                            <td>
-                                                <input type="number" step="0.01"
-                                                    name="amount_rules[0][min_amount]" value="1"
-                                                    class="form-control" required>
-                                            </td>
-
-                                            <td>
-                                                <input type="number" step="0.01"
-                                                    name="amount_rules[0][max_amount]" class="form-control" required>
-                                            </td>
-
-                                            <td>
-                                                <input type="number" step="0.01" name="amount_rules[0][charge]"
-                                                    class="form-control" required>
-                                            </td>
-
-                                            <td>
-                                                <button type="button"
-                                                    class="btn btn-danger btn-sm removeRow">✕</button>
-                                            </td>
-                                        </tr> --}}
                                     @endif
-
-                                </tbody>
-
-                            </table>
+                                </div>
+                            </div>
                         </div>
+
 
                         <!-- State Wise -->
                         <div id="state_wise_box" class="delivery-box d-none">
@@ -550,7 +544,122 @@
 
 @push('scripts')
 <script>
+    const IS_EDIT = @json($isEdit);
     $(document).ready(function() {
+
+        function uid() {
+            return Date.now() + Math.random().toString(36).slice(2);
+        }
+
+        let addedAmountRanges = [];
+        let amountIndex = {{ count($amountRules) }};
+
+        document.addEventListener('click', function(e) {
+
+            /* ADD AMOUNT RANGE */
+            if (e.target.id === 'addAmountRow') {
+
+                const minInput = document.getElementById('amt-min');
+                const maxInput = document.getElementById('amt-max');
+                const chargeInput = document.getElementById('amt-charge');
+
+                const min = parseFloat(minInput.value);
+                const max = parseFloat(maxInput.value);
+                const charge = parseFloat(chargeInput.value);
+
+                /* VALIDATIONS */
+                if (!min || !max || !charge) {
+                    showFlash('Fill Min, Max and Charge');
+                    return;
+                }
+
+                if (min >= max) {
+                    showFlash('Min amount must be less than Max amount');
+                    return;
+                }
+
+                const key = `${min}-${max}`;
+                if (addedAmountRanges.includes(key)) {
+                    showFlash('This amount range already exists');
+                    return;
+                }
+
+                /* CHECK OVERLAP */
+                for (const card of document.querySelectorAll('.amount-card')) {
+                    const cMin = parseFloat(card.querySelector('[name*="[min_amount]"]').value);
+                    const cMax = parseFloat(card.querySelector('[name*="[max_amount]"]').value);
+
+                    if (
+                        (min >= cMin && min <= cMax) ||
+                        (max >= cMin && max <= cMax) ||
+                        (min <= cMin && max >= cMax)
+                    ) {
+                        showFlash(`Range overlaps with ${cMin} - ${cMax}`);
+                        return;
+                    }
+                }
+
+                addedAmountRanges.push(key);
+
+                const id = uid();
+                const card = document.createElement('div');
+                card.className = 'card mb-2 amount-card';
+                card.id = `amount-${id}`;
+
+                card.innerHTML = `
+                <div class="card-body py-2">
+                    <div class="row align-items-center">
+                        <div class="col-md-9">
+                            <strong>₹ ${min} – ₹ ${max}</strong> → ₹ ${charge}
+                            <input type="hidden" name="amount_rules[${amountIndex}][min_amount]" value="${min}">
+                            <input type="hidden" name="amount_rules[${amountIndex}][max_amount]" value="${max}">
+                            <input type="hidden" name="amount_rules[${amountIndex}][charge]" value="${charge}">
+                        </div>
+                        <div class="col-md-3 text-end">
+                            <button type="button"
+                                class="btn btn-sm btn-danger delete-item"
+                                data-type="amount"
+                                data-id="${id}">
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+                const container = document.getElementById('added-amount-container');
+                const emptyMsg = document.getElementById('no-amount-msg');
+                if (emptyMsg) emptyMsg.style.display = 'none';
+                amountIndex++;
+                container.appendChild(card);
+
+                /* CLEAR INPUTS */
+                minInput.value = '';
+                maxInput.value = '';
+                chargeInput.value = '';
+                minInput.focus();
+            }
+
+            /* DELETE AMOUNT RANGE */
+            if (e.target.closest('.delete-item')?.dataset.type === 'amount') {
+
+                const btn = e.target.closest('.delete-item');
+                const id = btn.dataset.id;
+                const card = document.getElementById(`amount-${id}`);
+
+                const min = card.querySelector('[name*="[min_amount]"]').value;
+                const max = card.querySelector('[name*="[max_amount]"]').value;
+
+                addedAmountRanges = addedAmountRanges.filter(k => k !== `${min}-${max}`);
+                card.remove();
+
+                if (!document.querySelector('.amount-card')) {
+                    document.getElementById('no-amount-msg').style.display = 'block';
+                }
+            }
+        });
+
+
 
         function updateStateWiseCharges() {
             const container = $('#state_wise_box .row');
@@ -612,11 +721,6 @@
             updateStateWiseCharges();
         });
 
-    });
-</script>
-
-<script>
-    $(document).ready(function() {
 
         function toggleDeliveryBoxes() {
             let mode = $('input[name="delivery_mode"]:checked').val();
@@ -627,50 +731,11 @@
         toggleDeliveryBoxes();
         $('input[name="delivery_mode"]').on('change', toggleDeliveryBoxes);
 
-        // Add amount row
-        $('#addAmountRow').on('click', function() {
-            let index = $('#amountRows tr').length;
-            // let lastMax = $('#amountRows tr:last input[name$="[max_amount]"]').val();
-            // if (lastMax) nextMin = parseFloat(lastMax) + 1;
 
-            $('#amountRows').append(`
-            <tr>
-                <td>
-                    <input type="number" step="0.01"
-                        name="amount_rules[${index}][min_amount]"
-                        class="form-control" required>
-                </td>
 
-                <td>
-                    <input type="number" step="0.01"
-                        name="amount_rules[${index}][max_amount]"
-                        class="form-control" required>
-                </td>
+        //
 
-                <td>
-                    <input type="number" step="0.01"
-                        name="amount_rules[${index}][charge]"
-                        class="form-control" required>
-                </td>
 
-                <td>
-                    <button type="button" class="btn btn-danger btn-sm removeRow">✕</button>
-                </td>
-            </tr>
-        `);
-        });
-
-        // Remove row
-        $(document).on('click', '.removeRow', function() {
-            $(this).closest('tr').remove();
-        });
-
-    });
-</script>
-
-<script>
-    const IS_EDIT = @json($isEdit);
-    $(document).ready(function() {
         function clearErrors() {
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
