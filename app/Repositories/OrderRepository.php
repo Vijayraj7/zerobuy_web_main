@@ -122,8 +122,8 @@ class OrderRepository extends Repository
                 }
 
                 $order->products()->attach($product->id, [
-                    'order_variant_id' => $order_variant_id,
-                    'order_bulk_item_id' => $order_bulk_item_id,
+                    'order_variants_id' => $order_variant_id,
+                    'order_bulk_items_id' => $order_bulk_item_id,
                     'quantity' => $cart->quantity,
                     'color' => $color?->name,
                     'size' => $size?->name,
