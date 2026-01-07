@@ -240,7 +240,10 @@ class OrderController extends Controller
         ]);
 
         // Find the order
-        $order = Order::find($request->order_id);
+        $order = Order::with([
+            'orderProducts.orderVariant',
+            'orderProducts.orderBulkItem',
+        ])->find($request->order_id);
 
         return $this->json('order details', [
             'order' => OrderDetailsResource::make($order),
