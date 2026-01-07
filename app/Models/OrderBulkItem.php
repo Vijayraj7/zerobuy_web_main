@@ -7,9 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class OrderBulkItem extends Model
 {
-    use HasFactory;
-
-    protected $guarded = ['id'];
+    public $timestamps = false;
 
     protected $fillable = [
         'name',

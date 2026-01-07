@@ -7,9 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class OrderVariant extends Model
 {
-    use HasFactory;
-
-    protected $guarded = ['id'];
+    public $timestamps = false;
 
     protected $fillable = [
         'color_name',
