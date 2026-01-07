@@ -12,6 +12,7 @@ use App\Http\Requests\OrderRequest;
 use App\Models\AdminCoupon;
 use App\Models\GeneraleSetting;
 use App\Models\Order;
+use App\Models\OrderBulkItem;
 use App\Models\OrderVariant;
 use App\Models\OrderVatTax;
 use App\Models\Payment;
@@ -111,12 +112,12 @@ class OrderRepository extends Repository
                 }
 
                 if ($cart->bulkItem) {
-                    $order_bulk_item_id = OrderVariant::create([
-                        'color_name' => null,
-                        'color_code' => null,
-                        'size_name' => null,
-                        'price' => 0,
+                    $order_bulk_item_id = OrderBulkItem::create([
+                        'name' => $cart->bulkItem->name,
                         'quantity' => $cart->quantity,
+                        'moq' => $cart->bulkItem->moq,
+                        'mrp' => $cart->bulkItem->mrp,
+                        'selling_price' => $cart->bulkItem->selling_price,
                     ])->id;
                 }
 

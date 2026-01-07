@@ -8,4 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class OrderBulkItem extends Model
 {
     use HasFactory;
+
+    protected $guarded = ['id'];
+
+    protected $fillable = [
+        'name',
+        'quantity',
+        'moq',
+        'mrp',
+        'selling_price',
+    ];
 }

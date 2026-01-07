@@ -8,4 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class OrderVariant extends Model
 {
     use HasFactory;
+
+    protected $guarded = ['id'];
+
+    protected $fillable = [
+        'color_name',
+        'color_code',
+        'size_name',
+        'price',
+        'quantity',
+    ];
 }
