@@ -55,14 +55,14 @@ class OrderProductResource extends JsonResource
         $mprice = (float) number_format((float) $this->price, 2, '.', '');
         $color = $this->pivot->color ?? null;
         $size = $this->pivot->size ?? null;
-        if ($this->orderVariant) {
-            $dprice =  (float) number_format($this->orderVariant->price, 2, '.', '');
-            $color =  $this->orderVariant->color_name;
-            $size =  $this->orderVariant->size_name;
-        } else if ($this->orderBulkItem) {
-            $pname = $this->orderBulkItem->name;
-            $mprice = (float) number_format($this->orderBulkItem->mrp, 2, '.', '');
-            $dprice =  (float) number_format($this->orderBulkItem->selling_price, 2, '.', '');
+        if ($this->orderVariant()) {
+            $dprice =  (float) number_format($this->orderVariant()->price, 2, '.', '');
+            $color =  $this->orderVariant()->color_name;
+            $size =  $this->orderVariant()->size_name;
+        } else if ($this->orderBulkItem()) {
+            $pname = $this->orderBulkItem()->name;
+            $mprice = (float) number_format($this->orderBulkItem()->mrp, 2, '.', '');
+            $dprice =  (float) number_format($this->orderBulkItem()->selling_price, 2, '.', '');
         } else {
             $dprice = (float) number_format($this->discount_price, 2, '.', '');
         }
