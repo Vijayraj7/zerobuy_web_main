@@ -62,16 +62,16 @@ class OrderProductResource extends JsonResource
         $color = $pivot->color ?? null;
         $size  = $pivot->size ?? null;
 
-        if ($this->order_variants_id) {
-            $variant = OrderVariant::where('id', $this->order_variants_id)->first();
+        if ($this->pivot->order_variants_id) {
+            $variant = OrderVariant::where('id', $this->pivot->order_variants_id)->first();
 
             if ($variant) {
                 $dprice = (float) number_format($variant->price, 2, '.', '');
                 $color  = $variant->color_name;
                 $size   = $variant->size_name;
             }
-        } elseif ($this->order_bulk_items_id) {
-            $bulk = OrderBulkItem::where('id', $this->order_bulk_items_id)->first();
+        } elseif ($this->pivot->order_bulk_items_id) {
+            $bulk = OrderBulkItem::where('id', $this->pivot->order_bulk_items_id)->first();
 
             if ($bulk) {
                 $pname  = $bulk->name;
