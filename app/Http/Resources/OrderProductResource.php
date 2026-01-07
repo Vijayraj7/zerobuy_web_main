@@ -16,6 +16,7 @@ class OrderProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         $this->load('brand', 'reviews');
+        $this->pivot->loadMissing(['orderVariant', 'orderBulkItem']);
 
         $review = $this->reviews()->where('customer_id', auth()->user()->customer?->id)->where('product_id', $this->id)->where('order_id', $request->order_id)->first();
 
