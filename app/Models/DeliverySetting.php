@@ -19,7 +19,7 @@ class DeliverySetting extends Model
 
     public function amountRules()
     {
-        return $this->hasMany(DeliveryAmountRule::class);
+        return $this->hasMany(DeliveryAmountRule::class, 'delivery_setting_id');
     }
 
     public function stateCharges()

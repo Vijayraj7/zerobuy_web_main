@@ -4,11 +4,14 @@ namespace App\Repositories;
 
 use Abedin\Maker\Repositories\Repository;
 use App\Http\Requests\ShopCreateRequest;
+use App\Models\DeliveryAmountRule;
 use App\Models\Shop;
 use App\Models\State;
 use App\Models\District;
 use App\Models\DeliverySetting;
+use App\Models\DeliveryStateCharge;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ShopRepository extends Repository
 {
@@ -125,6 +128,51 @@ class ShopRepository extends Repository
         ]);
 
         $shop->businessCategories()->sync($request->bussiness_categories_id);
+
+
+        DB::transaction(function () use ($request, $shop) {
+
+            $setting = DeliverySetting::updateOrCreate(
+                ['shop_id' => $shop->id],
+                [
+                    'delivery_mode' => $request->delivery_mode,
+                    'update_when_shipped' => $request->update_when_shipped ?? false,
+                ]
+            );
+
+            // Clean old data
+            DeliveryAmountRule::where('delivery_setting_id', $setting->id)->delete();
+            DeliveryStateCharge::where('delivery_setting_id', $setting->id)->delete();
+
+            // Amount based
+            if ($request->delivery_mode === 'amount_based') {
+                foreach ($request->amount_rules ?? [] as $rule) {
+                    DeliveryAmountRule::create([
+                        'delivery_setting_id' => $setting->id,
+                        'min_amount' => $rule['min_amount'],
+                        'max_amount' => $rule['max_amount'],
+                        'charge'     => $rule['charge'],
+                    ]);
+                }
+            }
+
+            // State wise
+            if ($request->delivery_mode === 'state_wise') {
+                foreach ($request->state_charges ?? [] as $state) {
+                    if ($state['charge'] != null) {
+                        $stateModel = State::find($state['state']);
+                        // dd($stateModel);
+                        DeliveryStateCharge::create([
+                            'delivery_setting_id' => $setting->id,
+                            'state' => $stateModel->name,
+                            'state_id' => $stateModel->id,
+                            'charge' => $state['charge'],
+                        ]);
+                    }
+                }
+            }
+        });
+
 
         $stateIds = array_map('intval', $request->delivery_state_ids);
         DeliverySetting::updateOrCreate(
