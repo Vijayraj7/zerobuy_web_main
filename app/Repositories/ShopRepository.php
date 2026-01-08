@@ -95,9 +95,9 @@ class ShopRepository extends Repository
         $district = District::findOrFail($request->district_id);
 
         // Update user only if fields provided
-        if ($request->filled(['first_name', 'email', 'password'])) {
-            UserRepository::updateByRequest($request, $shop->user);
-        }
+        // if ($request->filled(['first_name', 'email', 'password'])) {
+        //     UserRepository::updateByRequest($request, $shop->user);
+        // }
         UserRepository::updateByRequest($request, $shop->user);
 
         // Only update images if files uploaded
