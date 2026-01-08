@@ -109,9 +109,17 @@ class CartRepository extends Repository
                     $pname = $cart->bulkItem->name;
                     $mprice = (float) number_format($cart->bulkItem->mrp, 2, '.', '');
                     $dprice =  (float) number_format($cart->bulkItem->selling_price, 2, '.', '');
+                } else if ($product->bulkPrices) {
+                    $ogprice = $product->bulkPrices->where('min_qty', '<=', $cart->quantity)
+                        ->where('max_qty', '>=', $cart->quantity)
+                        ->first();
+                    if ($ogprice) {
+                        $dprice =  (float) number_format($ogprice->price, 2, '.', '');
+                    }
                 } else {
                     $dprice = (float) number_format($discountPrice, 2, '.', '');
                 }
+
                 $productArray[] = (object) [
                     'id' => $product->id,
                     'cart_id' => (int) $cart->id,
@@ -189,7 +197,7 @@ class CartRepository extends Repository
         if ($cart) {
             // CartRepository::syncvariant($cart, $request);
             $cart->update([
-                'quantity' => $isBuyNow ?  $product->min_order_quantity ?? 1  : $cart->quantity + 1,
+                'quantity' => $isBuyNow ?  $product->min_order_quantity ?? 1  : $cart->quantity + ($request->quantity ?? 1),
                 'size' => $request->size ?? $cart->size,
                 'color' => $request->color ?? $cart->color,
                 'unit' => $request->unit ?? $cart->unit,
@@ -237,12 +245,17 @@ class CartRepository extends Repository
                 ]);
             }
         } else {
+            $qty = $product->min_order_quantity ?? 1;
+            $req_qty = $request->quantity ?? 1;
+            if ($req_qty > $qty) {
+                $qty = $req_qty;
+            }
             $cart = self::create([
                 'product_id'  => $product->id,
                 'shop_id'     => $product->shop->id,
                 'is_buy_now'  => $isBuyNow,
                 'customer_id' => $customer->id,
-                'quantity'    => $product->min_order_quantity ?? 1,
+                'quantity'    => $qty,
                 'size'        => $size,
                 'color'       => $color,
                 'unit'        => $unit,
@@ -350,6 +363,13 @@ class CartRepository extends Repository
                 $price = (float)$cart->variant->price;
             } else if ($cart->bulkItem) {
                 $price = (float)$cart->bulkItem->selling_price;
+            } else if ($product->bulkPrices) {
+                $ogprice = $product->bulkPrices->where('min_qty', '<=', $cart->quantity)
+                    ->where('max_qty', '>=', $cart->quantity)
+                    ->first();
+                if ($ogprice) {
+                    $price =  (float) number_format($ogprice->price, 2, '.', '');
+                }
             }
 
             if ($flashSale) {

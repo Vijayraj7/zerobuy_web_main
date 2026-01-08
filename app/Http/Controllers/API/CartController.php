@@ -91,14 +91,13 @@ class CartController extends Controller
 
         $customer = auth()->user()->customer;
 
-        $cart = $customer->carts()
-            ?->where('is_buy_now', $isBuyNow)
+        $cart = $customer->carts()?->where('is_buy_now', $isBuyNow)
             ->where('product_id',  $request->product_id)
             ->where('variant_id',  $request->variant_id)
             ->where('bulk_item_id',  $request->bulk_item_id)->first();
 
         if (! $cart) {
-            return $this->json('Sorry product not found in cart', [], 422);
+            return $this->json('Sorry product not found in cart ' . $request->is_buy_now, [], 422);
         }
 
         $quantity = $cart->quantity;

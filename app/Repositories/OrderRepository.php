@@ -304,6 +304,13 @@ class OrderRepository extends Repository
                 $price = (float)$cart->variant->price;
             } else if ($cart->bulkItem) {
                 $price = (float)$cart->bulkItem->selling_price;
+            } else if ($product->bulkPrices) {
+                $ogprice = $product->bulkPrices->where('min_qty', '<=', $cart->quantity)
+                    ->where('max_qty', '>=', $cart->quantity)
+                    ->first();
+                if ($ogprice) {
+                    $price =  (float) number_format($ogprice->price, 2, '.', '');
+                }
             }
 
             $flashSale = $product->flashSales?->first();
