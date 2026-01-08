@@ -8,7 +8,6 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('addresses', function (Blueprint $table) {
-
             $table->foreignId('state_id')
                 ->nullable()
                 ->constrained('states')

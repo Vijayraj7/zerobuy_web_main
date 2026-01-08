@@ -9,10 +9,13 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Events\OrderMailEvent;
 use App\Http\Requests\OrderRequest;
+use App\Models\Address;
 use App\Models\AdminCoupon;
 use App\Models\GeneraleSetting;
 use App\Models\Order;
+use App\Models\OrderAddress;
 use App\Models\OrderBulkItem;
+use App\Models\OrderedProduct;
 use App\Models\OrderVariant;
 use App\Models\OrderVatTax;
 use App\Models\Payment;
@@ -66,6 +69,59 @@ class OrderRepository extends Repository
                 $cart->product->decrement('quantity', $cart->quantity);
 
                 $product = $cart->product;
+                // $productx = $cart->product;
+
+                // $productxx = OrderedProduct::create([
+                //     // 'id' => $productx->id,
+                //     // Reference to original product
+                //     'product_id' => $productx->id,
+
+                //     // Basic info
+                //     'name' => $productx->name,
+                //     'name_ar' => $productx->name_ar ?? null,
+                //     'slug' => $productx->slug,
+                //     'code' => $productx->sku ?? null, // mapped from sku
+
+                //     'condition_status' => $productx->condition_status ?? 'New',
+
+                //     // Relations
+                //     'shop_id' => $productx->shop_id,
+                //     'media_id' => $productx->media_id ?? null,
+                //     'brand_id' => $productx->brand_id ?? null,
+                //     'unit_id' => $productx->unit_id ?? null,
+                //     'video_id' => $productx->video_id ?? null,
+
+                //     // Pricing & stock
+                //     'price' => $productx->price,
+                //     'buy_price' => $productx->buy_price ?? 0,
+                //     'discount_price' => $productx->discount_price,
+                //     'quantity' => $productx->quantity ?? 0,
+                //     'min_order_quantity' => $productx->min_order_quantity ?? 1,
+                //     'return_period' => $productx->return_period ?? null,
+                //     'tax_percentage' => $productx->tax_percentage ?? null,
+
+                //     // Descriptions (JSON-safe)
+                //     'details' => $productx->details
+                //         ? json_encode($productx->details, JSON_UNESCAPED_UNICODE)
+                //         : json_encode([]),
+
+                //     'short_description' => $productx->short_description ?? null,
+                //     'short_description_ar' => $productx->short_description_ar ?? null,
+                //     'description' => $productx->description ?? null,
+                //     'description_ar' => $productx->description_ar ?? null,
+
+                //     // Flags
+                //     'is_active' => 1,
+                //     'is_new' => $productx->is_new ?? 0,
+                //     'is_featured' => $productx->is_featured ?? 0,
+                //     'is_approve' => 1,
+
+                //     // SEO
+                //     'meta_title' => $productx->meta_title ?? $productx->name,
+                //     'meta_description' => $productx->meta_description ?? null,
+                //     'meta_keywords' => $productx->meta_keywords ?? null,
+                // ]);
+
                 $price = $product->discount_price > 0 ? $product->discount_price : $product->price;
 
                 $flashSale = $product->flashSales?->first();
@@ -168,6 +224,28 @@ class OrderRepository extends Repository
     {
         $lastOrderId = self::query()->max('id');
 
+        $address = Address::find($request->address_id);
+
+        $orderaddress_id = OrderAddress::create([
+            'name' => $address->name,
+            'phone' => $address->phone,
+            'customer_id' => $address->customer_id,
+            'address_type' => $address->address_type,
+            'area' => $address->area,
+            'road_no' => $address->road_no,
+            'flat_no' => $address->flat_no,
+            'house_no' => $address->house_no,
+            'address_line' => $address->address_line,
+            'address_line2' => $address->address_line2,
+            'post_code' => $address->post_code,
+            'latitude' => $address->latitude,
+            'longitude' => $address->longitude,
+            'state' => $address->state,
+            'state_id' => $address->state_id,
+            'district_id' => $address->district_id,
+            'is_default' => $address->is_default,
+        ])->id;
+
         $order = self::create([
             'shop_id' => $shop->id,
             'order_code' => str_pad($lastOrderId + 1, 6, '0', STR_PAD_LEFT),
@@ -181,7 +259,7 @@ class OrderRepository extends Repository
             'coupon_discount' => $getCartAmounts['discount'],
             'payment_method' => $paymentMethod->value,
             'order_status' => OrderStatus::PENDING->value,
-            'address_id' => $request->address_id,
+            'address_id' => $orderaddress_id,
             'instruction' => $request->note,
             'payment_status' => PaymentStatus::PENDING->value,
         ]);

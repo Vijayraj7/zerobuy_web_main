@@ -181,6 +181,7 @@ class CartRepository extends Repository
 
         $cart = $customer->carts()
             ?->where('is_buy_now', $isBuyNow)
+            ->where('product_id',  $request->product_id)
             ->where('variant_id',  $request->variant_id)
             ->where('bulk_item_id',  $request->bulk_item_id)
             ->first();

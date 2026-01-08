@@ -75,9 +75,15 @@ class Order extends Model
     /**
      * Get the address for the Order.
      */
+    // public function address(): BelongsTo
+    // {
+    //     return $this->belongsTo(Address::class, 'address_id');
+    // }
+
+
     public function address(): BelongsTo
     {
-        return $this->belongsTo(Address::class, 'address_id');
+        return  $this->belongsTo(OrderAddress::class, 'address_id');
     }
 
     /**

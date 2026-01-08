@@ -91,7 +91,11 @@ class CartController extends Controller
 
         $customer = auth()->user()->customer;
 
-        $cart = $customer->carts()?->where('product_id', $product->id)->where('is_buy_now', $isBuyNow)->first();
+        $cart = $customer->carts()
+            ?->where('is_buy_now', $isBuyNow)
+            ->where('product_id',  $request->product_id)
+            ->where('variant_id',  $request->variant_id)
+            ->where('bulk_item_id',  $request->bulk_item_id)->first();
 
         if (! $cart) {
             return $this->json('Sorry product not found in cart', [], 422);
@@ -149,7 +153,11 @@ class CartController extends Controller
         }
 
         $customer = auth()->user()->customer;
-        $cart = $customer->carts()?->where('product_id', $product->id)->where('is_buy_now', $isBuyNow)->first();
+        $cart = $customer->carts()
+            ?->where('is_buy_now', $isBuyNow)
+            ->where('product_id',  $request->product_id)
+            ->where('variant_id',  $request->variant_id)
+            ->where('bulk_item_id',  $request->bulk_item_id)->first();
 
         if (! $cart) {
             return $this->json('Sorry product not found in cart', [], 422);
