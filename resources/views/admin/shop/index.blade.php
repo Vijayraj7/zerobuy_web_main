@@ -140,6 +140,23 @@
 
         <div class="mb-3 card" id="listItem">
             <div class="card-body">
+                <ul class="nav nav-tabs mt-3" id="statusTabs">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link active" data-filter="all">All</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-filter="branded">Branded Stores</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-filter="verified">Verified Stores</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-filter="active">Active Stores</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-filter="inactive">Inactive Stores</a>
+                    </li>
+                </ul>
                 <div class="d-flex flex-wrap align-items-center gap-3 mt-3 px-2">
                     <!-- Date Filters -->
                     <div class="d-flex align-items-center gap-2">
@@ -204,6 +221,7 @@
     $(function() {  
         let startDate = "";
         let endDate = "";
+        let filter    = "all";
 
         let table = $('#shopTable').DataTable({
             responsive: true,
@@ -214,6 +232,7 @@
                 data: function(d) { 
                     d.startDate = startDate;
                     d.endDate = endDate;
+                    d.filter    = filter;
                 }
             },
              columns: [
@@ -229,11 +248,13 @@
                         return data ? data : '<span class="text-muted">-</span>';
                     }
                 },
-                { 
-                    data: 'store_type', name: 'store_type', 
-                    render: function(data) {
-                        return data ? data : '<span class="text-muted">-</span>';
-                    } 
+                { data: 'store_type', name: 'store_type',
+                    render: function (data) {
+                        if (!data) {
+                            return '<span class="text-muted">-</span>';
+                        }
+                        return data.charAt(0).toUpperCase() + data.slice(1);
+                    }
                 },
                 // { data: 'subscription_days', name: 'subscription_days' },
                 { data: 'products', name: 'products' },
@@ -264,19 +285,31 @@
             },
         }); 
  
-        // Auto Date Filtering
-        $('#startDate, #endDate').change(function() {
+        // Date filter
+        $('#startDate, #endDate').change(function () {
             startDate = $('#startDate').val();
             endDate   = $('#endDate').val();
-            table.ajax.reload(null, false);
+            table.ajax.reload();
         });
 
-        // Reload Button
+        // Reload
         $('#reloadBtn').click(function () {
-            $('#startDate').val('');
-            $('#endDate').val('');
-            startDate = "";
-            endDate = ""; 
+            startDate = endDate = "";
+            filter = "all";
+            $('#startDate,#endDate').val('');
+            $('#statusTabs .nav-link').removeClass('active');
+            $('#statusTabs .nav-link[data-filter="all"]').addClass('active');
+            table.ajax.reload();
+        });
+        
+        // Tabs click
+        $('#statusTabs').on('click', '.nav-link', function (e) {
+            e.preventDefault();
+
+            $('#statusTabs .nav-link').removeClass('active');
+            $(this).addClass('active');
+
+            filter = $(this).data('filter'); // 👈 get tab filter
             table.ajax.reload();
         });
     });

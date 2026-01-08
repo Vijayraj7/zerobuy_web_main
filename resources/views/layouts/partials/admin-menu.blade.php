@@ -22,7 +22,7 @@
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/employee.svg') }}" alt="icon"
                     loading="lazy" />
-                {{ __('Users Management') }}
+                {{ __('Users') }}
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
@@ -62,7 +62,7 @@
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/customer.svg') }}" alt="icon"
                     loading="lazy" />
-                {{ __('Customer Management') }}
+                {{ __('Customers') }}
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
@@ -134,7 +134,7 @@
             data-bs-toggle="collapse" href="#productVarientMenu">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/boxes.svg') }}" alt="icon" loading="lazy" />
-                {{ __('Product Variant Management') }}
+                {{ __('Product Variants') }}
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
@@ -180,7 +180,7 @@
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/orders.svg') }}" alt="icon"
                     loading="lazy" />
-                {{ __('Order Management') }}
+                {{ __('Orders') }}
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
@@ -212,7 +212,7 @@
                 <span>
                     <img class="menu-icon" src="{{ asset('assets/icons-admin/shop.svg') }}" alt="icon"
                         loading="lazy" />
-                    {{ __('Shop Management') }}
+                    {{ __('Shops') }}
                 </span>
                 <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
             </a>
@@ -256,7 +256,7 @@
                 <span>
                     <img class="menu-icon" src="{{ asset('assets/icons-admin/shop-product.svg') }}" alt="icon"
                         loading="lazy" />
-                    {{ __('Shop Product Management') }}
+                    {{ __('Shop Products') }}
                 </span>
                 <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="" class="downIcon">
             </a>
@@ -300,7 +300,7 @@
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/category.svg') }}" alt="icon"
                     loading="lazy" />
-                {{ __('Category Management') }}
+                {{ __('Categories') }}
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
@@ -347,7 +347,7 @@
                 <span>
                     <img class="menu-icon" src="{{ asset('assets/icons-admin/crown.svg') }}" alt="icon"
                         loading="lazy" />
-                    {{ __('Subscription Management') }}
+                    {{ __('Subscriptions') }}
                 </span>
                 <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
             </a>
@@ -399,7 +399,7 @@
             data-bs-toggle="collapse" href="#promotionMenu">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/ads.svg') }}" alt="icon" loading="lazy" />
-                {{ __('Promotion Management') }}
+                {{ __('Promotions') }}
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
@@ -471,39 +471,7 @@
         </a>
     </li>
 @endhasPermission
-<!------------------------------ End Certificates ------------------------------>
-
-
-<!------------------------------ Brand Store ------------------------------>
-@hasPermission('admin.contactUs.index')
-    <li>
-        <a href="#"
-            class="menu {{ request()->routeIs('admin.contactUs.*') ? 'active' : '' }}">
-            <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/brand.svg') }}" alt="icon"
-                    loading="lazy" />
-                {{ __('Brand Store') }}
-            </span>
-        </a>
-    </li>
-@endhasPermission
-<!------------------------------ End Brand Store ------------------------------>
-
-
-<!------------------------------ Verified Store ------------------------------>
-@hasPermission('admin.contactUs.index')
-    <li>
-        <a href="#"
-            class="menu {{ request()->routeIs('admin.contactUs.*') ? 'active' : '' }}">
-            <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/contacts.svg') }}" alt="icon"
-                    loading="lazy" />
-                {{ __('Verified Store') }}
-            </span>
-        </a>
-    </li>
-@endhasPermission
-<!------------------------------ End Verified Store ------------------------------>
+<!------------------------------ End Certificates ------------------------------> 
 
 
 <!------------------------------ Revenue ------------------------------>
@@ -563,7 +531,7 @@
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/3rd-config.svg') }}" alt="icon"
                     loading="lazy" />
-                {{ __('Support Management') }}
+                {{ __('Supports') }}
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
@@ -631,7 +599,7 @@
                 <span>
                     <img class="menu-icon" src="{{ asset('assets/icons-admin/withdraw.svg') }}" alt="icon"
                         loading="lazy" />
-                    {{ __('Withdrawal Management') }}
+                    {{ __('Withdrawal') }}
                 </span>
             </a>
         </li>

@@ -77,12 +77,12 @@ class ShopCreateRequest extends FormRequest
             'gst_number' => ['nullable', 'string'],
 
             'bussiness_categories_id' => ['required', 'array', 'min:1'],
-            'bussiness_categories_id.*' => ['exists:business_categories,id'],
+            'bussiness_categories_id.*' => ['required', 'exists:business_categories,id'],
             // 'terms_condition_status' => [$isUpdate ? 'nullable' : 'required', 'in:1'],
 
             'delivery_days' => ['required', 'string'],
             'delivery_state_ids' => ['required', 'array', 'min:1'],
-            'delivery_state_ids.*' => ['integer', 'exists:states,id'],
+            'delivery_state_ids.*' => ['required', 'integer', 'exists:states,id'],
         ];
     }
 
@@ -115,6 +115,17 @@ class ShopCreateRequest extends FormRequest
             'password_confirmation.min' => __('The password confirmation must be at least 6 characters.'),
             'password_confirmation.required' => __('The password confirmation field is required.'),
             'address.max' => __('The address may not be greater than 255 characters.'),
+
+            // ✅ Add custom messages for multi-select/checkbox fields
+            'bussiness_categories_id.required' => __('Please select at least one business category.'),
+            'bussiness_categories_id.array' => __('Invalid business category selection.'),
+            'bussiness_categories_id.min' => __('Please select at least one business category.'),
+            'bussiness_categories_id.*.exists' => __('Selected business category is invalid.'),
+
+            'delivery_state_ids.required' => __('Please select at least one delivery state.'),
+            'delivery_state_ids.array' => __('Invalid delivery state selection.'),
+            'delivery_state_ids.min' => __('Please select at least one delivery state.'),
+            'delivery_state_ids.*.exists' => __('Selected delivery state is invalid.'),
         ];
     }
 }
