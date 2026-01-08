@@ -98,7 +98,7 @@ class ShopRepository extends Repository
         // if ($request->filled(['first_name', 'email', 'password'])) {
         //     UserRepository::updateByRequest($request, $shop->user);
         // }
-        UserRepository::updateByRequest($request, $shop->user);
+        // UserRepository::updateByRequest($request, $shop->user);
 
         // Only update images if files uploaded
         $thumbnail = $request->hasFile('shop_logo') ? self::updateLogo($shop, $request) : $shop->logo;
