@@ -31,13 +31,13 @@
                                         </span>
                                         <div class="mt-0">
                                             @if($shop->user?->is_active==1)
-                                            <span class="badge bg-success">Active</span> 
+                                            <span class="badge bg-success clear-badge-font">Active</span> 
                                             @else
-                                            <span class="badge bg-danger">Inactive</span>
+                                            <span class="badge bg-danger clear-badge-font">Inactive</span>
                                             @endif
 
                                             @if($shop->is_branded==1)
-                                            <span class="badge bg-success"><i class="bi bi-shop"></i> Branded Store</span> 
+                                            <span class="badge bg-success clear-badge-font"><i class="bi bi-shop"></i> Branded Store</span> 
                                             @else 
                                             
                                             @endif
@@ -97,6 +97,13 @@
                                     <span><b>{{ $shop->district }} , {{ $shop->state }}</b></span>
                                 </div>
 
+                                @if(!empty($shop->store_since))
+                                <div class="mt-2">
+                                    <span class="fw-medium">{{ __('Store Since') }} : </span>
+                                    <span><b>{{ date('d-m-Y', strtotime($shop->store_since)) }}</b></span>
+                                </div>
+                                @endif
+
                                 <div class="mt-2">
                                     <span class="fw-medium">{{ __('Estimated Delivery') }} : </span>
                                     <span><b>{{ $shop->estimated_delivery_time }}</b></span>
@@ -104,25 +111,27 @@
 
                                 <div class="mt-2">
                                     <span class="fw-medium">{{ __('Shop ID') }} : <b>STR0{{ $shop->id }}</b></span> | 
-                                    <span class="fw-medium">{{ __('GST No.') }} : <b>{{ $shop->gst_number }}</b></span>
+                                    <span class="fw-medium">{{ __('GST No.') }} : <b>{{ $shop->gst_number ?? 'No' }}</b></span>
                                     <span></span>
                                 </div> 
 
                                 <div class="mt-2">
                                     <span class="fw-medium">{{ __('Shop Description') }} :</span>
-                                    <span><b>{{ $shop->description }}</b></span>
+                                    <span>{{ $shop->description }}</span>
                                 </div>
 
                                 <div class="mt-2">
-                                    <span class="badge badge-primary">₹{{ $shop->min_order_amount }} Min, Order</span>
-                                    <span class="badge badge-info"><i class="fa fa-refresh"></i> Return Policy</span>
-                                    <span class="badge badge-success"><i class="fa fa-sack-dollar"></i> GST Available</span>
-                                    <span class="badge badge-danger"><i class="fa fa-award"></i> Truste</span>  
+                                    <span class="badge badge-primary clear-badge-font">₹{{ $shop->min_order_amount }} Min, Order</span>
+                                    <!-- <span class="badge badge-info clear-badge-font"><i class="fa fa-refresh"></i> Return Policy</span> -->
+                                    <span class="badge badge-info clear-badge-font" role="button" data-bs-toggle="modal" data-bs-target="#termsModal"><i class="fa fa-refresh"></i> Return Policy</span>
+                                    <!-- <span class="badge badge-success clear-badge-font"><i class="fa fa-sack-dollar"></i> GST Available</span> -->
+                                     <span class="badge {{ $shop->gst_number ? 'badge-success' : 'badge-secondary' }} clear-badge-font"><i class="fa fa-sack-dollar"></i> {{ $shop->gst_number ? 'GST Available' : 'GST Not Available' }} </span>
+                                    <span class="badge badge-danger clear-badge-font"><i class="fa fa-award"></i> Truste</span>  
                                 </div>
                             </div>
                         </div>
                         <div class="card mt-3">
-                            <div class="row mb-3">
+                            <div class="row mb-1">
                                 <div class="col-lg-12 mt-3">
                                     <div class="card-header d-flex align-items-center justify-content-start gap-2 py-3">
                                         <i class="fas fa-crown fz-18"></i>
@@ -143,6 +152,15 @@
                                             </div>
 
                                             <div class="mt-2">
+                                                <span class="fw-medium">Sale Limit :
+                                                    <b>{{ $subscription->sale_limit ?? 'Unlimited' }}</b> |
+                                                </span>
+                                                <span class="fw-medium">Remaining Sales :
+                                                    <b>{{ $subscription->remaining_sales ?? 'Unlimited' }}</b>
+                                                </span>
+                                            </div>
+
+                                            <div class="mt-2">
                                                 <span class="fw-medium">Activation :
                                                     <b>{{ optional($subscription->starts_at)->format('d-m-Y') }}</b> |
                                                 </span>
@@ -156,11 +174,30 @@
                                             </div>
                                         @endif
                                     </div>
-                                </div>  
-                                <div class="d-flex justify-content-center align-items-center">
-                                    <div id="daysLeftChart"></div>
                                 </div>
-
+                                <div class="row mb-1">  
+                                    <div class="col-lg-4 mt-3">
+                                        <div class="card-body">
+                                            @if($subscription)
+                                            <div class="justify-content-center align-items-center">
+                                                <div class="mt-4 badge bg-primary rounded-pill px-3 py-1 mt-2 mb-2"> 
+                                                    <div class="mt-2 mb-2">
+                                                        <h5 class="fw-medium text-white">Plan Validity</h5>
+                                                        <div class="mt-1">
+                                                            <h5 class="text-white"><b>{{ $subscription->plan?->duration ? ucwords(daysToLargestUnit($subscription->plan?->duration)) : 'Unlimited' }}</b></h5>
+                                                        </div>
+                                                    </div>
+                                                </div> 
+                                            </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-8 mt-1">
+                                        <div class="d-flex justify-content-center align-items-center">
+                                            <div id="daysLeftChart"></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>  
                         </div>   
                     </div>
@@ -258,13 +295,13 @@
 
                                             <h6 class="fw-bold mb-0">Sales & Order Summary</h6>
 
-                                            <div class="d-flex gap-2">
-                                                <span class="badge bg-primary px-3 py-2">Sales</span>
-                                                <span class="badge bg-success px-3 py-2">Order</span>
-                                                <span class="badge bg-danger px-3 py-2">Return</span>
+                                            <div class="d-flex gap-1">
+                                                <span class="btn btn-primary btn-sm">Sales</span>
+                                                <span class="btn btn-success btn-sm">Order</span>
+                                                <span class="btn btn-danger btn-sm">Return</span>
                                             </div>
 
-                                            <div class="btn-group">
+                                            <div class="btn-group p-3">
                                                 <button class="btn btn-outline-secondary btn-sm">Today</button>
                                                 <button class="btn btn-outline-secondary btn-sm">Week</button>
                                                 <button class="btn btn-outline-secondary btn-sm">Month</button>
@@ -341,122 +378,105 @@
 
     <!-- VIEW CUSTOMER CREDENTIALS MODAL -->
     <div class="modal fade" id="viewCredentials" tabindex="-1" aria-labelledby="viewCredentialsLabel" aria-hidden="true">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="viewCredentialsLabel">{{ __('View Credentials') }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-
-            <div class="modal-body">
-                <!-- MOBILE -->
-                <div id="copyFlash" style="display:none; background:white; color:#28a745; padding:2px 2px; z-index:9999;text-align:center;"> Copied! </div> 
-                <div class="input-group mb-2">
-                    <input type="text" id="copyMobile" value="{{ $shop->user?->phone }}" class="form-control" readonly>
-                    <button class="btn btn-outline-primary" onclick="copyField('copyMobile')">
-                        <i class="fa fa-copy"></i>
-                    </button>
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewCredentialsLabel">{{ __('View Credentials') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
-                <!-- EMAIL -->
-                <div class="input-group mb-2">
-                    <input type="text" id="copyEmail" value="{{ $shop->user?->email }}" class="form-control" readonly>
-                    <button class="btn btn-outline-primary" onclick="copyField('copyEmail')">
-                        <i class="fa fa-copy"></i>
-                    </button>
+                <div class="modal-body">
+                    <!-- MOBILE -->
+                    <div id="copyFlash" style="display:none; background:white; color:#28a745; padding:2px 2px; z-index:9999;text-align:center;"> Copied! </div> 
+                    <div class="input-group mb-2">
+                        <input type="text" id="copyMobile" value="{{ $shop->user?->phone }}" class="form-control" readonly>
+                        <button class="btn btn-outline-primary" onclick="copyField('copyMobile')">
+                            <i class="fa fa-copy"></i>
+                        </button>
+                    </div>
+
+                    <!-- EMAIL -->
+                    <div class="input-group mb-2">
+                        <input type="text" id="copyEmail" value="{{ $shop->user?->email }}" class="form-control" readonly>
+                        <button class="btn btn-outline-primary" onclick="copyField('copyEmail')">
+                            <i class="fa fa-copy"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- TERMS & CONDITIONS MODAL -->
+    <div class="modal fade" id="termsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Terms & Conditions</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 400px; overflow-y:auto;">
+                    @if (!empty($sellerTerms))
+                        {!! $sellerTerms->description !!}
+                    @else
+                        <p class="text-danger">Terms & Conditions not available.</p>
+                    @endif
+                    
+                    @if ($shop->terms_condition_status == 1)
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" checked disabled>
+                            <label class="form-check-label fw-bold text-success">Agreed</label>
+                        </div>
+                    @endif
+                </div> 
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
+
 @endsection
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-    <!-- <script>
-        var daysLeft = 354;
-        var totalDays = 365;
-        var percent = Math.round((daysLeft / totalDays) * 100);
-        
-        var options = {
-            series: [percent],
-            chart: {
-                type: 'radialBar',
-                height: 200,
-                sparkline: { enabled: true }
-            },
-            plotOptions: {
-                radialBar: {
-                    startAngle: 0,
-                    endAngle: 360,
-                    hollow: {
-                        size: '65%'
-                    },
-                    track: {
-                        background: '#EAF6F1',
-                        strokeWidth: '100%'
-                    },
-                    dataLabels: {
-                        name: {
-                            show: false
-                        },
-                        value: {
-                            show: true,
-                            formatter: function () {
-                                return daysLeft;
-                            },
-                            fontSize: '36px',
-                            fontWeight: 700,
-                            color: '#000',
-                            offsetY: -5
-                        },
-                        total: {
-                            show: true,
-                            label: 'Days Left',
-                            fontSize: '14px',
-                            fontWeight: 500,
-                            color: '#6c757d'
-                        }
-                    }
-                }
-            },
-            stroke: {
-                lineCap: 'round'
-            },
-            colors: ['#0A8F6A']
-        };
-
-        new ApexCharts(
-            document.querySelector("#daysLeftChart"),
-            options
-        ).render();
-    </script> -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script> 
     <script>
         var daysLeft  = {{ $daysLeft }};
         var totalDays = {{ $totalDays }};
         var percent   = totalDays > 0 ? Math.round((daysLeft / totalDays) * 100) : 0;
 
         new ApexCharts(document.querySelector("#daysLeftChart"), {
-            series: [percent],
-            chart: { type: 'radialBar', height: 200, sparkline: { enabled: true }},
+            series: [percent], // % only for chart fill
+            chart: {
+                type: 'radialBar',
+                height: 220,
+                sparkline: { enabled: true }
+            },
             plotOptions: {
                 radialBar: {
                     hollow: { size: '65%' },
                     dataLabels: {
-                        value: {
-                            formatter: () => daysLeft,
-                            fontSize: '36px',
-                            fontWeight: 700
-                        },
-                        total: {
+                        name: {
                             show: true,
-                            label: 'Days Left'
+                            fontSize: '14px',
+                            offsetY: 25,
+                            formatter: () => 'Days Left'
+                        },
+                        value: {
+                            show: true,
+                            fontSize: '32px',
+                            fontWeight: 700,
+                            offsetY: -10,
+                            formatter: function () {
+                                return daysLeft; // ✅ SHOW REAL DAYS
+                            }
                         }
                     }
                 }
             },
+            stroke: { lineCap: 'round' },
             colors: ['#0A8F6A']
         }).render();
-    </script>
+    </script> 
 
     <!-- <script>
         var options = {

@@ -158,10 +158,11 @@
                         </div>
                         <div class="mt-3">
                             <x-select label="Return Period" required name="return_period">
+                                <option value="" disabled selected>--Select Return Period--</option>
                                 @foreach ([0, 2, 5, 7, 10, 15, 30] as $days)
                                     <option value="{{ $days }}"
                                         {{ old('return_period', $product->return_period ?? '') == $days ? 'selected' : '' }}>
-                                        {{ $days == 0 ? 'No Return Period' : $days . ' Days' }}
+                                        {{ $days == 0 ? 'No Returns' : $days . ' Days' }}
                                     </option>
                                 @endforeach
                             </x-select>

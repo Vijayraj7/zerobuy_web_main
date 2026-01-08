@@ -217,6 +217,7 @@
                         </div>
                     @endforeach
                 </div>
+                <p class="text-danger mt-2" id="businessCategoryError"></p>
                 <div class="mt-3">
                     <button type="button" class="btn btn-secondary prev-btn" data-prev="1">&laquo;
                         Previous</button>
@@ -279,6 +280,7 @@
                         </div>
                     </div>
                 </div>
+                <p class="text-danger mt-2" id="deliveryStateError"></p>
                 <div class="mt-5">
                     <button type="button" class="btn btn-secondary prev-btn" data-prev="2">&laquo;
                         Previous</button>
@@ -544,6 +546,23 @@
 
 @push('scripts')
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('store_since');
+
+    if (input) {
+        const today = new Date().toISOString().split('T')[0];
+        input.setAttribute('max', today);
+
+        // Safety: prevent manual future date typing
+        input.addEventListener('change', function () {
+            if (this.value > today) {
+                this.value = today;
+            }
+        });
+    }
+});
+</script>
+<script>
     const IS_EDIT = @json($isEdit);
     $(document).ready(function() {
 
@@ -747,6 +766,8 @@
         function clearErrors() {
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
+            $('#businessCategoryError').text('');
+            $('#deliveryStateError').text('');
         }
 
         const initialStateId = $('#state_id').val();
@@ -810,6 +831,14 @@
 
         function showErrors(errors) {
             $.each(errors, function(field, messages) {
+                if (field === 'bussiness_categories_id') {
+                    $('#businessCategoryError').text(messages[0]);
+                    return;
+                }
+                if (field === 'delivery_state_ids') { 
+                    $('#deliveryStateError').text(messages[0]);
+                    return; 
+                }
                 let input = $('[name="' + field + '"]');
                 input.addClass('is-invalid');
                 if (input.next('.invalid-feedback').length === 0) {

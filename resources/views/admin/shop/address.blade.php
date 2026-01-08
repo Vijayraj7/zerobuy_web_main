@@ -7,7 +7,7 @@
         <div class="card-body">
             @include('admin.shop.header-nav')
 
-           <div class="card mt-3">
+            <div class="card mt-3">
                 <div class="card-header d-flex align-items-center justify-content-start gap-2 py-3">
                     <i class="fa fa-address-card fz-18"></i>
                     <h4 class="fz-20 m-0"> {{ __('Address Information') }}</h4> 
@@ -29,6 +29,27 @@
                         <span class="fw-medium">{{ __('PINCODE') }} : </span>
                         <span><b>{{ $shop->pincode }}</b></span>
                     </div> 
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header d-flex align-items-center justify-content-start gap-2 py-3">
+                    <i class="fa fa-user fz-18"></i>
+                    <h4 class="fz-20 m-0"> {{ __('User Information') }}</h4> 
+                </div>
+                <div class="card-body"> 
+                    <div class="mt-2">
+                        <span class="fw-medium">{{ __('User Name') }} : </span>
+                        <span><b>{{ $shop->user?->name }}</b></span>
+                    </div> 
+                    <div class="mt-2">
+                        <span class="fw-medium">{{ __('Phone Number') }} : </span>
+                        <span><b>{{ $shop->user?->phone }}</b></span>
+                    </div> 
+                    <div class="mt-2">
+                        <span class="fw-medium">{{ __('Email') }} : </span>
+                        <span><b>{{ $shop->user?->email }}</b></span>
+                    </div>  
                 </div>
             </div>
 

@@ -31,10 +31,28 @@ class ShopController extends Controller
     public function index(Request $request)
     {
         $shops = Shop::paginate(20);
+        $query = Shop::with('user')->withCount(['products', 'orders']);
+        if ($request->filter) {
+            switch ($request->filter) {
+
+                case 'branded':
+                    $query->where('is_branded', 1);
+                    break;
+
+                case 'verified':
+                    $query->where('is_verified', 1);
+                    break;
+
+                case 'active':
+                    $query->whereHas('user', fn ($q) => $q->where('is_active', 1));
+                    break;
+
+                case 'inactive':
+                    $query->whereHas('user', fn ($q) => $q->where('is_active', 0));
+                    break;
+            }
+        }
         if ($request->ajax()) { 
-
-            $query = Shop::with('user')->withCount(['products', 'orders']);
-
             if ($request->startDate) {
                 $query->whereDate('shops.created_at', '>=', $request->startDate);
             }
@@ -119,7 +137,7 @@ class ShopController extends Controller
                     // }
                     // if (auth()->user()->can('admin.shop.edit')) {
                     $btn .= '
-                    <a class="circleIcon" href="' . route('admin.shop.edit', $shop->id) . '">
+                    <a class="circleIcon mt-1" href="' . route('admin.shop.edit', $shop->id) . '">
                         <img src="' . asset('assets/icons-admin/edit.svg') . '">
                     </a>';
                     // }
@@ -159,7 +177,7 @@ class ShopController extends Controller
     {
         // Mark notification read
         Notification::where('url', '/admin/shops/' . $shop->id)->whereNull('shop_id')->where('is_read', false)->update(['is_read' => true]);
-
+        $sellerTerms = Page::where('slug', 'seller-terms-of-service')->where('is_active', 1)->first();
         /* ---------------- TOTAL SALES ---------------- */
         $totalSales = $shop->orders()
             ->where('order_status', OrderStatus::DELIVERED->value)
@@ -195,7 +213,8 @@ class ShopController extends Controller
         $totalDays = 0;
 
         if ($subscription && $subscription->ends_at && $subscription->starts_at) {
-            $daysLeft  = now()->diffInDays($subscription->ends_at, false);
+            // $daysLeft  = now()->diffInDays($subscription->ends_at, false);
+            $daysLeft = max(0, now()->startOfDay()->diffInDays($subscription->ends_at->startOfDay()));
             $totalDays = $subscription->starts_at->diffInDays($subscription->ends_at);
         }
 
@@ -227,7 +246,7 @@ class ShopController extends Controller
             'returns' => $months->map(fn($m) => (int) ($returnData[$m] ?? 0)),
         ];
 
-        return view('admin.shop.show', compact('totalSales', 'shop', 'orderOverview', 'subscription', 'daysLeft', 'totalDays', 'chartData'));
+        return view('admin.shop.show', compact('totalSales', 'shop', 'orderOverview', 'subscription', 'daysLeft', 'totalDays', 'chartData', 'sellerTerms'));
     }  
 
     public function edit(Shop $shop)
@@ -245,7 +264,7 @@ class ShopController extends Controller
         if (app()->environment() == 'local' && $shop->user->email == 'shop@readyecommerce.com') {
             return back()->with('demoMode', 'You can not update the shop in demo mode');
         } 
-// dd($request->all());
+ 
         ShopRepository::updateByRequest($shop, $request);
 
         return response()->json([
@@ -420,7 +439,7 @@ class ShopController extends Controller
                         <a href="'.route('shop.product.edit', $row->id).'" class="btn btn-sm btn-primary">
                             <i class="fa fa-edit"></i>
                         </a>
-                        <a href="'.route('shop.product.show', $row->id).'" class="btn btn-sm btn-secondary">
+                        <a href="'.route('shop.product.show', $row->id).'" class="btn btn-sm btn-secondary mt-1">
                             <i class="fa fa-eye"></i>
                         </a>
                     ';
