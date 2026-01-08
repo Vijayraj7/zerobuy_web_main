@@ -68,7 +68,7 @@ class ProductDetailsResource extends JsonResource
             'short_description' => $shortDescription,
             'price' => (float) number_format($price, 2, '.', ''),
             'discount_price' => (float) number_format($discountPrice, 2, '.', ''),
-            'details' => $this->details,
+            'details' => $this->itemDetails,
             'discount_percentage' => (float) number_format($discountPercentage, 2, '.', ''),
             'rating' => (float) $this->averageRating ?? 0.0,
             'total_reviews' => (string) Number::abbreviate($this->reviews?->count(), maxPrecision: 2),

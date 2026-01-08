@@ -36,6 +36,8 @@ class ShopResource extends JsonResource
             'name' => $this->name,
             'logo' => $this->logo,
             'banner' => $this->banner,
+            'state' => $this->states ? $this->states->name : null,
+            'district' => $this->districts ? $this->districts->name : null,
             'total_products' => (int) $this->products()->isActive()->count(),
             'total_categories' => (int) $this->categories()->active()->count(),
             'rating' => (float) number_format($this->averageRating, 1, '.', ''),

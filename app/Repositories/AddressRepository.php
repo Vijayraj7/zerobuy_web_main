@@ -69,6 +69,8 @@ class AddressRepository extends Repository
             'phone' => $request->phone,
             'state' => $request->state,     // <-- new field created by ancy
             'area' => $request->area,
+            'state_id' => $request->state_id,
+            'district_id' => $request->district_id,
             'flat_no' => $request->flat_no ?? null,
             'post_code' => $request->post_code,
             'address_line' => $request->address_line,
@@ -101,6 +103,8 @@ class AddressRepository extends Repository
             'name' => $request->name,
             'phone' => $request->phone,
             'state' => $request->state,
+            'state_id' => $request->state_id,
+            'district_id' => $request->district_id,
             'area' => $request->area,
             'flat_no' => $request->flat_no,
             'post_code' => $request->post_code,

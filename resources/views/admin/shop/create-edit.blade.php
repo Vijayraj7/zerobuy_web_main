@@ -17,7 +17,7 @@
     const SELECTED_DISTRICT_ID = @json(old('district_id', $shop->district_id ?? null));
 </script>
 
-<form id="shopForm" action="{{ $isEdit ? route('admin.shop.update', $shop->id) : route('admin.shop.store') }}"
+<form id="shopForm" action="{{ $isEdit ? route('shop.shop.update', $shop->id) : route('shop.shop.store') }}"
     method="POST" enctype="multipart/form-data">@csrf
     <div class="card">
         <div class="card-body">

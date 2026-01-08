@@ -13,6 +13,7 @@ use App\Http\Resources\SellerProductDetailsResource;
 use App\Http\Resources\SellerProductResource;
 use App\Http\Resources\SizeResource;
 use App\Http\Resources\UnitResource;
+use App\Models\Category;
 use App\Models\Media;
 use App\Models\Product;
 use App\Repositories\NotificationRepository;
@@ -80,7 +81,10 @@ class ProductController extends Controller
 
         $brands = $rshop?->brands()->isActive()->get();
         $colors = $shop?->colors()->isActive()->get();
-        $categories = $rshop?->categories()->active()->get();
+        // $categories = $rshop?->categories()->active()->get();
+
+        $categories = Category::active()->get();
+
         $units = $rshop?->units()->isActive()->get();
         $sizes = $shop?->sizes()->isActive()->get();
 

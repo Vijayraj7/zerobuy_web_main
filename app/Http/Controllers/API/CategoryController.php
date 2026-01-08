@@ -24,13 +24,14 @@ class CategoryController extends Controller
         $shop = generaleSetting('rootShop');
 
         $categories = CategoryRepository::query()->active()
-            ->whereHas('shops', function ($query) use ($shop) {
-                $query->where('id', $shop->id);
-            })->whereHas('products', function ($query) {
-                $query->whereHas('shop', function ($query) {
-                    return $query->isActive();
-                });
-            })->latest('id');
+            // ->whereHas('shops', function ($query) use ($shop) {
+            //     $query->where('id', $shop->id);
+            // })->whereHas('products', function ($query) {
+            //     $query->whereHas('shop', function ($query) {
+            //         return $query->isActive();
+            //     });
+            // })
+            ->latest('id');
 
         $total = $categories->count();
 
