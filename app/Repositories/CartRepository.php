@@ -115,6 +115,11 @@ class CartRepository extends Repository
                         ->first();
                     if ($ogprice) {
                         $dprice =  (float) number_format($ogprice->price, 2, '.', '');
+                    } else {
+                        $lastbulkprice = $product->bulkPrices->sortByDesc('max_qty')->first();
+                        if ($lastbulkprice && $cart->quantity > $lastbulkprice->max_qty) {
+                            $dprice =  (float) number_format($lastbulkprice->price, 2, '.', '');
+                        }
                     }
                 } else {
                     $dprice = (float) number_format($discountPrice, 2, '.', '');
@@ -197,7 +202,7 @@ class CartRepository extends Repository
         if ($cart) {
             // CartRepository::syncvariant($cart, $request);
             $cart->update([
-                'quantity' => $isBuyNow ?  $product->min_order_quantity ?? 1  : $cart->quantity + ($request->quantity ?? 1),
+                'quantity' => $isBuyNow ?  $product->min_order_quantity ?? 1  : ($request->quantity ?? ($cart->quantity + 1)),
                 'size' => $request->size ?? $cart->size,
                 'color' => $request->color ?? $cart->color,
                 'unit' => $request->unit ?? $cart->unit,
@@ -369,6 +374,11 @@ class CartRepository extends Repository
                     ->first();
                 if ($ogprice) {
                     $price =  (float) number_format($ogprice->price, 2, '.', '');
+                } else {
+                    $lastbulkprice = $product->bulkPrices->sortByDesc('max_qty')->first();
+                    if ($lastbulkprice && $cart->quantity > $lastbulkprice->max_qty) {
+                        $price =  (float) number_format($lastbulkprice->price, 2, '.', '');
+                    }
                 }
             }
 

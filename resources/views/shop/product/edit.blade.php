@@ -150,7 +150,7 @@
                             <div class="col-md-6">
                                 <label class="form-label">MOQ <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" name="min_order_quantity"
-                                    placeholder="Enter Minimum Order Quantity" min="1" value="1">
+                                    placeholder="Enter Minimum Order Quantity" min="1" value="{{ old('min_order_quantity', $isEdit ? $product->min_order_quantity : 0) }}">
                                 @error('min_order_quantity')
                                     <p class="text text-danger m-0">{{ $message }}</p>
                                 @enderror

@@ -310,6 +310,11 @@ class OrderRepository extends Repository
                     ->first();
                 if ($ogprice) {
                     $price =  (float) number_format($ogprice->price, 2, '.', '');
+                } else {
+                    $lastbulkprice = $product->bulkPrices->sortByDesc('max_qty')->first();
+                    if ($lastbulkprice && $cart->quantity > $lastbulkprice->max_qty) {
+                        $price =  (float) number_format($lastbulkprice->price, 2, '.', '');
+                    }
                 }
             }
 

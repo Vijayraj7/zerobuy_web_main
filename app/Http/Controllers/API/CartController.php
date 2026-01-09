@@ -43,10 +43,16 @@ class CartController extends Controller
             return $this->json('Product not available now.', [], 422);
         }
 
-        $quantity = $product->min_order_quantity ?? 1;
+        // $quantity = $product->min_order_quantity ?? 1;
+        $min_quantity = $product->min_order_quantity ?? 1;
+        $request_quantity = $request->quantity ??  1;
 
         $customer = auth()->user()->customer;
-        $cart = $customer->carts()->where('product_id', $product->id)->first();
+        // $cart = $customer->carts()->where('product_id', $product->id)->first();
+
+        $cart = $customer->carts()
+            ->where('product_id',  $request->product_id)
+            ->where('variant_id',  $request->variant_id)->first();
 
         if ($isBuyNow) {
 
@@ -57,7 +63,16 @@ class CartController extends Controller
             }
         }
 
-        if (($product->quantity < $quantity) || ($product->quantity <= $cart?->quantity)) {
+        $product_quantity = $product->quantity;
+
+        if ($request->variant_id != null) {
+            $variant = $product->variants()->where('id', $request->variant_id)->first();
+            if ($variant) {
+                $product_quantity = $variant->quantity;
+            }
+        }
+
+        if (($request_quantity < $min_quantity) || ($request_quantity > $product_quantity) || ($cart?->quantity >= $product_quantity)) {
             return $this->json('Sorry! product cart quantity is limited. No more stock', [], 422);
         }
 

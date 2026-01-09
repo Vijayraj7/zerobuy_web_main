@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Repositories\CartRepository;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Auth;
@@ -62,6 +63,15 @@ class ProductDetailsResource extends JsonResource
 
         $lastOnline = $this->last_online >= now() ? true : false;
 
+        $carts = null;
+        if ($user && $user->customer) {
+            $user_carts = $user->customer->carts()->where('product_id', $this->id)->get();
+            $groupCart = $user_carts->groupBy('shop_id');
+            $carts = CartRepository::ShopWiseCartProducts($groupCart);
+        }
+
+
+
         return [
             'id' => $this->id,
             'name' => $name,
@@ -78,6 +88,7 @@ class ProductDetailsResource extends JsonResource
             'is_favorite' => (bool) $favorite,
             'thumbnails' => $this->thumbnails(),
             'videourl' => $this->videourl(),
+            'cart_items' => $carts ? $carts['shop_wise_products'] : [],
             'sizes' => SizeResource::collection($this->sizes),
             'colors' => ColorResource::collection($this->colors),
             'bulk_items' => ProductBulkItemResource::collection(
