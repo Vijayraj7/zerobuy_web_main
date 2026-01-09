@@ -176,8 +176,7 @@ class ShopController extends Controller
     public function show(Shop $shop)
     {
         // Mark notification read
-        Notification::where('url', '/admin/shops/' . $shop->id)->whereNull('shop_id')->where('is_read', false)->update(['is_read' => true]);
-        $sellerTerms = Page::where('slug', 'seller-terms-of-service')->where('is_active', 1)->first();
+        Notification::where('url', '/admin/shops/' . $shop->id)->whereNull('shop_id')->where('is_read', false)->update(['is_read' => true]); 
         /* ---------------- TOTAL SALES ---------------- */
         $totalSales = $shop->orders()
             ->where('order_status', OrderStatus::DELIVERED->value)
@@ -246,7 +245,7 @@ class ShopController extends Controller
             'returns' => $months->map(fn($m) => (int) ($returnData[$m] ?? 0)),
         ];
 
-        return view('admin.shop.show', compact('totalSales', 'shop', 'orderOverview', 'subscription', 'daysLeft', 'totalDays', 'chartData', 'sellerTerms'));
+        return view('admin.shop.show', compact('totalSales', 'shop', 'orderOverview', 'subscription', 'daysLeft', 'totalDays', 'chartData'));
     }  
 
     public function edit(Shop $shop)

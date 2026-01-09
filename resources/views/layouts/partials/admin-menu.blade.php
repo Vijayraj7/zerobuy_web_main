@@ -429,12 +429,7 @@
                         class="subMenu hasCount {{ request()->routeIs('admin.coupon.*') ? 'active' : '' }}">
                         {{ __('Promo Code') }}
                     </a>
-                @endhasPermission
-                @hasPermission('admin.coupon.index')
-                    <a href="#" class="subMenu hasCount {{ request()->routeIs('admin.coupon.*') ? 'active' : '' }}">
-                        {{ __('Slider') }}
-                    </a>
-                @endhasPermission
+                @endhasPermission 
             </div>
         </div>
     </li>

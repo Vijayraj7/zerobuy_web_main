@@ -168,36 +168,39 @@
                                                     <b>{{ optional($subscription->ends_at)->format('d-m-Y') }}</b>
                                                 </span>
                                             </div>
+
+                                            <div class="mt-2">
+                                                @if($subscription)
+                                                    <div class="justify-content-center align-items-center">
+                                                        <div class="badge bg-primary px-5 mt-1 mb-1 plan-validity-badge"> 
+                                                            <div class="mt-1 mb-1">
+                                                                <h5 class="fw-medium text-white">Plan Validity</h5>
+                                                                <div class="mt-1">
+                                                                    <h5 class="text-white"><b>{{ $subscription->plan?->duration ? ucwords(daysToLargestUnit($subscription->plan?->duration)) : 'Unlimited' }}</b></h5>
+                                                                </div>
+                                                            </div>
+                                                        </div> 
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            <div class="mt-3">
+                                                @php
+                                                    $percent = $totalDays > 0 ? round(($daysLeft / $totalDays) * 100) : 0;
+                                                @endphp
+                                                <h5 class="fw-bold">{{ $daysLeft }} Days Left</h5>
+
+                                                <div class="progress" style="height: 10px; border-radius: 20px;">
+                                                    <div class="progress-bar" role="progressbar" style="width: {{ $percent }}%; background-color:#0A8F6A; border-radius: 20px;" aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100">
+                                                    </div>
+                                                </div>
+                                            </div>
                                         @else
                                             <div class="alert alert-warning mb-0">
                                                 No Active Subscription
                                             </div>
                                         @endif
                                     </div>
-                                </div>
-                                <div class="row mb-1">  
-                                    <div class="col-lg-4 mt-3">
-                                        <div class="card-body">
-                                            @if($subscription)
-                                            <div class="justify-content-center align-items-center">
-                                                <div class="mt-4 badge bg-primary rounded-pill px-3 py-1 mt-2 mb-2"> 
-                                                    <div class="mt-2 mb-2">
-                                                        <h5 class="fw-medium text-white">Plan Validity</h5>
-                                                        <div class="mt-1">
-                                                            <h5 class="text-white"><b>{{ $subscription->plan?->duration ? ucwords(daysToLargestUnit($subscription->plan?->duration)) : 'Unlimited' }}</b></h5>
-                                                        </div>
-                                                    </div>
-                                                </div> 
-                                            </div>
-                                            @endif
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-8 mt-1">
-                                        <div class="d-flex justify-content-center align-items-center">
-                                            <div id="daysLeftChart"></div>
-                                        </div>
-                                    </div>
-                                </div>
+                                </div> 
                             </div>  
                         </div>   
                     </div>
@@ -407,27 +410,20 @@
         </div>
     </div>
 
-    <!-- TERMS & CONDITIONS MODAL -->
+    <!-- RETURN POLICY MODAL -->
     <div class="modal fade" id="termsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-dialog modal-md modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Terms & Conditions</h5>
+                    <h5 class="modal-title">Return Policy</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" style="max-height: 400px; overflow-y:auto;">
-                    @if (!empty($sellerTerms))
-                        {!! $sellerTerms->description !!}
+                    @if (!empty($shop->return_policy))
+                        {{$shop->return_policy}}
                     @else
-                        <p class="text-danger">Terms & Conditions not available.</p>
-                    @endif
-                    
-                    @if ($shop->terms_condition_status == 1)
-                        <div class="form-check mt-3">
-                            <input class="form-check-input" type="checkbox" checked disabled>
-                            <label class="form-check-label fw-bold text-success">Agreed</label>
-                        </div>
-                    @endif
+                        <p class="text-danger">Return Policy Not Available.</p>
+                    @endif 
                 </div> 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -435,11 +431,11 @@
             </div>
         </div>
     </div>
-
 @endsection
+
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script> 
-    <script>
+    <!-- <script>
         var daysLeft  = {{ $daysLeft }};
         var totalDays = {{ $totalDays }};
         var percent   = totalDays > 0 ? Math.round((daysLeft / totalDays) * 100) : 0;
@@ -476,68 +472,8 @@
             stroke: { lineCap: 'round' },
             colors: ['#0A8F6A']
         }).render();
-    </script> 
+    </script>   -->
 
-    <!-- <script>
-        var options = {
-            series: [
-                {
-                    name: 'Sales',
-                    data: [45000, 52000, 95000, 60000, 72000, 38000, 52000, 42000, 30000, 98000, 76000, 62000]
-                },
-                {
-                    name: 'Order',
-                    data: [28000, 35000, 62000, 42000, 52000, 30000, 46000, 28000, 22000, 56000, 42000, 36000]
-                },
-                {
-                    name: 'Return',
-                    data: [3000, 4500, 7000, 5000, 6000, 3500, 4200, 3200, 2500, 6200, 4800, 3900]
-                }
-            ],
-            chart: {
-                type: 'bar',
-                height: 350,
-                toolbar: { show: false }
-            },
-            plotOptions: {
-                bar: {
-                    horizontal: false,
-                    columnWidth: '45%',
-                    borderRadius: 6
-                }
-            },
-            colors: ['#1E88E5', '#43A047', '#E53935'],
-            dataLabels: { enabled: false },
-            stroke: { show: false },
-            xaxis: {
-                categories: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
-                axisBorder: { show: false },
-                axisTicks: { show: false }
-            },
-            yaxis: {
-                labels: {
-                    formatter: val => '₹ ' + val
-                }
-            },
-            grid: {
-                borderColor: '#e0e0e0',
-                strokeDashArray: 5
-            },
-            legend: {
-                show: false
-            },
-            tooltip: {
-                y: {
-                    formatter: val => '₹ ' + val
-                }
-            }
-        };
-
-        new ApexCharts(
-            document.querySelector("#salesOrderChart"),
-            options
-        ).render();
-    </script> -->
     <script>
         new ApexCharts(document.querySelector("#salesOrderChart"), {
             series: [

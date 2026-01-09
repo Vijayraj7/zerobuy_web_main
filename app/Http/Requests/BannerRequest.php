@@ -24,8 +24,13 @@ class BannerRequest extends FormRequest
         $required = $this->isMethod('POST') ? 'required' : 'nullable';
 
         return [
-            'title' => ['nullable', 'string', 'max:255'],
-            'banner' => [$required, 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:2048'],
+            // 'title' => ['nullable', 'string', 'max:255'], 
+            'business_category_id' => ['required', 'exists:business_categories,id'],
+            'slider_position'      => ['required', 'in:top,center,bottom'],
+            'slider_type'          => ['nullable', 'in:sub_category,child_category,product,shop'],
+            'slider_link'          => ['nullable'],
+            'banner'               => [$required, 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:2048'],
+            // 'banner'               => [$this->isMethod('post') ? 'required' : 'nullable', 'image', 'max:2048'],
         ];
     }
 
