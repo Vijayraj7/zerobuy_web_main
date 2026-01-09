@@ -40,4 +40,8 @@ class Banner extends Model
             get: fn () => $thumbnail
         );
     }
+    public function businessCategory()
+    {
+        return $this->belongsTo(BusinessCategory::class);
+    }
 }

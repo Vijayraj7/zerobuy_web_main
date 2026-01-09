@@ -39,12 +39,16 @@ class BannerRepository extends Repository
 
         return self::create([
             'shop_id' => $shopId,
-            'title' => $request->title,
-            'description' => $request->description,
-            'media_id' => $thumbnail->id,
-            'status' => true,
+            // 'title' => $request->title,
+            // 'description' => $request->description,
+            'business_category_id' => $request->business_category_id,
+            'slider_position'      => $request->slider_position,
+            'slider_type'          => $request->slider_type,
+            'slider_link'          => $request->slider_link,
+            'media_id'             => $thumbnail->id,
+            'status'               => true,
         ]);
-    }
+    } 
 
     /**
      * Update the banner.
@@ -53,12 +57,7 @@ class BannerRepository extends Repository
     {
         $thumbnail = $banner->media;
         if ($request->hasFile('banner')) {
-            $thumbnail = MediaRepository::updateByRequest(
-                $request->banner,
-                'banners',
-                'image',
-                $thumbnail
-            );
+            $thumbnail = MediaRepository::updateByRequest($request->banner, 'banners', 'image', $thumbnail);
         }
 
         $shop = generaleSetting('shop');
@@ -70,13 +69,17 @@ class BannerRepository extends Repository
 
         $banner->update([
             'shop_id' => $shopId,
-            'title' => $request->title,
-            'description' => $request->description,
-            'media_id' => $thumbnail ? $thumbnail->id : null,
+            // 'title' => $request->title,
+            // 'description' => $request->description,
+            'business_category_id' => $request->business_category_id,
+            'slider_position'      => $request->slider_position,
+            'slider_type'          => $request->slider_type,
+            'slider_link'          => $request->slider_link,
+            'media_id'             => $thumbnail ? $thumbnail->id : null,
         ]);
 
         return $banner;
-    }
+    } 
 
     /**
      * delete banner

@@ -92,6 +92,9 @@ Route::name('admin.')->group(function () {
             Route::put('/promotional-banner/{banner}/update', 'update')->name('banner.update');
             Route::get('/promotional-banner/{banner}/toggle', 'statusToggle')->name('banner.toggle');
             Route::get('/promotional-banner/{banner}/destroy', 'destroy')->name('banner.destroy');
+            // Added bu Ancy
+            Route::get('/banner/slider-options', 'sliderOptions')->name('banner.slider.options'); //Ajax
+            Route::get('/banner/{banner}', 'show')->name('banner.show');
         });
 
         // ads routes
