@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources;
 
+use App\Models\District;
+use App\Models\State;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,11 +16,14 @@ class AddressResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $state =  State::find($this->state_id);
+        $district =  District::find($this->district_id);
         return [
             'id' => $this->id,
             'name' => $this->name,
             'phone' => $this->phone,
-            'state' => $this->state,
+            'state' => $state->name,
+            'district' => $district->name,
             'area' => $this->area,
             'state_id' => $this->state_id,
             'district_id' => $this->district_id,

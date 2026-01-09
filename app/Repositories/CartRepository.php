@@ -13,6 +13,8 @@ use App\Http\Resources\SizeResource;
 use App\Models\Cart;
 use App\Models\CartBulkItem;
 use App\Models\CartVariant;
+use App\Models\DeliveryCharge;
+use App\Models\DeliverySetting;
 use App\Models\Product;
 use App\Models\ProductBulkItem;
 use App\Models\ProductVariant;
@@ -26,7 +28,7 @@ class CartRepository extends Repository
         return Cart::class;
     }
 
-    public static function ShopWiseCartProducts($groupCart)
+    public static function ShopWiseCartProducts($groupCart, $request = null)
     {
         $totalItems = 0;
         $shopWiseProducts = collect([]);
@@ -110,16 +112,20 @@ class CartRepository extends Repository
                     $mprice = (float) number_format($cart->bulkItem->mrp, 2, '.', '');
                     $dprice =  (float) number_format($cart->bulkItem->selling_price, 2, '.', '');
                 } else if ($product->bulkPrices) {
-                    $ogprice = $product->bulkPrices->where('min_qty', '<=', $cart->quantity)
-                        ->where('max_qty', '>=', $cart->quantity)
-                        ->first();
-                    if ($ogprice) {
-                        $dprice =  (float) number_format($ogprice->price, 2, '.', '');
-                    } else {
-                        $lastbulkprice = $product->bulkPrices->sortByDesc('max_qty')->first();
-                        if ($lastbulkprice && $cart->quantity > $lastbulkprice->max_qty) {
-                            $dprice =  (float) number_format($lastbulkprice->price, 2, '.', '');
+                    if ($product->bulkPrices->count() > 0) {
+                        $ogprice = $product->bulkPrices->where('min_qty', '<=', $cart->quantity)
+                            ->where('max_qty', '>=', $cart->quantity)
+                            ->first();
+                        if ($ogprice) {
+                            $dprice =  (float) number_format($ogprice->price, 2, '.', '');
+                        } else {
+                            $lastbulkprice = $product->bulkPrices->sortByDesc('max_qty')->first();
+                            if ($lastbulkprice && $cart->quantity > $lastbulkprice->max_qty) {
+                                $dprice =  (float) number_format($lastbulkprice->price, 2, '.', '');
+                            }
                         }
+                    } else {
+                        $dprice = (float) number_format($discountPrice, 2, '.', '');
                     }
                 } else {
                     $dprice = (float) number_format($discountPrice, 2, '.', '');
@@ -157,7 +163,7 @@ class CartRepository extends Repository
 
             $lastOnline = $shop->last_online >= now() ? true : false;
 
-            $deliveryCharge = getDeliveryCharge($totalAmount);
+            $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, $request?->state_id);
 
             $shopWiseProducts[] = (object) [
                 'shop_id' => $key,
@@ -347,6 +353,8 @@ class CartRepository extends Repository
         $couponDiscount = 0;
         $payableAmount = 0;
 
+        $shop = null;
+
         $shopWiseTotalAmount = [];
         $totalOrderTaxAmount = 0;
         $vatTaxesArray = [];
@@ -429,7 +437,9 @@ class CartRepository extends Repository
         //         $deliveryCharge += getDeliveryCharge($productQty);
         //     }
         // }
-        $deliveryCharge = getDeliveryCharge($totalAmount);
+
+
+        $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, $request->state_id);
 
         // generate array for get discount
         $products = collect([]);
@@ -485,6 +495,8 @@ class CartRepository extends Repository
         }
 
         $payableAmount += $totalOrderTaxAmount;
+
+        $setting = DeliverySetting::where('shop_id', $shop?->id)->first();
 
         return [
             'total_amount' => (float) round($totalAmount, 2),

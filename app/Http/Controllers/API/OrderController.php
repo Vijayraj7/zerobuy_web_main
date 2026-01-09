@@ -107,7 +107,7 @@ class OrderController extends Controller
         $shopProducts = $carts->groupBy('shop_id');
         foreach ($shopProducts as $shopId => $cartProducts) {
             $shop = Shop::find($shopId);
-            $getCartAmounts = OrderRepository::getCartWiseAmounts($shop, collect($cartProducts), $request->coupon_code);
+            $getCartAmounts = OrderRepository::getCartWiseAmounts($shop, collect($cartProducts), $request->coupon_code, $request);
             $current_amount = $getCartAmounts['payableAmount'];
             $totalPayableAmountx += $getCartAmounts['payableAmount'];
             if ($current_amount < $shop->min_order_amount) {

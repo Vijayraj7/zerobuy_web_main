@@ -279,7 +279,7 @@ class OrderRepository extends Repository
         return $order;
     }
 
-    public static function getCartWiseAmounts(Shop $shop, $carts, $couponCode = null): array
+    public static function getCartWiseAmounts(Shop $shop, $carts, $couponCode = null, $request = null): array
     {
         $totalAmount = 0;
         $discount = 0;
@@ -341,7 +341,9 @@ class OrderRepository extends Repository
 
             $totalAmount += ($price * $cart->quantity);
         }
-        $deliveryCharge = getDeliveryCharge($totalAmount);
+
+        $address = Address::find($request->address_id);
+        $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, $address->state_id);
 
         // order vat taxes
         $vatTaxes = VatTaxRepository::getActiveVatTaxes();

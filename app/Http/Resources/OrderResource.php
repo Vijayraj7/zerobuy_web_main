@@ -31,6 +31,7 @@ class OrderResource extends JsonResource
             'products' => $this->products,
             'order_status' => $this->order_status->value,
             'created_at' => $this->created_at,
+            'delivery_charge' => (float) number_format(($this->delivery_charge ?? 0), 2, '.', ''),
             'placed_at' => $this->created_at->format('d M, Y h:i A'),
             'address' => AddressResource::make($this->address),
         ];

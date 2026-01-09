@@ -1,7 +1,10 @@
 <?php
 
 use App\Models\Currency;
+use App\Models\DeliveryAmountRule;
 use App\Models\DeliveryCharge;
+use App\Models\DeliverySetting;
+use App\Models\DeliveryStateCharge;
 use App\Models\GeneraleSetting;
 use App\Models\User;
 use Carbon\Carbon;
@@ -111,12 +114,66 @@ if (! function_exists('showCurrency')) {
         $amount = ($amount == 0 || $amount == null) ? 0 : $amount;
 
         if ($generaleSetting?->currency_position == 'suffix') {
-            return $amount.$currency;
+            return $amount . $currency;
         }
 
-        return $currency.$amount;
+        return $currency . $amount;
     }
 }
+
+
+if (! function_exists('getShopDeliveryCharge')) {
+
+    /**
+     * get the delivery charge.
+     *
+     * @param  int  $orderQuantity
+     */
+
+    function getShopDeliveryCharge($totalAmount, $shop, $state_id): float
+    {
+        // $shop = generaleSetting('shop');
+        // $deliveryCharge = DeliveryCharge::where('min_qty', '<=', $orderQuantity)
+        //     ->where('max_qty', '>=', $orderQuantity)
+        //     ->first();
+
+        $deliveryCharge = 0;
+        $setting = DeliverySetting::where('shop_id', $shop?->id)->first();
+
+        if ($setting) {
+            $type = $setting->delivery_mode;
+            if ($type == 'state_wise') {
+                if ($state_id != null) {
+                    $deliveryCharge = DeliveryStateCharge::where('delivery_setting_id', $setting->id)->where('state_id', $state_id)->first()?->charge ?? 0;
+                }
+            } else if ($type == 'amount_based') {
+                if (
+                    $setting->amountRules->count() > 0
+                ) {
+                    $amountCharge = $setting->amountRules->where('min_amount', '<=', $totalAmount)
+                        ->where('max_amount', '>=', $totalAmount)
+                        ->first();
+                    if ($amountCharge) {
+                        $deliveryCharge = $amountCharge->charge;
+                    } else {
+                        $deliveryCharge = $setting->amountRules->sortByDesc('max_amount')->first()->charge;
+                    }
+                }
+            }
+        }
+
+        return $deliveryCharge;
+    }
+    // function getDeliveryCharge($orderQuantity): float
+    // {
+    //     $deliveryCharge = DeliveryCharge::where('min_qty', '<=', $orderQuantity)
+    //         ->where('max_qty', '>=', $orderQuantity)
+    //         ->first();
+
+    //     return $deliveryCharge?->charge ?? 0;
+    // }
+}
+
 
 if (! function_exists('getDeliveryCharge')) {
 
@@ -208,7 +265,8 @@ if (! function_exists('daysToLargestUnit')) {
 }
 
 if (!function_exists('sort_link')) {
-    function sortLink($label, $column) {
+    function sortLink($label, $column)
+    {
         $currentSort = request('sort_by');
         $currentOrder = request('sort_order') == 'asc' ? 'desc' : 'asc';
 
@@ -224,10 +282,10 @@ if (!function_exists('sort_link')) {
             }
         }
 
-        return '<a class="text-dark text-decoration-none" href="'.
-        request()->fullUrlWithQuery([
-            'sort_by' => $column,
-            'sort_order' => $currentOrder
-        ]).'">'.$label.' '.$icon.'</a>';
+        return '<a class="text-dark text-decoration-none" href="' .
+            request()->fullUrlWithQuery([
+                'sort_by' => $column,
+                'sort_order' => $currentOrder
+            ]) . '">' . $label . ' ' . $icon . '</a>';
     }
 }

@@ -21,7 +21,7 @@ class CartController extends Controller
 
         $carts = auth()->user()->customer->carts()->where('is_buy_now', $isBuyNow)->get();
         $groupCart = $carts->groupBy('shop_id');
-        $result = CartRepository::ShopWiseCartProducts($groupCart);
+        $result = CartRepository::ShopWiseCartProducts($groupCart, request());
 
         return $this->json('cart list', [
             'total' => $result['total_items'],
@@ -222,7 +222,7 @@ class CartController extends Controller
         $checkout = CartRepository::checkoutByRequest($request, $carts);
 
         $groupCart = $carts->groupBy('shop_id');
-        $result = CartRepository::ShopWiseCartProducts($groupCart);
+        $result = CartRepository::ShopWiseCartProducts($groupCart, $request);
 
         $message = 'Checkout information';
 
@@ -236,6 +236,7 @@ class CartController extends Controller
         }
 
         return $this->json($message, [
+            'state_id' => $request->state_id,
             'checkout' => $checkout,
             'apply_coupon' => $applyCoupon,
             'checkout_items' => $result['shop_wise_products'],
