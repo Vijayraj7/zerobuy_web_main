@@ -21,6 +21,7 @@ use App\Models\OrderVatTax;
 use App\Models\Payment;
 use App\Models\Shop;
 use App\Services\NotificationServices;
+use Illuminate\Support\Facades\Log;
 
 class OrderRepository extends Repository
 {
@@ -66,7 +67,13 @@ class OrderRepository extends Repository
 
             foreach ($cartProducts as $cart) {
 
-                $cart->product->decrement('quantity', $cart->quantity);
+                if ($cart->variant != null) {
+                    $cart->variant->decrement('quantity', $cart->quantity);
+                } elseif ($cart->bulkItem != null) {
+                    $cart->bulkItem->decrement('quantity', $cart->quantity);
+                } else {
+                    $cart->product->decrement('quantity', $cart->quantity);
+                }
 
                 $product = $cart->product;
                 // $productx = $cart->product;
@@ -279,8 +286,12 @@ class OrderRepository extends Repository
         return $order;
     }
 
-    public static function getCartWiseAmounts(Shop $shop, $carts, $couponCode = null, $request = null): array
+    public static function getCartWiseAmounts(Shop $shop, $carts, $couponCode = null, $addressId = null): array
     {
+        // Log::info('Controller address id', [
+        //     'address_id' => $addressId,
+        //     'all_request' => request()->all(),
+        // ]);
         $totalAmount = 0;
         $discount = 0;
         $coupon = null;
@@ -342,7 +353,7 @@ class OrderRepository extends Repository
             $totalAmount += ($price * $cart->quantity);
         }
 
-        $address = Address::find($request->address_id);
+        $address = Address::find(request()->address_id ?? $addressId);
         $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, $address->state_id);
 
         // order vat taxes

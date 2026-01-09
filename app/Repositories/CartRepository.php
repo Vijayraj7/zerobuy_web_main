@@ -131,11 +131,33 @@ class CartRepository extends Repository
                     $dprice = (float) number_format($discountPrice, 2, '.', '');
                 }
 
+                // $product_quantity = $product->quantity;
+                // $totalSold = 0;
+                // $product_orders = $product->orders;
+                // foreach ($product_orders as $order) {
+                //     foreach ($order->orderProducts as $order_product) {
+                //         if ($order_product->orderVariant) {
+                //             if ($order_product->orderVariant->product_variants_id == $cart->variant_id) {
+                //                 $product_quantity -= $order_product->quantity;
+                //             }
+                //         }
+                //     }
+                // }
+
+
+                $product_quantity = $product->quantity;
+                if ($cart->variant != null) {
+                    $product_quantity = $cart->variant->quantity;
+                } elseif ($cart->bulkItem != null) {
+                    $product_quantity = $cart->bulkItem->quantity;
+                }
+
                 $productArray[] = (object) [
                     'id' => $product->id,
                     'cart_id' => (int) $cart->id,
                     'quantity' => (int) $cart->quantity,
-                    'product_quantity' => (int) $product->quantity,
+                    'product_quantity' => (int) $product_quantity,
+                    'product_min_quantity' => (int) $product->min_order_quantity,
                     'name' => $pname,
                     'thumbnail' => $product->thumbnail,
                     'variant' => $cart->variant ? ProductVariantResource::make($cart->variant) : null,

@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\OrderRequest;
 use App\Http\Resources\OrderDetailsResource;
 use App\Http\Resources\OrderResource;
+use App\Models\Address;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Product;
@@ -77,6 +78,11 @@ class OrderController extends Controller
      */
     public function store(OrderRequest $request)
     {
+
+        // return $this->json('Order successfully', [
+        //     'request' => Address::find($request->address_id),
+        // ], 500);
+
         $isBuyNow = $request->is_buy_now ?? false;
         $user = auth()->user();
         // $rshop = generaleSetting('shop',$user);
@@ -107,7 +113,7 @@ class OrderController extends Controller
         $shopProducts = $carts->groupBy('shop_id');
         foreach ($shopProducts as $shopId => $cartProducts) {
             $shop = Shop::find($shopId);
-            $getCartAmounts = OrderRepository::getCartWiseAmounts($shop, collect($cartProducts), $request->coupon_code, $request);
+            $getCartAmounts = OrderRepository::getCartWiseAmounts($shop, collect($cartProducts), $request->coupon_code, $request->address_id);
             $current_amount = $getCartAmounts['payableAmount'];
             $totalPayableAmountx += $getCartAmounts['payableAmount'];
             if ($current_amount < $shop->min_order_amount) {
@@ -133,6 +139,7 @@ class OrderController extends Controller
         if ($paymentMethod->name != 'CASH') {
             $paymentUrl = route('order.payment', ['payment' => $payment, 'gateway' => $request->payment_method]);
         }
+
 
         return $this->json('Order created successfully', [
             'order_payment_url' => $paymentUrl,

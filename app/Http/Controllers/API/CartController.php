@@ -123,6 +123,12 @@ class CartController extends Controller
 
         $productQty = $product->quantity;
 
+        if ($cart->variant != null) {
+            $productQty = $cart->variant->quantity;
+        } elseif ($cart->bulkItem != null) {
+            $productQty = $cart->bulkItem->quantity;
+        }
+
         if ($flashSaleProduct) {
             $flashSaleQty = $flashSaleProduct->pivot->quantity - $flashSaleProduct->pivot->sale_quantity;
 
