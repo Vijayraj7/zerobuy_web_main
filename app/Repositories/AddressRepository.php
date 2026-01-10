@@ -45,6 +45,8 @@ class AddressRepository extends Repository
             'area' => $request->area,
             'flat_no' => $request->flat_no,
             'post_code' => $request->post_code,
+            'state_id' => $request->state_id,
+            'district_id' => $request->district_id,
             'address_line' => $request->address_line,
             'address_line2' => $request->address_line2,
             'address_type' => $request->address_type,

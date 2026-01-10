@@ -185,15 +185,25 @@ class CartRepository extends Repository
 
             $lastOnline = $shop->last_online >= now() ? true : false;
 
-            $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, $request?->state_id);
+            $isDeliverable = true;
+            $deliveryCharge = 0.00;
+            if ($products[0]?->address != null) {
+                $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, $products[0]?->address->state_id);
+                if ($deliveryCharge == null) {
+                    $isDeliverable = false;
+                }
+            } else {
+                $isDeliverable = false;
+            }
 
             $shopWiseProducts[] = (object) [
                 'shop_id' => $key,
                 'total_amount' => $totalAmount,
+                'is_deliverable' => $isDeliverable,
                 'delivery_charge' => $deliveryCharge,
                 'shop_name' => $shop->name,
                 'shop_logo' => $shop->logo,
-                'shop_address' => $shop->address,
+                'shop_address' => $shop->districts->name . ', ' . $shop->states->name,
                 'shop_rating' => (float) $shop->averageRating,
                 'shop_online' => $lastOnline,
                 'products' => $productArray,
@@ -461,7 +471,12 @@ class CartRepository extends Repository
         // }
 
 
+        $isDeliverable = true;
         $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, $request->state_id);
+        if ($deliveryCharge == null) {
+            $isDeliverable = false;
+            $deliveryCharge = 0;
+        }
 
         // generate array for get discount
         $products = collect([]);
@@ -518,9 +533,10 @@ class CartRepository extends Repository
 
         $payableAmount += $totalOrderTaxAmount;
 
-        $setting = DeliverySetting::where('shop_id', $shop?->id)->first();
+        // $setting = DeliverySetting::where('shop_id', $shop?->id)->first();
 
         return [
+            'is_deliverable' => $isDeliverable,
             'total_amount' => (float) round($totalAmount, 2),
             'delivery_charge' => (float) round($deliveryCharge, 2),
             'coupon_discount' => (float) round($couponDiscount, 2),

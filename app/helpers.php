@@ -130,7 +130,7 @@ if (! function_exists('getShopDeliveryCharge')) {
      * @param  int  $orderQuantity
      */
 
-    function getShopDeliveryCharge($totalAmount, $shop, $state_id): float
+    function getShopDeliveryCharge($totalAmount, $shop, $state_id): ?float
     {
         // $shop = generaleSetting('shop');
         // $deliveryCharge = DeliveryCharge::where('min_qty', '<=', $orderQuantity)
@@ -144,7 +144,12 @@ if (! function_exists('getShopDeliveryCharge')) {
             $type = $setting->delivery_mode;
             if ($type == 'state_wise') {
                 if ($state_id != null) {
-                    $deliveryCharge = DeliveryStateCharge::where('delivery_setting_id', $setting->id)->where('state_id', $state_id)->first()?->charge ?? 0;
+                    $stateDelivery = DeliveryStateCharge::where('delivery_setting_id', $setting->id)->where('state_id', $state_id)->first();
+                    if ($stateDelivery) {
+                        $deliveryCharge = $stateDelivery->charge;
+                    } else {
+                        $deliveryCharge = null;
+                    }
                 }
             } else if ($type == 'amount_based') {
                 if (
