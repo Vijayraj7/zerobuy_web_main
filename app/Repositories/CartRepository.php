@@ -186,14 +186,10 @@ class CartRepository extends Repository
             $lastOnline = $shop->last_online >= now() ? true : false;
 
             $isDeliverable = true;
-            $deliveryCharge = 0.00;
-            if ($products[0]?->address != null) {
-                $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, $products[0]?->address->state_id);
-                if ($deliveryCharge == null) {
-                    $isDeliverable = false;
-                }
-            } else {
+            $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, request()->state_id);
+            if ($deliveryCharge == null) {
                 $isDeliverable = false;
+                $deliveryCharge = 0.00;
             }
 
             $shopWiseProducts[] = (object) [
@@ -472,7 +468,7 @@ class CartRepository extends Repository
 
 
         $isDeliverable = true;
-        $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, $request->state_id);
+        $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, request()->state_id);
         if ($deliveryCharge == null) {
             $isDeliverable = false;
             $deliveryCharge = 0;

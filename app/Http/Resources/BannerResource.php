@@ -18,6 +18,8 @@ class BannerResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'thumbnail' => $this->thumbnail,
+            'business_category_id' => $this->business_category_id,
+            'slider_position' => $this->slider_position
         ];
     }
 }
