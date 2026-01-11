@@ -137,11 +137,12 @@ if (! function_exists('getShopDeliveryCharge')) {
         //     ->where('max_qty', '>=', $orderQuantity)
         //     ->first();
 
-        $deliveryCharge = 0;
+        $deliveryCharge = 0.00;
         $setting = DeliverySetting::where('shop_id', $shop?->id)->first();
 
         if ($setting) {
             $type = $setting->delivery_mode;
+
             if ($type == 'state_wise') {
                 if ($state_id != null) {
                     $stateDelivery = DeliveryStateCharge::where('delivery_setting_id', $setting->id)->where('state_id', $state_id)->first();

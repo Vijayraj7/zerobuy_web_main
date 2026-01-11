@@ -173,7 +173,7 @@ class CartRepository extends Repository
                     'size' => $size ? SizeResource::make($size) : null,
                     'unit' => $cart->unit,
                 ];
-                $price = $product->discount_price > 0 ? $product->discount_price : $product->price;
+                $price = $dprice > 0 ? $dprice : $mprice;
                 $totalAmount += $price * $cart->quantity;
             }
 
@@ -186,10 +186,17 @@ class CartRepository extends Repository
             $lastOnline = $shop->last_online >= now() ? true : false;
 
             $isDeliverable = true;
-            $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, request()->state_id);
-            if ($deliveryCharge == null) {
-                $isDeliverable = false;
+            $deliveryCharge = 0.00;
+            $setting = DeliverySetting::where('shop_id', $shop?->id)->first();
+            if ($setting->delivery_mode == 'manual') {
+                $isDeliverable = true;
                 $deliveryCharge = 0.00;
+            } else {
+                $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, request()->state_id);
+                if ($deliveryCharge == null) {
+                    $isDeliverable = false;
+                    $deliveryCharge = 0.00;
+                }
             }
 
             $checkout = CartRepository::checkoutByRequest($request, $products);
@@ -216,13 +223,14 @@ class CartRepository extends Repository
                 'totalAmount' => $checkout['total_amount'],
                 'payableAmount' => $checkout['payable_amount'],
                 'discount' => $checkout['coupon_discount'],
-                'deliveryCharge' => $checkout['delivery_charge'],
+                // 'deliveryCharge' => $totalAmount,
                 'applyCoupon' => $applyCoupon,
                 // 'giftCharge' => $checkout['gift_charge'] ?? 0.00,
                 'orderTaxAmount' => $checkout['order_tax_amount'],
                 'allVatTaxes' => $checkout['all_vat_taxes'],
 
                 'is_deliverable' => $isDeliverable,
+                // 'delivery_charge' => $totalAmount,
                 'delivery_charge' => $deliveryCharge,
                 'shop_name' => $shop->name,
                 'shop_logo' => $shop->logo,
