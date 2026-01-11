@@ -192,9 +192,36 @@ class CartRepository extends Repository
                 $deliveryCharge = 0.00;
             }
 
+            $checkout = CartRepository::checkoutByRequest($request, $products);
+
+            $applyCoupon = false;
+
+            $applyCoupon = false;
+            if (request()->filled('coupon_code')) {
+                if (request()->coupon_code && $checkout['coupon_discount'] > 0) {
+                    $applyCoupon = true;
+                    $message = 'Coupon applied';
+                } elseif (request()->coupon_code) {
+                    $message = 'Coupon not applied';
+                }
+            }
+
             $shopWiseProducts[] = (object) [
                 'shop_id' => $key,
                 'total_amount' => $totalAmount,
+
+                // 'payable_amount' => $checkout['payable_amount'],
+                'is_deliverable' => $checkout['is_deliverable'],
+
+                'totalAmount' => $checkout['total_amount'],
+                'payableAmount' => $checkout['payable_amount'],
+                'discount' => $checkout['coupon_discount'],
+                'deliveryCharge' => $checkout['delivery_charge'],
+                'applyCoupon' => $applyCoupon,
+                // 'giftCharge' => $checkout['gift_charge'] ?? 0.00,
+                'orderTaxAmount' => $checkout['order_tax_amount'],
+                'allVatTaxes' => $checkout['all_vat_taxes'],
+
                 'is_deliverable' => $isDeliverable,
                 'delivery_charge' => $deliveryCharge,
                 'shop_name' => $shop->name,
@@ -471,7 +498,7 @@ class CartRepository extends Repository
         $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, request()->state_id);
         if ($deliveryCharge == null) {
             $isDeliverable = false;
-            $deliveryCharge = 0.0;
+            $deliveryCharge = 0.00;
         }
 
         // generate array for get discount
@@ -483,15 +510,19 @@ class CartRepository extends Repository
                 'shop_id' => $cart->shop_id,
             ]);
         }
-        $array = (object) [
-            'coupon_code' => $request->coupon_code,
-            'products' => $products,
-        ];
 
-        // get coupon discount
-        $getDiscount = CouponRepository::getCouponDiscount($array);
+        $couponDiscount = 0.00;
+        if (request()->filled('coupon_code')) {
+            $array = (object) [
+                'coupon_code' => request()->coupon_code ?? '',
+                'products' => $products,
+            ];
 
-        $couponDiscount = $getDiscount['discount_amount'];
+            // get coupon discount
+            $getDiscount = CouponRepository::getCouponDiscount($array);
+
+            $couponDiscount = $getDiscount['discount_amount'];
+        }
 
         $payableAmount = $totalAmount + $deliveryCharge - $couponDiscount;
 
