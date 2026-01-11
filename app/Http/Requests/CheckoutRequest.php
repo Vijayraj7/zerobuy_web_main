@@ -23,7 +23,7 @@ class CheckoutRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'state_id' => 'required|exists:states,id',
+            // 'state_id' => 'required|exists:states,id',
             'shop_ids' => 'nullable|array',
             'shop_ids.*' => 'nullable|exists:shops,id',
             'coupon_code' => 'nullable|string|max:50',
