@@ -471,7 +471,7 @@ class CartRepository extends Repository
         $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, request()->state_id);
         if ($deliveryCharge == null) {
             $isDeliverable = false;
-            $deliveryCharge = 0;
+            $deliveryCharge = 0.0;
         }
 
         // generate array for get discount
