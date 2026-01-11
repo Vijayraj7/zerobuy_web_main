@@ -396,6 +396,15 @@ class ShopController extends Controller
                 ])
                 ->where('shop_id', $shop->id);
 
+            // $query = Product::query()    //row query
+            //     ->where('shop_id', $shop->id)
+            //     ->select([
+            //         'products.*',
+            //         DB::raw('(SELECT COUNT(*) FROM product_variants WHERE product_variants.product_id = products.id) as variants_count'),
+            //         DB::raw('(SELECT COUNT(*) FROM order_products WHERE order_products.product_id = products.id) as total_sale_count'),
+            //     ]);
+
+
             // Status filter (Active / Inactive)
             if ($request->filled('status')) {
                 $query->where('is_active', $request->status);

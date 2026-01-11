@@ -164,6 +164,8 @@
             responsive: true,
             processing: true,
             serverSide: true,
+            deferRender: true,
+
             ajax: {
                 url: "{{ route('admin.shop.products', $shop->id) }}",
                 data: function(d) {

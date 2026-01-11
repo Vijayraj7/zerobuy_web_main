@@ -118,3 +118,16 @@ input[type="radio"] {
     font-weight: 500;
     letter-spacing: 0.01em;
 }
+.dataTables_processing {
+    /* position: fixed !important;
+    top: 50% !important;
+    left: 50% !important; */
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+}
+/* Change DataTables processing dots color */
+div.dataTables_processing > div > div {
+    background-color: var(--theme-color) !important; 
+}
+
+
