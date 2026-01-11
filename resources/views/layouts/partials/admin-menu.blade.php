@@ -424,9 +424,9 @@
                         {{ __('Ads Campaign ') }}
                     </a>
                 @endhasPermission -->
-                @hasPermission('admin.coupon.index')
-                    <a href="{{ route('admin.coupon.index') }}"
-                        class="subMenu hasCount {{ request()->routeIs('admin.coupon.*') ? 'active' : '' }}">
+                @hasPermission('shop.voucher.index')
+                    <a href="{{ route('shop.voucher.index') }}"
+                        class="subMenu hasCount {{ request()->routeIs('shop.voucher.*') ? 'active' : '' }}">
                         {{ __('Promo Code') }}
                     </a>
                 @endhasPermission 
