@@ -188,15 +188,18 @@
                             <div class="col-3">
                                 <label class="form-label">Video Type</label>
                                 <select name="video_type" class="form-select">
-                                    <option value="">None</option>
-                                    <option value="youtube"
-                                        {{ old('video_type', $product->video_type ?? '') === 'youtube' ? 'selected' : '' }}>
+                                    <option value="youtube" selected>
                                         YouTube
                                     </option>
-                                    <option value="external"
+                                    {{-- <option value="">None</option> --}}
+                                    {{-- <option value="youtube"
+                                        {{ old('video_type', $product->video_type ?? '') === 'youtube' ? 'selected' : '' }}>
+                                        YouTube
+                                    </option> --}}
+                                    {{-- <option value="external"
                                         {{ old('video_type', $product->video_type ?? '') === 'external' ? 'selected' : '' }}>
                                         External
-                                    </option>
+                                    </option> --}}
                                 </select>
                             </div>
                             <div class="col-9">
