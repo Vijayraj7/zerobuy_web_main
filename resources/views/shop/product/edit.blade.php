@@ -150,7 +150,8 @@
                             <div class="col-md-6">
                                 <label class="form-label">MOQ <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" name="min_order_quantity"
-                                    placeholder="Enter Minimum Order Quantity" min="1" value="{{ old('min_order_quantity', $isEdit ? $product->min_order_quantity : 0) }}">
+                                    placeholder="Enter Minimum Order Quantity" min="1"
+                                    value="{{ old('min_order_quantity', $isEdit ? $product->min_order_quantity : 0) }}">
                                 @error('min_order_quantity')
                                     <p class="text text-danger m-0">{{ $message }}</p>
                                 @enderror
@@ -201,7 +202,7 @@
                             <div class="col-9">
                                 <label class="form-label">Video Link</label>
                                 <input type="text" name="video_link" class="form-control"
-                                    value="{{ old('video_link', $isEdit ? $product->video_link : '') }}">
+                                    value="{{ old('video_link', $isEdit ? (count($product->videourl()) > 0 ? $product->videourl()[0]->url : '') : '') }}">
                             </div>
                         </div>
                         <div class="mt-4">
