@@ -31,6 +31,7 @@ class SellerOrderResource extends JsonResource
             'pickup_date' => $this->pickup_date ? Carbon::parse($this->pickup_date)->format('d M, Y') : null,
             'delivery_date' => $this->delivery_date ? Carbon::parse($this->delivery_date)->format('d M, Y') : null,
             'order_placed' => Carbon::parse($this->created_at)->format('d M, Y'),
+            'delivery_mode' => $this->shop->deliverySetting?->delivery_mode ?? 'manual',
             'delivery_charge' => (float) number_format($this->delivery_charge, 2, '.', ''),
             'user' => [
                 'name' => $this->customer->user->name,
