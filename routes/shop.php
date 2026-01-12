@@ -26,6 +26,7 @@ use App\Http\Controllers\Shop\VoucherController;
 use App\Http\Controllers\Shop\WithdrawController;
 use App\Http\Controllers\Shop\ChildCategoryController;
 use App\Http\Controllers\Shop\ShopController;
+use App\Http\Controllers\Shop\AdvertismentController;
 use Illuminate\Support\Facades\Route;
 use Twilio\Rest\Chat;
 
@@ -270,6 +271,16 @@ Route::name('shop.')->group(function () {
             Route::get('/withdraw/{withdraw}/delete', 'delete')->name('withdraw.delete');
             Route::get('/withdraw/{withdraw}/show', 'show')->name('withdraw.show');
         });
+
+        // advertisement routes
+        Route::controller(AdvertismentController::class)->group(function () {
+            Route::get('/advertisements', 'index')->name('advertisement.index'); 
+            Route::post('/advertisements/store', 'store')->name('advertisement.store');  
+
+            Route::get('/advertisements/products', 'products')->name('advertisement.products');
+            Route::get('/advertisements/transactions', 'transactions')->name('advertisement.transactions');
+        });
+
         // bulk product route
         Route::controller(BulkProductImportController::class)->group(function () {
             Route::get('/bulk-product-import', 'index')->name('bulk-product-import.index');

@@ -234,6 +234,30 @@
     </li>
 @endhasPermission
 
+<!------------------------------ Advertisement Management ------------------------------>
+@hasPermission(['shop.advertisement.index'])
+    <li>
+        <a class="menu {{ request()->routeIs('shop.advertisement.*') ? 'active' : '' }}" data-bs-toggle="collapse" href="#promotionMenu">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/ads.svg') }}" alt="icon" loading="lazy" />
+                {{ __('Advertisements') }}
+            </span>
+            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
+        </a>
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('shop.advertisement.*') ? 'show' : '' }}" id="promotionMenu">
+            <div class="listBar"> 
+                @hasPermission('shop.advertisement.index')
+                    <a href="{{ route('shop.advertisement.index') }}"
+                        class="subMenu hasCount {{ request()->routeIs('shop.advertisement.*') ? 'active' : '' }}">
+                        {{ __('My Ads') }}
+                    </a>
+                @endhasPermission 
+            </div>
+        </div>
+    </li>
+@endhasPermission
+<!------------------------------ End Advertisement Management ------------------------------>
+
 @hasPermission(['shop.flashSale.index', 'shop.banner.index', 'shop.voucher.index'])
     <!--- Promotion management--->
     <li>

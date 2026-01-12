@@ -392,6 +392,31 @@
 <!------------------------------ End Subscription Management ------------------------------>
 
 
+<!------------------------------ Advertisement Management ------------------------------>
+@hasPermission(['admin.advertisement.index'])
+    <li>
+        <a class="menu {{ request()->routeIs('admin.advertisement.*') ? 'active' : '' }}" data-bs-toggle="collapse" href="#promotionMenu">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/ads.svg') }}" alt="icon" loading="lazy" />
+                {{ __('Advertisements') }}
+            </span>
+            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
+        </a>
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.advertisement.*') ? 'show' : '' }}" id="promotionMenu">
+            <div class="listBar"> 
+                @hasPermission('admin.advertisement.index')
+                    <a href="{{ route('admin.advertisement.index') }}"
+                        class="subMenu hasCount {{ request()->routeIs('admin.advertisement.*') ? 'active' : '' }}">
+                        {{ __('My Ads') }}
+                    </a>
+                @endhasPermission 
+            </div>
+        </div>
+    </li>
+@endhasPermission
+<!------------------------------ End Advertisement Management ------------------------------>
+
+
 <!------------------------------ Promotion Management ------------------------------>
 @hasPermission(['admin.banner.index', 'admin.flashSale.index', 'admin.ad.index', 'admin.coupon.index'])
     <li>

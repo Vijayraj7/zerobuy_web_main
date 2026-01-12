@@ -58,6 +58,7 @@ use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\BusinessCategoryController;
 use App\Http\Controllers\Admin\ChildCategoryController;
 use App\Http\Controllers\Admin\AjaxCategoryController;
+use App\Http\Controllers\Admin\AdvertismentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -106,6 +107,15 @@ Route::name('admin.')->group(function () {
             Route::put('/ads/{ad}/update', 'update')->name('ad.update');
             Route::get('/ads/{ad}/toggle', 'statusToggle')->name('ad.toggle');
             Route::get('/ads/{ad}/destroy', 'destroy')->name('ad.destroy');
+        });
+
+        // advertisement routes
+        Route::controller(AdvertismentController::class)->group(function () {
+            Route::get('/advertisements', 'index')->name('advertisement.index'); 
+            Route::post('/advertisements/store', 'store')->name('advertisement.store');  
+
+            Route::get('/advertisements/products', 'products')->name('advertisement.products');
+            Route::get('/advertisements/transactions', 'transactions')->name('advertisement.transactions');
         });
 
         // Shops
