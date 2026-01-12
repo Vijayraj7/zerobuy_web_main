@@ -28,7 +28,7 @@ class OrderResource extends JsonResource
             'amount' => (float) number_format($this->payable_amount, 2, '.', ''),
             'payment_method' => $paymentMethod,
             'payment_status' => $this->payment_status->value,
-            'products' => $this->products,
+            'products' => OrderProductResource::collection($this->products),
             'order_status' => $this->order_status->value,
             'created_at' => $this->created_at,
             'delivery_charge' => (float) number_format(($this->delivery_charge ?? 0), 2, '.', ''),

@@ -36,6 +36,7 @@ class ShopResource extends JsonResource
             'name' => $this->name,
             'logo' => $this->logo,
             'banner' => $this->banner,
+            'store_type' => $this->store_type ? $this->store_type : 'retail',
             'state' => $this->states ? $this->states->name : null,
             'district' => $this->districts ? $this->districts->name : null,
             'total_products' => (int) $this->products()->isActive()->count(),

@@ -80,7 +80,31 @@ class ProductRequest extends FormRequest
             'additional_images.*' => 'image|mimes:png,jpg,jpeg,webp|max:2048',
 
             'video_type'         => 'nullable|string|in:youtube,external',
-            'video_link'         => 'nullable|string',
+            // 'video_link'         => 'nullable|string',
+            'video_link' => [
+                'nullable',
+                'string',
+                function ($attribute, $value, $fail) {
+                    // Must be a YouTube URL
+                    if (!preg_match('~^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/~i', $value)) {
+                        $fail('The video link must be a valid YouTube URL.');
+                        return;
+                    }
+
+                    // Must NOT be a Shorts link
+                    if (preg_match('~youtube\.com\/shorts\/~i', $value)) {
+                        $fail('YouTube Shorts links are not allowed. Please use a normal YouTube video link.');
+                        return;
+                    }
+
+                    // Must contain a video ID (watch?v= or youtu.be/)
+                    if (
+                        !preg_match('~(watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{6,})~', $value)
+                    ) {
+                        $fail('Please enter a valid YouTube video link.');
+                    }
+                }
+            ],
 
             'meta_title'       => 'nullable|string|max:191',
             'meta_description' => 'nullable|string|max:200',

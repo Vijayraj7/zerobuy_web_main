@@ -46,6 +46,7 @@ class OrderDetailsResource extends JsonResource
             'coupon_discount' => (float) number_format($this->coupon_discount, 2, '.', ''),
             'payable_amount' => (float) number_format($this->payable_amount, 2, '.', ''),
             'quantity' => (int) $this->products->sum('pivot.quantity'),
+            'delivery_mode' => $this->shop->deliverySetting?->delivery_mode ?? 'manual',
             'delivery_charge' => (float) number_format(($this->delivery_charge ?? 0), 2, '.', ''),
             'shop' => ShopResource::make($this->shop),
             'products' => OrderProductResource::collection($this->products),
