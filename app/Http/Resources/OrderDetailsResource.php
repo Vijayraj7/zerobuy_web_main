@@ -54,6 +54,8 @@ class OrderDetailsResource extends JsonResource
             'payment_receipt_url' => route('shop.payment-slip', $this->id),
             'address' => AddressResource::make($this->address),
             'all_vat_taxes' => $this->vatTaxes,
+            'track_url' => $this->track_url,
+            'gst' => $this->gst,
             'return_order_within_days' => $generaleSetting?->return_order_within_days ?? 3,
             'last_return_date' => $this->created_at
                 ? $this->created_at->copy()->addDays($generaleSetting?->return_order_within_days ?? 3)->format('d M, Y h:i A')

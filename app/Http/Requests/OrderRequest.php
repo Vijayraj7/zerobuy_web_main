@@ -28,6 +28,7 @@ class OrderRequest extends FormRequest
             'shop_ids.*' => 'required|exists:shops,id',
             'address_id' => 'required|exists:addresses,id',
             'note' => 'nullable|string',
+            'gst' => 'nullable|string',
             'payment_method' => 'required|string',
             'coupon_code' => 'nullable|string|max:50',
         ];

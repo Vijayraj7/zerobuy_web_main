@@ -63,6 +63,7 @@ Route::prefix('/seller')->group(function () {
             Route::get('/orders', 'index');
             Route::get('/orders/details', 'show');
             Route::post('/orders/status-update', 'update');
+            Route::post('/orders/delivery-charge-update', 'deliveryChargeUpdate');
             Route::post('/orders/track-url-update', 'trackUrlUpdate');
         });
 

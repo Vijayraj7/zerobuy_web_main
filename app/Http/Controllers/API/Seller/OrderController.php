@@ -258,4 +258,26 @@ class OrderController extends Controller
             'order' => SellerOrderResource::make($order),
         ]);
     }
+
+    // delivery charge update
+    public function deliveryChargeUpdate(StatusUpdateRequest $request)
+    {
+        $order = OrderRepository::find($request->order_id);
+
+        if (! $order) {
+            return $this->json('Sorry, this order is not found', [], 422);
+        }
+
+        $order->update([
+            'delivery_charge' => $request->delivery_charge,
+        ]);
+
+        $order->refresh();
+
+        // OrderMailEvent::dispatch($order);
+
+        return $this->json('Delivery Charge updated successfully!', [
+            'order' => SellerOrderResource::make($order),
+        ]);
+    }
 }

@@ -64,6 +64,13 @@ class ProductResource extends JsonResource
             'discount_price' => (float) number_format($discountPrice, 2, '.', ''),
             'discount_percentage' => (float) number_format($discountPercentage, 2, '.', ''),
             'rating' => (float) $this->averageRating ?? 0.0,
+            'bulk_items' => ProductBulkItemResource::collection(
+                $this->bulkItems
+            ),
+            'bulk_prices' => ProductBulkPriceResource::collection(
+                $this->bulkPrices
+            ),
+            'variants' => ProductVariantResource::collection($this->variants),
             'total_reviews' => (string) Number::abbreviate($this->reviews?->count(), maxPrecision: 2),
             'total_sold' => (string) number_format($totalSold, 0, '.', ','),
             'quantity' => (int) ($flashSaleProduct ? $quantity : $this->quantity),

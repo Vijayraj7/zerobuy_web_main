@@ -257,6 +257,7 @@ class OrderRepository extends Repository
             'shop_id' => $shop->id,
             'order_code' => str_pad($lastOrderId + 1, 6, '0', STR_PAD_LEFT),
             'prefix' => $shop->prefix ?? 'RC',
+            'gst' => $request->gst,
             'customer_id' => auth()->user()->customer->id,
             'coupon_id' => $getCartAmounts['coupon'],
             'delivery_charge' => $getCartAmounts['deliveryCharge'],
