@@ -395,14 +395,14 @@
 <!------------------------------ Advertisement Management ------------------------------>
 @hasPermission(['admin.advertisement.index'])
     <li>
-        <a class="menu {{ request()->routeIs('admin.advertisement.*') ? 'active' : '' }}" data-bs-toggle="collapse" href="#promotionMenu">
+        <a class="menu {{ request()->routeIs('admin.advertisement.*') ? 'active' : '' }}" data-bs-toggle="collapse" href="#advertisementMenu">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/ads.svg') }}" alt="icon" loading="lazy" />
                 {{ __('Advertisements') }}
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
-        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.advertisement.*') ? 'show' : '' }}" id="promotionMenu">
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.advertisement.*') ? 'show' : '' }}" id="advertisementMenu">
             <div class="listBar"> 
                 @hasPermission('admin.advertisement.index')
                     <a href="{{ route('admin.advertisement.index') }}"
@@ -479,13 +479,11 @@
 
 
 <!------------------------------ Certificates ------------------------------>
-@hasPermission('admin.contactUs.index')
+@hasPermission('admin.certificate.index')
     <li>
-        <a href="#"
-            class="menu {{ request()->routeIs('admin.contactUs.*') ? 'active' : '' }}">
+        <a href="{{ route('admin.certificate.index') }}" class="menu {{ request()->routeIs('admin.certificate.*') ? 'active' : '' }}">
             <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/contacts.svg') }}" alt="icon"
-                    loading="lazy" />
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/contacts.svg') }}" alt="icon" loading="lazy" />
                 {{ __('Certificates') }}
             </span>
         </a>
@@ -764,9 +762,9 @@
 
 
 <!------------------------------ Business Settings ------------------------------>
-@hasPermission([ 'admin.generale-setting.index', 'admin.business-setting.index', 'admin.socialLink.index', 'admin.themeColor.index', 'admin.deliveryCharge.index', 'admin.ticketIssueType.index', 'admin.verification.index', 'admin.vatTax.index', 'admin.currency.index', 'admin.aiPrompt.index',])
+@hasPermission([ 'admin.generale-setting.index', 'admin.business-setting.index', 'admin.socialLink.index', 'admin.themeColor.index', 'admin.deliveryCharge.index', 'admin.ticketIssueType.index', 'admin.verification.index', 'admin.vatTax.index', 'admin.currency.index', 'admin.aiPrompt.index','admin.advrtsettings.edit',])
     <li>
-        <a class="menu {{ request()->routeIs('admin.generale-setting.*', 'admin.business-setting.*', 'admin.socialLink.*', 'admin.themeColor.*', 'admin.deliveryCharge.*', 'admin.ticketIssueType.*', 'admin.verification.*', 'admin.vatTax.*', 'admin.currency.*', 'admin.aiPrompt.index') ? 'active' : '' }}"
+        <a class="menu {{ request()->routeIs('admin.generale-setting.*', 'admin.business-setting.*', 'admin.socialLink.*', 'admin.themeColor.*', 'admin.deliveryCharge.*', 'admin.ticketIssueType.*', 'admin.verification.*', 'admin.vatTax.*', 'admin.currency.*', 'admin.aiPrompt.index','admin.advrtsettings.edit') ? 'active' : '' }}"
             data-bs-toggle="collapse" href="#settings">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/settings.svg') }}" alt="icon"
@@ -775,7 +773,7 @@
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="" class="downIcon">
         </a>
-        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.generale-setting.*', 'admin.business-setting.*', 'admin.socialLink.*', 'admin.themeColor.*', 'admin.deliveryCharge.*', 'admin.ticketIssueType.*', 'admin.verification.*', 'admin.vatTax.*', 'admin.currency.*', 'admin.aiPrompt.index') ? 'show' : '' }}"
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.generale-setting.*', 'admin.business-setting.*', 'admin.socialLink.*', 'admin.themeColor.*', 'admin.deliveryCharge.*', 'admin.ticketIssueType.*', 'admin.verification.*', 'admin.vatTax.*', 'admin.currency.*', 'admin.aiPrompt.index','admin.advrtsettings.edit') ? 'show' : '' }}"
             id="settings">
             <div class="listBar">
                 @hasPermission('admin.generale-setting.index')
@@ -817,6 +815,13 @@
                     <a href="{{ route('admin.deliveryCharge.index') }}"
                         class="subMenu {{ request()->routeIs('admin.deliveryCharge.*') ? 'active' : '' }}">
                         {{ __('Delivery Charge') }}
+                    </a>
+                @endhasPermission
+
+                @hasPermission('admin.advrtsettings.edit')
+                    <a href="{{ route('admin.advrtsettings.edit') }}"
+                        class="subMenu {{ request()->routeIs('admin.advrtsettings.*') ? 'active' : '' }}">
+                        {{ __('Ads Daily Budget') }}
                     </a>
                 @endhasPermission
 

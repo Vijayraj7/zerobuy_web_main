@@ -59,6 +59,8 @@ use App\Http\Controllers\Admin\BusinessCategoryController;
 use App\Http\Controllers\Admin\ChildCategoryController;
 use App\Http\Controllers\Admin\AjaxCategoryController;
 use App\Http\Controllers\Admin\AdvertismentController;
+use App\Http\Controllers\Admin\CertificateController;
+use App\Http\Controllers\Admin\AdvertisementSettingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -116,6 +118,22 @@ Route::name('admin.')->group(function () {
 
             Route::get('/advertisements/products', 'products')->name('advertisement.products');
             Route::get('/advertisements/transactions', 'transactions')->name('advertisement.transactions');
+        });
+
+        // certificate routes
+        Route::controller(CertificateController::class)->group(function () {
+            Route::get('/certificates', 'index')->name('certificate.index'); 
+            Route::post('/certificates/store', 'store')->name('certificate.store'); 
+
+            Route::get('/certificates/{certificate}', 'edit')->name('certificate.edit');
+            Route::delete('/certificates/{certificate}', 'destroy')->name('certificate.destroy');
+            Route::post('/certificates/status/{certificate}', 'status')->name('certificate.status');
+        });
+
+        // certificate routes
+        Route::controller(AdvertisementSettingController::class)->group(function () {
+            Route::get('/advertisement/settings', 'edit')->name('advrtsettings.edit'); 
+            Route::post('/advertisement/settings', 'update')->name('advrtsettings.update');  
         });
 
         // Shops
