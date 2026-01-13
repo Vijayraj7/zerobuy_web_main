@@ -22,6 +22,34 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @if(isset($message))
+                        <tr>
+                            <td colspan="5" class="text-center text-danger">
+                                {{ $message }}
+                            </td>
+                        </tr>
+
+                    @elseif($transactions->isEmpty())
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">
+                                No advertisement transactions found.
+                            </td>
+                        </tr>
+
+                    @else
+                        @foreach($transactions as $txn)
+                            <tr>
+                                <td>{{ $txn->created_at->format('d-m-Y') }}</td>
+                                <td>{{ $txn->transaction_id ?? '-' }}</td>
+                                <td>₹{{ $txn->amount }}</td>
+                                <td>{{ ucfirst($txn->type) }}</td>
+                                <td>{{ $txn->purpose }}</td>
+                            </tr>
+                        @endforeach
+                    @endif
+                </tbody>
+
+                <!-- <tbody>
                     @foreach($transactions as $txn)
                         <tr>
                             <td>{{ $txn->created_at->format('d-m-Y') }}</td>
@@ -31,7 +59,7 @@
                             <td>{{ $txn->purpose }}</td>
                         </tr>
                     @endforeach
-                </tbody>
+                </tbody> -->
             </table>
         </div>
     </div>
