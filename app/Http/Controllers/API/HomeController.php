@@ -92,6 +92,20 @@ class HomeController extends Controller
             })->withCount('orders as orders_count')
             // ->where('quantity', '>', 'min_order_quantity')
             ->whereColumn('quantity', '>', 'min_order_quantity')
+            // ->whereHas('advertisements', function ($query) {
+            //     $query->whereNotNull('product_id');
+            // })
+            ->withAvg('reviews as average_rating', 'rating')
+            ->orderByDesc('average_rating')
+            ->orderByDesc('orders_count')
+            ->take(6)->get();
+
+        $adProducts = ProductRepository::query()->isActive()
+            ->when($shop, function ($query) use ($shop) {
+                return $query->where('shop_id', $shop->id);
+            })->withCount('orders as orders_count')
+            // ->where('quantity', '>', 'min_order_quantity')
+            ->whereColumn('quantity', '>', 'min_order_quantity')
             ->whereHas('advertisements', function ($query) {
                 $query->whereNotNull('product_id');
             })
@@ -122,6 +136,7 @@ class HomeController extends Controller
             'categories' => CategoryResource::collection($categories),
             'business_categories' => BusinessCategoryResource::collection($businesscategories),
             'shops' => ShopResource::collection($shops),
+            'ad_products' => ProductResource::collection($popularProducts),
             'popular_products' => ProductResource::collection($popularProducts),
             'just_for_you' => [
                 'total' => $total,
