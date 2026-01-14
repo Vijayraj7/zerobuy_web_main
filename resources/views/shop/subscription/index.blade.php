@@ -45,14 +45,15 @@
                     $isCurrentPlan = $current && $current->plan_id === $subscriptionPlan->id;
                     $buttonLabel = null;
 
-                    if (! $current)
+                    if (!$current) {
                         $buttonLabel = __('Choose Plan');
-                    elseif ($isCurrentPlan)
+                    } elseif ($isCurrentPlan) {
                         $buttonLabel = __('Renew Plan');
-                    else
+                    } else {
                         $buttonLabel = __('Change Plan');
+                    }
                 @endphp
-                <div class="subscription-plan {{ $subscriptionPlan->is_popular ? 'popular' : 'position-relative'}}">
+                <div class="subscription-plan {{ $subscriptionPlan->is_popular ? 'popular' : 'position-relative' }}">
                     @if ($subscriptionPlan->is_popular)
                         <div class="popular-plan position-relative">
                     @endif
@@ -62,18 +63,51 @@
                         </span>
                     @endif
                     <div class="w-100">
-                        <div style="align-self: stretch; padding-left: 24px; padding-right: 24px; padding-top: 32px; padding-bottom: 12px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 16px; display: flex">
-                            <div style="color: white; font-size: 16px; font-family: Inter; font-weight: 600; letter-spacing: 0.32px; word-wrap: break-word">{{ $subscriptionPlan->name }}</div>
-                            <div style="align-self: stretch; justify-content: flex-start; align-items: center; gap: 8px; display: inline-flex">
-                                <div style="color: white; font-size: 36px; font-family: Inter; font-weight: 800; letter-spacing: 0.72px; word-wrap: break-word">{{ showCurrency($subscriptionPlan->price + 0) }}</div>
-                                <div style="flex-direction: column; justify-content: center; align-items: flex-start; gap: 2px; display: inline-flex">
-                                    <div style="color: white; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">{{ $subscriptionPlan->duration ? daysToLargestUnit($subscriptionPlan->duration) : 'Unlimited' }}</div>
+                        <div
+                            style="align-self: stretch; padding-left: 24px; padding-right: 24px; padding-top: 32px; padding-bottom: 12px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 16px; display: flex">
+                            <div
+                                style="color: white; font-size: 16px; font-family: Inter; font-weight: 600; letter-spacing: 0.32px; word-wrap: break-word">
+                                {{ $subscriptionPlan->name }}</div>
+                            <div
+                                style="align-self: stretch; justify-content: flex-start; align-items: center; gap: 8px; display: inline-flex">
+                                <div
+                                    style="color: white; font-size: 36px; font-family: Inter; font-weight: 800; letter-spacing: 0.72px; word-wrap: break-word">
+                                    {{ showCurrency($subscriptionPlan->price + 0) }}</div>
+                                <div
+                                    style="flex-direction: column; justify-content: center; align-items: flex-start; gap: 2px; display: inline-flex">
+                                    <div
+                                        style="color: white; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">
+                                        {{ $subscriptionPlan->duration ? daysToLargestUnit($subscriptionPlan->duration) : 'Unlimited' }}
+                                    </div>
                                 </div>
                             </div>
+                            <!-- MRP + Discount -->
+                            @if ($subscriptionPlan->mrp && $subscriptionPlan->mrp > $subscriptionPlan->price)
+                                @php
+                                    $discount = round(
+                                        (($subscriptionPlan->mrp - $subscriptionPlan->price) / $subscriptionPlan->mrp) *
+                                            100,
+                                    );
+                                @endphp
+                                <div style="display: inline-flex; align-items: center; gap: 8px;">
+                                    <!-- Crossed MRP -->
+                                    <span
+                                        style="color: #9CA3AF; font-size: 14px; font-family: Inter; text-decoration: line-through;">
+                                        {{ showCurrency($subscriptionPlan->mrp) }}
+                                    </span>
+                                    <!-- Discount -->
+                                    <span style="color: #22C55E; font-size: 13px; font-family: Inter; font-weight: 600;">
+                                        {{ $discount }}% OFF
+                                    </span>
+                                </div>
+                            @endif
                         </div>
                         @if ($subscriptionPlan->is_popular)
-                            <div style="padding-left: 8px; padding-right: 8px; padding-top: 6px; padding-bottom: 6px; right: 24px; top: 24px; position: absolute; background: rgba(255, 255, 255, 0.09); border-radius: 8px; justify-content: center; align-items: center; gap: 4px; display: inline-flex">
-                                <div style="text-align: center; color: #FFC107; font-size: 12px; font-family: Inter; font-weight: 500; letter-spacing: 0.24px; word-wrap: break-word">Most Popular</div>
+                            <div
+                                style="padding-left: 8px; padding-right: 8px; padding-top: 6px; padding-bottom: 6px; right: 24px; top: 24px; position: absolute; background: rgba(255, 255, 255, 0.09); border-radius: 8px; justify-content: center; align-items: center; gap: 4px; display: inline-flex">
+                                <div
+                                    style="text-align: center; color: #FFC107; font-size: 12px; font-family: Inter; font-weight: 500; letter-spacing: 0.24px; word-wrap: break-word">
+                                    Most Popular</div>
                             </div>
                         @endif
                         <div class="w-100 px-4 d-flex gap-3 justify-content-between text-white">
@@ -83,7 +117,8 @@
                             </div>
                             <div class="plan-info-box">
                                 <span class="label">Duration</span>
-                                <span class="value">{{ $subscriptionPlan->duration ? daysToLargestUnit($subscriptionPlan->duration) : 'Unlimited' }}</span>
+                                <span
+                                    class="value">{{ $subscriptionPlan->duration ? daysToLargestUnit($subscriptionPlan->duration) : 'Unlimited' }}</span>
                             </div>
                         </div>
                         <div class="w-100 p-4 text-white">
@@ -91,12 +126,10 @@
                         </div>
                     </div>
                     <div class="w-100">
-                        <div style="align-self: stretch; padding-bottom: 32px; padding-left: 24px; padding-right: 24px; flex-direction: column; justify-content: flex-start; align-items: center; gap: 10px; display: flex">
-                            <button type="button"
-                                class="btn btn-outline-primary w-100"
-                                data-bs-toggle="modal"
-                                data-bs-target="#choosePlanModal"
-                                data-plan-id="{{ $subscriptionPlan->id }}"
+                        <div
+                            style="align-self: stretch; padding-bottom: 32px; padding-left: 24px; padding-right: 24px; flex-direction: column; justify-content: flex-start; align-items: center; gap: 10px; display: flex">
+                            <button type="button" class="btn btn-outline-primary w-100" data-bs-toggle="modal"
+                                data-bs-target="#choosePlanModal" data-plan-id="{{ $subscriptionPlan->id }}"
                                 data-plan-name="{{ $subscriptionPlan->name }}"
                                 data-plan-price="{{ showCurrency($subscriptionPlan->price) }}">
                                 {{ $buttonLabel }}
@@ -104,21 +137,21 @@
                         </div>
                     </div>
                     @if ($subscriptionPlan->is_popular)
-                        </div>
-                    @endif
                 </div>
-            @empty
-                <div class="card shadow-sm rounded-12 show-card position-relative overflow-hidden w-100">
-                    <div class="card-body shop p-2">
-                        <p class="text-center text-muted">{{ __('No subscription plans found') }}</p>
-                    </div>
-                </div>
-            @endforelse
+            @endif
         </div>
+    @empty
+        <div class="card shadow-sm rounded-12 show-card position-relative overflow-hidden w-100">
+            <div class="card-body shop p-2">
+                <p class="text-center text-muted">{{ __('No subscription plans found') }}</p>
+            </div>
+        </div>
+        @endforelse
+    </div>
 
-        <div class="my-3">
-            {{ $subscriptionPlans->links() }}
-        </div>
+    <div class="my-3">
+        {{ $subscriptionPlans->links() }}
+    </div>
     </div>
 
     <!--Choose Plan Modal -->
@@ -253,14 +286,15 @@
     <script>
         const modal = document.getElementById('choosePlanModal');
 
-        modal.addEventListener('show.bs.modal', function (event) {
+        modal.addEventListener('show.bs.modal', function(event) {
             const button = event.relatedTarget;
             const planId = button.getAttribute('data-plan-id');
             const planName = button.getAttribute('data-plan-name');
             const planPrice = button.getAttribute('data-plan-price');
 
             document.getElementById('modalPlanId').value = planId;
-            document.getElementById('modalPlanInfo').textContent = `You selected the "${planName}" plan (${planPrice})`;
+            document.getElementById('modalPlanInfo').textContent =
+                `You selected the "${planName}" plan (${planPrice})`;
         });
 
         fixHeight();
