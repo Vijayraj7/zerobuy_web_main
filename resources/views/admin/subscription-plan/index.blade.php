@@ -27,7 +27,7 @@
                         <div class="popular-plan position-relative">
                     @endif
                     <div class="w-100">
-                        <div style="align-self: stretch; padding-left: 24px; padding-right: 24px; padding-top: 32px; padding-bottom: 12px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 16px; display: flex">
+                        <!-- <div style="align-self: stretch; padding-left: 24px; padding-right: 24px; padding-top: 32px; padding-bottom: 12px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 16px; display: flex">
                             <div style="color: white; font-size: 16px; font-family: Inter; font-weight: 600; letter-spacing: 0.32px; word-wrap: break-word">{{ $subscriptionPlan->name }}</div>
                             <div style="align-self: stretch; justify-content: flex-start; align-items: center; gap: 8px; display: inline-flex">
                                 <div style="color: white; font-size: 36px; font-family: Inter; font-weight: 800; letter-spacing: 0.72px; word-wrap: break-word">{{ showCurrency($subscriptionPlan->price + 0) }}</div>
@@ -35,7 +35,48 @@
                                     <div style="color: white; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">{{ $subscriptionPlan->duration ? daysToLargestUnit($subscriptionPlan->duration) : 'Unlimited' }}</div>
                                 </div>
                             </div>
+                        </div> -->
+
+                        <div style="align-self: stretch; padding-left: 24px; padding-right: 24px; padding-top: 32px; padding-bottom: 12px; display: flex; flex-direction: column; gap: 16px;">
+                            <!-- Plan Name -->
+                            <div style="color: white; font-size: 16px; font-family: Inter; font-weight: 600;">
+                                {{ $subscriptionPlan->name }}
+                            </div>
+                            <!-- Price Row -->
+                            <div style="display: inline-flex; align-items: center; gap: 12px;">
+                                <!-- Price Section -->
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <!-- Selling Price -->
+                                    <div style="color: white; font-size: 36px; font-family: Inter; font-weight: 800;">
+                                        {{ showCurrency($subscriptionPlan->price) }}
+                                    </div>
+                                    <!-- MRP + Discount -->
+                                    @if($subscriptionPlan->mrp && $subscriptionPlan->mrp > $subscriptionPlan->price)
+                                        @php
+                                            $discount = round((($subscriptionPlan->mrp - $subscriptionPlan->price) / $subscriptionPlan->mrp) * 100);
+                                        @endphp
+                                        <div style="display: inline-flex; align-items: center; gap: 8px;">
+                                            <!-- Crossed MRP -->
+                                            <span style="color: #9CA3AF; font-size: 14px; font-family: Inter; text-decoration: line-through;">
+                                                {{ showCurrency($subscriptionPlan->mrp) }}
+                                            </span>
+                                            <!-- Discount -->
+                                            <span style="color: #22C55E; font-size: 13px; font-family: Inter; font-weight: 600;">
+                                                {{ $discount }}% OFF
+                                            </span>
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <!-- Duration -->
+                                <div style="display: flex; flex-direction: column; justify-content: center;">
+                                    <div style="color: white; font-size: 12px; font-family: Inter;">
+                                        {{ $subscriptionPlan->duration ? daysToLargestUnit($subscriptionPlan->duration) : 'Unlimited' }}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+
                         @if ($subscriptionPlan->is_popular)
                             <div style="padding-left: 8px; padding-right: 8px; padding-top: 6px; padding-bottom: 6px; right: 24px; top: 24px; position: absolute; background: rgba(255, 255, 255, 0.09); border-radius: 8px; justify-content: center; align-items: center; gap: 4px; display: inline-flex">
                                 <div style="text-align: center; color: #FFC107; font-size: 12px; font-family: Inter; font-weight: 500; letter-spacing: 0.24px; word-wrap: break-word">Most Popular</div>
