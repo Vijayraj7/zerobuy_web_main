@@ -392,4 +392,9 @@ class Product extends Model
             'product_id'
         );
     }
+
+    public function advertisements()
+    {
+        return $this->hasMany(Advertisement::class, 'product_id', 'id');
+    }
 }

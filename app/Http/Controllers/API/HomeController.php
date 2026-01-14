@@ -60,18 +60,12 @@ class HomeController extends Controller
             // ->withCount('products')->orderByDesc('products_count')
             ->take(10)->get();
 
-        $popularProducts = ProductRepository::query()->isActive()
+
+        $justForYou = ProductRepository::query()->isActive()->latest('id')
+            ->whereColumn('quantity', '>', 'min_order_quantity')
             ->when($shop, function ($query) use ($shop) {
                 return $query->where('shop_id', $shop->id);
-            })->withCount('orders as orders_count')
-            ->withAvg('reviews as average_rating', 'rating')
-            ->orderByDesc('average_rating')
-            ->orderByDesc('orders_count')
-            ->take(6)->get();
-
-        $justForYou = ProductRepository::query()->isActive()->latest('id')->when($shop, function ($query) use ($shop) {
-            return $query->where('shop_id', $shop->id);
-        });
+            });
         $total = $justForYou->count();
         $justForYou = $justForYou->skip($skip)->take($perPage)->get();
 
@@ -91,6 +85,37 @@ class HomeController extends Controller
         // get running flash sale
         $runningFlashSale = FlashSaleRepository::getRunning();
 
+
+        $popularProducts = ProductRepository::query()->isActive()
+            ->when($shop, function ($query) use ($shop) {
+                return $query->where('shop_id', $shop->id);
+            })->withCount('orders as orders_count')
+            // ->where('quantity', '>', 'min_order_quantity')
+            ->whereColumn('quantity', '>', 'min_order_quantity')
+            ->whereHas('advertisements', function ($query) {
+                $query->whereNotNull('product_id');
+            })
+            ->withAvg('reviews as average_rating', 'rating')
+            ->orderByDesc('average_rating')
+            ->orderByDesc('orders_count')
+            ->take(6)->get();
+        // $popularProducts = ProductRepository::query()
+        //     ->isActive()
+        //     ->when($shop, function ($query) use ($shop) {
+        //         return $query->where('shop_id', $shop->id);
+        //     })
+        //     ->whereColumn('quantity', '>', 'min_order_quantity')
+        //     ->whereHas('ads', function ($query) {
+        //         $query->where('slider_type', 'product');
+        //     })
+        //     ->withCount('orders as orders_count')
+        //     ->withAvg('reviews as average_rating', 'rating')
+        //     ->orderByDesc('average_rating')
+        //     ->orderByDesc('orders_count')
+        //     ->take(6)
+        //     ->get();
+        // $ads = Ad::query()->paginate(20);
+
         return $this->json('home', [
             'banners' => BannerResource::collection($banners),
             'ads' => BannerResource::collection($ads),
@@ -102,6 +127,7 @@ class HomeController extends Controller
                 'total' => $total,
                 'products' => ProductResource::collection($justForYou),
             ],
+            'ads' => $ads,
             'incoming_flash_sale' => $incomingFlashSale ? FlashSaleResource::make($incomingFlashSale) : null,
             'running_flash_sale' => $runningFlashSale ? FlashSaleResource::make($runningFlashSale)->toArray(request(), 'true', 'true') : null,
         ]);

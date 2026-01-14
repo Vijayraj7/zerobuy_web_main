@@ -14,6 +14,8 @@ class Ad extends Model
 
     protected $guarded = ['id'];
 
+    protected $table = 'ads';
+
     public function media(): BelongsTo
     {
         return $this->belongsTo(Media::class, 'media_id');
@@ -27,7 +29,7 @@ class Ad extends Model
         }
 
         return Attribute::make(
-            get: fn () => $thumbnail
+            get: fn() => $thumbnail
         );
     }
 }

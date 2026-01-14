@@ -244,16 +244,16 @@
             $('#bannerForm').on('submit', function () {
                 let type = $('#slider_type').val();
 
-                if (type === 'sub_category' || type === 'child_category') {
-                    let selected = $('#slider_link').select2('data')[0];
-                    if (selected) {
-                        $('<input>').attr({
-                            type: 'hidden',
-                            name: 'slider_link',
-                            value: selected.text
-                        }).appendTo('#bannerForm');
-                    }
-                }
+                // if (type === 'sub_category' || type === 'child_category') {
+                //     let selected = $('#slider_link').select2('data')[0];
+                //     if (selected) {
+                //         $('<input>').attr({
+                //             type: 'hidden',
+                //             name: 'slider_link',
+                //             value: selected.text
+                //         }).appendTo('#bannerForm');
+                //     }
+                // }
             });
 
             /* ========= ADD BANNER ========= */
