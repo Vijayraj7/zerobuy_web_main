@@ -25,6 +25,7 @@ class SubscriptionPlanRequest extends FormRequest
             'name' => 'required|string|max:255',
             'short_description' => 'nullable|string|max:255',
             'description' => 'nullable|string',
+            'mrp' => 'required|numeric|min:0',
             'price' => 'required|numeric|min:0',
             'duration' => 'nullable|numeric|min:0',
             'sale_limit' => 'nullable|numeric|min:0',

@@ -11,6 +11,7 @@ use App\Repositories\ShopRepository;
 use App\Http\Requests\SubscriptionPlanRequest;
 use App\Repositories\ShopSubscriptionRepository;
 use App\Repositories\SubscriptionPlanRepository;
+use App\Models\OfflinePaymentDetail;
 
 class SubscriptionPlanController extends Controller
 {
@@ -106,5 +107,41 @@ class SubscriptionPlanController extends Controller
         } catch (\Exception $e) {
             return back()->withError($e->getMessage());
         }
+    }
+
+    public function createShopSubscription()
+    {
+        return view('admin.subscription-plan.create-shop-subscription');
+    }
+    
+    public function createOfflineDetails()
+    {
+        $offline = OfflinePaymentDetail::first(); 
+        return view('admin.subscription-plan.create-offline-details', compact('offline'));
+    }
+
+    public function storeOfflineDetails(Request $request)
+    {
+        $request->validate([
+            'account_name'   => 'required',
+            'account_number' => 'required',
+        ]);
+
+        OfflinePaymentDetail::updateOrCreate(
+            ['id' => $request->id],
+            $request->only([
+                'account_name',
+                'account_number',
+                'account_type',
+                'ifsc_code',
+                'branch_name',
+                'upi_number',
+            ])
+        );
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Offline payment details saved successfully'
+        ]);
     }
 }

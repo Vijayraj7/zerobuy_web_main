@@ -340,7 +340,7 @@
 
 <!------------------------------ Subscription Management ------------------------------>
 @if ($businessModel == 'multi')
-    @hasPermission(['admin.subscription-plan.index', 'admin.subscription-plan.create', 'admin.subscription-plan.subscription.list'])
+    @hasPermission(['admin.subscription-plan.index', 'admin.subscription-plan.create', 'admin.subscription-plan.subscription.list','admin.subscription-plan.offline.create','admin.subscription-plan.shopmanual.create'])
         <li>
             <a class="menu {{ request()->routeIs('admin.subscription-plan.*') ? 'active' : '' }}"
                 data-bs-toggle="collapse" href="#subscriptionMenu">
@@ -372,15 +372,15 @@
                             {{ __('Add Subscription Plan') }}
                         </a>
                     @endhasPermission
-                    @hasPermission('admin.subscription-plan.subscription.list')
-                        <a href="#"
-                            class="subMenu hasCount {{ request()->routeIs('admin.subscription-plan.subscription.list') ? 'active' : '' }}">
+                    @hasPermission('admin.subscription-plan.shopmanual.create')
+                        <a href="{{ route('admin.subscription-plan.shopmanual.create') }}"
+                            class="subMenu hasCount {{ request()->routeIs('admin.subscription-plan.shopmanual.create') ? 'active' : '' }}">
                             {{ __('Add Subscription Store') }}
                         </a>
                     @endhasPermission
-                    @hasPermission('admin.subscription-plan.subscription.list')
-                        <a href="#"
-                            class="subMenu hasCount {{ request()->routeIs('admin.subscription-plan.subscription.list') ? 'active' : '' }}">
+                    @hasPermission('admin.subscription-plan.offline.create')
+                        <a href="{{ route('admin.subscription-plan.offline.create') }}"
+                            class="subMenu hasCount {{ request()->routeIs('admin.subscription-plan.offline.create') ? 'active' : '' }}">
                             {{ __('Offline Payment Details') }}
                         </a>
                     @endhasPermission

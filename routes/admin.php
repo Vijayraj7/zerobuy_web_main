@@ -169,6 +169,12 @@ Route::name('admin.')->group(function () {
             Route::put('/subscription-plans/{subscriptionPlan}/update', 'update')->name('subscription-plan.update');
             Route::get('/subscription-plans/{subscriptionPlan}/toggle', 'statusToggle')->name('subscription-plan.toggle');
             Route::delete('/subscription-plans/{subscriptionPlan}/destroy', 'destroy')->name('subscription-plan.destroy');
+
+            Route::get('/subscription-shopmanual/create', 'createShopSubscription')->name('subscription-plan.shopmanual.create');
+            Route::post('/subscription-shopmanual/store', 'storeShopSubscription')->name('subscription-plan.shopmanual.store');
+            Route::get('/subscription-offline-payment/create', 'createOfflineDetails')->name('subscription-plan.offline.create');
+            Route::post('/subscription-offline-payment/store', 'storeOfflineDetails')->name('subscription-plan.offline.store');
+
         });
 
         // reviews

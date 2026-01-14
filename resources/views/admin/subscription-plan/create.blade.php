@@ -43,6 +43,11 @@
                 </div>
 
                 <div class="mt-3">
+                    <x-input type="text" name="mrp" label="MRP" placeholder="MRP"
+                        required="true" onlyNumber="true" />
+                </div>
+
+                <div class="mt-3">
                     <x-input type="text" name="price" label="Price" placeholder="Price"
                         required="true" onlyNumber="true" />
                 </div>
