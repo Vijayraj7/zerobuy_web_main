@@ -68,39 +68,44 @@
                             <div
                                 style="color: white; font-size: 16px; font-family: Inter; font-weight: 600; letter-spacing: 0.32px; word-wrap: break-word">
                                 {{ $subscriptionPlan->name }}</div>
-                            <div
-                                style="align-self: stretch; justify-content: flex-start; align-items: center; gap: 8px; display: inline-flex">
+
+                            <div style="display:flex; flex-direction:column; gap:0;">
                                 <div
-                                    style="color: white; font-size: 36px; font-family: Inter; font-weight: 800; letter-spacing: 0.72px; word-wrap: break-word">
-                                    {{ showCurrency($subscriptionPlan->price + 0) }}</div>
-                                <div
-                                    style="flex-direction: column; justify-content: center; align-items: flex-start; gap: 2px; display: inline-flex">
+                                    style="align-self: stretch; justify-content: flex-start; align-items: center; gap: 8px; display: inline-flex">
                                     <div
-                                        style="color: white; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">
-                                        {{ $subscriptionPlan->duration ? daysToLargestUnit($subscriptionPlan->duration) : 'Unlimited' }}
+                                        style="color: white; font-size: 36px; font-family: Inter; font-weight: 800; letter-spacing: 0.72px; word-wrap: break-word">
+                                        {{ showCurrency($subscriptionPlan->price + 0) }}</div>
+                                    <div
+                                        style="flex-direction: column; justify-content: center; align-items: flex-start; gap: 2px; display: inline-flex">
+                                        <div
+                                            style="color: white; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">
+                                            {{ $subscriptionPlan->duration ? daysToLargestUnit($subscriptionPlan->duration) : 'Unlimited' }}
+                                        </div>
                                     </div>
                                 </div>
+                                <!-- MRP + Discount -->
+                                @if ($subscriptionPlan->mrp && $subscriptionPlan->mrp > $subscriptionPlan->price)
+                                    @php
+                                        $discount = round(
+                                            (($subscriptionPlan->mrp - $subscriptionPlan->price) /
+                                                $subscriptionPlan->mrp) *
+                                                100,
+                                        );
+                                    @endphp
+                                    <div style="display: inline-flex; align-items: center; gap: 8px;">
+                                        <!-- Crossed MRP -->
+                                        <span
+                                            style="color: #9CA3AF; font-size: 14px; font-family: Inter; text-decoration: line-through;">
+                                            {{ showCurrency($subscriptionPlan->mrp) }}
+                                        </span>
+                                        <!-- Discount -->
+                                        <span
+                                            style="color: #22C55E; font-size: 13px; font-family: Inter; font-weight: 600;">
+                                            {{ $discount }}% OFF
+                                        </span>
+                                    </div>
+                                @endif
                             </div>
-                            <!-- MRP + Discount -->
-                            @if ($subscriptionPlan->mrp && $subscriptionPlan->mrp > $subscriptionPlan->price)
-                                @php
-                                    $discount = round(
-                                        (($subscriptionPlan->mrp - $subscriptionPlan->price) / $subscriptionPlan->mrp) *
-                                            100,
-                                    );
-                                @endphp
-                                <div style="display: inline-flex; align-items: center; gap: 8px;">
-                                    <!-- Crossed MRP -->
-                                    <span
-                                        style="color: #9CA3AF; font-size: 14px; font-family: Inter; text-decoration: line-through;">
-                                        {{ showCurrency($subscriptionPlan->mrp) }}
-                                    </span>
-                                    <!-- Discount -->
-                                    <span style="color: #22C55E; font-size: 13px; font-family: Inter; font-weight: 600;">
-                                        {{ $discount }}% OFF
-                                    </span>
-                                </div>
-                            @endif
                         </div>
                         @if ($subscriptionPlan->is_popular)
                             <div
