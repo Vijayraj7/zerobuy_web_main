@@ -266,6 +266,7 @@ class Shop extends Model
     {
         return $this->belongsToMany(BusinessCategory::class, 'shop_business_category');
     }
+
     public function deliverySetting()
     {
         return $this->hasOne(DeliverySetting::class, 'shop_id');

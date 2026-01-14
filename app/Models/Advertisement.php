@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Advertisement extends Model
 {
@@ -34,5 +36,20 @@ class Advertisement extends Model
     public function shop()
     {
         return $this->belongsTo(Shop::class);
+    }
+
+    public function scopeActive($query)
+    {
+        $now = Carbon::now();
+
+        return $query
+            ->where(function ($q) use ($now) {
+                $q->whereNull('start_date')
+                    ->orWhere('start_date', '<=', $now);
+            })
+            ->where(function ($q) use ($now) {
+                $q->whereNull('end_date')
+                    ->orWhere('end_date', '>=', $now);
+            });
     }
 }
