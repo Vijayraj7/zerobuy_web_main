@@ -105,7 +105,7 @@
 
                         <div class="col-md-6 mt-3">
                             <label>Daily Budget</label>
-                            <input type="number" class="form-control" id="daily_budget" value="{{ $setting->daily_budget }}" readonly>
+                            <input type="number" class="form-control" id="daily_budget" value="{{ $setting?->daily_budget ?? 0 }}" readonly>
                         </div>
 
                         <div class="col-md-6 mt-3">
