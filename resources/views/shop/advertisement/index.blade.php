@@ -58,6 +58,7 @@
                         <th>Product Name</th>
                         <th>Daily Budget</th>
                         <th>Total Budget</th>
+                        <th>Total Views</th>
                         <th>Status</th>
                     </tr>
                     </thead>
@@ -159,6 +160,7 @@ $(function () {
             { data: 'product_name' },
             { data: 'daily_budget' },
             { data: 'total_budget' },
+            { data: 'total_views' },
             { data: 'status', orderable:false }
         ]
     });

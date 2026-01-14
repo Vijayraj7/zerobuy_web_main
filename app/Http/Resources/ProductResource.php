@@ -80,6 +80,7 @@ class ProductResource extends JsonResource
             'colors' => ColorResource::collection($this->colors),
             'unit' => $this->unit ? UnitResource::make($this->unit) : null,
             'brand' => $brandName,
+            'is_ad' => count($this->advertisements) > 0,
             'shop' => ProductShopResource::make($this->shop),
         ];
     }
