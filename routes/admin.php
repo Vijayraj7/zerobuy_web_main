@@ -114,10 +114,14 @@ Route::name('admin.')->group(function () {
         // advertisement routes
         Route::controller(AdvertismentController::class)->group(function () {
             Route::get('/advertisements', 'index')->name('advertisement.index'); 
+            Route::get('/advertisements-all', 'allAds')->name('advertisement.allads');
+            Route::get('/advertisements/shop/{shop_id}', 'shopAds')->name('advertisement.shop.ads');
             Route::post('/advertisements/store', 'store')->name('advertisement.store');  
-
             Route::get('/advertisements/products', 'products')->name('advertisement.products');
             Route::get('/advertisements/transactions', 'transactions')->name('advertisement.transactions');
+            // Route::delete('/advertisements/{id}', 'destroy')->name('admin.advertisement.destroy'); 
+            Route::delete('/advertisements/{id}', 'destroy')->name('advertisement.destroy');
+
         });
 
         // certificate routes

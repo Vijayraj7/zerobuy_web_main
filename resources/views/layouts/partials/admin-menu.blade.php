@@ -393,7 +393,7 @@
 
 
 <!------------------------------ Advertisement Management ------------------------------>
-@hasPermission(['admin.advertisement.index'])
+@hasPermission(['admin.advertisement.index', 'admin.advertisement.allads'])
     <li>
         <a class="menu {{ request()->routeIs('admin.advertisement.*') ? 'active' : '' }}" data-bs-toggle="collapse" href="#advertisementMenu">
             <span>
@@ -404,9 +404,15 @@
         </a>
         <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.advertisement.*') ? 'show' : '' }}" id="advertisementMenu">
             <div class="listBar"> 
+                @hasPermission('admin.advertisement.allads')
+                    <a href="{{ route('admin.advertisement.allads') }}"
+                        class="subMenu hasCount {{ request()->routeIs('admin.advertisement.allads') ? 'active' : '' }}">
+                        {{ __('All Ads') }}
+                    </a>
+                @endhasPermission 
                 @hasPermission('admin.advertisement.index')
                     <a href="{{ route('admin.advertisement.index') }}"
-                        class="subMenu hasCount {{ request()->routeIs('admin.advertisement.*') ? 'active' : '' }}">
+                        class="subMenu hasCount {{ request()->routeIs('admin.advertisement.index') ? 'active' : '' }}">
                         {{ __('My Ads') }}
                     </a>
                 @endhasPermission 

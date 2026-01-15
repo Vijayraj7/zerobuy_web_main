@@ -186,7 +186,7 @@
                                 <th>{{ __('Mobile Number') }}</th> 
                                 <th>{{ __('State') }}</th>
                                 <th>{{ __('Store Type') }}</th>
-                                <!-- <th>{{ __('Subscription') }}</th>  -->
+                                <th>{{ __('Subscription') }}</th> 
                                 @hasPermission('admin.shop.products')
                                 <th>{{ __('Products') }}</th>
                                 @endhasPermission
@@ -256,7 +256,7 @@
                         return data.charAt(0).toUpperCase() + data.slice(1);
                     }
                 },
-                // { data: 'subscription_days', name: 'subscription_days' },
+                { data: 'subscription_days', name: 'subscription_days' },
                 { data: 'products', name: 'products' },
                 { data: 'orders', name: 'orders' },
                 { data: 'branded', name: 'branded', orderable: false, searchable: false },

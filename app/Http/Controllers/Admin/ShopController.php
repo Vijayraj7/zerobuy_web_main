@@ -31,7 +31,7 @@ class ShopController extends Controller
     public function index(Request $request)
     {
         $shops = Shop::paginate(20);
-        $query = Shop::with('user')->withCount(['products', 'orders']);
+        $query = Shop::with('user','currentSubscription.plan')->withCount(['products', 'orders']);
         if ($request->filter) {
             switch ($request->filter) {
 
@@ -124,6 +124,36 @@ class ShopController extends Controller
                     </a>';
                 })
 
+                // ->addColumn('subscription_days', function ($shop) {
+                //     $subscription = $shop->currentSubscription;
+                //     if (!$subscription) {
+                //         return '-';
+                //     }
+                //     $daysLeft = max(0, now()->startOfDay()->diffInDays($subscription->ends_at->startOfDay(), false));
+                //     $totalDays = $subscription->starts_at->diffInDays($subscription->ends_at);
+                //     return '<span class=""><b>Days Left : </b>'.$daysLeft.' Days</span> <br> 
+                //     <span class=""><b>Total Days : </b>'.$totalDays.' Days</span>'; 
+                // })
+                ->addColumn('subscription_days', function ($shop) {
+                    $subscription = $shop->currentSubscription;
+
+                    if (!$subscription || !$subscription->plan) {
+                        return '<span class="badge badge-secondary">No Plan</span>';
+                    }
+
+                    $daysLeft = max(
+                        0,
+                        now()->startOfDay()->diffInDays($subscription->ends_at->startOfDay(), false)
+                    );
+
+                    $totalDays = $subscription->starts_at->diffInDays($subscription->ends_at);
+
+                    return '
+                        <strong>' . e($subscription->plan->name) . '</strong><br>
+                        <span class="text-muted">' . $daysLeft . ' / ' . $totalDays . ' Days</span>
+                    ';
+                })
+
                 ->orderColumn('products', 'products_count $1')
                 ->orderColumn('orders', 'orders_count $1')
 
@@ -144,7 +174,7 @@ class ShopController extends Controller
                     return $btn;
                 })
 
-                ->rawColumns(['logo', 'phone', 'branded', 'verified', 'status', 'products', 'orders', 'shop_id_display', 'action'])
+                ->rawColumns(['logo', 'phone', 'branded', 'verified', 'status', 'products', 'subscription_days', 'orders', 'shop_id_display', 'action'])
                 ->make(true);
         }
 

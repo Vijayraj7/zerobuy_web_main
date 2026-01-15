@@ -150,7 +150,7 @@ $(function () {
         serverSide: true,
         ajax: "{{ route('admin.advertisement.index') }}",
         columns: [
-            { data: 'DT_RowIndex', orderable:false },
+            { data: 'DT_RowIndex', orderable: false, searchable: false },
             { data: 'start_date' },
             { data: 'end_date' },
             { data: 'ads_type' },
