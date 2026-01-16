@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Advertisement;
 use App\Models\Product;
 use App\Models\Wallet;
-use App\Models\Transaction; 
+use App\Models\Transaction;
 use App\Models\AdvertisementSetting;
 use Carbon\Carbon;
 use DataTables;
@@ -15,41 +15,45 @@ use DB;
 
 class AdvertismentController extends Controller
 {
-        public function index(Request $request)
+    public function index(Request $request)
     {
         // AUTO EXPIRE ADS
         Advertisement::where('status', 'active')
             ->whereDate('end_date', '<', Carbon::today())
             ->update(['status' => 'completed']);
 
-        $shop    = generaleSetting('shop');
-        $wallet  = Wallet::where('user_id',$shop->user_id)->first();
+        $shop = generaleSetting('shop');
+        $wallet = Wallet::where('user_id', $shop->user_id)->first();
         $setting = AdvertisementSetting::first();
 
         // AUTO EXPIRE ADS
-        Advertisement::where('status','active')
-            ->whereDate('end_date','<',Carbon::today())
-            ->update(['status'=>'completed']);
+        Advertisement::where('status', 'active')
+            ->whereDate('end_date', '<', Carbon::today())
+            ->update(['status' => 'completed']);
 
         if ($request->ajax()) {
             $ads = Advertisement::with('product')
-                ->where('shop_id',$shop->id);
+                ->where('shop_id', $shop->id);
 
             return DataTables::of($ads)
                 ->addIndexColumn()
-                ->editColumn('start_date',fn($r)=>$r->start_date->format('d-m-Y'))
-                ->editColumn('end_date',fn($r)=>$r->end_date->format('d-m-Y'))
-                ->addColumn('product_image',fn($r)=>
+                ->editColumn('start_date', fn($r) => $r->start_date->format('d-m-Y'))
+                ->editColumn('end_date', fn($r) => $r->end_date->format('d-m-Y'))
+                ->addColumn(
+                    'product_image',
+                    fn($r) =>
                     $r->product
-                        ? '<img src="'.asset($r->product->thumbnail).'" width="40">'
-                        : 'N/A'
+                    ? '<img src="' . asset($r->product->thumbnail) . '" width="40">'
+                    : 'N/A'
                 )
-                ->addColumn('product_id',fn($r)=>
-                    $r->product_id ? 'PRD0'.$r->product_id : 'N/A'
+                ->addColumn(
+                    'product_id',
+                    fn($r) =>
+                    $r->product_id ? 'PRD0' . $r->product_id : 'N/A'
                 )
-                ->addColumn('product_name',fn($r)=>$r->product?->name ?? 'N/A')
-                ->editColumn('daily_budget',fn($r)=>'₹'.$r->daily_budget)
-                ->editColumn('total_budget',fn($r)=>'₹'.$r->total_budget)
+                ->addColumn('product_name', fn($r) => $r->product?->name ?? 'N/A')
+                ->editColumn('daily_budget', fn($r) => '₹' . $r->daily_budget)
+                ->editColumn('total_budget', fn($r) => '₹' . $r->total_budget)
                 // ->addColumn('status',fn($r)=>
                 //     $r->status=='active'
                 //         ? '<span class="badge bg-success">Active</span>'
@@ -58,7 +62,7 @@ class AdvertismentController extends Controller
                 ->addColumn('status', function ($r) {
                     $today = Carbon::today();
                     $start = Carbon::parse($r->start_date);
-                    $end   = Carbon::parse($r->end_date);
+                    $end = Carbon::parse($r->end_date);
                     // UPCOMING
                     if ($start->gt($today)) {
                         $days = $today->diffInDays($start);
@@ -67,7 +71,7 @@ class AdvertismentController extends Controller
                             return '<span class="badge bg-info">Starts Tomorrow</span>';
                         }
 
-                        return '<span class="badge bg-info">Starts in '.$days.' days</span>';
+                        return '<span class="badge bg-info">Starts in ' . $days . ' days</span>';
                     }
                     // ACTIVE
                     if ($today->between($start, $end)) {
@@ -77,49 +81,49 @@ class AdvertismentController extends Controller
                     return '<span class="badge bg-secondary">Completed</span>';
                 })
 
-                ->rawColumns(['product_image','status'])
+                ->rawColumns(['product_image', 'status'])
                 ->make(true);
         }
 
-        return view('shop.advertisement.index',compact('wallet','setting'));
+        return view('shop.advertisement.index', compact('wallet', 'setting'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'ads_type'   => 'required|in:store,product',
+            'ads_type' => 'required|in:store,product',
             'start_date' => 'required|date|after_or_equal:today',
-            'end_date'   => 'required|date|after_or_equal:start_date',
+            'end_date' => 'required|date|after_or_equal:start_date',
             'product_id' => 'required_if:ads_type,product'
         ]);
 
-        $shop   = generaleSetting('shop');
-        $wallet = Wallet::where('user_id',$shop->user_id)->first();
-        $today  = Carbon::today();
+        $shop = generaleSetting('shop');
+        $wallet = Wallet::where('user_id', $shop->user_id)->first();
+        $today = Carbon::today();
 
         // SINGLE ACTIVE RULE
         if ($request->ads_type === 'store') {
-            $exists = Advertisement::where('shop_id',$shop->id)
-                ->where('ads_type','store')
-                ->where('status','active')
-                ->whereDate('end_date','>=',$today)
+            $exists = Advertisement::where('shop_id', $shop->id)
+                ->where('ads_type', 'store')
+                ->where('status', 'active')
+                ->whereDate('end_date', '>=', $today)
                 ->exists();
 
             if ($exists) {
-                return response()->json(['message'=>'Shop already has active advertisement'],400);
+                return $this->json('Shop already has active advertisement', 400);
             }
         }
 
         if ($request->ads_type === 'product') {
-            $exists = Advertisement::where('shop_id',$shop->id)
-                ->where('ads_type','product')
-                ->where('product_id',$request->product_id)
-                ->where('status','active')
-                ->whereDate('end_date','>=',$today)
+            $exists = Advertisement::where('shop_id', $shop->id)
+                ->where('ads_type', 'product')
+                ->where('product_id', $request->product_id)
+                ->where('status', 'active')
+                ->whereDate('end_date', '>=', $today)
                 ->exists();
 
             if ($exists) {
-                return response()->json(['message'=>'Product already has active advertisement'],400);
+                return $this->json('Product already has active advertisement', 400);
             }
         }
 
@@ -130,53 +134,54 @@ class AdvertismentController extends Controller
         $total = $days * $dailyBudget;
 
         if ($wallet->balance < $total) {
-            return response()->json(['message'=>'Insufficient wallet balance'],400);
+            return $this->json('Insufficient wallet balance', [], 400);
         }
 
-        DB::transaction(function() use($request,$shop,$wallet,$dailyBudget,$total){
+        DB::transaction(function () use ($request, $shop, $wallet, $dailyBudget, $total) {
 
             Advertisement::create([
-                'shop_id'      => $shop->id,
-                'ads_type'     => $request->ads_type,
-                'product_id'   => $request->ads_type=='product'
-                                    ? $request->product_id
-                                    : null,
-                'start_date'   => $request->start_date,
-                'end_date'     => $request->end_date,
+                'shop_id' => $shop->id,
+                'ads_type' => $request->ads_type,
+                'product_id' => $request->ads_type == 'product'
+                    ? $request->product_id
+                    : null,
+                'start_date' => $request->start_date,
+                'end_date' => $request->end_date,
                 'daily_budget' => $dailyBudget,
                 'total_budget' => $total,
-                'status'       => 'active'
+                'status' => 'active'
             ]);
 
-            $wallet->decrement('balance',$total);
+            $wallet->decrement('balance', $total);
 
             Transaction::create([
-                'wallet_id'=>$wallet->id,
-                'amount'=>$total,
-                'type'=>'debit',
-                'purpose'=>'Ads Run',
-                'note'=>'Advertisement'
+                'wallet_id' => $wallet->id,
+                'amount' => $total,
+                'type' => 'debit',
+                'purpose' => 'Ads Run',
+                'note' => 'Advertisement'
             ]);
         });
 
-        return response()->json(['message'=>'Advertisement created successfully']);
+        return $this->json('Advertisement created successfully', [], 200);
     }
 
     public function products(Request $request)
     {
         $shop = generaleSetting('shop');
 
-        return Product::where('shop_id',$shop->id)
-            ->where('is_active',1)
-            ->where(fn($q)=>
-                $q->where('name','like',"%{$request->q}%")
-                  ->orWhere('id','like',"%{$request->q}%")
+        return Product::where('shop_id', $shop->id)
+            ->where('is_active', 1)
+            ->where(
+                fn($q) =>
+                $q->where('name', 'like', "%{$request->q}%")
+                    ->orWhere('id', 'like', "%{$request->q}%")
             )
             ->get()
-            ->map(fn($p)=>[
-                'id'=>$p->id,
-                'name'=>$p->name,
-                'image'=>asset($p->thumbnail),
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'image' => asset($p->thumbnail),
             ]);
     }
 

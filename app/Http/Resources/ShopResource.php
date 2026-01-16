@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\ShopFollower;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -39,6 +40,7 @@ class ShopResource extends JsonResource
             'store_type' => $this->store_type ? $this->store_type : 'retail',
             'state' => $this->states ? $this->states->name : null,
             'district' => $this->districts ? $this->districts->name : null,
+            'total_followers' => (int) ShopFollower::where('shop_id', $this->id)->count(),
             'total_products' => (int) $this->products()->isActive()->count(),
             'total_categories' => (int) $this->categories()->active()->count(),
             'rating' => (float) number_format($this->averageRating, 1, '.', ''),

@@ -21,7 +21,14 @@ class SellerProductResource extends JsonResource
             'price' => (float) $this->price,
             'discount_price' => (float) $this->discount_price,
             // 'quantity' => (int) $this->quantity,
-            'quantity' => (int) $this->pivot?->quantity ?? $this->quantity,
+            'bulk_items' => ProductBulkItemResource::collection(
+                $this->bulkItems
+            ),
+            'bulk_prices' => ProductBulkPriceResource::collection(
+                $this->bulkPrices
+            ),
+            'variants' => ProductVariantResource::collection($this->variants),
+            'quantity' => $this->pivot ? (int) $this->pivot?->quantity : (int) $this->quantity,
             'min_order_quantity' => (int) $this->min_order_quantity,
             'brand' => $this->brand?->name ?? null,
             'is_active' => (bool) $this->is_active,

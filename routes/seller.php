@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\ChatController;
 use App\Http\Controllers\API\Seller\DeliverySettingController;
 use App\Http\Controllers\API\Seller\BannerController;
+use App\Http\Controllers\API\Seller\AdvertisementController;
 use App\Http\Controllers\API\Seller\DashboardController;
 use App\Http\Controllers\API\Seller\LoginController;
 use App\Http\Controllers\API\Seller\NotificationController;
@@ -52,6 +53,16 @@ Route::prefix('/seller')->group(function () {
             Route::delete('/banners/{banner}', 'destroy');
         });
 
+        // advertisement route
+        Route::controller(AdvertisementController::class)->group(function () {
+            Route::get('/advertisements', 'index');
+        });
+
+        // advertisement route
+        Route::controller(App\Http\Controllers\Shop\AdvertismentController::class)->group(function () {
+            Route::post('/advertisements/store', 'store');
+        });
+
         // dashboard route
         Route::get('/dashboard', [DashboardController::class, 'index']);
 
@@ -76,7 +87,7 @@ Route::prefix('/seller')->group(function () {
         Route::controller(DeliverySettingController::class)->group(function () {
             Route::get('/delivery-settings', 'show');
             Route::get('/get-states', 'getStates');
-            Route::post('/delivery-settings/selected-states',  'saveSelectedStates');
+            Route::post('/delivery-settings/selected-states', 'saveSelectedStates');
             Route::post('/delivery-settings', 'store');
         });
 
