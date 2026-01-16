@@ -61,6 +61,7 @@ use App\Http\Controllers\Admin\AjaxCategoryController;
 use App\Http\Controllers\Admin\AdvertismentController;
 use App\Http\Controllers\Admin\CertificateController;
 use App\Http\Controllers\Admin\AdvertisementSettingController;
+use App\Http\Controllers\Admin\AdsWalletController;
 
 /*
 |--------------------------------------------------------------------------
@@ -109,6 +110,13 @@ Route::name('admin.')->group(function () {
             Route::put('/ads/{ad}/update', 'update')->name('ad.update');
             Route::get('/ads/{ad}/toggle', 'statusToggle')->name('ad.toggle');
             Route::get('/ads/{ad}/destroy', 'destroy')->name('ad.destroy');
+        });
+
+        // ads routes
+        Route::controller(AdsWalletController::class)->group(function () {
+            Route::get('/ads-wallet', 'index')->name('adswallet.index'); 
+            Route::post('/wallet/recharge', 'recharge')->name('wallet.recharge');
+            Route::get('/wallet/{wallet}/transactions', 'transactions')->name('wallet.transactions');
         });
 
         // advertisement routes

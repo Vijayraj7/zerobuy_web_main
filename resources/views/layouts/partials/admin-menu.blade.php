@@ -469,10 +469,10 @@
 
 
 <!------------------------------ Wallet ------------------------------>
-@hasPermission('admin.contactUs.index')
+@hasPermission('admin.adswallet.index')
     <li>
-        <a href="#"
-            class="menu {{ request()->routeIs('admin.contactUs.*') ? 'active' : '' }}">
+        <a href="{{ route('admin.adswallet.index') }}"
+            class="menu {{ request()->routeIs('admin.adswallet.*') ? 'active' : '' }}">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/wallet.svg') }}" alt="icon"
                     loading="lazy" />
