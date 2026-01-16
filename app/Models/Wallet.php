@@ -27,4 +27,9 @@ class Wallet extends Model
     {
         return $this->hasMany(Transaction::class, 'wallet_id');
     }
+
+    public function shop()
+    {
+        return $this->hasOne(Shop::class, 'user_id', 'user_id');
+    }
 }

@@ -276,4 +276,9 @@ class Shop extends Model
     {
         return $this->hasOne(Wallet::class, 'user_id', 'user_id');
     }
+
+    public function advertisements()
+    {
+        return $this->hasMany(Advertisement::class);
+    }
 }
