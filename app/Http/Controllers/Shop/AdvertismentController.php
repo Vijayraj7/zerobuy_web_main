@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Shop;
 
 use App\Http\Controllers\Controller;
+use App\Models\AdTransaction;
+use App\Models\AdWallet;
 use Illuminate\Http\Request;
 use App\Models\Advertisement;
 use App\Models\Product;
@@ -98,7 +100,7 @@ class AdvertismentController extends Controller
         ]);
 
         $shop = generaleSetting('shop');
-        $wallet = Wallet::where('user_id', $shop->user_id)->first();
+        $wallet = AdWallet::where('user_id', $shop->user_id)->first();
         $today = Carbon::today();
 
         // SINGLE ACTIVE RULE
@@ -154,8 +156,8 @@ class AdvertismentController extends Controller
 
             $wallet->decrement('balance', $total);
 
-            Transaction::create([
-                'wallet_id' => $wallet->id,
+            AdTransaction::create([
+                'ad_wallet_id' => $wallet->id,
                 'amount' => $total,
                 'type' => 'debit',
                 'purpose' => 'Ads Run',

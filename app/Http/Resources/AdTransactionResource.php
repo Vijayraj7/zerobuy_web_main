@@ -16,7 +16,7 @@ class AdTransactionResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'wallet_id' => $this->wallet_id,
+            'wallet_id' => $this->ad_wallet_id,
             'amount' => $this->amount,
             'is_commission' => $this->is_commission,
             'type' => $this->type,
