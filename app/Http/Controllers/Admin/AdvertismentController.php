@@ -219,7 +219,7 @@ class AdvertismentController extends Controller
         if ($request->ajax()) {
             $today = Carbon::today();
             $ads = Advertisement::query()
-                ->with(['shop.products','shop.orders','shop.subscriptions','shop.wallet',])
+                ->with(['shop.products','shop.orders','shop.subscriptions','shop.adwallet',])
                 ->where('status', 'active')
                 ->where('ads_type', 'store')
                 ->whereDate('start_date', '<=', $today)

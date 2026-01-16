@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Wallet;
-use App\Models\Transaction;
+// use App\Models\Wallet;
+use App\Models\AdWallet;
+// use App\Models\Transaction;
+use App\Models\AdTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -16,7 +18,7 @@ class AdsWalletController extends Controller
     {
         if ($request->ajax()) {
 
-            $wallets = Wallet::with([
+            $wallets = AdWallet::with([
                 'shop.products',
                 'shop.orders',
                 'shop.currentSubscription'
@@ -97,7 +99,7 @@ class AdsWalletController extends Controller
             'type'      => 'required|in:credit,debit'
         ]);
 
-        $wallet = Wallet::findOrFail($request->wallet_id);
+        $wallet = AdWallet::findOrFail($request->wallet_id);
 
         if ($request->type === 'debit' && $request->amount > $wallet->balance) {
             return response()->json([
@@ -113,7 +115,7 @@ class AdsWalletController extends Controller
                 $wallet->decrement('balance', $request->amount);
             }
 
-            Transaction::create([
+            AdTransaction::create([
                 'wallet_id'      => $wallet->id,
                 'amount'         => $request->amount,
                 'type'           => $request->type, // credit / debit
@@ -135,11 +137,11 @@ class AdsWalletController extends Controller
     }
 
 
-    public function transactions(Request $request, Wallet $wallet)
+    public function transactions(Request $request, AdWallet $adWallet)
     {
         if ($request->ajax()) {
 
-            $transactions = Transaction::where('wallet_id', $wallet->id);
+            $transactions = AdTransaction::where('wallet_id', $adWallet->id);
 
             return DataTables::eloquent($transactions)
                 ->addIndexColumn()

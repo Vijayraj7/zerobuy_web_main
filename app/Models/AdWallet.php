@@ -28,4 +28,9 @@ class AdWallet extends Model
     {
         return $this->hasMany(AdTransaction::class, 'ad_wallet_id');
     }
+
+    public function shop()
+    {
+        return $this->hasOne(Shop::class, 'user_id', 'user_id');
+    }
 }

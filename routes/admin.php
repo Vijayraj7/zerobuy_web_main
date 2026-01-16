@@ -116,7 +116,7 @@ Route::name('admin.')->group(function () {
         Route::controller(AdsWalletController::class)->group(function () {
             Route::get('/ads-wallet', 'index')->name('adswallet.index'); 
             Route::post('/wallet/recharge', 'recharge')->name('wallet.recharge');
-            Route::get('/wallet/{wallet}/transactions', 'transactions')->name('wallet.transactions');
+            Route::get('/wallet/{adWallet}/transactions', 'transactions')->name('wallet.transactions');
         });
 
         // advertisement routes
