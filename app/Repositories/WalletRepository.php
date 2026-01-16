@@ -23,6 +23,7 @@ class WalletRepository extends Repository
      */
     public static function storeByRequest(User $user): Wallet
     {
+        AdWalletRepository::storeByRequest($user);
         return self::create([
             'user_id' => $user->id,
             'balance' => 0,

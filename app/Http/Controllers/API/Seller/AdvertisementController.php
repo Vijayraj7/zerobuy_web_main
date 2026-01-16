@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\Seller;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AdWalletResource;
 use App\Http\Resources\Seller\AdvertisementResource;
 use App\Http\Resources\SellerProductResource;
 use App\Http\Resources\ShopResource;
@@ -32,7 +33,7 @@ class AdvertisementController extends Controller
 
         return $this->json('all advertisements', [
             'daily_budget' => (float) $setting->daily_budget,
-            'wallet' => WalletResource::make($wallet),
+            'wallet' => AdWalletResource::make($wallet),
             'shop' => ShopResource::make($shop),
             'advertisements' => AdvertisementResource::collection($advertisements),
             'products' => SellerProductResource::collection($products),
