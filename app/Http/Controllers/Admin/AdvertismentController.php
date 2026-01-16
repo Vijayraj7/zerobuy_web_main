@@ -8,7 +8,7 @@ use App\Models\AdWallet;
 use Illuminate\Http\Request;
 use App\Models\Advertisement;
 use App\Models\Product;
-use App\Models\Wallet;
+// use App\Models\Wallet;
 use App\Models\Transaction;
 use App\Models\AdvertisementSetting;
 use App\Models\Shop;
@@ -192,7 +192,7 @@ class AdvertismentController extends Controller
     {
         $shop = generaleSetting('shop');
 
-        $wallet = Wallet::where('user_id', $shop->user_id)->first();
+        $wallet = AdWallet::where('user_id', $shop->user_id)->first();
 
         // CASE 1: Wallet not created
         if (!$wallet) {
@@ -317,7 +317,7 @@ class AdvertismentController extends Controller
    
         $shop = Shop::findOrFail($shop_id);
 
-        $wallet  = Wallet::where('user_id', $shop->user_id)->first();
+        $wallet  = AdWallet::where('user_id', $shop->user_id)->first();
         $setting = AdvertisementSetting::first();
 
         if ($request->ajax()) {

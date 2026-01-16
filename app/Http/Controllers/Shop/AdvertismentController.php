@@ -8,7 +8,7 @@ use App\Models\AdWallet;
 use Illuminate\Http\Request;
 use App\Models\Advertisement;
 use App\Models\Product;
-use App\Models\Wallet;
+// use App\Models\Wallet;
 use App\Models\Transaction;
 use App\Models\AdvertisementSetting;
 use Carbon\Carbon;
@@ -25,7 +25,7 @@ class AdvertismentController extends Controller
             ->update(['status' => 'completed']);
 
         $shop = generaleSetting('shop');
-        $wallet = Wallet::where('user_id', $shop->user_id)->first();
+        $wallet = AdWallet::where('user_id', $shop->user_id)->first();
         $setting = AdvertisementSetting::first();
 
         // AUTO EXPIRE ADS
@@ -191,7 +191,7 @@ class AdvertismentController extends Controller
     {
         $shop = generaleSetting('shop');
 
-        $wallet = Wallet::where('user_id', $shop->user_id)->first();
+        $wallet = AdWallet::where('user_id', $shop->user_id)->first();
 
         // CASE 1: Wallet not created
         if (!$wallet) {
