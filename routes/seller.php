@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\Seller\BusinessCategoryController;
 use App\Http\Controllers\API\ChatController;
 use App\Http\Controllers\API\Seller\DeliverySettingController;
 use App\Http\Controllers\API\Seller\BannerController;
@@ -43,6 +44,16 @@ Route::prefix('/seller')->group(function () {
             Route::post('/user-update', 'updateProfile');
             Route::post('/shop-update', 'shopUpdate');
             Route::post('/shop-setting-update', 'shopSettingUpdate');
+        });
+
+        // Business Categories
+        Route::controller(BusinessCategoryController::class)->group(function () {
+            Route::get('/business-category', 'index')->name('business-category.index');
+            Route::post('/business-category/shopstore', 'shopstore')->name('business-category.shopstore');
+            Route::post('/business-category/store', 'store')->name('business-category.store');
+            Route::get('/business-category/{businessCategory}/edit', 'edit')->name('business-category.edit');
+            Route::put('/business-category/{businessCategory}/update', 'update')->name('business-category.update');
+            Route::post('/business-category/{businessCategory}/toggle', 'statusToggle')->name('business-category.toggle');
         });
 
         // banner route

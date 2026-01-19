@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Certificate;
 use App\Models\ShopFollower;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -74,6 +75,7 @@ class SellerUserResource extends JsonResource
                 'open_time' => $openingTime,
                 'close_time' => $closingTime,
                 'off_day' => $offDay,
+                'certificate' => $shop->certificates()->active()->first()?->thumbnail,
                 'prefix' => $shop->prefix ?? 'ORD-',
                 'followers' => (int) ShopFollower::where('shop_id', $shop->id)->count(),
                 'estimated_delivery_time' => $shop->estimated_delivery_time,

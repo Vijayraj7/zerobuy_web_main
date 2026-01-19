@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -33,5 +34,13 @@ class Certificate extends Model
         return Attribute::make(
             get: fn () => $thumbnail
         );
+    }
+
+    /**
+     * Scope to get only active certificates.
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', 1);
     }
 }

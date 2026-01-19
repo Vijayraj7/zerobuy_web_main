@@ -286,4 +286,12 @@ class Shop extends Model
     {
         return $this->hasMany(Advertisement::class);
     }
+
+    /**
+     * Get all of the certificates for the Shop.
+     */
+    public function certificates(): HasMany
+    {
+        return $this->hasMany(Certificate::class);
+    }
 }
