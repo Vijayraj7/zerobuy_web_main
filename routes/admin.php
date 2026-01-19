@@ -356,10 +356,10 @@ Route::name('admin.')->group(function () {
         // Products
         Route::controller(ProductController::class)->group(function () {
             Route::get('/products', 'index')->name('product.index');
+            Route::post('/products/status', 'toggleStatus')->name('product.status');
             Route::get('/products/{product}/approve', 'approve')->name('product.approve');
             Route::get('/product/{product}/show', 'show')->name('product.show');
             Route::delete('/products/{product}/delete', 'destroy')->name('product.destroy');
-
             Route::get('/products/create', 'create')->name('product.create');
             Route::put('/products/{product}update', 'update')->name('product.update');
             Route::post('/products', 'store')->name('product.store');

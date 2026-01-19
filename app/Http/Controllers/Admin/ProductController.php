@@ -20,31 +20,127 @@ use App\Models\ProductItemDetail;
 use App\Models\ProductVariantMedia;
 use App\Models\Media;
 use Illuminate\Support\Facades\DB;
+use Yajra\DataTables\Facades\DataTables;
+use Carbon\Carbon;
 
 class ProductController extends Controller
 {
     /**
      * Display a listing of the products.
      */
+
+    // public function index(Request $request)
+    // {
+    //     $status = $request->status;
+    //     $shop = $request->shop;
+    //     $approve = $request->approve;
+
+    //     $products = Product::when($status == '1', function ($query) {
+    //         return $query->where('is_approve', false)->where('is_new', false);
+    //     })->when($status == '0', function ($query) {
+    //         return $query->where('is_approve', false)->where('is_new', true);
+    //     })->when($approve, function ($query) {
+    //         return $query->where('is_approve', true)->where('is_active', true);
+    //     })->when($shop, function ($query) use ($shop) {
+    //         return $query->where('shop_id', $shop);
+    //     })->paginate(50);
+
+    //     $shops = ShopRepository::query()->isActive()->get();
+
+    //     return view('admin.product.index', compact('products', 'shops'));
+    // }
+
     public function index(Request $request)
     {
-        $status = $request->status;
-        $shop = $request->shop;
-        $approve = $request->approve;
+        if ($request->ajax()) {
+            $status  = $request->status;
+            $shop    = $request->shop;
+            $approve = $request->approve;
 
-        $products = Product::when($status == '1', function ($query) {
-            return $query->where('is_approve', false)->where('is_new', false);
-        })->when($status == '0', function ($query) {
-            return $query->where('is_approve', false)->where('is_new', true);
-        })->when($approve, function ($query) {
-            return $query->where('is_approve', true)->where('is_active', true);
-        })->when($shop, function ($query) use ($shop) {
-            return $query->where('shop_id', $shop);
-        })->paginate(50);
+            $query = Product::with('shop')
+                ->withCount([
+                    'variants',                                  
+                    'orderItems as total_sale_count'  
+                ])
+                ->when($status == '1', function ($q) {
+                    $q->where('is_approve', false)->where('is_new', false);
+                })
+                ->when($status == '0', function ($q) {
+                    $q->where('is_approve', false)->where('is_new', true);
+                })
+                ->when($approve, function ($q) {
+                    $q->where('is_approve', true)->where('is_active', true);
+                })
+                ->when($shop, function ($q) use ($shop) {
+                    $q->where('shop_id', $shop);
+                });
+
+            return DataTables::of($query)
+                ->addIndexColumn()
+                ->addColumn('created_date', fn($row) =>
+                    Carbon::parse($row->created_at)->format('d-m-Y | h:i A')
+                ) 
+                ->addColumn('product_code', fn($row) => 'PRD0' . $row->id) 
+                ->addColumn('store_code', fn($row) => 'STD0' . $row->shop_id)
+                ->addColumn('shop', function ($row) {
+                    return '<a href="'.route('admin.shop.show', $row->shop_id).'" class="text-decoration-none text-dark">'
+                            .$row->shop->name.
+                        '</a>';
+                }) 
+                ->addColumn('thumbnail', function ($row) {
+                    return '<img src="'.$row->thumbnail.'" width="50">';
+                })
+                ->addColumn('quantity', fn($row) => $row->quantity ?? 0 ) 
+                ->addColumn('mrp', fn($row) => showCurrency($row->price)) 
+                ->addColumn('selling_price', fn($row) => showCurrency($row->discount_price))
+                ->addColumn('total_sale_count', fn($row) => $row->total_sale_count ?? 0 )
+                ->addColumn('variants_count', fn($row) => $row->variants_count ?? 0 )  
+                ->addColumn('status', function ($row) {
+                    return '
+                    <label class="switch">
+                        <input type="checkbox" class="toggle-status" data-id="'.$row->id.'" '.($row->is_active ? 'checked' : '').'>
+                        <span class="slider round"></span>
+                    </label>';
+                })
+                ->addColumn('action', function ($row) {
+                    if (!$row->is_approve) {
+                        $approve = '<a href="'.route('admin.product.approve', $row->id).'" class="btn btn-success btn-sm confirmApprove"> Approved </a>';
+                        $deny = '<button class="btn btn-danger btn-sm" onclick="confirmDeny('.$row->id.')"> Denied </button>';
+                        return '<div class="d-flex gap-2 justify-content-center">' .$approve.$deny. '</div>';
+                    }
+                    return '<a href="'.route('admin.product.show', $row->id).'" class="circleIcon btn-outline-primary"> <img src="'.asset('assets/icons-admin/eye.svg').'"> </a>';
+                })
+
+                // ->addColumn('action', function ($row) {
+
+                //     if (!$row->is_approve) {
+                //         $approveBtn = auth()->user()->can('admin.product.approve')
+                //             ? '<a href="'.route('admin.product.approve', $row->id).'"
+                //                 class="btn btn-success btn-sm confirmApprove">Approved</a>'
+                //             : '';
+
+                //         $denyBtn = auth()->user()->can('admin.product.destroy')
+                //             ? '<button class="btn btn-danger btn-sm"
+                //                 onclick="confirmDeny('.$row->id.')">Denied</button>'
+                //             : '';
+
+                //         return '<div class="d-flex gap-2 justify-content-center">'.$approveBtn.$denyBtn.'</div>';
+                //     }
+
+                //     return auth()->user()->can('admin.product.show')
+                //         ? '<a href="'.route('admin.product.show', $row->id).'"
+                //             class="circleIcon btn-outline-primary">
+                //             <img src="'.asset('assets/icons-admin/eye.svg').'">
+                //         </a>'
+                //         : '';
+                // })
+
+                ->rawColumns(['thumbnail', 'shop', 'status', 'action'])
+                ->make(true);
+        }
 
         $shops = ShopRepository::query()->isActive()->get();
-
-        return view('admin.product.index', compact('products', 'shops'));
+        return view('admin.product.index', compact('shops'));
     }
 
     public function show(Product $product)
@@ -196,4 +292,20 @@ class ProductController extends Controller
                 ->withErrors(['error' => $e->getMessage()]);
         }
     }
+
+    public function toggleStatus(Request $request)
+    {
+        $product = Product::findOrFail($request->id);
+
+        $product->update([
+            'is_active' => !$product->is_active,
+            'is_approve' => 0
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'status'  => $product->is_active
+        ]);
+    }
+
 }
