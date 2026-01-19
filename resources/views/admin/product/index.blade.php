@@ -48,85 +48,37 @@
         <div class="mb-3 card">
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table border-left-right table-responsive-lg">
+                    <table class="table border-left-right table-responsive-lg datatableCustomCSS" id="productTable">
                         <thead>
                             <tr>
-                                <th class="text-center">{{ __('SL') }}.</th>
+                                <!-- <th>{{ __('SL') }}.</th>
                                 <th>{{ __('Thumbnail') }}</th>
                                 <th style="min-width: 150px">{{ __('Product Name') }}</th>
                                 <th style="min-width: 100px">{{ __('Shop') }}</th>
-                                <th class="text-center">{{ __('Price') }}</th>
-                                <th class="text-center" style="min-width: 120px">{{ __('Discount Price') }}</th>
-                                <th class="text-center">{{ __('Action') }}</th>
+                                <th>{{ __('Price') }}</th>
+                                <th style="min-width: 120px">{{ __('Discount Price') }}</th>
+                                <th>{{ __('Action') }}</th> -->
+
+                                <th>SL</th>
+                                <th>Create Date</th>
+                                <th>Product ID</th>
+                                <th>Store ID</th>
+                                <th>Store Name</th>
+                                <th>Product Name</th>
+                                <th>Image</th>
+                                <th>Qty</th>
+                                <th>MRP</th>
+                                <th>Selling Price</th>
+                                <th>Total Sales</th>
+                                <th>Variants</th>
+                                <th>Status</th>
+                                <th>Action</th>
                             </tr>
-                        </thead>
-                        @forelse($products as $key => $product)
-                            <tr>
-                                <td class="text-center">{{ ++$key }}</td>
-
-                                <td>
-                                    <img src="{{ $product->thumbnail }}" width="50">
-                                </td>
-
-                                <td>{{ Str::limit($product->name, 50, '...') }}</td>
-
-                                <td>
-                                    <a class="text-decoration-none text-dark"
-                                        href="{{ route('admin.shop.show', $product->shop_id) }}">
-                                        {{ $product->shop->name }}
-                                    </a>
-                                </td>
-
-                                <td class="text-center">
-                                    {{ showCurrency($product->price) }}
-                                </td>
-
-                                <td class="text-center">
-                                    {{ showCurrency($product->discount_price) }}
-                                </td>
-
-                                <td class="text-center">
-                                    @if (!$product->is_approve)
-                                        <div class="d-flex gap-3 justify-content-center">
-                                            @hasPermission('admin.product.approve')
-                                                <a href="{{ route('admin.product.approve', $product->id) }}"
-                                                    class="btn btn-success btn-sm confirmApprove">{{ __('Approved') }}</a>
-                                            @endhasPermission
-                                            @hasPermission('admin.product.destroy')
-                                                <button class="btn btn-danger btn-sm"
-                                                    onclick="confirmDeny({{ $product->id }})">
-                                                    {{ __('Denied') }}
-                                                </button>
-                                            @endhasPermission
-                                        </div>
-                                    @else
-                                        <div class="d-flex gap-3 justify-content-center">
-                                            @hasPermission('admin.product.show')
-                                                <a href="{{ route('admin.product.show', $product->id) }}"
-                                                    class="circleIcon btn-outline-primary">
-                                                    <img src="{{ asset('assets/icons-admin/eye.svg') }}" alt="icon"
-                                                        loading="lazy" />
-                                                </a>
-                                            @endhasPermission
-                                        </div>
-                                    @endif
-
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td class="text-center" colspan="100%">{{ __('No Data Found') }}</td>
-                            </tr>
-                        @endforelse
-                        </tbody>
+                        </thead> 
                     </table>
                 </div>
             </div>
-        </div>
-
-        <div class="my-3">
-            {{ $products->withQueryString()->links() }}
-        </div>
+        </div> 
 
         <form action="" method="POST" class="d-none" id="deleteForm">
             @csrf
@@ -137,7 +89,39 @@
 @endsection
 
 @push('scripts')
-    <script>
+    <script> 
+
+        $('#productTable').DataTable({
+            processing: true,
+            serverSide: true,
+            responsive: true,
+            ajax: {
+                url: "{{ route('admin.product.index') }}",
+                data: function (d) {
+                    d.shop    = $('select[name=shop]').val();
+                    d.status  = "{{ request('status') }}";
+                    d.approve = "{{ request('approve') }}";
+                }
+            },
+            columns: [
+                { data: 'DT_RowIndex', orderable:false, searchable:false },
+                { data: 'created_date' },
+                { data: 'product_code' },
+                { data: 'store_code' },
+                { data: 'shop', name:'shop.name' },
+                { data: 'name', name:'name' },
+                { data: 'thumbnail', orderable:false, searchable:false },
+                { data: 'quantity' },
+                { data: 'mrp' },
+                { data: 'selling_price' }, 
+                { data: 'total_sale_count', orderable:false, searchable:false },
+                { data: 'variants_count', orderable:false, searchable:false },
+                { data: 'status', orderable:false, searchable:false },
+                { data: 'action', orderable:false, searchable:false }
+            ]
+        });
+
+
         $(".confirmApprove").on("click", function(e) {
             e.preventDefault();
             const url = $(this).attr("href");
@@ -173,5 +157,27 @@
                 }
             });
         }
+
+        $(document).on('change', '.toggle-status', function () {
+            let id = $(this).data('id');
+
+            $.ajax({
+                url: "{{ route('admin.product.status') }}",
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    id: id
+                },
+                success: function (res) {
+                    if (res.success) {
+                        toastr.success('Status updated successfully');
+                    }
+                },
+                error: function () {
+                    toastr.error('Something went wrong');
+                }
+            });
+        });
+
     </script>
 @endpush

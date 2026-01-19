@@ -14,32 +14,118 @@ use App\Repositories\NotificationRepository;
 use App\Repositories\OrderRepository;
 use App\Services\NotificationServices;
 use Illuminate\Http\Request;
+use Yajra\DataTables\Facades\DataTables; 
 
 class OrderController extends Controller
 {
     /**
      * Display a order list with filter status.
      */
-    public function index($status = null)
+    public function index(Request $request)
     {
-        $status = $status ? str_replace('_', ' ', $status) : '';
+        if ($request->ajax()) {
 
-        $generaleSetting = GeneraleSetting::first();
-        $shop = null;
-        if ($generaleSetting?->shop_type == 'single') {
-            $shop = User::role(Roles::ROOT->value)->first()?->shop;
+            $status = $request->status;
+
+            $orders = OrderRepository::query()
+                ->with(['shop', 'customer.user', 'products'])
+                ->when($status, fn ($q) => $q->where('order_status', $status))
+                ->latest();
+
+            return DataTables::of($orders)
+                ->addIndexColumn()
+                ->addColumn('created_date', function ($order) {
+                    return $order->created_at->format('d-m-Y | h:i A');
+                })
+
+                ->addColumn('order_id', function ($order) {
+                    return 'ORD0' . $order->id;
+                })
+
+                ->addColumn('store_id', function ($order) {
+                    return 'STD0' . $order->shop_id;
+                })
+
+                ->addColumn('store_name', fn ($order) => $order->shop?->name)
+
+                ->addColumn('customer_name', fn ($order) =>
+                    $order->customer?->user?->name
+                )
+
+                ->addColumn('mobile', fn ($order) =>
+                    $order->customer?->user?->phone ?? 'N/A'
+                )
+
+                ->addColumn('quantity', function ($order) {
+                    return $order->products->sum('pivot.quantity');
+                })
+               ->addColumn('total_amount', function ($order) {
+                    return showCurrency($order->payable_amount)
+                        . '<br><span class="badge bg-primary">'
+                        . $order->payment_status->value
+                        . '</span>';
+                })
+                ->addColumn('payment_method', function ($order) {
+                    return strtoupper($order->payment_method->value);
+                }) 
+                ->addColumn('status', function ($order) {
+
+                    $status = $order->order_status->value;
+
+                    return match ($status) {
+                        'Pending'   => '<span class="badge bg-warning">Pending</span>',
+                        'Accepted'  => '<span class="badge bg-info">Accepted</span>',
+                        'Shipped'   => '<span class="badge bg-primary">Shipped</span>',
+                        'Delivered' => '<span class="badge bg-success">Delivered</span>',
+                        'Cancelled' => '<span class="badge bg-danger">Cancelled</span>',
+                        default     => '<span class="badge bg-secondary">'.$status.'</span>',
+                    };
+                }) 
+                ->addColumn('action', function ($order) {
+                    $viewUrl    = route('admin.order.show', $order->id);
+                    $invoiceUrl = route('shop.download-invoice', $order->id);
+
+                    $eyeIcon    = asset('assets/icons-admin/eye.svg');
+                    $downIcon   = asset('assets/icons-admin/download-alt.svg');
+
+                    return '
+                        <a href="'.$viewUrl.'" class="circleIcon svg-bg" data-bs-toggle="tooltip" title="View">
+                            <img src="'.$eyeIcon.'" alt="View" loading="lazy" />
+                        </a>
+
+                        <a href="'.$invoiceUrl.'" class="circleIcon btn-outline-secondary" data-bs-toggle="tooltip" title="Invoice">
+                            <img src="'.$downIcon.'" alt="Invoice" loading="lazy" />
+                        </a>
+                    ';
+                })
+
+
+                ->rawColumns(['status', 'action', 'payment_method', 'total_amount'])
+                ->make(true);
         }
 
-        $orders = OrderRepository::query()
-            ->when($shop, function ($query) use ($shop) {
-                return $query->where('shop_id', $shop->id);
-            })
-            ->when($status, function ($query) use ($status) {
-                $query->where('order_status', $status);
-            })->latest('id')->paginate(20);
-
-        return view('admin.order.index', compact('orders', 'status'));
+        return view('admin.order.index');
     }
+    // public function index($status = null)
+    // {
+    //     $status = $status ? str_replace('_', ' ', $status) : '';
+
+    //     $generaleSetting = GeneraleSetting::first();
+    //     $shop = null;
+    //     if ($generaleSetting?->shop_type == 'single') {
+    //         $shop = User::role(Roles::ROOT->value)->first()?->shop;
+    //     }
+
+    //     $orders = OrderRepository::query()
+    //         ->when($shop, function ($query) use ($shop) {
+    //             return $query->where('shop_id', $shop->id);
+    //         })
+    //         ->when($status, function ($query) use ($status) {
+    //             $query->where('order_status', $status);
+    //         })->latest('id')->paginate(20);
+
+    //     return view('admin.order.index', compact('orders', 'status'));
+    // }
 
     /**
      * Display the order details.

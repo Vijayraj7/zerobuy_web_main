@@ -679,15 +679,16 @@
         });
     </script>
     @stack('scripts')
+    
     @if (session('success'))
-        <script>
+    <script>
         Toast.fire({
             icon: 'success',
-            title: '{{ session('
-            success ') }}'
+            title: "{{ session('success') }}"
         })
-        </script>
+    </script>
     @endif
+
     @if (session('error'))
         <script>
         Toast.fire({
