@@ -42,6 +42,7 @@ class ProductController extends Controller
         $brandID = $request->brand_id;
         $colorID = $request->color_id;
         $sizeID = $request->size_id;
+        $stateID = $request->state_id;
 
         $generaleSetting = generaleSetting('setting');
         $shop = null;
@@ -101,6 +102,10 @@ class ProductController extends Controller
             })->when($subCategoryID, function ($query) use ($subCategoryID) {
                 $query->whereHas('subcategories', function ($query) use ($subCategoryID) {
                     return $query->where('id', $subCategoryID);
+                });
+            })->when($stateID, function ($query) use ($stateID) {
+                return $query->whereHas('shop', function ($query) use ($stateID) {
+                    return $query->where('state_id', $stateID);
                 });
             })->when($rating, function ($query) use ($rating) {
                 $ratingValue = floatval($rating);

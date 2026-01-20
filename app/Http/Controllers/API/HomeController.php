@@ -11,6 +11,7 @@ use App\Http\Resources\FlashSaleResource;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\ShopResource;
 use App\Models\Ad;
+use App\Models\Banner;
 use App\Models\BusinessCategory;
 use App\Models\GeneraleSetting;
 use App\Models\User;
@@ -43,7 +44,7 @@ class HomeController extends Controller
             $shop = $rootShop;
         }
 
-        $banners = BannerRepository::query()->whereNull('shop_id')->active()->get();
+        // $banners = BannerRepository::query()->whereNull('shop_id')->active()->get();
 
         $categories = CategoryRepository::query()->active()
             ->whereHas('shops', function ($query) use ($rootShop) {
@@ -74,13 +75,16 @@ class HomeController extends Controller
 
         $today = Carbon::today();
 
+        $banners = Banner::active()->get();
 
-        $businessCategoryId = $request->business_category_id;
+        $businessCategoryId = $request->get('business_category_id');
 
         $businesscategorIds = [];
         $mainCategoryIds = [];
 
         if ($businessCategoryId) {
+
+            $banners = Banner::active()->where('business_category_id', $businessCategoryId)->get();
             $businesscategorIds = [$businessCategoryId];
             $businessCategory = BusinessCategory::find($businessCategoryId);
 
@@ -182,6 +186,9 @@ class HomeController extends Controller
         // $ads = Ad::query()->paginate(20);
 
         return $this->json('home', [
+            'business_category_id' => $businessCategoryId,
+            'main_category_ids' => $mainCategoryIds,
+            'business_category_ids' => $businesscategorIds,
             'banners' => BannerResource::collection($banners),
             'ads' => BannerResource::collection($ads),
             'categories' => CategoryResource::collection($categories),
