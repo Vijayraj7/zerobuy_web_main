@@ -3,11 +3,7 @@
 @section('header-title', __('Product Details'))
 
 @section('content')
-    <div>
-        <h4>
-            {{ __('Product Details') }}
-        </h4>
-    </div>
+    <div><h4>{{ __('Product Details') }}</h4></div>
 
 
     <div class="card mt-3 shadow-sm">
@@ -90,19 +86,19 @@
                         {{ __('General Information') }}
                     </h5>
                     <table class="table table-borderless mb-0 border-0">
-                        <tr>
+                        <!-- <tr>
                             <td class="ps-0 py-1">{{ __('Brand') }}</td>
                             <td class="py-1">
                                 : {{ __($product->brand?->name) }}
                             </td>
-                        </tr>
+                        </tr> -->
                         <tr>
                             <td class="ps-0 py-1">{{ __('Categories') }}</td>
                             <td class="py-1">
                                 : {{ $categories }}
                             </td>
                         </tr>
-                        <tr>
+                        <!-- <tr>
                             <td class="ps-0 py-1">{{ __('Colors') }}</td>
                             <td class="py-1">
                                 : {{ $colors }}
@@ -113,7 +109,7 @@
                             <td class="py-1">
                                 : {{ $sizes }}
                             </td>
-                        </tr>
+                        </tr> -->
                     </table>
                 </div>
 
@@ -142,6 +138,156 @@
                     </p>
                 </div>
             </div>
+
+            @if ($product->itemDetails->isNotEmpty())
+                <div class="border-top my-3"></div>
+
+                <h5 class="fw-bold">{{ __('Product Item Details') }}</h5>
+
+                <table class="table table-sm table-bordered w-50">
+                    @foreach ($product->itemDetails as $detail)
+                        <tr>
+                            <th>{{ $detail->item_name }}</th>
+                            <td>{{ $detail->item_value }}</td>
+                        </tr>
+                    @endforeach
+                </table>
+            @endif
+
+            @php
+                $hasColor = $product->variants->whereNotNull('color_id')->count() > 0;
+                $hasSize  = $product->variants->whereNotNull('size_id')->count() > 0;
+            @endphp
+
+
+            @if ($product->variants->isNotEmpty())
+                <div class="border-top my-4"></div>
+
+                <h5 class="fw-bold mb-3">{{ __('Product Variants') }}</h5>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+
+                                @if ($hasColor)
+                                    <th>{{ __('Color') }}</th>
+                                @endif
+
+                                @if ($hasSize)
+                                    <th>{{ __('Size') }}</th>
+                                @endif
+
+                                <th>{{ __('Price') }}</th>
+                                <th>{{ __('Quantity') }}</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach ($product->variants as $index => $variant)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+
+                                    {{-- COLOR --}}
+                                    @if ($hasColor)
+                                        <td>
+                                            @if ($variant->color)
+                                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                                    <span class="color-box"
+                                                        style="background-color: {{ $variant->color->color_code }}">
+                                                    </span>
+                                                    <span class="fw-semibold">
+                                                        {{ $variant->color->name }}
+                                                    </span>
+                                                </div>
+                                            @else
+                                                —
+                                            @endif
+                                        </td>
+                                    @endif
+
+                                    {{-- SIZE --}}
+                                    @if ($hasSize)
+                                        <td>
+                                            {{ $variant->size?->name ?? '—' }}
+                                        </td>
+                                    @endif
+
+                                    <td class="fw-semibold">
+                                        {{ showCurrency($variant->price) }}
+                                    </td>
+
+                                    <td>
+                                        <span class="badge bg-success">
+                                            {{ $variant->quantity }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+
+
+            @if ($product->bulkItems->isNotEmpty())
+                <div class="border-top my-3"></div>
+
+                <h5 class="fw-bold">{{ __('Bulk Items') }}</h5>
+
+                <table class="table table-bordered table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{{ __('Item Name') }}</th>
+                            <th>{{ __('Quantity') }}</th>
+                            <th>{{ __('MOQ') }}</th>
+                            <th>{{ __('MRP') }}</th>
+                            <th>{{ __('Selling Price') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($product->bulkItems as $item)
+                            <tr>
+                                <td>{{ $item->name }}</td>
+                                <td>{{ $item->quantity }}</td>
+                                <td>{{ $item->moq }}</td>
+                                <td>{{ showCurrency($item->mrp) }}</td>
+                                <td>{{ showCurrency($item->selling_price) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+
+            @if ($product->bulkPrices->isNotEmpty())
+                <div class="border-top my-3"></div>
+
+                <h5 class="fw-bold">{{ __('Bulk Pricing') }}</h5>
+
+                <table class="table table-bordered table-sm w-50">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{{ __('Min Qty') }}</th>
+                            <th>{{ __('Max Qty') }}</th>
+                            <th>{{ __('Price') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($product->bulkPrices as $price)
+                            <tr>
+                                <td>{{ $price->min_qty }}</td>
+                                <td>{{ $price->max_qty }}</td>
+                                <td>{{ showCurrency($price->price) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+
+
+
+
 
             <div class="border-top my-3"></div>
 
@@ -181,6 +327,15 @@
     <style>
         iframe {
             height: 380px;
+        }
+    </style>
+    <style>
+        .color-box {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            display: inline-block;
         }
     </style>
 @endpush

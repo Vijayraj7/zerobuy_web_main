@@ -36,10 +36,16 @@
                     <label class="switch mb-0" data-bs-toggle="tooltip" data-bs-placement="left"
                         data-bs-title="{{ __('Update product status') }}">
                         <a href="{{ route('shop.product.toggle', $product->id) }}">
-                            <input type="checkbox" {{ $product->is_active ? 'checked' : '' }}>
+                            <!-- <input type="checkbox" {{ $product->is_active ? 'checked' : '' }}> -->
+                            <input data-bs-title="{{ $product->disabled_by_admin ? 'Disabled by admin' : 'Update product status' }}" type="checkbox" {{ $product->is_active ? 'checked' : '' }} {{ $product->disabled_by_admin ? 'disabled' : '' }}>
                             <span class="slider round"></span>
                         </a>
                     </label>
+                    @if ($product->disabled_by_admin)
+                        <span class="badge bg-danger mt-1">
+                            {{ __('Disabled by Admin') }}
+                        </span>
+                    @endif
                 </td>
 
                 <td class="text-center">
