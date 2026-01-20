@@ -279,6 +279,11 @@ class ProductController extends Controller
      */
     public function statusToggle(Product $product)
     {
+        // Admin-disabled protection
+        if ($product->disabled_by_admin) {
+            return back()->withError(__('This product was disabled by admin. Please contact admin.'));
+        }
+
         if (! $product->is_approve) {
             return back()->withError(__('Sorry! Your Product is not approved yet!'));
         }
@@ -289,6 +294,19 @@ class ProductController extends Controller
 
         return back()->withSuccess(__('Status updated successfully'));
     }
+
+    // public function statusToggle(Product $product)
+    // {
+    //     if (! $product->is_approve) {
+    //         return back()->withError(__('Sorry! Your Product is not approved yet!'));
+    //     }
+
+    //     $product->update([
+    //         'is_active' => ! $product->is_active,
+    //     ]);
+
+    //     return back()->withSuccess(__('Status updated successfully'));
+    // }
 
     /**
      * generate barcode

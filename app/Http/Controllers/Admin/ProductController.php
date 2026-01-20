@@ -57,23 +57,47 @@ class ProductController extends Controller
             $shop    = $request->shop;
             $approve = $request->approve;
 
+            // $query = Product::with('shop')
+            //     ->withCount([
+            //         'variants',                                  
+            //         'orderItems as total_sale_count'  
+            //     ])
+            //     ->when($status == '1', function ($q) {
+            //         $q->where('is_approve', false)->where('is_new', false);
+            //     })
+            //     ->when($status == '0', function ($q) {
+            //         $q->where('is_approve', false)->where('is_new', true);
+            //     })
+            //     ->when($approve, function ($q) {
+            //         $q->where('is_approve', true)->where('is_active', true);
+            //     })
+            //     ->when($shop, function ($q) use ($shop) {
+            //         $q->where('shop_id', $shop);
+            //     });
+
             $query = Product::with('shop')
-                ->withCount([
-                    'variants',                                  
-                    'orderItems as total_sale_count'  
-                ])
-                ->when($status == '1', function ($q) {
-                    $q->where('is_approve', false)->where('is_new', false);
-                })
-                ->when($status == '0', function ($q) {
-                    $q->where('is_approve', false)->where('is_new', true);
-                })
-                ->when($approve, function ($q) {
-                    $q->where('is_approve', true)->where('is_active', true);
-                })
-                ->when($shop, function ($q) use ($shop) {
-                    $q->where('shop_id', $shop);
+            ->withCount([
+                'variants',
+                'orderItems as total_sale_count'
+            ])
+            ->when($status == '1', function ($q) {
+                $q->where('is_approve', false)
+                ->where('is_new', false);
+            })
+            ->when($status == '0', function ($q) {
+                $q->where('is_approve', false)
+                ->where('is_new', true);
+            })
+            ->when($approve, function ($q) {
+                $q->where('is_approve', true)
+                ->where(function ($sub) {
+                    $sub->where('is_active', true)
+                        ->orWhere('disabled_by_admin', true);
                 });
+            })
+            ->when($shop, function ($q) use ($shop) {
+                $q->where('shop_id', $shop);
+            });
 
             return DataTables::of($query)
                 ->addIndexColumn()
@@ -95,13 +119,33 @@ class ProductController extends Controller
                 ->addColumn('selling_price', fn($row) => showCurrency($row->discount_price))
                 ->addColumn('total_sale_count', fn($row) => $row->total_sale_count ?? 0 )
                 ->addColumn('variants_count', fn($row) => $row->variants_count ?? 0 )  
+                // ->addColumn('status', function ($row) {
+                //     return '
+                //     <label class="switch">
+                //         <input type="checkbox" class="toggle-status" data-id="'.$row->id.'" '.($row->is_active ? 'checked' : '').'>
+                //         <span class="slider round"></span>
+                //     </label>';
+                // })
                 ->addColumn('status', function ($row) {
+                    $badge = '';
+
+                    if ($row->disabled_by_admin) {
+                        $badge = '<div class="mt-1">
+                                    <span class="badge bg-danger">Disabled by Admin</span>
+                                </div>';
+                    }
+
                     return '
-                    <label class="switch">
-                        <input type="checkbox" class="toggle-status" data-id="'.$row->id.'" '.($row->is_active ? 'checked' : '').'>
-                        <span class="slider round"></span>
-                    </label>';
+                        <label class="switch">
+                            <input type="checkbox"
+                                class="toggle-status"
+                                data-id="'.$row->id.'"
+                                '.($row->is_active ? 'checked' : '').'>
+                            <span class="slider round"></span>
+                        </label>
+                        '.$badge;
                 })
+
                 ->addColumn('action', function ($row) {
                     if (!$row->is_approve) {
                         $approve = '<a href="'.route('admin.product.approve', $row->id).'" class="btn btn-success btn-sm confirmApprove"> Approved </a>';
@@ -143,8 +187,21 @@ class ProductController extends Controller
         return view('admin.product.index', compact('shops'));
     }
 
+    // public function show(Product $product)
+    // {
+
+    //     return view('admin.product.show', compact('product'));
+    // }
+
     public function show(Product $product)
     {
+        $product->load([
+            'itemDetails',
+            'variants.color',
+            'variants.size',
+            'bulkItems',
+            'bulkPrices',
+        ]);
 
         return view('admin.product.show', compact('product'));
     }
@@ -293,13 +350,31 @@ class ProductController extends Controller
         }
     }
 
+    // public function toggleStatus(Request $request)
+    // {
+    //     $product = Product::findOrFail($request->id);
+
+    //     $product->update([
+    //         'is_active' => !$product->is_active,
+    //         'is_approve' => 0
+    //     ]);
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'status'  => $product->is_active
+    //     ]);
+    // }
+
     public function toggleStatus(Request $request)
     {
         $product = Product::findOrFail($request->id);
 
+        // Toggle status
+        $newStatus = ! $product->is_active;
+
         $product->update([
-            'is_active' => !$product->is_active,
-            'is_approve' => 0
+            'is_active' => $newStatus,
+            'disabled_by_admin' => ! $newStatus ? true : false
         ]);
 
         return response()->json([
