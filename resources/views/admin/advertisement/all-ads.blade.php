@@ -4,19 +4,35 @@
 
 @section('content')
 
-<div class="app-page-title">
+{{-- <div class="app-page-title">
     <div class="page-title-wrapper d-flex justify-content-between align-items-center">
         <div>
             <h3>{{ __('All Running Ads') }}</h3>
             <p class="text-muted">{{ __('All Running Ads Lists') }}</p>
         </div> 
     </div>
-</div>
+</div> --}}
 
 <div class="container-fluid mt-3">
     <div class="card">
         <div class="card-body">
-            <h4 class="m-0 mt-4">{{ __('All Running Ads') }}</h4> 
+            <h4 class="m-0 mt-0">{{ __('All Running Ads') }}</h4> 
+            <!-- Status Filter Buttons -->
+            <div class="d-flex flex-wrap align-items-center gap-2 mt-3 px-2">
+                <button class="status-filter-btn btn btn-sm" data-status="all">
+                    <i class="fa fa-list"></i> All
+                </button>
+                <button class="status-filter-btn btn btn-sm btn-success" data-status="active">
+                    <i class="fa fa-play-circle"></i> Active
+                </button>
+                <button class="status-filter-btn btn btn-sm btn-info" data-status="scheduled">
+                    <i class="fa fa-calendar"></i> Scheduled
+                </button>
+                <button class="status-filter-btn btn btn-sm btn-secondary" data-status="completed">
+                    <i class="fa fa-check-circle"></i> Completed
+                </button>
+            </div>
+            <!-- Date and Other Filters -->
             <div class="d-flex flex-wrap align-items-center gap-3 mt-3 px-2">
                 <!-- Date Filters -->
                 <div class="d-flex align-items-center gap-2">
@@ -65,6 +81,8 @@
 @push('scripts')
 <script>
     $(function () {
+        let currentStatusFilter = 'all';
+
         // DATATABLE
         let table = $('#advertisementTable').DataTable({
             processing: true,
@@ -75,6 +93,9 @@
                 data: function (d) {
                     d.start_date = $('#startDate').val();
                     d.end_date   = $('#endDate').val();
+                    if (currentStatusFilter !== 'all') {
+                        d.status_filter = currentStatusFilter;
+                    }
                 }
             },
             columns: [
@@ -92,6 +113,23 @@
             ]
 
         });
+
+        // Status Filter Button Handler
+        $('.status-filter-btn').on('click', function () {
+            currentStatusFilter = $(this).data('status');
+            
+            // Update active button styling
+            $('.status-filter-btn').removeClass('active');
+            $(this).addClass('active');
+            
+            // If clicking 'All' button, remove active class and use default styling
+            if (currentStatusFilter === 'all') {
+                $(this).removeClass('active');
+            }
+            
+            table.ajax.reload();
+        });
+
         $('#startDate, #endDate').on('change', function () {
             table.ajax.reload();
         });
@@ -99,7 +137,9 @@
         $('#reloadBtn').click(function () {
             startDate = endDate = "";
             filter = "all";
+            currentStatusFilter = 'all';
             $('#startDate,#endDate').val(''); 
+            $('.status-filter-btn').removeClass('active');
             table.ajax.reload();
         });
     });

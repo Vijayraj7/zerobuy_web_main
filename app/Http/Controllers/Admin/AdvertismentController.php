@@ -46,8 +46,8 @@ class AdvertismentController extends Controller
                     'product_image',
                     fn($r) =>
                     $r->product
-                    ? '<img src="' . asset($r->product->thumbnail) . '" width="40">'
-                    : 'N/A'
+                        ? '<img src="' . asset($r->product->thumbnail) . '" width="40">'
+                        : 'N/A'
                 )
                 ->addColumn(
                     'product_id',
@@ -226,8 +226,8 @@ class AdvertismentController extends Controller
             $today = Carbon::today();
             $ads = Advertisement::query()
                 ->with(['shop.products', 'shop.orders', 'shop.subscriptions', 'shop.adwallet',])
-                ->where('status', 'active')
-                ->where('ads_type', 'store');
+                ->where('status', 'active');
+            // ->where('ads_type', 'store');
             // ->whereDate('start_date', '<=', $today)
             // ->whereDate('end_date', '>=', $today);
 
@@ -237,6 +237,10 @@ class AdvertismentController extends Controller
 
             if ($request->filled('end_date')) {
                 $ads->whereDate('advertisements.created_at', '<=', $request->end_date);
+            }
+
+            if ($request->filled('status_filter') && in_array($request->status_filter, ['active', 'scheduled', 'completed'])) {
+                $ads->byStatusName($request->status_filter);
             }
 
             return DataTables::eloquent($ads)
@@ -290,8 +294,17 @@ class AdvertismentController extends Controller
                 )
                 ->addColumn(
                     'status',
-                    fn() =>
-                    '<span class="badge bg-success">Active</span>'
+                    function ($r) {
+                        $status = $r->getStatusName();
+                        $badgeColor = match ($status) {
+                            'active' => 'bg-success',
+                            'scheduled' => 'bg-info',
+                            'completed' => 'bg-secondary',
+                            default => 'bg-secondary'
+                        };
+                        $statusLabel = ucfirst($status);
+                        return '<span class="badge ' . $badgeColor . '">' . $statusLabel . '</span>';
+                    }
                 )
                 ->addColumn(
                     'actions',
@@ -401,8 +414,8 @@ class AdvertismentController extends Controller
                     'product_image',
                     fn($r) =>
                     $r->product
-                    ? '<img src="' . asset($r->product->thumbnail) . '" width="40">'
-                    : 'N/A'
+                        ? '<img src="' . asset($r->product->thumbnail) . '" width="40">'
+                        : 'N/A'
                 )
                 ->addColumn(
                     'product_id',
@@ -506,5 +519,4 @@ class AdvertismentController extends Controller
             'message' => 'Advertisement deleted successfully.'
         ]);
     }
-
 }

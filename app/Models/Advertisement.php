@@ -57,6 +57,22 @@ class Advertisement extends Model
             });
     }
 
+    public function scopeByStatusName($query, $statusName)
+    {
+        $today = Carbon::today();
+
+        return $query->where(function ($q) use ($today, $statusName) {
+            if ($statusName === 'scheduled') {
+                $q->where('start_date', '>', $today);
+            } elseif ($statusName === 'completed') {
+                $q->where('end_date', '<', $today);
+            } elseif ($statusName === 'active') {
+                $q->where('start_date', '<=', $today)
+                    ->where('end_date', '>=', $today);
+            }
+        });
+    }
+
     public function getStatusName()
     {
         $today = Carbon::today();
