@@ -14,12 +14,12 @@ class BusinessCategoryResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $lang = request()->header('accept-language') ?? 'en';
-        $translation = $lang != 'en' ? $this->translations()?->where('lang', $lang)->first() : null;
+        // $lang = request()->header('accept-language') ?? 'en';
+        // $translation = $lang != 'en' ? $this->translations()?->where('lang', $lang)->first() : null;
 
         return [
             'id' => $this->id ?? null,
-            'name' => $translation ? $translation->name : ($this->name ?? null),
+            'name' => ($this->name ?? null),
             'thumbnail' => $this->thumbnail ?? null,
             'categories' => CategoryResource::collection($this->categories ?? []),
         ];
