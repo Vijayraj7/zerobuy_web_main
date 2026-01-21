@@ -149,6 +149,14 @@ class Product extends Model
     }
 
     /**
+     * Get the media record associated with the model.
+     */
+    public function businessCategory(): BelongsTo
+    {
+        return $this->belongsTo(BusinessCategory::class);
+    }
+
+    /**
      * Create a thumbnail for the media, with a default image if none is present.
      */
     public function thumbnail(): Attribute

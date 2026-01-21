@@ -26,11 +26,11 @@ use Illuminate\Http\Request;
 
 class HomeController extends Controller
 {
-    /**
-     * Index method for retrieving banners, categories, and popular products.
-     *
-     * @return Some_Return_Value
-     */
+    // /**
+    //  * Index method for retrieving banners, categories, and popular products.
+    //  *
+    //  * @return Some_Return_Value
+    //  */
     public function index(Request $request)
     {
         $page = $request->page ?? 1;
@@ -80,7 +80,7 @@ class HomeController extends Controller
         $businessCategoryId = $request->get('business_category_id');
 
         $businesscategorIds = [];
-        $mainCategoryIds = [];
+        // $mainCategoryIds = [];
 
         if ($businessCategoryId) {
 
@@ -88,12 +88,12 @@ class HomeController extends Controller
             $businesscategorIds = [$businessCategoryId];
             $businessCategory = BusinessCategory::find($businessCategoryId);
 
-            if ($businessCategory) {
-                $mainCategoryIds = $businessCategory
-                    ->categories()
-                    ->pluck('id')
-                    ->toArray();
-            }
+            // if ($businessCategory) {
+            //     $mainCategoryIds = $businessCategory
+            //         ->categories()
+            //         ->pluck('id')
+            //         ->toArray();
+            // }
         }
 
         $adProducts = ProductRepository::query()
@@ -102,9 +102,9 @@ class HomeController extends Controller
                 return $query->where('shop_id', $shop->id);
             })
             ->whereColumn('quantity', '>', 'min_order_quantity')
-            ->when(!empty($mainCategoryIds), function ($q) use ($mainCategoryIds) {
-                $q->whereHas('categories', function ($qc) use ($mainCategoryIds) {
-                    $qc->whereIn('categories.id', $mainCategoryIds);
+            ->when($businessCategoryId, function ($q) use ($businessCategoryId) {
+                $q->whereHas('categories', function ($qc) use ($businessCategoryId) {
+                    $qc->where('categories.business_category_id', $businessCategoryId);
                 });
             })
             ->whereHas('advertisements', function ($query) use ($today) {
@@ -125,9 +125,9 @@ class HomeController extends Controller
             })->withCount('orders as orders_count')
             ->whereColumn('quantity', '>=', 'min_order_quantity')
             ->whereNotIn('id', $adProductIds)
-            ->when(!empty($mainCategoryIds), function ($q) use ($mainCategoryIds) {
-                $q->whereHas('categories', function ($qc) use ($mainCategoryIds) {
-                    $qc->whereIn('categories.id', $mainCategoryIds);
+            ->when($businessCategoryId, function ($q) use ($businessCategoryId) {
+                $q->whereHas('categories', function ($qc) use ($businessCategoryId) {
+                    $qc->where('categories.business_category_id', $businessCategoryId);
                 });
             })
             ->withAvg('reviews as average_rating', 'rating')
@@ -143,9 +143,9 @@ class HomeController extends Controller
         $justForYou = ProductRepository::query()->isActive()->latest('id')
             ->whereColumn('quantity', '>', 'min_order_quantity')
             ->whereNotIn('id', $excludedIds)
-            ->when(!empty($mainCategoryIds), function ($q) use ($mainCategoryIds) {
-                $q->whereHas('categories', function ($qc) use ($mainCategoryIds) {
-                    $qc->whereIn('categories.id', $mainCategoryIds);
+            ->when($businessCategoryId, function ($q) use ($businessCategoryId) {
+                $q->whereHas('categories', function ($qc) use ($businessCategoryId) {
+                    $qc->where('categories.business_category_id', $businessCategoryId);
                 });
             })
             ->when($shop, function ($query) use ($shop) {
@@ -187,7 +187,7 @@ class HomeController extends Controller
 
         return $this->json('home', [
             'business_category_id' => $businessCategoryId,
-            'main_category_ids' => $mainCategoryIds,
+            // 'main_category_ids' => $mainCategoryIds,
             'business_category_ids' => $businesscategorIds,
             'banners' => BannerResource::collection($banners),
             'ads' => BannerResource::collection($ads),

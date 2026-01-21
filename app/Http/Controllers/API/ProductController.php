@@ -21,9 +21,10 @@ class ProductController extends Controller
     /**
      * Retrieve a paginated list of products based on the provided request parameters.
      *
-     * @param  Request  $request  The request object containing page, per_page, and search parameters
-     * @return Some_Return_Value The JSON response containing total and products data
      */
+    // * @param  Request  $request  The request object containing page, per_page, and search parameters
+    //  * @return App\Http\Controllers\API\Illuminate\Http\JsonResponse The JSON response containing total and products data
+
     public function index(Request $request)
     {
         $page = $request->page;
@@ -76,14 +77,14 @@ class ProductController extends Controller
             ->isActive()
             ->when($shop, function ($query) use ($shop) {
                 return $query->where('shop_id', $shop->id);
-            })->when($shopID && ! $shop, function ($query) use ($shopID) {
+            })->when($shopID && !$shop, function ($query) use ($shopID) {
                 return $query->where('shop_id', $shopID);
             })
             ->when($search, function ($query) use ($search) {
                 return $query->where(function ($query) use ($search) {
-                    $query->where('name', 'like', '%'.$search.'%')
-                        ->orWhere('short_description', 'like', '%'.$search.'%')
-                        ->orWhere('code', 'like', '%'.$search.'%');
+                    $query->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('short_description', 'like', '%' . $search . '%')
+                        ->orWhere('code', 'like', '%' . $search . '%');
                 });
             })->when($brandID, function ($query) use ($brandID) {
                 return $query->where('brand_id', $brandID);
@@ -111,7 +112,7 @@ class ProductController extends Controller
                 $ratingValue = floatval($rating);
                 $upperBound = $ratingValue + 1;
 
-                return $query->havingRaw('average_rating >= '.$rating.' AND average_rating < '.$upperBound);
+                return $query->havingRaw('average_rating >= ' . $rating . ' AND average_rating < ' . $upperBound);
             })->when($sortType == 'top_selling', function ($query) {
                 return $query->orderByDesc('orders_count');
             })->when($sortType == 'popular_product', function ($query) {
