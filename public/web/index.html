@@ -24,22 +24,19 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="zerobuy_app">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="apple-touch-icon" href="/public/web//icons/Icon-192.png">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="icon" type="image/png" href="/public/web//favicon.png"/>
 
   <title>zerobuy_app</title>
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="/public/web//manifest.json">
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
-  
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+  <script src="/public/web//flutter_bootstrap.js" async></script>
   <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/public/web/firebase-messaging-sw.js')
+  navigator.serviceWorker.register('/public/web//firebase-messaging-sw.js')
     .then((registration) => {
       console.log('Service Worker registered:', registration);
     }).catch(err => console.log('SW registration failed:', err));
