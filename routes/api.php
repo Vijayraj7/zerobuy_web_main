@@ -19,6 +19,7 @@ use App\Http\Controllers\API\ProductController;
 use App\Http\Controllers\API\SupportController;
 use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\API\Auth\AuthController;
+use App\Http\Controllers\API\Auth\OTPAuthController;
 use App\Http\Controllers\API\FlashSaleController;
 use App\Http\Controllers\API\LegalPageController;
 use App\Http\Controllers\API\SocialAuthController;
@@ -33,6 +34,7 @@ use App\Http\Controllers\API\SubCategoryController;
 use App\Http\Controllers\API\SupportTicketMessageController;
 use App\Http\Controllers\API\ChildCategoryController;
 use App\Http\Controllers\API\LocationController;
+use App\Http\Controllers\API\VerifyManageApiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -61,6 +63,13 @@ Route::controller(AuthController::class)->middleware('throttle:5,5')->group(func
     Route::post('/login', 'login');
 });
 
+// OTP Login/Registration routes
+Route::controller(OTPAuthController::class)->group(function () {
+    Route::post('/otp-login/send', 'sendLoginOTP')->middleware('throttle:10,1'); // 10 requests per minute
+    Route::post('/otp-login/verify', 'verifyLoginOTP')->middleware('throttle:20,1'); // 20 requests per minute (for multiple OTP attempts)
+    Route::post('/otp-login/complete-registration', 'completeRegistration')->middleware('throttle:10,1'); // 10 requests per minute
+});
+
 Route::controller(ForgotPasswordController::class)->group(function () {
     Route::post('/send-otp', 'resendOTP');
     Route::post('/verify-otp', 'verifyOtp');
@@ -82,6 +91,9 @@ Route::controller(SupportController::class)->group(function () {
 Route::controller(MasterController::class)->group(function () {
     Route::get('/master', 'index');
 });
+
+// verify-manage route (lightweight config for apps)
+Route::get('/verify-manage', [VerifyManageApiController::class, 'show']);
 
 // home route
 Route::controller(HomeController::class)->group(function () {

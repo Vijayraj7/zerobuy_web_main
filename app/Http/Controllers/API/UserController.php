@@ -70,8 +70,13 @@ class UserController extends Controller
         /** @var User $user */
         $user = auth()->user();
 
-        if (! Hash::check($request->current_password, $user->password)) {
-            return $this->json('Current password does not match', [], 422);
+        // if (! Hash::check($request->current_password, $user->password)) {
+        //     return $this->json('Current password does not match', [], 422);
+        // }
+        if (auth()->user()) {
+            // User is authenticated
+        } else {
+            return $this->json('User not authenticated', [], 401);
         }
         $user->update([
             'password' => Hash::make($request->password),
