@@ -362,6 +362,22 @@
     @endhasPermission
 @endif
 
+<!------------------------------ Status ------------------------------>
+@hasPermission('shop.productStatus.status')
+    <li>
+        <a href="{{ route('shop.productStatus.status') }}"
+            class="menu {{ request()->routeIs('shop.productStatus.*') ? 'active' : '' }}">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/clock.svg') }}" alt="icon"
+                    loading="lazy" />
+                {{ __('Status') }}
+            </span>
+        </a>
+    </li>
+@endhasPermission
+<!------------------------------ End Status ------------------------------>
+
+
 @hasPermission(['shop.bulk-product-export.index', 'shop.bulk-product-import.index', 'shop.gallery.index'])
     <!--- Import / Export --->
     <li>

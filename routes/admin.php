@@ -62,6 +62,7 @@ use App\Http\Controllers\Admin\AdvertismentController;
 use App\Http\Controllers\Admin\CertificateController;
 use App\Http\Controllers\Admin\AdvertisementSettingController;
 use App\Http\Controllers\Admin\AdsWalletController;
+use App\Http\Controllers\Admin\ProductStatusController;
 
 /*
 |--------------------------------------------------------------------------
@@ -362,8 +363,16 @@ Route::name('admin.')->group(function () {
             Route::delete('/products/{product}/delete', 'destroy')->name('product.destroy');
             Route::get('/products/create', 'create')->name('product.create');
             Route::put('/products/{product}update', 'update')->name('product.update');
-            Route::post('/products', 'store')->name('product.store');
+            Route::post('/products', 'store')->name('product.store'); 
         });
+
+        Route::controller(ProductStatusController::class)->group(function () {
+            Route::get('/products-status', 'index')->name('productStatus.status');
+            Route::post('/products-status/store', 'store')->name('productStatus.store');
+            Route::post('/products-status/toggle/{status}', 'toggle')->name('productStatus.toggle');
+            Route::delete('/products-status/{status}', 'destroy')->name('productStatus.destroy');
+        });
+
 
         // Generate Settings
         Route::controller(GeneraleSettingController::class)->group(function () {

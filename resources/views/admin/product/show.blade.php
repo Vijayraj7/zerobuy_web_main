@@ -117,11 +117,11 @@
                     <h5 class="text-dark fw-bold">{{ __('Price Information') }}</h5>
                     <table class="table table-borderless mb-0 border-0">
                         <tr>
-                            <td class="ps-0 py-1">{{ __('Price') }}</td>
+                            <td class="ps-0 py-1">{{ __('MRP') }}</td>
                             <td class="py-1">: {{ showCurrency($product->price) }}</td>
                         </tr>
                         <tr>
-                            <td class="ps-0 py-1">{{ __('Discount Price') }}</td>
+                            <td class="ps-0 py-1">{{ __('Selling Price') }}</td>
                             <td class="py-1">
                                 : {{ showCurrency($product->discount_price) }}
                             </td>
@@ -194,9 +194,9 @@
                                         <td>
                                             @if ($variant->color)
                                                 <div class="d-flex align-items-center justify-content-center gap-2">
-                                                    <span class="color-box"
+                                                    <!-- <span class="color-box"
                                                         style="background-color: {{ $variant->color->color_code }}">
-                                                    </span>
+                                                    </span> -->
                                                     <span class="fw-semibold">
                                                         {{ $variant->color->name }}
                                                     </span>
