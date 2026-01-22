@@ -405,4 +405,9 @@ class Product extends Model
     {
         return $this->hasMany(Advertisement::class, 'product_id', 'id');
     }
+
+    public function getFormattedIdAttribute()
+    {
+        return 'PRD0' . $this->id;
+    }
 }

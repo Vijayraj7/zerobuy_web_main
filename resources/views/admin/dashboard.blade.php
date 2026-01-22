@@ -189,7 +189,8 @@
 
                         <div class="col-md-6">
                             <div class="wallet-others">
-                                <div class="amount">{{ showCurrency($alreadyWithdraw) }}</div>
+                                <!-- <div class="amount">{{ showCurrency($alreadyWithdraw) }}</div> -->
+                                <div class="amount">{{ showCurrency(number_format((float) $alreadyWithdraw, 2, '.', '')) }}</div>
                                 <div class="d-flex align-items-center gap-2 justify-content-between">
                                     <div class="title">{{ __('Already Withdraw') }}</div>
                                     <div class="icon svg-bg">
@@ -202,7 +203,8 @@
 
                         <div class="col-md-6">
                             <div class="wallet-others">
-                                <div class="amount">{{ showCurrency($pendingWithdraw) }}</div>
+                                <!-- <div class="amount">{{ showCurrency($pendingWithdraw) }}</div> -->
+                                <div class="amount">{{ showCurrency(number_format((float) $pendingWithdraw, 2, '.', '')) }}</div>
                                 <div class="d-flex align-items-center gap-2 justify-content-between">
                                     <div class="title">{{ __('Pending Withdraw') }}</div>
                                     <div class="icon">
@@ -215,7 +217,8 @@
 
                         <div class="col-md-6">
                             <div class="wallet-others">
-                                <div class="amount">{{ showCurrency($totalCommission) }}</div>
+                                <!-- <div class="amount">{{ showCurrency($totalCommission) }}</div> -->
+                                <div class="amount">{{ showCurrency(number_format((float) $totalCommission, 2, '.', '')) }}</div>
                                 <div class="d-flex align-items-center gap-2 justify-content-between">
                                     <div class="title">{{ __('Total Commission') }}</div>
                                     <div class="icon">
@@ -228,7 +231,8 @@
 
                         <div class="col-md-6">
                             <div class="wallet-others">
-                                <div class="amount">{{ showCurrency($deniedWithdraw) }}</div>
+                                <!-- <div class="amount">{{ showCurrency($deniedWithdraw) }}</div> -->
+                                <div class="amount">{{ showCurrency(number_format((float) $deniedWithdraw, 2, '.', '')) }}</div>
                                 <div class="d-flex align-items-center gap-2 justify-content-between">
                                     <div class="title">{{ __('Rejected Withdraw') }}</div>
                                     <div class="icon">

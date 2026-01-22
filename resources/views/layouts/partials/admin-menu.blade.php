@@ -547,6 +547,22 @@
 <!------------------------------ End Messages ------------------------------>
 
 
+<!------------------------------ Status ------------------------------>
+@hasPermission('admin.productStatus.status')
+    <li>
+        <a href="{{ route('admin.productStatus.status') }}"
+            class="menu {{ request()->routeIs('admin.productStatus.*') ? 'active' : '' }}">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/clock.svg') }}" alt="icon"
+                    loading="lazy" />
+                {{ __('Status') }}
+            </span>
+        </a>
+    </li>
+@endhasPermission
+<!------------------------------ End Status ------------------------------>
+
+
 <!------------------------------ Support Management ------------------------------>
 @hasPermission(['admin.supportTicket.index', 'admin.support.index'])
     <li>

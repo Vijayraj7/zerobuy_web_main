@@ -27,6 +27,7 @@ use App\Http\Controllers\Shop\WithdrawController;
 use App\Http\Controllers\Shop\ChildCategoryController;
 use App\Http\Controllers\Shop\ShopController;
 use App\Http\Controllers\Shop\AdvertismentController;
+use App\Http\Controllers\Shop\ProductStatusController;
 use Illuminate\Support\Facades\Route;
 use Twilio\Rest\Chat;
 
@@ -228,6 +229,14 @@ Route::name('shop.')->group(function () {
             Route::get('/trashed-products', 'onlyTrashedProduct')->name('product.trashedList');
             Route::get('/product/{id}/restore', 'restore')->name('product.restore');
             Route::post('/generate-ai-data', 'generateAIData')->name('product.generate.AI.data');
+        });
+
+        // Products Status
+        Route::controller(ProductStatusController::class)->group(function () {
+            Route::get('/products-status', 'index')->name('productStatus.status');
+            Route::post('/products-status/store', 'store')->name('productStatus.store');
+            Route::post('/products-status/toggle/{status}', 'toggle')->name('productStatus.toggle');
+            Route::delete('/products-status/{status}', 'destroy')->name('productStatus.destroy');
         });
 
         // profile
