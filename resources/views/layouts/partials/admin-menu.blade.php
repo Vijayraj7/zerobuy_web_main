@@ -515,10 +515,10 @@
 
 
 <!------------------------------ Push Notification ------------------------------>
-@hasPermission('admin.customerNotification.index')
+@hasPermission('admin.user_seller.index')
     <li>
-        <a class="menu {{ $request->routeIs('admin.customerNotification.*') ? 'active' : '' }}"
-            href="{{ route('admin.customerNotification.index') }}">
+        <a class="menu {{ $request->routeIs('admin.user_seller.*') ? 'active' : '' }}"
+            href="{{ route('admin.user_seller.index') }}">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/notification.svg') }}" alt="icon"
                     loading="lazy" />
@@ -833,12 +833,12 @@
                     </a>
                 @endhasPermission
 
-                @hasPermission('admin.deliveryCharge.index')
+                <!-- @hasPermission('admin.deliveryCharge.index')
                     <a href="{{ route('admin.deliveryCharge.index') }}"
                         class="subMenu {{ request()->routeIs('admin.deliveryCharge.*') ? 'active' : '' }}">
                         {{ __('Delivery Charge') }}
                     </a>
-                @endhasPermission
+                @endhasPermission -->
 
                 @hasPermission('admin.advrtsettings.edit')
                     <a href="{{ route('admin.advrtsettings.edit') }}"
@@ -847,12 +847,12 @@
                     </a>
                 @endhasPermission
 
-                @hasPermission('admin.vatTax.index')
+                <!-- @hasPermission('admin.vatTax.index')
                     <a href="{{ route('admin.vatTax.index') }}"
                         class="subMenu {{ request()->routeIs('admin.vatTax.*') ? 'active' : '' }}">
                         {{ __('VAT & Tax') }}
                     </a>
-                @endhasPermission
+                @endhasPermission -->
 
                 @hasPermission('admin.themeColor.index')
                     <a href="{{ route('admin.themeColor.index') }}"

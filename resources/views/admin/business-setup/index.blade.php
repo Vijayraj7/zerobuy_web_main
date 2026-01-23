@@ -102,10 +102,10 @@
                         </x-select>
                     </div>
 
-                    <div class="col-lg-4 mt-4">
+                    <!-- <div class="col-lg-4 mt-4">
                         <x-input type="number" min="1" label="Return Order Within Days" name="return_order_within_days"
                             :value="$generaleSetting?->return_order_within_days" />
-                    </div>
+                    </div> -->
 
                 </div>
 
