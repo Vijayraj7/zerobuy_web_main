@@ -63,6 +63,7 @@ use App\Http\Controllers\Admin\CertificateController;
 use App\Http\Controllers\Admin\AdvertisementSettingController;
 use App\Http\Controllers\Admin\AdsWalletController;
 use App\Http\Controllers\Admin\ProductStatusController;
+use App\Http\Controllers\Admin\SellerUserNotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -371,6 +372,18 @@ Route::name('admin.')->group(function () {
             Route::post('/products-status/store', 'store')->name('productStatus.store');
             Route::post('/products-status/toggle/{status}', 'toggle')->name('productStatus.toggle');
             Route::delete('/products-status/{status}', 'destroy')->name('productStatus.destroy');
+        });
+ 
+        Route::controller(SellerUserNotificationController::class)->group(function () {
+            Route::get('/user-seller-notifications', 'index')->name('user_seller.index');
+            Route::get('/user-seller-notifications/option-types', 'optionTypes')->name('user_seller.option_types'); 
+            Route::get('/seller-shops', 'sellerShops')->name('seller.shops');
+            Route::get('/new-notifications', 'index')->name('dashboard.notification');
+            Route::get('/notifications/option-types', 'optionTypes')->name('user_seller.option_types');
+            Route::post('/user-notification/store', 'storeUser')->name('user.notification.store');
+            Route::post('/seller-notification/store', 'storeSeller')->name('seller.notification.store');
+            Route::get('/notification/{id}/resend', 'resend')->name('notification.resend');
+            Route::delete('/notification/{id}/delete', 'delete')->name('notification.delete');
         });
 
 
