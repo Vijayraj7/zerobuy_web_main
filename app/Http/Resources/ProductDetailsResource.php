@@ -17,7 +17,7 @@ class ProductDetailsResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $this->load(['reviews', 'orders', 'colors', 'shop', 'sizes', 'unit', 'brand', 'flashSales']);
+        $this->load(['reviews', 'orders', 'colors', 'sizes', 'unit', 'brand', 'flashSales']);
 
         $lang = request()->header('accept-language') ?? 'en';
 
@@ -26,6 +26,19 @@ class ProductDetailsResource extends JsonResource
 
         if ($user && $user->customer) {
             $favorite = $user->customer->favorites()->where('product_id', $this->id)->exists();
+            
+            // Load shop with is_followed check for authenticated users
+            $this->load([
+                'shop' => function ($query) use ($user) {
+                    $query->withExists([
+                        'followers as is_followed' => fn($q) =>
+                        $q->where('customer_id', $user->customer->id)
+                    ]);
+                }
+            ]);
+        } else {
+            // Load shop without is_followed for guests
+            $this->load('shop');
         }
 
         $discountPercentage = $this->getDiscountPercentage($this->price, $this->discount_price);

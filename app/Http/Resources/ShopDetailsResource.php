@@ -6,6 +6,7 @@ use App\Models\ShopFollower;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Auth;
 
 class ShopDetailsResource extends JsonResource
 {
@@ -30,6 +31,17 @@ class ShopDetailsResource extends JsonResource
         if ($currentTime->between($openingTime, $closingTime)) {
             $shopStatus = 'Online';
         }
+        
+        // Check if user is logged in and is a customer
+        $isFollowed = false;
+        $user = Auth::guard('api')->user();
+        
+        if ($user && $user->customer) {
+            $isFollowed = ShopFollower::where([
+                'shop_id' => $this->id,
+                'customer_id' => $user->customer->id,
+            ])->exists();
+        }
 
         return [
             'id' => $this->id,
@@ -48,7 +60,7 @@ class ShopDetailsResource extends JsonResource
             'pincode' => $this->pincode,
             'district' => $this->districts ? $this->districts->name : null,
             'district_id' => $this->districts ? (int)$this->districts->id : null,
-            'is_followed' => (bool) $this->is_followed,
+            'is_followed' => (bool) $isFollowed,
             'followers' => (int) ShopFollower::where('shop_id', $this->id)->count(),
             'total_products' => (int) $this->products()->isActive()->count(),
             'total_categories' => (int) $this->categories()->active()->count(),

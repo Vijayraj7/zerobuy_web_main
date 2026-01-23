@@ -16,6 +16,9 @@ class ProductShopResource extends JsonResource
     public function toArray(Request $request): array
     {
         $lastOnline = $this->last_online >= now() ? true : false;
+        
+        // Check if is_followed attribute exists (set via withExists), otherwise default to false
+        $isFollowed = $this->is_followed ?? false;
 
         return [
             'id' => $this->id,
@@ -24,7 +27,7 @@ class ProductShopResource extends JsonResource
             'banner' => $this->banner,
             'state' => $this->states->name,
             'district' => $this->districts->name,
-            'is_followed' => (bool) $this->is_followed,
+            'is_followed' => (bool) $isFollowed,
             'followers' => (int) ShopFollower::where('shop_id', $this->id)->count(),
             'total_products' => (int) $this->products()->isActive()->count(),
             'total_categories' => (int) $this->categories()->active()->count(),

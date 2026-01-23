@@ -290,6 +290,10 @@ Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
         Route::post('/send-message', 'sendMessage');
     });
 
+    // statuses from followed shops
+    Route::get('/statuses', [App\Http\Controllers\API\StatusController::class, 'index']);
+    Route::post('/statuses/{statusId}/view', [App\Http\Controllers\API\StatusController::class, 'incrementView']);
+
     // check user is online or not
 
     Route::post('/update-last-seen', function () {
