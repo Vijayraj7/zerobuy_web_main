@@ -27,16 +27,16 @@ class SellerOrderProductResource extends JsonResource
         $size  =  null;
 
         if ($this->orderVariant != null) {
-            $dprice = (float) number_format((float)$this->orderVariant->price, 2, '.', '');
+            // $dprice = (float) number_format((float)$this->orderVariant->price, 2, '.', '');
             $mprice = (float) number_format((float) $this->product->price, 2, '.', '');
             $color  = $this->orderVariant->color_name;
             $size   = $this->orderVariant->size_name;
         } elseif ($this->orderBulkItem != null) {
             $pname  = $this->orderBulkItem->name;
-            $dprice = (float) number_format((float) $this->orderBulkItem->mrp, 2, '.', '');
+            // $dprice = (float) number_format((float) $this->orderBulkItem->mrp, 2, '.', '');
             $mprice = (float) number_format((float) $this->orderBulkItem->selling_price, 2, '.', '');
         } else {
-            $dprice = (float) number_format((float) $this->price, 2, '.', '');
+            // $dprice = (float) number_format((float) $this->price, 2, '.', '');
             $mprice = (float) number_format((float) $this->product->price, 2, '.', '');
         }
 
