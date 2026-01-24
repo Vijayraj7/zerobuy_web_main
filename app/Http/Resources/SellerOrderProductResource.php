@@ -57,7 +57,7 @@ class SellerOrderProductResource extends JsonResource
             'size' => $size,
             // 'variants' => ProductVariantResource::collection($this->variants),
             'quantity' =>  (int) $this->quantity,
-            'min_order_quantity' => (int) $this->min_order_quantity,
+            'min_order_quantity' => (int) $this->product->min_order_quantity,
             // 'brand' => $this->brand?->name ?? null,
             'is_active' => (bool) $this->is_active,
         ];
