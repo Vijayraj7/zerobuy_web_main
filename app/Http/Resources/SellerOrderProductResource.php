@@ -39,7 +39,7 @@ class SellerOrderProductResource extends JsonResource
         }
 
         return [
-            'id' => $this->product_id,
+            'id' => $this->product->id,
             'name' => $pname,
             'thumbnail' => $this->product->thumbnail,
             'price' => (float) $mprice,
