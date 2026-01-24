@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\OrderIdRequest;
 use App\Http\Requests\StatusUpdateRequest;
 use App\Http\Resources\SellerOrderResource;
+use App\Models\Order;
 use App\Repositories\NotificationRepository;
 use App\Repositories\OrderRepository;
 use App\Services\NotificationServices;
@@ -184,7 +185,7 @@ class OrderController extends Controller
     // show order details
     public function show(OrderIdRequest $request)
     {
-        $order = OrderRepository::find($request->order_id);
+        $order = Order::find($request->order_id);
 
         return $this->json('Order details', [
             'order' => SellerOrderResource::make($order),

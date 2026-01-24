@@ -14,7 +14,8 @@
                                 width="20" />
                             {{ __('Payment Slip') }}
                         </a>
-                        <a href="{{ route('shop.download-invoice', $order->id) }}" target="_blank" class="btn btn-primary py-2.5">
+                        <a href="{{ route('shop.download-invoice', $order->id) }}" target="_blank"
+                            class="btn btn-primary py-2.5">
                             <img src="{{ asset('assets/icons-admin/download-alt.svg') }}" alt="icon" loading="lazy"
                                 width="20" />
                             {{ __('Download Invoice') }}
@@ -51,8 +52,7 @@
                             </div>
                             <div class="order-item">
                                 <label class="label">{{ __('Delivery Date') }}:</label>
-                                <span
-                                    class="value">
+                                <span class="value">
                                     {{ $order->delivery_date ? Carbon\Carbon::parse($order->delivery_date)->format('M d, Y') : '-' }}
                                 </span>
                             </div>
@@ -76,35 +76,48 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($order->products as $key => $product)
+                                @foreach ($order->orderProducts as $key => $product)
+                                    @php
+                                        // $this->load('brand', 'reviews');
+                                        $pname = $product->name;
+                                        $dprice = 0;
+                                        $mprice = (float) number_format((float) $product->price, 2, '.', '');
+
+                                        $color = null;
+                                        $size = null;
+
+                                        if ($product->orderVariant != null) {
+                                            $dprice = (float) number_format($product->orderVariant->price, 2, '.', '');
+                                            $color = $product->orderVariant->color_name;
+                                            $size = $product->orderVariant->size_name;
+                                        } elseif ($product->orderBulkItem != null) {
+                                            $pname = $product->orderBulkItem->name;
+                                            $mprice = (float) number_format($product->orderBulkItem->mrp, 2, '.', '');
+                                            $dprice = (float) number_format($product->orderBulkItem->selling_price, 2);
+                                        } else {
+                                            $dprice = (float) number_format($product->price, 2, '.', '');
+                                        }
+                                    @endphp
                                     <tr>
                                         <td>{{ $key + 1 }}</td>
                                         <td>
                                             <div class="d-flex gap-1 align-items-center">
-                                                <img src="{{ $product->thumbnail }}" alt="" width="40"
+                                                <img src="{{ $product->product->thumbnail }}" alt="" width="40"
                                                     height="40" loading="lazy">
-                                                <span>{{ $product->name }}</span>
+                                                <span>{{ $pname }}</span>
                                             </div>
                                         </td>
                                         @if ($businessModel == 'multi')
                                             <td>{{ $product->shop?->name }}</td>
                                         @endif
-                                        <td>{{ $product->pivot->quantity }}</td>
-                                        <td>{{ $product->pivot->size ?? '-' }}</td>
-                                        <td>{{ $product->pivot->color ?? '-' }}</td>
+                                        <td>{{ $product->quantity }}</td>
+                                        <td>{{ $product->orderVariant?->size_name ?? '-' }}</td>
+                                        <td>{{ $product->orderVariant?->color_name ?? '-' }}</td>
                                         <td>
-                                            @php
-                                                $price =
-                                                    $product->pivot->price > 0
-                                                        ? $product->pivot->price
-                                                        : ($product->discount_price > 0
-                                                            ? $product->discount_price
-                                                            : $product->price);
-                                            @endphp
-                                            {{ showCurrency($price) }}
+                                            {{ showCurrency($dprice) }}
                                         </td>
                                         <td class="text-end">
-                                            {{ showCurrency($product->pivot->quantity * $price) }}
+                                            {{ showCurrency($product->quantity * $dprice) }}
                                         </td>
                                     </tr>
                                 @endforeach
@@ -169,12 +182,12 @@
                             data-bs-toggle="dropdown" aria-expanded="false">
                             {{ $order->order_status->value }}
                         </a>
-                        @if($order->order_status->value != 'Delivered' && $order->order_status->value != 'Cancelled')
+                        @if ($order->order_status->value != 'Delivered' && $order->order_status->value != 'Cancelled')
                             @hasPermission(['shop.order.status.change'])
                                 <ul class="dropdown-menu order-status">
                                     @foreach ($orderStatus as $status)
                                         <li>
-                                            <a class="dropdown-item @if(in_array($status->value, ['Delivered','Cancelled'])) OrderStatusConfirm @endif"
+                                            <a class="dropdown-item @if (in_array($status->value, ['Delivered', 'Cancelled'])) OrderStatusConfirm @endif"
                                                 href="{{ route('shop.order.status.change', $order->id) }}?status={{ $status->value }}">
                                                 {{ __($status->value) }}
                                             </a>
@@ -272,6 +285,7 @@
             border: 1px solid #343a40;
             box-shadow: 0 0 10px #343a40;
         }
+
         .app-theme-dark .dropdown-menu.order-status .dropdown-item {
             border-bottom: 1px solid #343a40;
         }
@@ -336,29 +350,29 @@
     </style>
 @endpush
 @push('scripts')
-<script>
-$(document).ready(function () {
-    $(".dropdown-menu").on("click", ".OrderStatusConfirm", function (e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
+    <script>
+        $(document).ready(function() {
+            $(".dropdown-menu").on("click", ".OrderStatusConfirm", function(e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
 
-        const url = $(this).attr("href");
-        const statusName = $(this).text().trim();
+                const url = $(this).attr("href");
+                const statusName = $(this).text().trim();
 
-        Swal.fire({
-            title: "Are you sure?",
-            text: `Do you really want to mark this order as ${statusName}?`,
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes, proceed!"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                window.location.href = url;
-            }
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: `Do you really want to mark this order as ${statusName}?`,
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, proceed!"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = url;
+                    }
+                });
+            });
         });
-    });
-});
-</script>
+    </script>
 @endpush

@@ -42,7 +42,7 @@ class OrderController extends Controller
      */
     public function show($orderId)
     {
-        $order = OrderRepository::query()->withoutGlobalScopes()->whereId($orderId)->firstOrFail();
+        $order = Order::whereId($orderId)->firstOrFail();
 
         $orderStatus = OrderStatus::cases();
 
@@ -91,7 +91,7 @@ class OrderController extends Controller
         }
 
         $title = 'Order status updated';
-        $message = 'Your order status updated to '.$request->status.' order code: '.$order->prefix.$order->order_code;
+        $message = 'Your order status updated to ' . $request->status . ' order code: ' . $order->prefix . $order->order_code;
         $deviceKeys = $order->customer->user->devices->pluck('key')->toArray();
 
         try {
@@ -127,7 +127,7 @@ class OrderController extends Controller
     {
         $order = Order::findOrFail($id);
 
-        $orderCode = '#'.$order->prefix.$order->order_code;
+        $orderCode = '#' . $order->prefix . $order->order_code;
 
         $qrCode = new EndroidQrCode($orderCode);
         $qrCode->setSize(100);
@@ -166,7 +166,7 @@ class OrderController extends Controller
         $mPdf->WriteHTML($view);
 
         // Output the PDF as a download
-        return $mPdf->Output('invoice-'.$order->prefix.$order->order_code.'.pdf', 'D');
+        return $mPdf->Output('invoice-' . $order->prefix . $order->order_code . '.pdf', 'D');
 
         // Output the PDF as a stream
         // return $mPdf->Output('invoice-' . $order->prefix . $order->order_code . '.pdf', 'I');
@@ -206,11 +206,11 @@ class OrderController extends Controller
         $view = view('PDF.payment-slip', compact('order'))->render();
         $mPdf->WriteHTML($view);
 
-        $pdfContent = $mPdf->Output('payment-slip-'.$order->prefix.$order->order_code.'.pdf', 'S');
+        $pdfContent = $mPdf->Output('payment-slip-' . $order->prefix . $order->order_code . '.pdf', 'S');
 
         return response($pdfContent, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="payment-slip-'.$order->prefix.$order->order_code.'.pdf"',
+            'Content-Disposition' => 'inline; filename="payment-slip-' . $order->prefix . $order->order_code . '.pdf"',
         ]);
     }
 

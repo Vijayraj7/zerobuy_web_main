@@ -16,7 +16,7 @@ class Category extends Model
 
     protected $guarded = ['id'];
     protected $appends = ['thumbnail'];
-    
+
     public function translations(): HasMany
     {
         return $this->hasMany(TranslateUtility::class);
@@ -37,9 +37,9 @@ class Category extends Model
         return $this->hasMany(Blog::class, 'category_id');
     }
 
-    public function subCategories(): BelongsToMany
+    public function subCategories(): HasMany
     {
-        return $this->belongsToMany(SubCategory::class, 'category_subcategories')->where('is_active', 1);
+        return $this->hasMany(SubCategory::class, 'category_id')->where('is_active', 1);
     }
 
     // added by ancy
@@ -90,7 +90,7 @@ class Category extends Model
         }
 
         return Attribute::make(
-            get: fn () => $thumbnail
+            get: fn() => $thumbnail
         );
     }
 
@@ -108,8 +108,8 @@ class Category extends Model
 
         if ($sortBy === 'business_name') {
             $query->join('business_categories', 'categories.business_category_id', '=', 'business_categories.id')
-                  ->select('categories.*')
-                  ->orderBy('business_categories.name', $sortOrder);
+                ->select('categories.*')
+                ->orderBy('business_categories.name', $sortOrder);
         } elseif ($sortBy === 'category_name') {
             $query->orderBy('categories.name', $sortOrder);
         } else {

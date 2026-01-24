@@ -40,7 +40,7 @@ class SellerOrderResource extends JsonResource
                 'profile_photo' => $this->customer->user->thumbnail,
                 'address' => AddressResource::make($this->address),
             ],
-            'products' => SellerProductResource::collection($this->products),
+            'products' => SellerOrderProductResource::collection($this->orderProducts),
             'rider' => $this->driverOrder ? OrderRiderResource::make($this->driverOrder) : null,
             'invoice_url' => route('shop.download-invoice', $this->id),
         ];
