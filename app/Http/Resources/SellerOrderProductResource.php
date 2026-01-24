@@ -20,30 +20,32 @@ class SellerOrderProductResource extends JsonResource
 
         // $this->load('brand', 'reviews');
         $pname  = $this->product->name;
-        $dprice = 0;
-        $mprice = (float) number_format((float) $this->price, 2, '.', '');
+        $mprice = 0;
+        $dprice = (float) number_format((float) $this->price, 2, '.', '');
 
         $color =  null;
         $size  =  null;
 
         if ($this->orderVariant != null) {
-            $dprice = (float) number_format($this->orderVariant->price, 2, '.', '');
+            $dprice = (float) number_format((float)$this->orderVariant->price, 2, '.', '');
+            $mprice = (float) number_format((float) $this->product->price, 2, '.', '');
             $color  = $this->orderVariant->color_name;
             $size   = $this->orderVariant->size_name;
         } elseif ($this->orderBulkItem != null) {
             $pname  = $this->orderBulkItem->name;
-            $mprice = (float) number_format($this->orderBulkItem->mrp, 2, '.', '');
-            $dprice = (float) number_format($this->orderBulkItem->selling_price, 2, '.', '');
+            $dprice = (float) number_format((float) $this->orderBulkItem->mrp, 2, '.', '');
+            $mprice = (float) number_format((float) $this->orderBulkItem->selling_price, 2, '.', '');
         } else {
-            $dprice = (float) number_format($this->product->price, 2, '.', '');
+            $dprice = (float) number_format((float) $this->price, 2, '.', '');
+            $mprice = (float) number_format((float) $this->product->price, 2, '.', '');
         }
 
         return [
             'id' => $this->product->id,
             'name' => $pname,
             'thumbnail' => $this->product->thumbnail,
-            'price' => (float) $dprice,
-            'discount_price' => (float) $mprice,
+            'price' => (float) $mprice,
+            'discount_price' => (float) $dprice,
             'variant_id' => $this->orderVariant?->id,
             'bulk_item_id' => $this->orderBulkItem?->id,
             // 'quantity' => (int) $this->quantity,
