@@ -35,7 +35,7 @@ class SellerOrderProductResource extends JsonResource
             $mprice = (float) number_format($this->orderBulkItem->mrp, 2, '.', '');
             $dprice = (float) number_format($this->orderBulkItem->selling_price, 2, '.', '');
         } else {
-            $dprice = (float) number_format($this->product->discount_price, 2, '.', '');
+            $dprice = (float) number_format($this->product->price, 2, '.', '');
         }
 
         return [
