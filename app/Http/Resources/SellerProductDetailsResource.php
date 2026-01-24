@@ -25,7 +25,7 @@ class SellerProductDetailsResource extends JsonResource
             'min_order_quantity' => (int) $this->min_order_quantity,
             'thumbnail' => $this->thumbnail,
             'gst' => $this->tax_percentage,
-            'return_period' => $this->return_period,
+            'return_period' => (int) $this->return_period,
             'condition_status' => $this->condition_status,
             'variants' => ProductVariantResource::collection($this->variants),
             // 'videourl' => $this->videourl(),
