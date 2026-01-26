@@ -370,3 +370,11 @@ Route::name('shop.')->group(function () {
 // Razorpay Webhook (no auth required)
 Route::post('/shop/advertisements/webhook/razorpay', [App\Http\Controllers\Shop\AdvertismentController::class, 'webhookHandler'])
     ->name('shop.advertisement.webhook.razorpay');
+
+// Test webhook endpoint
+Route::get('/shop/advertisements/webhook/test', [App\Http\Controllers\Shop\AdvertismentController::class, 'testWebhook'])
+    ->name('shop.advertisement.webhook.test');
+
+// Process pending payment manually (for fixing stuck payments)
+Route::get('/shop/advertisements/process-pending/{orderId}', [App\Http\Controllers\Shop\AdvertismentController::class, 'processPendingPayment'])
+    ->name('shop.advertisement.process-pending');

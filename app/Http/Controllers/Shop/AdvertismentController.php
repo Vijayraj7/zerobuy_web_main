@@ -425,6 +425,11 @@ class AdvertismentController extends Controller
     public function webhookHandler(Request $request)
     {
         try {
+            \Log::info('Razorpay Webhook Hit', [
+                'headers' => $request->headers->all(),
+                'body' => $request->all()
+            ]);
+
             // Get Razorpay credentials
             $razorpay = PaymentGateway::where('name', 'Razorpay')
                 ->where('is_active', 1)
@@ -432,7 +437,7 @@ class AdvertismentController extends Controller
 
             if (!$razorpay) {
                 \Log::error('Razorpay Webhook: Gateway not found');
-                return response()->json(['status' => 'error'], 400);
+                return response()->json(['status' => 'error', 'message' => 'Gateway not configured'], 400);
             }
 
             $credentials = json_decode($razorpay->config, true);
@@ -446,15 +451,20 @@ class AdvertismentController extends Controller
                 $expectedSignature = hash_hmac('sha256', $webhookBody, $webhookSecret);
 
                 if ($webhookSignature !== $expectedSignature) {
-                    \Log::error('Razorpay Webhook: Invalid signature');
-                    return response()->json(['status' => 'error'], 400);
+                    \Log::error('Razorpay Webhook: Invalid signature', [
+                        'expected' => $expectedSignature,
+                        'received' => $webhookSignature
+                    ]);
+                    return response()->json(['status' => 'error', 'message' => 'Invalid signature'], 400);
                 }
+            } else {
+                \Log::warning('Razorpay Webhook: No webhook secret configured, skipping signature verification');
             }
 
             $payload = $request->all();
             $event = $payload['event'] ?? null;
 
-            \Log::info('Razorpay Webhook Received', ['event' => $event, 'payload' => $payload]);
+            \Log::info('Razorpay Webhook Event', ['event' => $event]);
 
             // Handle payment.captured event
             if ($event === 'payment.captured') {
@@ -541,6 +551,130 @@ class AdvertismentController extends Controller
             ]);
 
             return response()->json(['status' => 'error'], 500);
+        }
+    }
+
+    public function testWebhook()
+    {
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Webhook endpoint is accessible',
+            'url' => route('shop.advertisement.webhook.razorpay'),
+            'timestamp' => now()
+        ]);
+    }
+
+    public function processPendingPayment($orderId)
+    {
+        try {
+            // Find payment order
+            $paymentOrder = AdPaymentOrder::where('razorpay_order_id', $orderId)->first();
+
+            if (!$paymentOrder) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Payment order not found'
+                ], 404);
+            }
+
+            if ($paymentOrder->status === 'paid') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Payment already processed'
+                ], 400);
+            }
+
+            // Get Razorpay credentials
+            $razorpay = PaymentGateway::where('name', 'Razorpay')
+                ->where('is_active', 1)
+                ->first();
+
+            if (!$razorpay) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Razorpay gateway not found'
+                ], 400);
+            }
+
+            $credentials = json_decode($razorpay->config, true);
+            $api = new Api($credentials['key'], $credentials['secret']);
+
+            // Fetch order from Razorpay
+            $order = $api->order->fetch($orderId);
+            
+            \Log::info('Razorpay Order Fetched', [
+                'order_id' => $orderId,
+                'status' => $order->status,
+                'amount_paid' => $order->amount_paid
+            ]);
+
+            // Check if order is paid
+            if ($order->status === 'paid' && $order->amount_paid > 0) {
+                // Fetch payments for this order
+                $payments = $api->order->fetch($orderId)->payments();
+                
+                if ($payments && count($payments->items) > 0) {
+                    $payment = $payments->items[0];
+                    
+                    if ($payment->status === 'captured') {
+                        DB::beginTransaction();
+
+                        // Update wallet balance
+                        $wallet = $paymentOrder->adWallet;
+                        if ($wallet) {
+                            $wallet->balance += $paymentOrder->amount;
+                            $wallet->save();
+                        }
+
+                        // Update payment order
+                        $paymentOrder->update([
+                            'razorpay_payment_id' => $payment->id,
+                            'status' => 'paid',
+                            'paid_at' => now()
+                        ]);
+
+                        // Create transaction record
+                        AdTransaction::create([
+                            'ad_wallet_id' => $paymentOrder->ad_wallet_id,
+                            'amount' => $paymentOrder->amount,
+                            'is_commission' => 0,
+                            'type' => 'credit',
+                            'transaction_id' => $payment->id,
+                            'purpose' => 'recharge',
+                            'note' => 'Manual Processing - Order: ' . $orderId
+                        ]);
+
+                        DB::commit();
+
+                        return response()->json([
+                            'status' => true,
+                            'message' => 'Payment processed successfully',
+                            'amount' => $paymentOrder->amount,
+                            'payment_id' => $payment->id
+                        ]);
+                    }
+                }
+            }
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Order is not paid or payment not captured',
+                'order_status' => $order->status,
+                'amount_paid' => $order->amount_paid
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            \Log::error('Process Pending Payment Error', [
+                'order_id' => $orderId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
         }
     }
 }
