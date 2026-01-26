@@ -365,16 +365,16 @@ Route::name('shop.')->group(function () {
             Route::post('/send-message', 'sendMessageAdmin')->name('customer.chat.sendMessage');
         });
     });
+    
+    // Razorpay Webhook (no auth required) - outside auth middleware
+    Route::post('/advertisements/webhook/razorpay', [App\Http\Controllers\Shop\AdvertismentController::class, 'webhookHandler'])
+        ->name('advertisement.webhook.razorpay');
+
+    // Test webhook endpoint
+    Route::get('/advertisements/webhook/test', [App\Http\Controllers\Shop\AdvertismentController::class, 'testWebhook'])
+        ->name('advertisement.webhook.test');
+
+    // Process pending payment manually (for fixing stuck payments)
+    Route::get('/advertisements/process-pending/{orderId}', [App\Http\Controllers\Shop\AdvertismentController::class, 'processPendingPayment'])
+        ->name('advertisement.process-pending');
 });
-
-// Razorpay Webhook (no auth required)
-Route::post('/shop/advertisements/webhook/razorpay', [App\Http\Controllers\Shop\AdvertismentController::class, 'webhookHandler'])
-    ->name('shop.advertisement.webhook.razorpay');
-
-// Test webhook endpoint
-Route::get('/shop/advertisements/webhook/test', [App\Http\Controllers\Shop\AdvertismentController::class, 'testWebhook'])
-    ->name('shop.advertisement.webhook.test');
-
-// Process pending payment manually (for fixing stuck payments)
-Route::get('/shop/advertisements/process-pending/{orderId}', [App\Http\Controllers\Shop\AdvertismentController::class, 'processPendingPayment'])
-    ->name('shop.advertisement.process-pending');
