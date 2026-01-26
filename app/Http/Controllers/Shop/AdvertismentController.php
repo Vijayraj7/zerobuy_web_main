@@ -375,9 +375,13 @@ class AdvertismentController extends Controller
             if ($paymentOrder->status === 'paid') {
                 DB::rollBack();
                 return response()->json([
-                    'status' => false,
-                    'message' => 'Payment already processed'
-                ], 400);
+                    'status' => true,
+                    'message' => '₹' . number_format($request->amount, 2) . ' added to your ad wallet successfully'
+                ]);
+                // return response()->json([
+                //     'status' => false,
+                //     'message' => 'Payment already processed'
+                // ], 400);
             }
 
             // Get wallet
@@ -534,7 +538,7 @@ class AdvertismentController extends Controller
 
             // Fetch order from Razorpay
             $order = $api->order->fetch($orderId);
-            
+
             \Log::info('Razorpay Order Fetched', [
                 'order_id' => $orderId,
                 'status' => $order->status,
@@ -545,10 +549,10 @@ class AdvertismentController extends Controller
             if ($order->status === 'paid' && $order->amount_paid > 0) {
                 // Fetch payments for this order
                 $payments = $api->order->fetch($orderId)->payments();
-                
+
                 if ($payments && count($payments->items) > 0) {
                     $payment = $payments->items[0];
-                    
+
                     if ($payment->status === 'captured') {
                         DB::beginTransaction();
 
@@ -595,10 +599,9 @@ class AdvertismentController extends Controller
                 'order_status' => $order->status,
                 'amount_paid' => $order->amount_paid
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             \Log::error('Process Pending Payment Error', [
                 'order_id' => $orderId,
                 'error' => $e->getMessage()
