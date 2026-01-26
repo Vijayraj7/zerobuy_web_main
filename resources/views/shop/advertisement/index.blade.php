@@ -328,26 +328,26 @@ $(function () {
                     }
                     
                     // Verify Payment
-                    $.post("{{ route('shop.advertisement.wallet.verify-payment') }}", {
-                        _token: "{{ csrf_token() }}",
-                        razorpay_payment_id: response.razorpay_payment_id,
-                        razorpay_order_id: response.razorpay_order_id,
-                        razorpay_signature: response.razorpay_signature,
-                        amount: amount
-                    })
-                    .done(function(verifyRes){
-                        $('#addMoneyModal').modal('hide');
-                        Toast.fire({
-                            icon: 'success',
-                            title: verifyRes.message
-                        });
-                        setTimeout(() => location.reload(), 1200);
-                    })
-                    .fail(function(xhr){
-                        $('#addMoneyError').removeClass('d-none')
-                            .text(xhr.responseJSON?.message || 'Payment verification failed');
-                        $('#addMoneyBtn').prop('disabled', false);
-                    });
+                    // $.post("{{ route('shop.advertisement.wallet.verify-payment') }}", {
+                    //     _token: "{{ csrf_token() }}",
+                    //     razorpay_payment_id: response.razorpay_payment_id,
+                    //     razorpay_order_id: response.razorpay_order_id,
+                    //     razorpay_signature: response.razorpay_signature,
+                    //     amount: amount
+                    // })
+                    // .done(function(verifyRes){
+                    //     $('#addMoneyModal').modal('hide');
+                    //     Toast.fire({
+                    //         icon: 'success',
+                    //         title: verifyRes.message
+                    //     });
+                    //     setTimeout(() => location.reload(), 1200);
+                    // })
+                    // .fail(function(xhr){
+                    //     $('#addMoneyError').removeClass('d-none')
+                    //         .text(xhr.responseJSON?.message || 'Payment verification failed');
+                    //     $('#addMoneyBtn').prop('disabled', false);
+                    // });
                 },
                 modal: {
                     ondismiss: function() {

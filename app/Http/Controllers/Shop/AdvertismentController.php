@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Shop;
 use App\Http\Controllers\Controller;
 use App\Models\AdTransaction;
 use App\Models\AdWallet;
+use App\Models\AdPaymentOrder;
 use Illuminate\Http\Request;
 use App\Models\Advertisement;
 use App\Models\Product;
@@ -143,7 +144,7 @@ class AdvertismentController extends Controller
 
         DB::transaction(function () use ($request, $shop, $wallet, $dailyBudget, $total) {
 
-            Advertisement::create([
+            $ad_new = Advertisement::create([
                 'shop_id' => $shop->id,
                 'ads_type' => $request->ads_type,
                 'product_id' => $request->ads_type == 'product'
@@ -163,6 +164,7 @@ class AdvertismentController extends Controller
                 'amount' => $total,
                 'type' => 'debit',
                 'purpose' => 'Ads Run',
+                'transaction_id' => $ad_new->id,
                 'note' => 'Advertisement'
             ]);
         });
@@ -203,8 +205,8 @@ class AdvertismentController extends Controller
             ]);
         }
 
-        $transactions = Transaction::where('wallet_id', $wallet->id)
-            ->where('purpose', 'Ads Run')
+        $transactions = AdTransaction::where('ad_wallet_id', $wallet->id)
+            // ->where('purpose', 'Ads Run')
             ->latest()
             ->get();
 
@@ -267,6 +269,27 @@ class AdvertismentController extends Controller
                 'currency' => $order->currency
             ]);
 
+            // Get or create AdWallet
+            $wallet = AdWallet::firstOrCreate(
+                ['user_id' => $shop->user_id],
+                ['balance' => 0]
+            );
+
+            // Save payment order to database
+            AdPaymentOrder::create([
+                'user_id' => $shop->user_id,
+                'ad_wallet_id' => $wallet->id,
+                'razorpay_order_id' => $order->id,
+                'amount' => $request->amount,
+                'currency' => $order->currency,
+                'receipt' => $order->receipt,
+                'status' => 'created',
+                'notes' => json_encode([
+                    'shop_id' => $shop->id,
+                    'purpose' => 'Ad Wallet Recharge'
+                ])
+            ]);
+
             return response()->json([
                 'status' => true,
                 'order' => [
@@ -282,7 +305,7 @@ class AdvertismentController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to create order: ' . $e->getMessage()
@@ -337,12 +360,40 @@ class AdvertismentController extends Controller
 
             DB::beginTransaction();
 
-            // Get or create AdWallet
+            // Find payment order
+            $paymentOrder = AdPaymentOrder::where('razorpay_order_id', $request->razorpay_order_id)->first();
+
+            if (!$paymentOrder) {
+                DB::rollBack();
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Payment order not found'
+                ], 404);
+            }
+
+            // Check if already processed
+            if ($paymentOrder->status === 'paid') {
+                DB::rollBack();
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Payment already processed'
+                ], 400);
+            }
+
+            // Get wallet
             $wallet = AdWallet::where('user_id', $shop->user_id)->first();
 
             // Add amount to wallet
             $wallet->balance += $request->amount;
             $wallet->save();
+
+            // Update payment order
+            $paymentOrder->update([
+                'razorpay_payment_id' => $request->razorpay_payment_id,
+                'razorpay_signature' => $request->razorpay_signature,
+                'status' => 'paid',
+                'paid_at' => now()
+            ]);
 
             // Create transaction record
             AdTransaction::create([
@@ -351,7 +402,7 @@ class AdvertismentController extends Controller
                 'is_commission' => 0,
                 'type' => 'credit',
                 'transaction_id' => $request->razorpay_payment_id,
-                'purpose' => 'Wallet Recharge',
+                'purpose' => 'recharge',
                 'note' => 'Razorpay Payment - Order: ' . $request->razorpay_order_id
             ]);
 
@@ -368,6 +419,128 @@ class AdvertismentController extends Controller
                 'status' => false,
                 'message' => 'Payment verification failed: ' . $e->getMessage()
             ], 400);
+        }
+    }
+
+    public function webhookHandler(Request $request)
+    {
+        try {
+            // Get Razorpay credentials
+            $razorpay = PaymentGateway::where('name', 'Razorpay')
+                ->where('is_active', 1)
+                ->first();
+
+            if (!$razorpay) {
+                \Log::error('Razorpay Webhook: Gateway not found');
+                return response()->json(['status' => 'error'], 400);
+            }
+
+            $credentials = json_decode($razorpay->config, true);
+            $webhookSecret = $credentials['webhook_secret'] ?? null;
+
+            // Verify webhook signature if secret is configured
+            if ($webhookSecret) {
+                $webhookSignature = $request->header('X-Razorpay-Signature');
+                $webhookBody = $request->getContent();
+
+                $expectedSignature = hash_hmac('sha256', $webhookBody, $webhookSecret);
+
+                if ($webhookSignature !== $expectedSignature) {
+                    \Log::error('Razorpay Webhook: Invalid signature');
+                    return response()->json(['status' => 'error'], 400);
+                }
+            }
+
+            $payload = $request->all();
+            $event = $payload['event'] ?? null;
+
+            \Log::info('Razorpay Webhook Received', ['event' => $event, 'payload' => $payload]);
+
+            // Handle payment.captured event
+            if ($event === 'payment.captured') {
+                $payment = $payload['payload']['payment']['entity'] ?? null;
+
+                if (!$payment) {
+                    return response()->json(['status' => 'error'], 400);
+                }
+
+                $orderId = $payment['order_id'] ?? null;
+                $paymentId = $payment['id'] ?? null;
+
+                if (!$orderId || !$paymentId) {
+                    return response()->json(['status' => 'error'], 400);
+                }
+
+                // Find payment order
+                $paymentOrder = AdPaymentOrder::where('razorpay_order_id', $orderId)->first();
+
+                if (!$paymentOrder) {
+                    \Log::warning('Razorpay Webhook: Payment order not found', ['order_id' => $orderId]);
+                    return response()->json(['status' => 'success']); // Return success to avoid retries
+                }
+
+                // Skip if already processed
+                if ($paymentOrder->status === 'paid') {
+                    \Log::info('Razorpay Webhook: Payment already processed', ['order_id' => $orderId]);
+                    return response()->json(['status' => 'success']);
+                }
+
+                DB::beginTransaction();
+
+                // Update wallet balance
+                $wallet = $paymentOrder->adWallet;
+                if ($wallet) {
+                    $wallet->balance += $paymentOrder->amount;
+                    $wallet->save();
+                }
+
+                // Update payment order
+                $paymentOrder->update([
+                    'razorpay_payment_id' => $paymentId,
+                    'status' => 'paid',
+                    'paid_at' => now()
+                ]);
+
+                // Create transaction record
+                AdTransaction::create([
+                    'ad_wallet_id' => $paymentOrder->ad_wallet_id,
+                    'amount' => $paymentOrder->amount,
+                    'is_commission' => 0,
+                    'type' => 'credit',
+                    'transaction_id' => $paymentId,
+                    'purpose' => 'recharge',
+                    'note' => 'Razorpay Webhook Payment - Order: ' . $orderId
+                ]);
+
+                DB::commit();
+
+                \Log::info('Razorpay Webhook: Payment processed successfully', [
+                    'order_id' => $orderId,
+                    'payment_id' => $paymentId
+                ]);
+            }
+
+            // Handle payment.failed event
+            if ($event === 'payment.failed') {
+                $payment = $payload['payload']['payment']['entity'] ?? null;
+                $orderId = $payment['order_id'] ?? null;
+
+                if ($orderId) {
+                    $paymentOrder = AdPaymentOrder::where('razorpay_order_id', $orderId)->first();
+                    if ($paymentOrder && $paymentOrder->status === 'created') {
+                        $paymentOrder->update(['status' => 'failed']);
+                    }
+                }
+            }
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            \Log::error('Razorpay Webhook Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json(['status' => 'error'], 500);
         }
     }
 }
