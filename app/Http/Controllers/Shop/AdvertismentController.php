@@ -16,7 +16,6 @@ use App\Models\AdvertisementSetting;
 use Carbon\Carbon;
 use DataTables;
 use DB;
-use Log;
 use Razorpay\Api\Api;
 
 class AdvertismentController extends Controller

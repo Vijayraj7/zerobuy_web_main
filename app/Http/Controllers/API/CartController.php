@@ -72,6 +72,12 @@ class CartController extends Controller
             }
         }
 
+        if ($request_quantity < $min_quantity) {
+            if ($product_quantity >= $min_quantity) {
+                $request_quantity = $min_quantity;
+            }
+        }
+
         if (($request_quantity < $min_quantity) || ($request_quantity > $product_quantity) || ($cart?->quantity > $product_quantity)) {
             return $this->json('Sorry! product cart quantity is limited. No more stock', [], 422);
         }
@@ -84,7 +90,7 @@ class CartController extends Controller
         $groupCart = $carts->groupBy('shop_id');
         $result = CartRepository::ShopWiseCartProducts($groupCart);
 
-        return $this->json('product added to cart', [
+        return $this->json(strlen($product->name) > 10 ? substr($product->name, 0, 10) . '... added to cart!' : $product->name . ' added to cart!', [
             'total' => $result['total_items'],
             'cart_items' => $result['shop_wise_products'],
             'info' => $result['info'],

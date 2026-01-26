@@ -201,4 +201,20 @@ return [
         'DNS2D' => Milon\Barcode\Facades\DNS2DFacade::class,
     ])->toArray(),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Test Phone Numbers
+    |--------------------------------------------------------------------------
+    |
+    | Phone numbers in this array will use OTP "1234" and won't send actual SMS.
+    | Useful for testing without consuming SMS credits.
+    |
+    */
+
+    'test_phone_numbers' => [
+        '9072424102',
+        '9746619024',
+        // Add more test numbers here
+    ],
+
 ];

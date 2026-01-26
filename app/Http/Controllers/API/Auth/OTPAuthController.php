@@ -27,6 +27,7 @@ class OTPAuthController extends Controller
      */
     public function sendLoginOTP(OTPRequest $request)
     {
+        $test_numbers = config('app.test_phone_numbers', []);
         $user = UserRepository::findByPhone($request->phone);
         $isNewUser = is_null($user);
 
@@ -42,9 +43,20 @@ class OTPAuthController extends Controller
 
         $type = $verifyManage?->register_otp_type ?? 'phone';
 
-        // Create a new verification code using the phone number
-        $verificationCode = VerificationCodeRepository::findOrCreateByContact($request->phone);
-        $OTP = $verificationCode->otp;
+        // Check if phone is a test number
+        $isTestNumber = in_array($request->phone, $test_numbers);
+
+        if ($isTestNumber) {
+            // For test numbers, always use OTP "1234"
+            $verificationCode = VerificationCodeRepository::findOrCreateByContact($request->phone);
+            $verificationCode->otp = '1234';
+            $verificationCode->save();
+            $OTP = '1234';
+        } else {
+            // Create a new verification code using the phone number
+            $verificationCode = VerificationCodeRepository::findOrCreateByContact($request->phone);
+            $OTP = $verificationCode->otp;
+        }
 
         $messageType = $isNewUser ? 'Registration' : 'Login';
         $message = 'Your ' . $messageType . ' OTP is ' . $OTP;
@@ -54,22 +66,28 @@ class OTPAuthController extends Controller
         $phoneCode = $request->phone_code ?? '+91';
 
         if ($type == 'phone') {
-            try {
-                $phoneNumber = $request->phone; // may be raw 10-digit or concatenated
-                (new SmsGatewayService)->sendSMS($phoneCode, $phoneNumber, $message, $OTP);
-            } catch (\Throwable $e) {
-                // swallow SMS errors for security; do not leak
+            // Skip sending SMS for test numbers
+            if (!$isTestNumber) {
+                try {
+                    $phoneNumber = $request->phone; // may be raw 10-digit or concatenated
+                    (new SmsGatewayService)->sendSMS($phoneCode, $phoneNumber, $message, $OTP);
+                } catch (\Throwable $e) {
+                    // swallow SMS errors for security; do not leak
+                }
             }
             $responseMessage = 'Your ' . $messageType . ' code is sent to your phone';
             $emailOrPhone = $phoneCode . $request->phone;
         } else {
-            // Send OTP via email when register_otp_type is email
-            try {
-                $email = $request->phone; // frontend passes email in `phone` field per existing validators
-                // Dispatch event with correct arguments (email, message, otp)
-                SendOTPMail::dispatch($email, $message, $OTP);
-            } catch (\Throwable $e) {
-                // swallow email errors; do not leak
+            // Skip sending email for test numbers
+            if (!$isTestNumber) {
+                // Send OTP via email when register_otp_type is email
+                try {
+                    $email = $request->phone; // frontend passes email in `phone` field per existing validators
+                    // Dispatch event with correct arguments (email, message, otp)
+                    SendOTPMail::dispatch($email, $message, $OTP);
+                } catch (\Throwable $e) {
+                    // swallow email errors; do not leak
+                }
             }
             $responseMessage = 'Your ' . $messageType . ' code is sent to your email';
             $emailOrPhone = $request->phone;
@@ -79,7 +97,7 @@ class OTPAuthController extends Controller
             'email_or_phone' => $emailOrPhone,
             'phone_code' => $phoneCode,
             'is_new_user' => $isNewUser,
-            'otp' => app()->environment('local') ? $OTP : null,
+            'otp' => (app()->environment('local') || $isTestNumber) ? $OTP : null,
         ]);
     }
 

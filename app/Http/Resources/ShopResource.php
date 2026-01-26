@@ -37,6 +37,8 @@ class ShopResource extends JsonResource
             'name' => $this->name,
             'logo' => $this->logo,
             'banner' => $this->banner,
+            'contact_number' => $this->phone_number,
+            'whatsapp_number' => $this->whatsapp_number,
             'store_type' => $this->store_type ? $this->store_type : 'retail',
             'state' => $this->states ? $this->states->name : null,
             'district' => $this->districts ? $this->districts->name : null,
