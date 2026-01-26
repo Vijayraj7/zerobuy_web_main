@@ -424,133 +424,66 @@ class AdvertismentController extends Controller
 
     public function webhookHandler(Request $request)
     {
-        try {
-            \Log::info('Razorpay Webhook Hit', [
-                'headers' => $request->headers->all(),
-                'body' => $request->all()
-            ]);
+        \Log::debug('Webhook');
+        \Log::debug('response array ' . json_encode($request->all()));
 
-            // Get Razorpay credentials
-            $razorpay = PaymentGateway::where('name', 'Razorpay')
-                ->where('is_active', 1)
-                ->first();
+        $post = file_get_contents('php://input');
+        $data = json_decode($post, true);
 
-            if (!$razorpay) {
-                \Log::error('Razorpay Webhook: Gateway not found');
-                return response()->json(['status' => 'error', 'message' => 'Gateway not configured'], 400);
-            }
+        if (isset($data['event']) && $data['event'] === 'payment.captured') {
+            try {
+                $status = $data['payload']['payment']['entity']['status'];
+                $raz_order_id = $data['payload']['payment']['entity']['order_id'];
+                $raz_payment_id = $data['payload']['payment']['entity']['id'];
 
-            $credentials = json_decode($razorpay->config, true);
-            $webhookSecret = $credentials['webhook_secret'] ?? null;
+                // Find payment order that is not already processed
+                $paymentOrder = AdPaymentOrder::where('razorpay_order_id', $raz_order_id)
+                    ->where('status', 'created')
+                    ->first();
 
-            // Verify webhook signature if secret is configured
-            if ($webhookSecret) {
-                $webhookSignature = $request->header('X-Razorpay-Signature');
-                $webhookBody = $request->getContent();
+                if ($status === 'captured') {
+                    if ($paymentOrder !== null) {
+                        $amount = $paymentOrder->amount;
 
-                $expectedSignature = hash_hmac('sha256', $webhookBody, $webhookSecret);
+                        // Update wallet balance
+                        $wallet = AdWallet::find($paymentOrder->ad_wallet_id);
+                        $wallet->balance += $amount;
+                        $wallet->save();
 
-                if ($webhookSignature !== $expectedSignature) {
-                    \Log::error('Razorpay Webhook: Invalid signature', [
-                        'expected' => $expectedSignature,
-                        'received' => $webhookSignature
-                    ]);
-                    return response()->json(['status' => 'error', 'message' => 'Invalid signature'], 400);
-                }
-            } else {
-                \Log::warning('Razorpay Webhook: No webhook secret configured, skipping signature verification');
-            }
+                        // Create transaction record
+                        $transaction = new AdTransaction();
+                        $transaction->ad_wallet_id = $paymentOrder->ad_wallet_id;
+                        $transaction->amount = $amount;
+                        $transaction->is_commission = 0;
+                        $transaction->type = 'credit';
+                        $transaction->transaction_id = $raz_payment_id;
+                        $transaction->purpose = 'recharge';
+                        $transaction->note = 'Wallet Recharge - Order: ' . $raz_order_id;
+                        $transaction->save();
 
-            $payload = $request->all();
-            $event = $payload['event'] ?? null;
+                        // Update payment order status
+                        $paymentOrder->razorpay_payment_id = $raz_payment_id;
+                        $paymentOrder->status = 'paid';
+                        $paymentOrder->paid_at = now();
+                        $paymentOrder->save();
 
-            \Log::info('Razorpay Webhook Event', ['event' => $event]);
-
-            // Handle payment.captured event
-            if ($event === 'payment.captured') {
-                $payment = $payload['payload']['payment']['entity'] ?? null;
-
-                if (!$payment) {
-                    return response()->json(['status' => 'error'], 400);
-                }
-
-                $orderId = $payment['order_id'] ?? null;
-                $paymentId = $payment['id'] ?? null;
-
-                if (!$orderId || !$paymentId) {
-                    return response()->json(['status' => 'error'], 400);
-                }
-
-                // Find payment order
-                $paymentOrder = AdPaymentOrder::where('razorpay_order_id', $orderId)->first();
-
-                if (!$paymentOrder) {
-                    \Log::warning('Razorpay Webhook: Payment order not found', ['order_id' => $orderId]);
-                    return response()->json(['status' => 'success']); // Return success to avoid retries
-                }
-
-                // Skip if already processed
-                if ($paymentOrder->status === 'paid') {
-                    \Log::info('Razorpay Webhook: Payment already processed', ['order_id' => $orderId]);
-                    return response()->json(['status' => 'success']);
-                }
-
-                DB::beginTransaction();
-
-                // Update wallet balance
-                $wallet = $paymentOrder->adWallet;
-                if ($wallet) {
-                    $wallet->balance += $paymentOrder->amount;
-                    $wallet->save();
-                }
-
-                // Update payment order
-                $paymentOrder->update([
-                    'razorpay_payment_id' => $paymentId,
-                    'status' => 'paid',
-                    'paid_at' => now()
-                ]);
-
-                // Create transaction record
-                AdTransaction::create([
-                    'ad_wallet_id' => $paymentOrder->ad_wallet_id,
-                    'amount' => $paymentOrder->amount,
-                    'is_commission' => 0,
-                    'type' => 'credit',
-                    'transaction_id' => $paymentId,
-                    'purpose' => 'recharge',
-                    'note' => 'Razorpay Webhook Payment - Order: ' . $orderId
-                ]);
-
-                DB::commit();
-
-                \Log::info('Razorpay Webhook: Payment processed successfully', [
-                    'order_id' => $orderId,
-                    'payment_id' => $paymentId
-                ]);
-            }
-
-            // Handle payment.failed event
-            if ($event === 'payment.failed') {
-                $payment = $payload['payload']['payment']['entity'] ?? null;
-                $orderId = $payment['order_id'] ?? null;
-
-                if ($orderId) {
-                    $paymentOrder = AdPaymentOrder::where('razorpay_order_id', $orderId)->first();
-                    if ($paymentOrder && $paymentOrder->status === 'created') {
-                        $paymentOrder->update(['status' => 'failed']);
+                        \Log::debug('success: ' . $raz_order_id);
+                        echo 200;
+                    } else {
+                        \Log::debug('Payment order not found or already processed: ' . $raz_order_id);
+                        echo 200; // Return success to avoid retries
                     }
+                } else {
+                    \Log::debug('Invalid payment status: ' . $status . ' for order ID: ' . $raz_order_id);
+                    echo 400;
                 }
+            } catch (\Exception $e) {
+                \Log::error('Exception: ' . $e->getMessage());
+                echo 500;
             }
-
-            return response()->json(['status' => 'success']);
-        } catch (\Exception $e) {
-            \Log::error('Razorpay Webhook Error', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json(['status' => 'error'], 500);
+        } else {
+            \Log::debug('Invalid or missing event in the request: ' . json_encode($data));
+            echo 400;
         }
     }
 
