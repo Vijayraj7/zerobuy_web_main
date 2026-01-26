@@ -376,7 +376,7 @@ class AdvertismentController extends Controller
                 DB::rollBack();
                 return response()->json([
                     'status' => true,
-                    'message' => '₹' . number_format($request->amount, 2) . ' added to your ad wallet successfully'
+                    'message' => '₹' . number_format($request->amount, 2) . ' added to your ad wallet successfully.'
                 ]);
                 // return response()->json([
                 //     'status' => false,
