@@ -72,7 +72,7 @@ class CartController extends Controller
             }
         }
 
-        if (($request_quantity < $min_quantity) || ($request_quantity > $product_quantity) || ($cart?->quantity >= $product_quantity)) {
+        if (($request_quantity < $min_quantity) || ($request_quantity > $product_quantity) || ($cart?->quantity > $product_quantity)) {
             return $this->json('Sorry! product cart quantity is limited. No more stock', [], 422);
         }
 
