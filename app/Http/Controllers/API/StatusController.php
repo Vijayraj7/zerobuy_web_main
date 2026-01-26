@@ -35,14 +35,14 @@ class StatusController extends Controller
 
         $statuses = $statusesByShop->map(function ($shopStatuses) {
             $shop = $shopStatuses->first()->shop;
-            
+
             $statusItems = $shopStatuses->map(function ($productStatus) {
                 // Get product image URL
                 $imageUrl = null;
                 if ($productStatus->product && $productStatus->product->media) {
                     $imageUrl = $productStatus->product->media->srcUrl ?? null;
                 }
-                
+
                 // Fallback to a default image if no product image
                 if (!$imageUrl) {
                     $imageUrl = asset('default/default.jpg');
@@ -52,7 +52,7 @@ class StatusController extends Controller
                     'image_url' => $imageUrl,
                     'message' => $productStatus->message,
                     'timestamp' => optional($productStatus->created_at)->toIso8601String(),
-                    'product_id' => $productStatus->product_id,
+                    'product_id' => (int) $productStatus->product_id,
                     'status_id' => $productStatus->id,
                 ];
             })->values();
