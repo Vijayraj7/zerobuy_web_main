@@ -191,7 +191,7 @@ class Shop extends Model
     {
         return $builder->whereHas('user', function ($query) {
             $query->where('is_active', 1);
-        });
+        })->whereHas('currentSubscription');
     }
 
     /**

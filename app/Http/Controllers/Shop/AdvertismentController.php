@@ -8,12 +8,14 @@ use App\Models\AdWallet;
 use Illuminate\Http\Request;
 use App\Models\Advertisement;
 use App\Models\Product;
+use App\Models\PaymentGateway;
 // use App\Models\Wallet;
 use App\Models\Transaction;
 use App\Models\AdvertisementSetting;
 use Carbon\Carbon;
 use DataTables;
 use DB;
+use Razorpay\Api\Api;
 
 class AdvertismentController extends Controller
 {
@@ -45,8 +47,8 @@ class AdvertismentController extends Controller
                     'product_image',
                     fn($r) =>
                     $r->product
-                    ? '<img src="' . asset($r->product->thumbnail) . '" width="40">'
-                    : 'N/A'
+                        ? '<img src="' . asset($r->product->thumbnail) . '" width="40">'
+                        : 'N/A'
                 )
                 ->addColumn(
                     'product_id',
@@ -210,5 +212,162 @@ class AdvertismentController extends Controller
             'transactions' => $transactions,
             'message' => null
         ]);
+    }
+
+    public function createWalletOrder(Request $request)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:1'
+        ]);
+
+        $shop = generaleSetting('shop');
+
+        // Get Razorpay credentials from PaymentGateway table
+        $razorpay = PaymentGateway::where('name', 'Razorpay')
+            ->where('is_active', 1)
+            ->first();
+
+        if (!$razorpay) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Razorpay payment gateway is not configured or inactive'
+            ], 400);
+        }
+
+        $credentials = json_decode($razorpay->config, true);
+        $key = $credentials['key'] ?? null;
+        $secret = $credentials['secret'] ?? null;
+
+        if (!$key || !$secret) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Razorpay credentials are missing'
+            ], 400);
+        }
+
+        try {
+            $api = new Api($key, $secret);
+
+            $amount = $request->amount * 100; // Convert to paise
+
+            $order = $api->order->create([
+                'amount' => $amount,
+                'currency' => 'INR',
+                'receipt' => 'adwallet_' . $shop->id . '_' . time(),
+                'notes' => [
+                    'shop_id' => $shop->id,
+                    'user_id' => $shop->user_id,
+                    'purpose' => 'Ad Wallet Recharge'
+                ]
+            ]);
+
+            \Log::info('Razorpay Order Created', [
+                'order_id' => $order->id,
+                'amount' => $order->amount,
+                'currency' => $order->currency
+            ]);
+
+            return response()->json([
+                'status' => true,
+                'order' => [
+                    'id' => $order->id,
+                    'amount' => $order->amount,
+                    'currency' => $order->currency,
+                    'receipt' => $order->receipt
+                ],
+                'razorpay_key' => $key
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Razorpay Order Creation Failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to create order: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function verifyWalletPayment(Request $request)
+    {
+        $request->validate([
+            'razorpay_payment_id' => 'required',
+            'razorpay_order_id' => 'required',
+            'razorpay_signature' => 'required',
+            'amount' => 'required|numeric|min:1'
+        ]);
+
+        $shop = generaleSetting('shop');
+
+        // Get Razorpay credentials
+        $razorpay = PaymentGateway::where('name', 'Razorpay')
+            ->where('is_active', 1)
+            ->first();
+
+        if (!$razorpay) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Razorpay payment gateway not found'
+            ], 400);
+        }
+
+        $credentials = json_decode($razorpay->config, true);
+        $secret = $credentials['secret'] ?? null;
+
+        if (!$secret) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Razorpay secret key is missing'
+            ], 400);
+        }
+
+        try {
+            // Verify signature
+            $api = new Api($credentials['key'], $secret);
+
+            $attributes = [
+                'razorpay_order_id' => $request->razorpay_order_id,
+                'razorpay_payment_id' => $request->razorpay_payment_id,
+                'razorpay_signature' => $request->razorpay_signature
+            ];
+
+            $api->utility->verifyPaymentSignature($attributes);
+
+            DB::beginTransaction();
+
+            // Get or create AdWallet
+            $wallet = AdWallet::where('user_id', $shop->user_id)->first();
+
+            // Add amount to wallet
+            $wallet->balance += $request->amount;
+            $wallet->save();
+
+            // Create transaction record
+            AdTransaction::create([
+                'ad_wallet_id' => $wallet->id,
+                'amount' => $request->amount,
+                'is_commission' => 0,
+                'type' => 'credit',
+                'transaction_id' => $request->razorpay_payment_id,
+                'purpose' => 'Wallet Recharge',
+                'note' => 'Razorpay Payment - Order: ' . $request->razorpay_order_id
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'status' => true,
+                'message' => '₹' . number_format($request->amount, 2) . ' added to your ad wallet successfully'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Payment verification failed: ' . $e->getMessage()
+            ], 400);
+        }
     }
 }

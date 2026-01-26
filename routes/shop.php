@@ -288,6 +288,9 @@ Route::name('shop.')->group(function () {
 
             Route::get('/advertisements/products', 'products')->name('advertisement.products');
             Route::get('/advertisements/transactions', 'transactions')->name('advertisement.transactions');
+            
+            Route::post('/advertisements/wallet/create-order', 'createWalletOrder')->name('advertisement.wallet.create-order');
+            Route::post('/advertisements/wallet/verify-payment', 'verifyWalletPayment')->name('advertisement.wallet.verify-payment');
         });
 
         // bulk product route

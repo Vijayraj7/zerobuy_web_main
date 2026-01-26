@@ -15,7 +15,9 @@
                 <i class="fas fa-wallet"></i>
                 ₹{{ number_format($wallet?->balance ?? 0, 2) }}
             </a>
-            <a href="#" class="btn py-2 btn-success"> <i class="fa fa-money">&#xf0d6;</i> {{__('Add Money')}} </a> 
+            <button class="btn py-2 btn-success" data-bs-toggle="modal" data-bs-target="#addMoneyModal">
+                <i class="fa fa-money">&#xf0d6;</i> {{__('Add Money')}}
+            </button> 
             <a href="{{ route('shop.advertisement.transactions') }}" class="btn btn-warning">
                 <i class="fa fa-exchange"></i> {{ __('Transaction History') }}
             </a>
@@ -67,6 +69,32 @@
             </div>
 
 
+        </div>
+    </div>
+</div>
+
+<!-- ADD MONEY MODAL -->
+<div class="modal fade" id="addMoneyModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5>{{ __('Add Money to Ad Wallet') }}</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addMoneyForm">
+                    @csrf
+                    <div class="mb-3">
+                        <label>{{ __('Amount') }} (₹) <span class="text-danger">*</span></label>
+                        <input type="number" name="amount" id="amount" class="form-control" min="1" step="0.01" required>
+                    </div>
+                    <div class="alert alert-danger d-none" id="addMoneyError"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                <button class="btn btn-success" id="addMoneyBtn">{{ __('Proceed to Payment') }}</button>
+            </div>
         </div>
     </div>
 </div>
@@ -142,6 +170,7 @@
 @endsection
 
 @push('scripts')
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
 $(function () {
 
@@ -255,6 +284,89 @@ $(function () {
             $('#submitBtn').prop('disabled',false);
             $('#formError').removeClass('d-none')
                 .text(xhr.responseJSON.message);
+        });
+    });
+
+    // ADD MONEY TO WALLET
+    $('#addMoneyBtn').click(function(){
+        let amount = parseFloat($('#amount').val());
+        
+        if(!amount || amount <= 0){
+            $('#addMoneyError').removeClass('d-none').text('Please enter a valid amount');
+            return;
+        }
+
+        $('#addMoneyBtn').prop('disabled', true);
+        $('#addMoneyError').addClass('d-none');
+
+        // Create Razorpay Order
+        $.post("{{ route('shop.advertisement.wallet.create-order') }}", {
+            _token: "{{ csrf_token() }}",
+            amount: amount
+        })
+        .done(function(res){
+            // Store order details for later use
+            let orderId = res.order.id;
+            
+            let options = {
+                key: res.razorpay_key,
+                amount: res.order.amount,
+                currency: res.order.currency,
+                name: "{{ generaleSetting('setting')?->name ?? 'ZeroBuy' }}",
+                description: "Add Money to Ad Wallet",
+                order_id: orderId,
+                handler: function (response) {
+                    console.log('Razorpay Response:', response);
+                    
+                    // Check if all required fields are present
+                    if (!response.razorpay_order_id || !response.razorpay_signature) {
+                        console.error('Missing order_id or signature in response');
+                        $('#addMoneyError').removeClass('d-none')
+                            .text('Payment response incomplete. Please contact support.');
+                        $('#addMoneyBtn').prop('disabled', false);
+                        return;
+                    }
+                    
+                    // Verify Payment
+                    $.post("{{ route('shop.advertisement.wallet.verify-payment') }}", {
+                        _token: "{{ csrf_token() }}",
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_signature: response.razorpay_signature,
+                        amount: amount
+                    })
+                    .done(function(verifyRes){
+                        $('#addMoneyModal').modal('hide');
+                        Toast.fire({
+                            icon: 'success',
+                            title: verifyRes.message
+                        });
+                        setTimeout(() => location.reload(), 1200);
+                    })
+                    .fail(function(xhr){
+                        $('#addMoneyError').removeClass('d-none')
+                            .text(xhr.responseJSON?.message || 'Payment verification failed');
+                        $('#addMoneyBtn').prop('disabled', false);
+                    });
+                },
+                modal: {
+                    ondismiss: function() {
+                        $('#addMoneyBtn').prop('disabled', false);
+                    }
+                },
+                theme: {
+                    color: "#3399cc"
+                }
+            };
+
+            let rzp = new Razorpay(options);
+            rzp.open();
+            $('#addMoneyBtn').prop('disabled', false);
+        })
+        .fail(function(xhr){
+            $('#addMoneyError').removeClass('d-none')
+                .text(xhr.responseJSON?.message || 'Failed to create payment order');
+            $('#addMoneyBtn').prop('disabled', false);
         });
     });
 

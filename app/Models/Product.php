@@ -348,9 +348,7 @@ class Product extends Model
     public function scopeIsActive(Builder $builder)
     {
         return $builder->where('is_active', true)->where('is_approve', true)->whereHas('shop', function ($query) {
-            return $query->whereHas('user', function ($query) {
-                $query->where('is_active', 1);
-            });
+            $query->isActive();
         });
     }
 

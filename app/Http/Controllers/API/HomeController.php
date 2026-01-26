@@ -155,6 +155,7 @@ class HomeController extends Controller
         $justForYou = $justForYou->skip($skip)->take($perPage)->get();
 
         $shops = collect([]);
+        $sponsoredShops = collect([]);
 
         if ($generaleSetting?->shop_type != 'single') {
             $shops = ShopRepository::query()->isActive()
@@ -166,6 +167,13 @@ class HomeController extends Controller
                 ->whereHas('products', function ($query) {
                     return $query->isActive();
                 })->withCount('orders')->withAvg('reviews as average_rating', 'rating')->orderByDesc('average_rating')->orderByDesc('orders_count')->take(8)->get();
+            $sponsoredShops = $shops->filter(function ($shop) use ($today) {
+                return $shop->advertisements()
+                    ->active()
+                    ->where('ads_type', 'store')
+                    ->whereNotNull('shop_id')
+                    ->exists();
+            })->shuffle()->take(8);
         }
 
         // $popularProducts = ProductRepository::query()
@@ -193,6 +201,7 @@ class HomeController extends Controller
             'ads' => BannerResource::collection($ads),
             'categories' => CategoryResource::collection($categories),
             'business_categories' => BusinessCategoryResource::collection($businesscategories),
+            'sponsored_shops' => ShopResource::collection($sponsoredShops),
             'shops' => ShopResource::collection($shops),
             'ad_products' => ProductResource::collection($adProducts),
             'popular_products' => ProductResource::collection($popularProducts),
