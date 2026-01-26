@@ -16,6 +16,7 @@ use App\Models\AdvertisementSetting;
 use Carbon\Carbon;
 use DataTables;
 use DB;
+use Log;
 use Razorpay\Api\Api;
 
 class AdvertismentController extends Controller
@@ -376,12 +377,8 @@ class AdvertismentController extends Controller
                 DB::rollBack();
                 return response()->json([
                     'status' => true,
-                    'message' => '₹' . number_format($request->amount, 2) . ' added to your ad wallet successfully.'
+                    'message' => '₹' . number_format($request->amount, 2) . ' already added to your ad wallet successfully.'
                 ]);
-                // return response()->json([
-                //     'status' => false,
-                //     'message' => 'Payment already processed'
-                // ], 400);
             }
 
             // Get wallet
@@ -406,7 +403,7 @@ class AdvertismentController extends Controller
                 'is_commission' => 0,
                 'type' => 'credit',
                 'transaction_id' => $request->razorpay_payment_id,
-                'purpose' => 'recharge',
+                'purpose' => 'Recharge',
                 'note' => 'Razorpay Payment - Order: ' . $request->razorpay_order_id
             ]);
 
@@ -461,7 +458,7 @@ class AdvertismentController extends Controller
                         $transaction->is_commission = 0;
                         $transaction->type = 'credit';
                         $transaction->transaction_id = $raz_payment_id;
-                        $transaction->purpose = 'recharge';
+                        $transaction->purpose = 'Recharge';
                         $transaction->note = 'Wallet Recharge - Order: ' . $raz_order_id;
                         $transaction->save();
 
@@ -577,7 +574,7 @@ class AdvertismentController extends Controller
                             'is_commission' => 0,
                             'type' => 'credit',
                             'transaction_id' => $payment->id,
-                            'purpose' => 'recharge',
+                            'purpose' => 'Recharge',
                             'note' => 'Manual Processing - Order: ' . $orderId
                         ]);
 
