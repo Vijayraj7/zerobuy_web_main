@@ -28,10 +28,10 @@
                                 <label class="label">{{ __('Order Id') }}:</label>
                                 <span class="value">#{{ $order->prefix . $order->order_code }}</span>
                             </div>
-                            <div class="order-item">
+                            <!-- <div class="order-item">
                                 <label class="label">{{ __('Payment Status') }}:</label>
                                 <span class="value">{{ $order->payment_status }}</span>
-                            </div>
+                            </div> -->
                             <div class="order-item">
                                 <label class="label">{{ __('Payment Method') }}:</label>
                                 <span class="value">{{ $order->payment_method }}</span>
@@ -49,11 +49,10 @@
                                 <label class="label">{{ __('Order Date') }}:</label>
                                 <span class="value">{{ $order->created_at->format('M d, Y') }}</span>
                             </div>
-                            <div class="order-item">
+                            <!-- <div class="order-item">
                                 <label class="label">{{ __('Delivery Date') }}:</label>
-                                <span
-                                    class="value">{{ $order->delivery_date ? Carbon\Carbon::parse($order->delivery_date)->format('M d, Y') : '-' }}</span>
-                            </div>
+                                <span class="value">{{ $order->delivery_date ? Carbon\Carbon::parse($order->delivery_date)->format('M d, Y') : '-' }}</span>
+                            </div> -->
                         </div>
                     </div>
 
@@ -63,9 +62,9 @@
                                 <tr>
                                     <th>{{ __('SL') }}</th>
                                     <th>{{ __('Product') }}</th>
-                                    @if ($businessModel == 'multi')
+                                    <!-- @if ($businessModel == 'multi')
                                         <th>{{ __('Shop') }}</th>
-                                    @endif
+                                    @endif -->
                                     <th>{{ __('Quantity') }}</th>
                                     <th>{{ __('Size') }}</th>
                                     <th>{{ __('Color') }}</th>
@@ -84,9 +83,9 @@
                                                 <span>{{ $product->name }}</span>
                                             </div>
                                         </td>
-                                        @if ($businessModel == 'multi')
+                                        <!-- @if ($businessModel == 'multi')
                                             <td>{{ $product->shop?->name }}</td>
-                                        @endif
+                                        @endif -->
                                         <td>{{ $product->pivot->quantity }}</td>
                                         <td>{{ $product->pivot->size ?? '-' }}</td>
                                         <td>{{ $product->pivot->color ?? '-' }}</td>
@@ -126,10 +125,10 @@
                             <div>{{ showCurrency($order->delivery_charge) }}</div>
                         </div>
 
-                        <div class="d-flex align-items-center justify-content-between gap-2">
+                        <!-- <div class="d-flex align-items-center justify-content-between gap-2">
                             <div>{{ __('VAT & Tax') }}</div>
                             <div>{{ showCurrency($order->tax_amount) }}</div>
-                        </div>
+                        </div> -->
 
                         <div class="d-flex align-items-center justify-content-between gap-2 border-top pt-1 mt-1">
                             <div class="fw-bold">{{ __('Grand Total') }}</div>
@@ -184,7 +183,7 @@
                     </div>
                 </div>
 
-                <div class="border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 p-3">
+                <!-- <div class="border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 p-3">
                     <div class="text-color">{{ __('Payment Status') }}</div>
                     <div class="d-flex align-items-center gap-1">
                         <span>{{ $order->payment_status }}</span>
@@ -197,9 +196,9 @@
                             </label>
                         @endhasPermission
                     </div>
-                </div>
+                </div> -->
 
-                @hasPermission('admin.rider.assign.order')
+                <!-- @hasPermission('admin.rider.assign.order')
                     @if ($order->order_status->value != 'Pending')
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 p-3">
                             <div class="fw-medium text-color">{{ __('Assign Rider') }}</div>
@@ -219,7 +218,7 @@
                             </div>
                         </div>
                     @endif
-                @endhasPermission
+                @endhasPermission -->
             </div>
 
             <!--##### Shipping Address #####-->
@@ -238,11 +237,11 @@
                     <span class="text-color">{{ __('Address Type') }}: </span>
                     <span class="fw-medium">{{ $order->address?->address_type }}</span>
                 </div>
-                <div class="border-bottom d-flex align-items-center justify-content-between gap-2 px-3 py-12">
+                <!-- <div class="border-bottom d-flex align-items-center justify-content-between gap-2 px-3 py-12">
                     <span class="text-color">{{ __('Area') }}: </span>
                     <span class="fw-medium">{{ $order->address?->area }}</span>
-                </div>
-                <div class="d-flex gap-2 border-bottom align-items-center justify-content-between flex-wrap px-3 py-12">
+                </div> -->
+                <!-- <div class="d-flex gap-2 border-bottom align-items-center justify-content-between flex-wrap px-3 py-12">
                     <div>
                         <span class="text-color">{{ __('Road No') }}: </span>
                         <span class="fw-medium">{{ $order->address?->road_no }}</span>,
@@ -255,7 +254,7 @@
                         <span class="text-color">{{ __('House No') }}: </span>
                         <span class="fw-medium">{{ $order->address?->house_no }}</span>
                     </div>
-                </div>
+                </div> -->
 
                 <div class="border-bottom d-flex align-items-center justify-content-between gap-2 px-3 py-12">
                     <span class="text-color">{{ __('Post Code') }}: </span>
