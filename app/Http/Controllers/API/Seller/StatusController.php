@@ -93,4 +93,24 @@ class StatusController extends Controller
             'status_id' => $status->id,
         ]);
     }
+
+    /**
+     * Delete a status for the authenticated shop.
+     */
+    public function destroy($statusId)
+    {
+        $shop = generaleSetting('shop');
+
+        $status = ProductStatus::where('id', $statusId)
+            ->where('shop_id', $shop->id)
+            ->first();
+
+        if (! $status) {
+            return $this->json('Status not found', [], 404);
+        }
+
+        $status->delete();
+
+        return $this->json('Status deleted successfully');
+    }
 }
