@@ -15,6 +15,7 @@ use App\Http\Controllers\API\Seller\UserController;
 use App\Http\Controllers\API\Seller\WalletController;
 use App\Http\Controllers\Seller\SellerChatController;
 use App\Http\Controllers\API\Seller\SubscriptionController;
+use App\Http\Controllers\API\Seller\StatusController as SellerStatusController;
 use App\Http\Controllers\Shop\ColorController;
 use Illuminate\Support\Facades\Route;
 
@@ -153,6 +154,9 @@ Route::prefix('/seller')->group(function () {
             Route::post('/send-message', 'sendMessageAdmin');
             Route::get('/unread-messages', 'unreadMessages');
         });
+
+        // seller product statuses
+        Route::get('/statuses', [SellerStatusController::class, 'index']);
 
         // logout
         Route::get('/logout', [LoginController::class, 'logout']);
