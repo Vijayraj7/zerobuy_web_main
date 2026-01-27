@@ -35,6 +35,7 @@ use App\Http\Controllers\API\SupportTicketMessageController;
 use App\Http\Controllers\API\ChildCategoryController;
 use App\Http\Controllers\API\LocationController;
 use App\Http\Controllers\API\VerifyManageApiController;
+use App\Http\Controllers\API\Seller\StatusController as SellerStatusController;
 
 /*
 |--------------------------------------------------------------------------
@@ -306,6 +307,13 @@ Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
 
         return response()->noContent();
     });
+});
+
+// seller status routes (ensure available in api context)
+Route::middleware(['auth:sanctum', 'role:shop'])->prefix('seller')->group(function () {
+    Route::get('/statuses', [SellerStatusController::class, 'index']);
+    Route::post('/statuses', [SellerStatusController::class, 'store']);
+    Route::delete('/statuses/{statusId}', [SellerStatusController::class, 'destroy']);
 });
 
 
