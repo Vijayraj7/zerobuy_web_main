@@ -157,6 +157,7 @@ Route::prefix('/seller')->group(function () {
 
         // seller product statuses
         Route::get('/statuses', [SellerStatusController::class, 'index']);
+        Route::post('/statuses', [SellerStatusController::class, 'store']);
 
         // logout
         Route::get('/logout', [LoginController::class, 'logout']);
