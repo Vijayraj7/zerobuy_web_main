@@ -36,6 +36,10 @@
                                 <label class="label">{{ __('Payment Method') }}:</label>
                                 <span class="value">{{ $order->payment_method }}</span>
                             </div>
+                            <div class="order-item">
+                                <label class="label">{{ __('GST') }}:</label>
+                                <span class="value">{{ $order->gst ?? '_' }}</span>
+                            </div> 
                         </div>
 
                         <div class="item-divider"></div>
@@ -47,7 +51,7 @@
                             </div>
                             <div class="order-item">
                                 <label class="label">{{ __('Order Date') }}:</label>
-                                <span class="value">{{ $order->created_at->format('M d, Y') }}</span>
+                                <span class="value">{{ $order->created_at->format('M d, Y | h:i A') }}</span>
                             </div>
                             <!-- <div class="order-item">
                                 <label class="label">{{ __('Delivery Date') }}:</label>
@@ -234,6 +238,25 @@
                     <span class="fw-medium">{{ $order->address?->phone }}</span>
                 </div>
                 <div class="border-bottom d-flex align-items-center justify-content-between gap-2 px-3 py-12">
+                    <span class="text-color">{{ __('Address Line') }} 1: </span>
+                    <span class="fw-medium">{{ $order->address?->address_line }}</span>
+                </div>
+                <div class="d-flex align-items-center justify-content-between gap-2 px-3 py-12">
+                    <span class="text-color">{{ __('Address Line') }} 2: </span>
+                    <span class="fw-medium">{{ $order->address?->address_line2 }}</span>
+                </div>
+                <div class="border-bottom d-flex align-items-center justify-content-between gap-2 px-3 py-12">
+                    <span class="text-color">{{ __('State & District') }}:</span>
+                    <span class="fw-medium">
+                        {{ $order->address?->stateData?->name }},
+                        {{ $order->address?->districtData?->name }}
+                    </span>
+                </div>
+                <div class="border-bottom d-flex align-items-center justify-content-between gap-2 px-3 py-12">
+                    <span class="text-color">{{ __('PIN Code') }}: </span>
+                    <span class="fw-medium">{{ $order->address?->post_code }}</span>
+                </div> 
+                <div class="border-bottom d-flex align-items-center justify-content-between gap-2 px-3 py-12">
                     <span class="text-color">{{ __('Address Type') }}: </span>
                     <span class="fw-medium">{{ $order->address?->address_type }}</span>
                 </div>
@@ -254,20 +277,7 @@
                         <span class="text-color">{{ __('House No') }}: </span>
                         <span class="fw-medium">{{ $order->address?->house_no }}</span>
                     </div>
-                </div> -->
-
-                <div class="border-bottom d-flex align-items-center justify-content-between gap-2 px-3 py-12">
-                    <span class="text-color">{{ __('Post Code') }}: </span>
-                    <span class="fw-medium">{{ $order->address?->post_code }}</span>
-                </div>
-                <div class="border-bottom d-flex align-items-center justify-content-between gap-2 px-3 py-12">
-                    <span class="text-color">{{ __('Address Line') }}: </span>
-                    <span class="fw-medium">{{ $order->address?->address_line }}</span>
-                </div>
-                <div class="d-flex align-items-center justify-content-between gap-2 px-3 py-12">
-                    <span class="text-color">{{ __('Address Line') }} 2: </span>
-                    <span class="fw-medium">{{ $order->address?->address_line2 }}</span>
-                </div>
+                </div> --> 
             </div>
 
         </div>

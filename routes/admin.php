@@ -310,7 +310,9 @@ Route::name('admin.')->group(function () {
             Route::get('/subscription-plan/{subscriptionPlan}/toggle', 'statusToggle')->name('subscription-plan.subscription.toggle');
 
             // SUBSCRIPTION LIST
+            Route::get('/subscription-all-list', 'subscriptionAllList')->name('subscription-plan.subscription.all-list');
             Route::get('/subscription-list', 'subscriptionList')->name('subscription-plan.subscription.list');
+            Route::get('/subscription-history/{shop}', 'subscriptionHistory')->name('subscription-plan.subscription.history');
 
             // SUBSCRIPTION STATUS
             Route::post('/subscription-status/{shopSubscription}', 'subscriptionStatus')->name('subscription-plan.subscription.status');

@@ -42,15 +42,18 @@ class OrderController extends Controller
      */
     public function show($orderId)
     {
-        $order = Order::whereId($orderId)->firstOrFail();
+        // $order = Order::whereId($orderId)->firstOrFail(); 
+
+        $order = Order::whereId($orderId)->firstOrFail()->load('address.stateData', 'address.districtData');
+
 
         $orderStatus = OrderStatus::cases();
 
         $riders = Driver::whereHas('user', function ($query) {
-            return $query->where('is_active', true);
+            $query->where('is_active', true);
         })->get();
 
-        return view('shop.order.show', compact('order', 'orderStatus', 'riders'));
+        return view('admin.order.show', compact('order', 'orderStatus', 'riders'));
     }
 
     /**

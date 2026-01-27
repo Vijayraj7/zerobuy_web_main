@@ -27,4 +27,16 @@ class OrderAddress extends Model
         'state_id',
         'district_id',
     ];
+
+    // OrderAddress.php
+    public function stateData()
+    {
+        return $this->belongsTo(State::class, 'state_id');
+    }
+
+    public function districtData()
+    {
+        return $this->belongsTo(District::class, 'district_id');
+    }
+
 }

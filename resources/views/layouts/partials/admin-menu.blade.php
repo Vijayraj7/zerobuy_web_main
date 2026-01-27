@@ -340,7 +340,7 @@
 
 <!------------------------------ Subscription Management ------------------------------>
 @if ($businessModel == 'multi')
-    @hasPermission(['admin.subscription-plan.index', 'admin.subscription-plan.create', 'admin.subscription-plan.subscription.list','admin.subscription-plan.offline.create','admin.subscription-plan.shopmanual.create'])
+    @hasPermission(['admin.subscription-plan.index', 'admin.subscription-plan.create', 'admin.subscription-plan.subscription.list','admin.subscription-plan.offline.create','admin.subscription-plan.shopmanual.create','admin.subscription-plan.subscription.all-list'])
         <li>
             <a class="menu {{ request()->routeIs('admin.subscription-plan.*') ? 'active' : '' }}"
                 data-bs-toggle="collapse" href="#subscriptionMenu">
@@ -354,10 +354,16 @@
             <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.subscription-plan.*') ? 'show' : '' }}"
                 id="subscriptionMenu">
                 <div class="listBar">
+                    @hasPermission('admin.subscription-plan.subscription.all-list')
+                        <a href="{{ route('admin.subscription-plan.subscription.all-list') }}"
+                            class="subMenu hasCount {{ request()->routeIs('admin.subscription-plan.subscription.all-list') ? 'active' : '' }}">
+                            {{ __('Subscription Lists') }}
+                        </a>
+                    @endhasPermission
                     @hasPermission('admin.subscription-plan.subscription.list')
                         <a href="{{ route('admin.subscription-plan.subscription.list') }}"
                             class="subMenu hasCount {{ request()->routeIs('admin.subscription-plan.subscription.list') ? 'active' : '' }}">
-                            {{ __('All Subscription Store') }}
+                            {{ __('Subscription History') }}
                         </a>
                     @endhasPermission
                     @hasPermission('admin.subscription-plan.index')

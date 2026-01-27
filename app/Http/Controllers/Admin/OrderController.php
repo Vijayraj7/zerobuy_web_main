@@ -62,7 +62,7 @@ class OrderController extends Controller
                ->addColumn('total_amount', function ($order) {
                     return showCurrency($order->payable_amount)
                         . '<br><span class="badge bg-primary">'
-                        . $order->payment_status->value
+                        // . $order->payment_status->value
                         . '</span>';
                 })
                 ->addColumn('payment_method', function ($order) {
@@ -130,16 +130,30 @@ class OrderController extends Controller
     /**
      * Display the order details.
      */
+
     public function show(Order $order)
     {
+        $order->load('address.stateData', 'address.districtData');
+        
         $orderStatus = OrderStatus::cases();
 
         $riders = Driver::whereHas('user', function ($query) {
-            return $query->where('is_active', true);
+            $query->where('is_active', true);
         })->get();
 
         return view('admin.order.show', compact('order', 'orderStatus', 'riders'));
     }
+
+    // public function show(Order $order)
+    // {
+    //     $orderStatus = OrderStatus::cases();
+
+    //     $riders = Driver::whereHas('user', function ($query) {
+    //         return $query->where('is_active', true);
+    //     })->get();
+
+    //     return view('admin.order.show', compact('order', 'orderStatus', 'riders'));
+    // }
 
     /**
      * Update the order status.
