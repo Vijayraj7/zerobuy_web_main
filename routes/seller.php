@@ -17,6 +17,8 @@ use App\Http\Controllers\Seller\SellerChatController;
 use App\Http\Controllers\API\Seller\SubscriptionController;
 use App\Http\Controllers\Shop\ColorController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\Seller\StatusController as SellerStatusController;
+use App\Http\Controllers\API\Seller\AnalyticsController as SellerAnalyticsController;
 
 // ==========Route for seller==========
 Route::prefix('/seller')->group(function () {
@@ -153,6 +155,17 @@ Route::prefix('/seller')->group(function () {
             Route::post('/send-message', 'sendMessageAdmin');
             Route::get('/unread-messages', 'unreadMessages');
         });
+
+        // seller product statuses
+        Route::get('/statuses', [SellerStatusController::class, 'index']);
+        Route::post('/statuses', [SellerStatusController::class, 'store']);
+        Route::delete('/statuses/{statusId}', [SellerStatusController::class, 'destroy']);
+
+        // seller analytics
+        Route::get('/analytics/summary', [SellerAnalyticsController::class, 'summary']);
+        Route::get('/analytics/top-products', [SellerAnalyticsController::class, 'topProducts']);
+        Route::get('/analytics/top-customers', [SellerAnalyticsController::class, 'topCustomers']);
+
 
         // logout
         Route::get('/logout', [LoginController::class, 'logout']);
