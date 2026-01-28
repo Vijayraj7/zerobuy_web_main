@@ -39,6 +39,10 @@ class WalletController extends Controller
             return $query->where(function ($query) {
                 $query->whereMonth('created_at', Carbon::now()->month);
             });
+        })->when($filterType == 'six_months', function ($query) {
+            return $query->where(function ($query) {
+                return $query->whereBetween('created_at', [Carbon::now()->subMonths(6), Carbon::now()]);
+            });
         })->when($filterType == 'this_year', function ($query) {
             return $query->where(function ($query) {
                 $query->whereYear('created_at', Carbon::now()->year);
@@ -55,6 +59,8 @@ class WalletController extends Controller
             return $query->where(function ($query) {
                 $query->whereYear('created_at', Carbon::now()->subYear()->year);
             });
+        })->when($filterType == 'lifetime', function ($query) {
+            return $query;
         });
 
         $totalAmount = $orders->sum('total_amount');
@@ -130,6 +136,10 @@ class WalletController extends Controller
             return $query->where(function ($query) {
                 $query->whereMonth('created_at', Carbon::now()->month);
             });
+        })->when($filterType == 'six_months', function ($query) {
+            return $query->where(function ($query) {
+                return $query->whereBetween('created_at', [Carbon::now()->subMonths(6), Carbon::now()]);
+            });
         })->when($filterType == 'this_year', function ($query) {
             return $query->where(function ($query) {
                 $query->whereYear('created_at', Carbon::now()->year);
@@ -146,6 +156,8 @@ class WalletController extends Controller
             return $query->where(function ($query) {
                 $query->whereYear('created_at', Carbon::now()->subYear()->year);
             });
+        })->when($filterType == 'lifetime', function ($query) {
+            return $query;
         })->orderBy('created_at', 'desc');
 
         $total = $withdraws->count();
