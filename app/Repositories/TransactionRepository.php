@@ -22,10 +22,12 @@ class TransactionRepository extends Repository
     /**
      * transaction store
      */
-    public static function storeByRequest(Wallet $wallet, $amount, $type, $hasAdminUpdate, $isCommission, $purpose = null, $description = null): Transaction
+    public static function storeByRequest(Wallet $wallet, $amount, $type, $hasAdminUpdate, $isCommission, $purpose = null, $description = null, $orderId = null, $returnId = null): Transaction
     {
         $transaction = self::create([
             'wallet_id' => $wallet->id,
+            'order_id' => $orderId,
+            'return_id' => $returnId,
             'transaction_id' => str_pad($wallet->transactions()->count() + 1, 6, '0', STR_PAD_LEFT),
             'amount' => $amount,
             'type' => $type,
@@ -62,10 +64,12 @@ class TransactionRepository extends Repository
         return true;
     }
 
-    public static function storeByRefundRequest(Wallet $wallet, $amount, $type, $hasAdminUpdate, $isCommission, $purpose = null, $description = null): Transaction
+    public static function storeByRefundRequest(Wallet $wallet, $amount, $type, $hasAdminUpdate, $isCommission, $purpose = null, $description = null, $orderId = null, $returnId = null): Transaction
     {
         $transaction = self::create([
             'wallet_id' => $wallet->id,
+            'order_id' => $orderId,
+            'return_id' => $returnId,
             'transaction_id' => str_pad($wallet->transactions()->count() + 1, 6, '0', STR_PAD_LEFT),
             'amount' => -$amount,
             'type' => $type,
