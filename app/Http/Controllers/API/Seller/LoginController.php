@@ -231,7 +231,7 @@ class LoginController extends Controller
         }
 
         $user->update([
-            'password' => $request->password,
+            'password' => Hash::make($request->password),
         ]);
 
         $verifyOtp->delete();
