@@ -118,6 +118,7 @@ Route::prefix('/seller')->group(function () {
             Route::get('/wallet', 'index');
             Route::get('/wallet/history', 'history');
             Route::post('/wallet/withdraw', 'withdraw');
+            Route::post('/wallet/transactions', 'transactions');
         });
 
 
