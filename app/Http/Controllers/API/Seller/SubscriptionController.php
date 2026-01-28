@@ -28,10 +28,10 @@ class SubscriptionController extends Controller
             return PaymentGateway::where('is_active', true)->get();
         });
 
-        $currentSubscription = ShopSubscriptionRepository::query()
-            ->where('shop_id', $shop->id)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
-            ->first();
+        // $currentSubscription = ShopSubscriptionRepository::query()
+        //     ->where('shop_id', $shop->id)
+        //     ->where('status', SubscriptionStatus::ACTIVE->value)
+        //     ->first();
 
         // if ($currentSubscription) {
 
@@ -51,7 +51,8 @@ class SubscriptionController extends Controller
         // }
 
         return $this->json('subscription lists', [
-            'current_subscription' => $currentSubscription,
+            // 'current_subscription' => $currentSubscription,
+            'current_subscription' => $shop->currentSubscription,
             'subscription' => $subscriptionPlans,
             'payments' => $paymentGateways
         ]);
