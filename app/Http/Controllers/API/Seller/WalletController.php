@@ -93,6 +93,7 @@ class WalletController extends Controller
             'profit' => number_format($profit, 2, '.', ','),
             'lifetime_sales' => number_format($lifetimeSales, 2, '.', ','),
             'withdrawable_amount' => number_format($withdrawableAmount > 0 ? $withdrawableAmount : 0, 2, '.', ','),
+            'pending_withdraws' => number_format($pendingWithdraws, 2, '.', ','),
             'growth_percentage' => '+2.5%',
             'pending_withdraw' => $latestPendingWithdraw ? WithdrawResource::make($latestPendingWithdraw) : null,
             'min_withdraw_amount' => (float) $minWithdrawAmount,
@@ -198,7 +199,7 @@ class WalletController extends Controller
         $shop = generaleSetting('shop');
 
         // admin notification message
-        $message = 'Withdraw Request from '.$shop->name;
+        $message = 'Withdraw Request from ' . $shop->name;
         try {
             AdminProductRequestEvent::dispatch($message);
         } catch (\Throwable $th) {
@@ -207,8 +208,8 @@ class WalletController extends Controller
 
         $data = (object) [
             'title' => $message,
-            'content' => 'New Withdraw Request created from '.$shop->name.' shop.',
-            'url' => '/admin/withdraw/'.$withdraw->id.'/show',
+            'content' => 'New Withdraw Request created from ' . $shop->name . ' shop.',
+            'url' => '/admin/withdraw/' . $withdraw->id . '/show',
             'icon' => 'bi-wallet2',
             'type' => 'success',
             'withdraw_id' => $withdraw->id,
