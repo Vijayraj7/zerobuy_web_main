@@ -93,6 +93,7 @@ class WalletController extends Controller
             'profit' => number_format($profit, 2, '.', ','),
             'lifetime_sales' => number_format($lifetimeSales, 2, '.', ','),
             'withdrawable_amount' => number_format($withdrawableAmount > 0 ? $withdrawableAmount : 0, 2, '.', ','),
+            'amount_in_wallet' => number_format(auth()->user()->wallet?->balance ?? 0, 2, '.', ','),
             'pending_withdraws' => number_format($pendingWithdraws, 2, '.', ','),
             'growth_percentage' => '+2.5%',
             'pending_withdraw' => $latestPendingWithdraw ? WithdrawResource::make($latestPendingWithdraw) : null,
