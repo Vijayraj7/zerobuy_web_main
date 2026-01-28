@@ -37,6 +37,7 @@ class ReturnOrderController extends Controller
             'returnOrders' => ReturnOrderResource::collection($returnOrders),
         ]);
     }
+
     public function show(ReturnOrder $returnOrder)
     {
         $customer = auth()->user()->customer;
@@ -83,6 +84,31 @@ class ReturnOrderController extends Controller
 
         return $this->json('Order return successfully done', [
             'returnOrder' => ReturnOrderResource::make($returnOrder),
+        ]);
+    }
+
+    public function cancel(ReturnOrder $returnOrder)
+    {
+        $customer = auth()->user()->customer;
+
+        $returnOrder = $customer->returnOrders()->where('id', $returnOrder->id)->first();
+
+        if (!$returnOrder) {
+            return $this->json('Return order not found', [], 404);
+        }
+
+        if ($returnOrder->status === 'cancelled') {
+            return $this->json('Return order is already cancelled', [], 422);
+        }
+
+        if (in_array($returnOrder->status, ['completed', 'rejected'])) {
+            return $this->json('Cannot cancel this return order', [], 422);
+        }
+
+        $returnOrder->update(['status' => 'cancelled']);
+
+        return $this->json('Return order cancelled successfully', [
+            'returnOrder' => ReturnOrderDetailsResource::make($returnOrder),
         ]);
     }
 }

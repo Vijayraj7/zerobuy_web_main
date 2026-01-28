@@ -233,6 +233,7 @@ Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
         Route::get('/return-orders', 'index');
         Route::get('/return-order-details/{returnOrder}', 'show');
         Route::post('/return-order', 'store');
+        Route::post('/return-order/{returnOrder}/cancel', 'cancel');
     });
 
     // coupon route

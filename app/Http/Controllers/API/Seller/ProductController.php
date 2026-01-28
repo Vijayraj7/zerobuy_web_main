@@ -83,7 +83,10 @@ class ProductController extends Controller
         $colors = $shop?->colors()->isActive()->get();
         // $categories = $rshop?->categories()->active()->get();
 
-        $categories = Category::active()->get();
+        // $categories = Category::active()->get();
+        $categories = $shop?->businessCategories()->with(['categories' => function($query) {
+            $query->has('subCategories');
+        }])->get()->pluck('categories')->flatten();
 
         $units = $rshop?->units()->isActive()->get();
         $sizes = $shop?->sizes()->isActive()->get();

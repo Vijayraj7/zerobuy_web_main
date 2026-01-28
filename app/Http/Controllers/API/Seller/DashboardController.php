@@ -102,7 +102,7 @@ class DashboardController extends Controller
         $pendingOrder = (clone $orderObject)->where('order_status', OrderStatus::PENDING->value)->count();
 
         $toPickupOrders = (clone $orderObject)->where(function ($query) {
-            $query->whereHas('driverOrder')->where('order_status', OrderStatus::CONFIRM->value)->orWhere('order_status', OrderStatus::PENDING->value);
+            $query->where('order_status', OrderStatus::CONFIRM->value);
         })->count();
 
         $toDeliveryOrders = (clone $orderObject)->where('order_status', OrderStatus::SHIPPED->value)->count();
@@ -209,11 +209,7 @@ class DashboardController extends Controller
         $currentSubscription = null;
 
         if ($generalSettings?->business_based_on == 'subscription') {
-            $currentSubscription = ShopSubscriptionRepository::query()
-                ->with('plan')
-                ->where('shop_id', $shop->id)
-                ->where('status', SubscriptionStatus::ACTIVE->value)
-                ->first();
+            $currentSubscription = $shop->currentSubscription;
         }
 
         return $this->json('Seller dashboard summary', [
