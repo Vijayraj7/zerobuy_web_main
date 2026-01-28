@@ -53,7 +53,7 @@ class OrderController extends Controller
             $query->where('is_active', true);
         })->get();
 
-        return view('admin.order.show', compact('order', 'orderStatus', 'riders'));
+        return view('shop.order.show', compact('order', 'orderStatus', 'riders'));
     }
 
     /**
