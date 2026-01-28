@@ -175,7 +175,7 @@
 <!------------------------------ Order Management ------------------------------>
 @hasPermission('admin.order.index')
     <li>
-        <a class="menu {{ $request->routeIs('admin.order.*') ? 'active' : '' }}" data-bs-toggle="collapse"
+        <a class="menu {{ $request->routeIs('admin.order.*','admin.returnOrder.*') ? 'active' : '' }}" data-bs-toggle="collapse"
             href="#OrderManagementMenu">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/orders.svg') }}" alt="icon"
@@ -184,15 +184,15 @@
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
-        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.order.*') ? 'show' : '' }}" id="OrderManagementMenu">
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.order.*','admin.returnOrder.*') ? 'show' : '' }}" id="OrderManagementMenu">
             <div class="listBar">
                 @hasPermission('admin.order.index')
                     <a href="{{ route('admin.order.index') }}" class="subMenu hasCount {{ request()->routeIs('admin.order.index') ? 'active' : '' }}">
                         {{ __('All Orders') }}
                     </a>
                 @endhasPermission
-                @hasPermission('admin.order.create')
-                    <a href="#" class="subMenu hasCount {{ request()->routeIs('admin.order.index') ? 'active' : '' }}">
+                @hasPermission('admin.returnOrder.index')
+                    <a href="{{ route('admin.returnOrder.index') }}" class="subMenu hasCount {{ request()->routeIs('admin.returnOrder.index') ? 'active' : '' }}">
                         {{ __('Return Orders') }}
                     </a>
                 @endhasPermission
@@ -543,8 +543,7 @@
         <span class="position-relative">
             <img class="menu-icon" src="{{ asset('assets/icons-admin/message.svg') }}" alt="icon" loading="lazy" />
             {{ __('Messages') }}
-            <span id="unread-message-badge" class="bg-success text-white ms-2 position-absolute d-none"
-                style="top: 0; transform: translateY(-50%); left: 5px; height: 16px; width: 16px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center;">
+            <span id="unread-message-badge" class="bg-success text-white ms-2 position-absolute d-none" style="top: 0; transform: translateY(-50%); left: 5px; height: 16px; width: 16px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center;">
                 0
             </span>
         </span>
@@ -554,7 +553,7 @@
 
 
 <!------------------------------ Status ------------------------------>
-@hasPermission('admin.productStatus.status')
+<!-- @hasPermission('admin.productStatus.status')
     <li>
         <a href="{{ route('admin.productStatus.status') }}"
             class="menu {{ request()->routeIs('admin.productStatus.*') ? 'active' : '' }}">
@@ -564,6 +563,34 @@
                 {{ __('Status') }}
             </span>
         </a>
+    </li>
+@endhasPermission -->
+
+@hasPermission(['admin.productStatus.status'])
+    <li>
+        <a class="menu {{ request()->routeIs('admin.productStatus.*') ? 'active' : '' }}" data-bs-toggle="collapse" href="#StatusMenu">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/clock.svg') }}" alt="icon" loading="lazy" />
+                {{ __('Status') }}
+            </span>
+            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
+        </a>
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.productStatus.*') ? 'show' : '' }}" id="StatusMenu">
+            <div class="listBar">
+                @hasPermission('admin.productStatus.status')
+                    <a href="{{ route('admin.productStatus.status') }}"
+                        class="subMenu hasCount {{ request()->routeIs('admin.productStatus.*') ? 'active' : '' }}">
+                        {{ __('My Status') }}
+                    </a>
+                @endhasPermission 
+                @hasPermission('admin.productStatus.status')
+                    <a href="#"
+                        class="subMenu hasCount {{ request()->routeIs('admin.productStatus.*') ? 'active' : '' }}">
+                        {{ __('All Status') }}
+                    </a>
+                @endhasPermission 
+            </div>
+        </div>
     </li>
 @endhasPermission
 <!------------------------------ End Status ------------------------------>

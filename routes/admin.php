@@ -205,6 +205,16 @@ Route::name('admin.')->group(function () {
             Route::get('/orders/{order}/payment-status-toggle', 'paymentStatusToggle')->name('order.payment.status.toggle');
         });
 
+        // Return Orders
+        Route::controller(ReturnOrderController::class)->group(function () { 
+            Route::get('/return-orders', 'index')->name('returnOrder.index'); 
+            Route::get('/return-order/{returnOrder}/show', 'show')->name('returnOrder.show'); 
+            Route::post('/return-order/{returnOrder}/payment-status', 'paymentStatus')->name('returnOrder.payment.status'); 
+            Route::post('/return-order/{returnOrder}/reject', 'returnReject')->name('returnOrder.reject'); 
+            Route::post('/return-order/{returnOrder}/status-change', 'statusChange')->name('returnOrder.status.change');
+
+        });
+
         // Business Categories
         Route::controller(BusinessCategoryController::class)->group(function () {
             Route::get('/business-category', 'index')->name('business-category.index');
@@ -264,26 +274,7 @@ Route::name('admin.')->group(function () {
         //     Route::post('/menu-update', 'menuUpdate')->name('category.menu.update');
         //     Route::delete('/{categoryAttribute}/destroy', 'destroy')->name('categoryAttribute.destroy');
         //      Route::get('/category-attribute/{category}/add', 'getCategoryAttribute')->name('getCategoryAttribute');
-        // });
-
-
-        // Return Orders
-        Route::controller(ReturnOrderController::class)->group(function () {
-
-            // LIST
-            Route::get('/return-orders', 'index')->name('returnOrder.index');
-
-            // SHOW
-            Route::get('/return-order/{returnOrder}/show', 'show')->name('returnOrder.show');
-
-            // PAYMENT STATUS
-            Route::post('/return-order/{returnOrder}/payment-status', 'paymentStatus')->name('returnOrder.payment.status');
-
-            // REJECT RETURN
-            Route::post('/return-order/{returnOrder}/reject', 'returnReject')->name('returnOrder.reject');
-        });
-
-
+        // }); 
 
         // Subscription Plans
         Route::controller(SubscriptionPlanController::class)->group(function () {
