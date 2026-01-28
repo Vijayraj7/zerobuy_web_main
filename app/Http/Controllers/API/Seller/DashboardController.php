@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\WithdrawResource;
 use App\Repositories\ShopSubscriptionRepository;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
@@ -37,7 +38,7 @@ class DashboardController extends Controller
             $query->where('status', 'pending');
         })->sum('amount');
 
-        $walletBalance = auth()->user()->wallet->balance - $pendingWithdraw;
+        $walletBalance = Auth::user()->wallet->balance - $pendingWithdraw;
         $walletBalance = $walletBalance > 0 ? $walletBalance : 0;
 
         $latestPendingWithdraw = $shop->withdraws()->where(function ($query) {
@@ -110,7 +111,7 @@ class DashboardController extends Controller
             $query->where('status', 'pending');
         })->sum('amount');
 
-        $walletBalance = auth()->user()->wallet->balance - $pendingWithdraw;
+        $walletBalance = Auth::user()->wallet->balance - $pendingWithdraw;
         $walletBalance = $walletBalance > 0 ? $walletBalance : 0;
 
         $latestPendingWithdraw = $shop->withdraws()->where(function ($query) {
