@@ -83,8 +83,8 @@ class LoginController extends Controller
 
         $data = (object) [
             'title' => $message,
-            'content' => 'New Shop created for review. shop name: ' . $shop->name,
-            'url' => '/admin/shops/' . $shop->id,
+            'content' => 'New Shop created for review. shop name: '.$shop->name,
+            'url' => '/admin/shops/'.$shop->id,
             'icon' => 'bi-shop',
             'type' => 'success',
         ];
@@ -185,7 +185,7 @@ class LoginController extends Controller
         $type = $request->forgot_password ? 'Forgot Password' : 'Registration';
         $otp = $verificationCode->otp;
 
-        $message = 'Hello Your Seller ' . $type . ' OTP is ' . $otp;
+        $message = 'Hello Your Seller '.$type.' OTP is '.$otp;
 
         try {
             SendOTPMail::dispatch($request->email, $message, $otp);
