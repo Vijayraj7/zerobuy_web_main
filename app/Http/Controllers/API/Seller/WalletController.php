@@ -43,6 +43,23 @@ class WalletController extends Controller
             return $query->where(function ($query) {
                 return $query->whereBetween('created_at', [Carbon::now()->subMonths(6), Carbon::now()]);
             });
+        })->when($filterType == 'custom', function ($query) use ($request) {
+            $startDate = $request->start_date ? Carbon::parse($request->start_date)->startOfDay() : null;
+            $endDate = $request->end_date ? Carbon::parse($request->end_date)->endOfDay() : null;
+
+            if ($startDate && $endDate) {
+                return $query->whereBetween('created_at', [$startDate, $endDate]);
+            }
+
+            if ($startDate) {
+                return $query->whereDate('created_at', '>=', $startDate);
+            }
+
+            if ($endDate) {
+                return $query->whereDate('created_at', '<=', $endDate);
+            }
+
+            return $query;
         })->when($filterType == 'this_year', function ($query) {
             return $query->where(function ($query) {
                 $query->whereYear('created_at', Carbon::now()->year);
@@ -140,6 +157,23 @@ class WalletController extends Controller
             return $query->where(function ($query) {
                 return $query->whereBetween('created_at', [Carbon::now()->subMonths(6), Carbon::now()]);
             });
+        })->when($filterType == 'custom', function ($query) use ($request) {
+            $startDate = $request->start_date ? Carbon::parse($request->start_date)->startOfDay() : null;
+            $endDate = $request->end_date ? Carbon::parse($request->end_date)->endOfDay() : null;
+
+            if ($startDate && $endDate) {
+                return $query->whereBetween('created_at', [$startDate, $endDate]);
+            }
+
+            if ($startDate) {
+                return $query->whereDate('created_at', '>=', $startDate);
+            }
+
+            if ($endDate) {
+                return $query->whereDate('created_at', '<=', $endDate);
+            }
+
+            return $query;
         })->when($filterType == 'this_year', function ($query) {
             return $query->where(function ($query) {
                 $query->whereYear('created_at', Carbon::now()->year);
