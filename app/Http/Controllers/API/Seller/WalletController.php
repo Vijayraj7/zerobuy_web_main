@@ -6,8 +6,10 @@ use App\Enums\OrderStatus;
 use App\Events\AdminProductRequestEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\WithdrawRequest;
+use App\Http\Resources\TransactionResource;
 use App\Http\Resources\WithdrawResource;
 use App\Models\GeneraleSetting;
+use App\Models\Transaction;
 use App\Repositories\NotificationRepository;
 use App\Repositories\WithdrawRepository;
 use Carbon\Carbon;
@@ -201,6 +203,92 @@ class WalletController extends Controller
         return $this->json('withdraw history', [
             'total' => $total,
             'withdraws' => WithdrawResource::collection($withdraws),
+        ]);
+    }
+
+    /**
+     * wallet transaction history
+     *
+     * @return json
+     */
+    public function transactions(Request $request)
+    {
+        $page = $request->page ?? 1;
+        $perPage = $request->per_page ?? 10;
+        $skip = ($page * $perPage) - $perPage;
+
+        $filterType = $request->filter_type ?? 'this_month';
+
+        $wallet = auth()->user()->wallet;
+
+        if (! $wallet) {
+            return $this->json('wallet not found', [
+                'total' => 0,
+                'transactions' => [],
+            ]);
+        }
+
+        $transactions = Transaction::where('wallet_id', $wallet->id)
+            ->when($filterType == 'today', function ($query) {
+                return $query->where(function ($query) {
+                    $query->whereDate('created_at', Carbon::today());
+                });
+            })->when($filterType == 'this_week', function ($query) {
+                return $query->where(function ($query) {
+                    return $query->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                });
+            })->when($filterType == 'this_month', function ($query) {
+                return $query->where(function ($query) {
+                    $query->whereMonth('created_at', Carbon::now()->month);
+                });
+            })->when($filterType == 'six_months', function ($query) {
+                return $query->where(function ($query) {
+                    return $query->whereBetween('created_at', [Carbon::now()->subMonths(6), Carbon::now()]);
+                });
+            })->when($filterType == 'custom', function ($query) use ($request) {
+                $startDate = $request->start_date ? Carbon::parse($request->start_date)->startOfDay() : null;
+                $endDate = $request->end_date ? Carbon::parse($request->end_date)->endOfDay() : null;
+
+                if ($startDate && $endDate) {
+                    return $query->whereBetween('created_at', [$startDate, $endDate]);
+                }
+
+                if ($startDate) {
+                    return $query->whereDate('created_at', '>=', $startDate);
+                }
+
+                if ($endDate) {
+                    return $query->whereDate('created_at', '<=', $endDate);
+                }
+
+                return $query;
+            })->when($filterType == 'this_year', function ($query) {
+                return $query->where(function ($query) {
+                    $query->whereYear('created_at', Carbon::now()->year);
+                });
+            })->when($filterType == 'last_week', function ($query) {
+                return $query->where(function ($query) {
+                    $query->whereBetween('created_at', [Carbon::now()->subWeek(), Carbon::now()->subWeek(1)]);
+                });
+            })->when($filterType == 'last_month', function ($query) {
+                return $query->where(function ($query) {
+                    $query->whereMonth('created_at', Carbon::now()->subMonth()->month);
+                });
+            })->when($filterType == 'last_year', function ($query) {
+                return $query->where(function ($query) {
+                    $query->whereYear('created_at', Carbon::now()->subYear()->year);
+                });
+            })->when($filterType == 'lifetime', function ($query) {
+                return $query;
+            })->orderBy('created_at', 'desc');
+
+        $total = $transactions->count();
+
+        $transactions = $transactions->skip($skip)->take($perPage)->get();
+
+        return $this->json('transaction history', [
+            'total' => $total,
+            'transactions' => TransactionResource::collection($transactions),
         ]);
     }
 
