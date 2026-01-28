@@ -132,7 +132,7 @@ class WalletController extends Controller
             });
         })->when($filterType == 'this_year', function ($query) {
             return $query->where(function ($query) {
-                $query->whereYear('created_at', Carbon::now()->subYear()->year);
+                $query->whereYear('created_at', Carbon::now()->year);
             });
         })->when($filterType == 'last_week', function ($query) {
             return $query->where(function ($query) {
