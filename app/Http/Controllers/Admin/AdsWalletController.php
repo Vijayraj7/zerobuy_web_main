@@ -25,11 +25,11 @@ class AdsWalletController extends Controller
             ]);
 
             if ($request->start_date) {
-                $wallets->whereDate('created_at','>=',$request->start_date);
+                $wallets->whereDate('created_at', '>=', $request->start_date);
             }
 
             if ($request->end_date) {
-                $wallets->whereDate('created_at','<=',$request->end_date);
+                $wallets->whereDate('created_at', '<=', $request->end_date);
             }
 
             return DataTables::eloquent($wallets)
@@ -37,59 +37,73 @@ class AdsWalletController extends Controller
 
                 ->addColumn('create_date', function ($w) {
                     return optional($w->created_at)->format('d-m-Y | h:i A') ?? '—';
-                }) 
+                })
 
-                ->addColumn('store_id', fn($w) =>
-                    $w->shop ? 'STR0'.$w->shop->id : '—'
+                ->addColumn(
+                    'store_id',
+                    fn($w) =>
+                    $w->shop ? 'STR0' . $w->shop->id : '—'
                 )
 
-                ->addColumn('store_name', fn($w) =>
+                ->addColumn(
+                    'store_name',
+                    fn($w) =>
                     $w->shop->name ?? '—'
                 )
 
-                ->addColumn('state', fn($w) =>
+                ->addColumn(
+                    'state',
+                    fn($w) =>
                     $w->shop->state ?? '—'
                 )
 
-                ->addColumn('total_products', fn($w) =>
+                ->addColumn(
+                    'total_products',
+                    fn($w) =>
                     $w->shop?->products?->count() ?? 0
                 )
 
-                ->addColumn('total_orders', fn($w) =>
+                ->addColumn(
+                    'total_orders',
+                    fn($w) =>
                     $w->shop?->orders?->count() ?? 0
                 )
 
                 ->addColumn('subscription', function ($w) {
                     $sub = $w->shop?->currentSubscription;
                     if (!$sub) return '—';
-                    return $sub->starts_at->diffInDays($sub->ends_at).' Days';
+                    return $sub->starts_at->diffInDays($sub->ends_at) . ' Days';
                 })
 
-                ->addColumn('wallet_amount', fn($w) =>
-                    '₹ '.number_format($w->balance,2)
+                ->addColumn(
+                    'wallet_amount',
+                    fn($w) =>
+                    '₹ ' . number_format($w->balance, 2)
                 )
 
-                ->addColumn('status', fn() =>
+                ->addColumn(
+                    'status',
+                    fn() =>
                     '<span class="badge bg-success">Active</span>'
                 )
 
                 ->addColumn('actions', fn($w) => '
-                    <a href="'.route('admin.wallet.transactions',$w->id).'" 
+                    <a href="' . route('admin.wallet.transactions', $w->id) . '" 
                        class="btn btn-sm btn-outline-primary">
                         <i class="fa fa-list"></i>
                     </a>
                     <button class="btn btn-sm btn-outline-success rechargeBtn"
-                        data-id="'.$w->id.'" data-balance="'.$w->balance.'">
+                        data-id="' . $w->id . '" data-balance="' . $w->balance . '">
                         <i class="fa fa-plus"></i>
                     </button>
                 ')
 
-                ->rawColumns(['status','actions'])
+                ->rawColumns(['status', 'actions'])
                 ->make(true);
         }
 
         return view('admin.ads-wallet.index');
-    } 
+    }
 
     public function recharge(Request $request)
     {
@@ -116,17 +130,17 @@ class AdsWalletController extends Controller
             }
 
             AdTransaction::create([
-                'wallet_id'      => $wallet->id,
+                'ad_wallet_id'      => $wallet->id,
                 'amount'         => $request->amount,
                 'type'           => $request->type, // credit / debit
                 'is_commission'  => 0,
                 'transaction_id' => 'TXN-' . strtoupper(Str::random(10)),
                 'purpose'        => $request->type === 'credit'
-                                    ? 'Wallet Recharge by Admin'
-                                    : 'Wallet Adjustment by Admin',
+                    ? 'Wallet Recharge by Admin'
+                    : 'Wallet Adjustment by Admin',
                 'note'           => $request->type === 'credit'
-                                    ? 'Wallet Recharge'
-                                    : 'Wallet Debit (Correction)'
+                    ? 'Wallet Recharge'
+                    : 'Wallet Debit (Correction)'
             ]);
         });
 
@@ -141,20 +155,26 @@ class AdsWalletController extends Controller
     {
         if ($request->ajax()) {
 
-            $transactions = AdTransaction::where('wallet_id', $adWallet->id);
+            $transactions = AdTransaction::where('ad_wallet_id', $adWallet->id);
 
             return DataTables::eloquent($transactions)
                 ->addIndexColumn()
 
-                ->addColumn('date', fn ($t) =>
+                ->addColumn(
+                    'date',
+                    fn($t) =>
                     optional($t->created_at)->format('d-m-Y h:i A') ?? '—'
                 )
 
-                ->addColumn('amount', fn ($t) =>
+                ->addColumn(
+                    'amount',
+                    fn($t) =>
                     '₹ ' . number_format($t->amount, 2)
                 )
 
-                ->addColumn('status', fn ($t) =>
+                ->addColumn(
+                    'status',
+                    fn($t) =>
                     $t->type === 'credit'
                         ? '<span class="badge bg-success">Credit</span>'
                         : '<span class="badge bg-danger">Debit</span>'
@@ -163,7 +183,7 @@ class AdsWalletController extends Controller
                 ->rawColumns(['status'])
                 ->make(true);
         }
-
+        $wallet = $adWallet;
         return view('admin.ads-wallet.transactions', compact('wallet'));
     }
 }
