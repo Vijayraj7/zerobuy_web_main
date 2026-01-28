@@ -101,7 +101,14 @@ class LoginController extends Controller
      */
     private function authenticate($request)
     {
-        $user = UserRepository::findByContact($request->contact);
+        $user = UserRepository::query()
+            ->where(function ($query) use ($request) {
+                $query->where('phone', $request->contact)
+                    ->orWhere('email', $request->contact);
+            })
+            ->whereHas('shop')
+            ->first();
+
         if (! is_null($user) && $user->shop) {
             if (Hash::check($request->password, $user->password)) {
                 return $user;
