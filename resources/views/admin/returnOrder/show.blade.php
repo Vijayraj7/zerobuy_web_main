@@ -15,27 +15,33 @@
                         <div class="flex-grow-1">
                             <div class="order-item">
                                 <label class="label">{{ __('Order Id') }}:</label>
-                                <span
-                                    class="value">#{{ $returnOrder->order->prefix . $returnOrder->order->order_code }}</span>
-                            </div>
-                            <div class="order-item">
+                                <span class="value">#{{ $returnOrder->order->prefix . $returnOrder->order->order_code }}</span>
+                            </div> 
+                            <!-- <div class="order-item">
                                 <label class="label">{{ __('Payment Status') }}:</label>
-
                                 <span class="value">{{ $returnOrder->order->payment_status }}</span>
-                            </div>
+                            </div> -->
                             <div class="order-item">
                                 <label class="label">{{ __('Order Status') }}:</label>
                                 <span class="value">{{ $returnOrder->order->order_status }}</span>
                             </div>
                             <div class="order-item">
                                 <label class="label">{{ __('Order Date') }}:</label>
-                                <span class="value">{{ $returnOrder->order->created_at->format('M d, Y') }}</span>
+                                <span class="value">{{ $returnOrder->order->created_at->format('M d, Y | h:i A') }}</span>
                             </div>
+                            <div class="order-item">
+                                <label class="label">{{ __('GST') }}:</label>
+                                <span class="value">{{ $returnOrder->order->gst ?? '_' }}</span>
+                            </div> 
                         </div>
 
                         <div class="item-divider"></div>
 
                         <div class="flex-grow-1">
+                            <div class="order-item">
+                                <label class="label">{{ __('Return Id') }}:</label>
+                                <span class="value">#RTN0{{ $returnOrder->id }}</span>
+                            </div>
                             <div class="order-item">
                                 <label class="label">{{ __('Return Status') }}:</label>
                                 <span class="value">{{ $returnOrder->status }}</span>
@@ -47,7 +53,7 @@
                             <div class="order-item">
                                 <label class="label">{{ __('Return Date') }}:</label>
                                 <span
-                                    class="value">{{ $returnOrder->created_at ? Carbon\Carbon::parse($returnOrder->created_at)->format('M d, Y') : '-' }}</span>
+                                    class="value">{{ $returnOrder->created_at ? Carbon\Carbon::parse($returnOrder->created_at)->format('M d, Y | h:i A') : '-' }}</span>
                             </div>
                         </div>
                     </div>
@@ -57,13 +63,14 @@
                             <thead>
                                 <tr>
                                     <th>{{ __('Product') }}</th>
-                                    @if ($businessModel == 'multi')
+                                    <!-- @if ($businessModel == 'multi')
                                         <th>{{ __('Shop') }}</th>
-                                    @endif
+                                    @endif -->
                                     <th>{{ __('Quantity') }}</th>
                                     <th>{{ __('Size') }}</th>
                                     <th>{{ __('Color') }}</th>
                                     <th>{{ __('Price') }}</th>
+                                    <th>{{ __('Payment Method') }}</th>
                                     <th class="text-end">{{ __('Total') }}</th>
                                 </tr>
                             </thead>
@@ -77,15 +84,14 @@
                                                 <span>{{ $product->product->name ?? '-' }}</span>
                                             </div>
                                         </td>
-                                        @if ($businessModel == 'multi')
+                                        <!-- @if ($businessModel == 'multi')
                                             <td>{{ $returnOrder?->shop?->name }}</td>
-                                        @endif
+                                        @endif -->
                                         <td>{{ $product->quantity ?? 0 }}</td>
                                         <td>{{ $product->size ?? '-' }}</td>
                                         <td>{{ $product->color ?? '-' }}</td>
-                                        <td>
-                                            {{ showCurrency($product->price) }}
-                                        </td>
+                                        <td>{{ showCurrency($product->price) }}</td>
+                                        <td>{{ $returnOrder->order?->payment_method ?? '-' }}</td>
                                         <td class="text-end">
                                             {{ showCurrency($product->quantity * $product->price) }}
                                         </td>
@@ -153,15 +159,22 @@
                             data-bs-toggle="dropdown" aria-expanded="false">
                             {{ $returnOrder->status }}
                         </a>
-                        @if ($returnOrder->status != 'Cancelled' && $returnOrder->status != 'Refunded' && auth()->user()->shop?->id == $returnOrder->shop_id)
+                        @if ($returnOrder->status != 'Cancelled' && $returnOrder->status != 'Refunded') <!-- && auth()->user()->shop?->id == $returnOrder->shop_id -->
                             @hasPermission(['shop.order.status.change'])
-                                <ul class="dropdown-menu order-status">
-                                    @foreach ($returnStatus as $status)
+                                <ul class="dropdown-menu order-status"> 
+                                    @foreach(\App\Enums\ReturnOderStatus::visibleStatuses() as $status)
                                         <li>
-                                            <a class="dropdown-item"
-                                                href="{{ route('shop.returnOrder.status.change', $returnOrder->id) }}?status={{ $status->value }}">
+                                            <form action="{{ route('admin.returnOrder.status.change', $returnOrder->id) }}" method="POST">
+                                                @csrf
+                                                <input type="hidden" name="status" value="{{ $status->value }}">
+                                                <button type="submit" class="dropdown-item">
+                                                    {{ __($status->value) }}
+                                                </button>
+                                            </form>
+                                            <!-- <a class="dropdown-item"
+                                                href="{{ route('admin.returnOrder.status.change', $returnOrder->id) }}?status={{ $status->value }}">
                                                 {{ __($status->value) }}
-                                            </a>
+                                            </a> -->
                                         </li>
                                     @endforeach
                                 </ul>
@@ -170,7 +183,7 @@
                     </div>
 
                 </div>
-                <div class="border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 p-3">
+                <!-- <div class="border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 p-3">
                     <div class="text-color">{{ __('Payment Status') }}</div>
                     <div class="d-flex align-items-center gap-1">
                         <span>{{ $returnOrder->payment_status ? 'Paid' : 'Unpaid' }}</span>
@@ -186,7 +199,7 @@
                         @endif
 
                     </div>
-                </div>
+                </div> -->
 
                  @if ($returnOrder->payment_status == 0 && $returnOrder->status != 'Cancelled')
                     <div class="px-3 py-2 d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom">
