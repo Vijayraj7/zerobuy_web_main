@@ -25,10 +25,12 @@ Route::prefix('/seller')->group(function () {
 
     // auth route
     Route::controller(LoginController::class)->group(function () {
-        Route::post('/login', 'login')->name('seller.login')->middleware('throttle:5,5');
+        Route::post('/login', 'login')->name('seller.login');
+        // ->middleware('throttle:5,5');
         Route::post('/registration', 'register')->name('seller.register')->middleware('throttle:5,5');
         Route::post('/forgot-password', 'forgotPassword')->middleware('throttle:5,5');
-        Route::post('/send-otp', 'sendOTP')->middleware('throttle:5,5');
+        Route::post('/send-otp', 'sendOTP');
+        // ->middleware('throttle:5,5');
         Route::post('/verify-otp', 'verifyOtp');
         Route::get('/check-user-status', 'checkUserStatus');
         Route::post('/check-email-phone', 'checkEmailPhone');
