@@ -80,6 +80,7 @@ Route::prefix('/seller')->group(function () {
 
         // dashboard route
         Route::get('/dashboard', [DashboardController::class, 'index']);
+        Route::get('/dashboard-summary', [DashboardController::class, 'summary']);
 
         // change password
         Route::post('/change-password', [LoginController::class, 'changePassword']);
