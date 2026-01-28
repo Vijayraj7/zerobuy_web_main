@@ -624,7 +624,7 @@ class OrderRepository extends Repository
             WalletRepository::updateByRequest($wallet, $order->total_amount, 'credit');
 
             if ($generaleSetting?->business_based_on == 'commission') {
-                TransactionRepository::storeByRequest($wallet, $commission, 'debit', true, true, 'admin commission added', 'order commission added in admin wallet');
+                TransactionRepository::storeByRequest($wallet, $commission, 'debit', true, true, 'admin commission added', 'order commission added in admin wallet', $order->id, null);
             }
 
             $driverWallet = DriverRepository::getWallet($driverOrder->driver);

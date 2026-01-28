@@ -244,6 +244,6 @@ class OrderController extends Controller
 
         WalletRepository::updateByRequest($wallet, $order->payable_amount, 'credit');
 
-        TransactionRepository::storeByRequest($wallet, $commission, 'debit', true, true, 'admin commission', 'order');
+        TransactionRepository::storeByRequest($wallet, $commission, 'debit', true, true, 'admin commission', 'order', $order->id, null);
     }
 }

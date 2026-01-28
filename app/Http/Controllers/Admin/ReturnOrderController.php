@@ -36,7 +36,7 @@ class ReturnOrderController extends Controller
             return back()->with('error', __('Payment status updated successfully'));
         }
 
-       $returnOrder->update(['payment_status' => 1, 'status' => 'Refunded']);
+        $returnOrder->update(['payment_status' => 1, 'status' => 'Refunded']);
 
         $this->updateWalletAndTransaction($returnOrder);
 
@@ -63,9 +63,9 @@ class ReturnOrderController extends Controller
 
         $wallet = $returnOrder->shop->user->wallet;
 
-       WalletRepository::updateByRequest($wallet, $amount, 'debit');
+        WalletRepository::updateByRequest($wallet, $amount, 'debit');
 
-       TransactionRepository::storeByRefundRequest($wallet, $commission, 'credit', true, true, 'admin commission removal for refund order', 'refundorder');
+        TransactionRepository::storeByRefundRequest($wallet, $commission, 'credit', true, true, 'admin commission removal for refund order', 'refundorder', null, $returnOrder->id);
     }
 
     public function returnReject(ReturnOrder $returnOrder, Request $request)
