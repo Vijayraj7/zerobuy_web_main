@@ -45,6 +45,13 @@ class ReturnOrderDetailsResource extends JsonResource
             'address_state' => $this->order->address->stateData->name ?? '',
             'address_postcode' => $this->order->address->post_code ?? '',
             'return_order_products' => ReturnOrderProductResource::collection($this->returnProduct),
+            'images' => $this->returnProductImages->map(function ($image) {
+                return [
+                    'id' => $image->id,
+                    'image_url' => $image->image_url,
+                    'image_path' => $image->image_path,
+                ];
+            }),
         ];
     }
 }
