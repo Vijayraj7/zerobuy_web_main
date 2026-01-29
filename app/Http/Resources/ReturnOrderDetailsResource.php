@@ -52,6 +52,13 @@ class ReturnOrderDetailsResource extends JsonResource
                     'image_path' => $image->image_path,
                 ];
             }),
+            'return_product_images' => $this->returnProductImages->map(function ($image) {
+                return [
+                    'id' => $image->id,
+                    'image_url' => $image->image_url,
+                    'image_path' => $image->image_path,
+                ];
+            }),
         ];
     }
 }
