@@ -30,21 +30,22 @@ class ReturnOrderRepository extends Repository
             'customer_id' => auth()->user()->customer->id,
             'status' => ReturnOderStatus::PENDING->value
         ]);
-        foreach ($request->product_ids as $key => $productId) {
+        foreach ($request->products as $oproduct) {
 
-            $orderProduct = $order->products()->where('product_id', $productId)->first();
-            
+            $orderProduct = $order->products()->wherePivot('order_products.id', $oproduct['order_product_id'])->first();
+
             $returnOrder->returnProduct()->create([
                 'return_order_id' => $returnOrder->id,
-                'product_id' => $productId,
+                'product_id' => $orderProduct->id,
+                'order_product_id' => $orderProduct->pivot->id,
                 'price' => $orderProduct->pivot->price,
-                'quantity' => $orderProduct->pivot->quantity,
-                'color' => $orderProduct->pivot->color ?? '',
-                'size' => $orderProduct->pivot->size ?? '',
+                'quantity' => $oproduct['quantity'],
+                'color' => $orderProduct->pivot->orderVariant?->color_name ?? '',
+                'size' => $orderProduct->pivot->orderVariant?->size_name ?? '',
                 'unit' => $orderProduct->pivot->unit ?? '',
             ]);
-
-            $totalAmount += $orderProduct->pivot->price * $orderProduct->pivot->quantity;
+            $qnty = (int)$oproduct['quantity'];
+            $totalAmount += $orderProduct->pivot->price * $qnty;
         }
         $returnOrder->amount = $totalAmount;
         $returnOrder->save();

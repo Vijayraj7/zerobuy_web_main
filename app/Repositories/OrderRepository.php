@@ -188,10 +188,10 @@ class OrderRepository extends Repository
                     'order_variants_id' => $order_variant_id,
                     'order_bulk_items_id' => $order_bulk_item_id,
                     'quantity' => $cart->quantity,
-                    'color' => $color?->name,
-                    'size' => $size?->name,
+                    'color' => $cart->variant?->color?->name ?? $color?->name,
+                    'size' => $cart->variant?->size?->name ?? $size?->name,
                     'unit' => $cart->unit,
-                    'price' => $price,
+                    'price' => $cart->variant?->price ?? $cart->bulkItem?->selling_price ?? $price,
                 ]);
             }
 

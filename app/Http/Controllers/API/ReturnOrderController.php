@@ -61,19 +61,19 @@ class ReturnOrderController extends Controller
             return $this->json("This Order is not Delivered yet", [], 422);
         }
 
-        foreach ($request->product_ids as $productId) {
-            $orderProduct = $order->products()->where('product_id', $productId)->first();
+        foreach ($request->order_product_ids as $productId) {
+            $orderProduct = $order->products()->wherePivot('id', $productId)->first();
 
             if (! $orderProduct) {
                 return $this->json("Product with ID {$productId} not found in this order", [], 422);
             }
         }
 
-        $alreadyReturned = ReturnOrderDetail::whereIn('product_id', $request->product_ids)
+        $alreadyReturned = ReturnOrderDetail::whereIn('order_product_id', $request->order_product_ids)
             ->whereHas('returnOrder', function ($q) use ($request) {
                 $q->where('order_id', $request->order_id);
             })
-            ->pluck('product_id')
+            ->pluck('order_product_id')
             ->toArray();
 
         if (!empty($alreadyReturned)) {
