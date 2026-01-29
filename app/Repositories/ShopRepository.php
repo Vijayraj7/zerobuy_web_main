@@ -160,7 +160,7 @@ class ShopRepository extends Repository
             'address' => $request->address,
             'description' => $request->description,
             'store_type' => $request->store_type,
-            'phone_number' => $request->phone_number,
+            'phone_number' => $request->phone,
             'whatsapp_number' => $request->whatsapp_number,
             'state_id' => $state->id,
             'district_id' => $district->id,
