@@ -15,7 +15,7 @@ class AdWalletResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'balance' => $this->balance,
+            'balance' => (float)$this->balance,
             'transactions' => AdTransactionResource::collection($this->transactions)
         ];
     }
