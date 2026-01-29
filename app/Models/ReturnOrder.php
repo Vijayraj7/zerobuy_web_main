@@ -30,11 +30,6 @@ class ReturnOrder extends Model
         return $this->hasmany(ReturnOrderDetail::class);
     }
 
-    public function returnProducts()
-    {
-        return $this->hasMany(ReturnOrderDetail::class);
-    }
-
     public function returnProductImages()
     {
         return $this->hasMany(ReturnProductImage::class);

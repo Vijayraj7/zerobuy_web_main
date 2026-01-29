@@ -290,6 +290,26 @@
                                         </div>    
                                     </div>
                                 </div>
+                                <div class="card mt-3">
+                                    <div class="card-body">
+                                        <div class="cardTitleBox">
+                                            <h5 class="card-title chartTitle">
+                                                {{ __('Business Categories') }}
+                                            </h5>
+                                        </div>
+                                        <div class="orderOverviewList">
+                                            @forelse($shop->businessCategories as $category)
+                                                <h4>
+                                                    <span class="badge badge-primary clear-badge-font">
+                                                        {{ $category->name }}
+                                                    </span>
+                                                </h4>
+                                            @empty
+                                                <p class="text-muted mb-0">{{ __('No business categories assigned') }}</p>
+                                            @endforelse
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="col-lg-9">
                                <div class="card shadow-sm p-4 mt-3"> 

@@ -40,7 +40,8 @@ class GeneraleSettingRequest extends FormRequest
             'footer_text' => 'nullable|string|max:255',
             'footer_description' => 'nullable|string|max:255',
             'footerqrcode' => 'nullable|image|mimes:png,jpg,jpeg,png,gif|max:2048',
-            'return_order_within_days'=>'nullable|numeric'
+            'return_order_within_days'=>'nullable|numeric',
+            'partial_payment_percentage' => 'nullable|required_if:partial_payment,on|integer|min:1|max:100'
         ];
     }
 

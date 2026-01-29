@@ -566,7 +566,7 @@
     </li>
 @endhasPermission -->
 
-@hasPermission(['admin.productStatus.status'])
+@hasPermission(['admin.productStatus.status','admin.productStatus.all-status'])
     <li>
         <a class="menu {{ request()->routeIs('admin.productStatus.*') ? 'active' : '' }}" data-bs-toggle="collapse" href="#StatusMenu">
             <span>
@@ -579,13 +579,13 @@
             <div class="listBar">
                 @hasPermission('admin.productStatus.status')
                     <a href="{{ route('admin.productStatus.status') }}"
-                        class="subMenu hasCount {{ request()->routeIs('admin.productStatus.*') ? 'active' : '' }}">
+                        class="subMenu hasCount {{ request()->routeIs('admin.productStatus.status') ? 'active' : '' }}">
                         {{ __('My Status') }}
                     </a>
                 @endhasPermission 
-                @hasPermission('admin.productStatus.status')
-                    <a href="#"
-                        class="subMenu hasCount {{ request()->routeIs('admin.productStatus.*') ? 'active' : '' }}">
+                @hasPermission('admin.productStatus.all-status')
+                    <a href="{{ route('admin.productStatus.all-status') }}"
+                        class="subMenu hasCount {{ request()->routeIs('admin.productStatus.all-status') ? 'active' : '' }}">
                         {{ __('All Status') }}
                     </a>
                 @endhasPermission 

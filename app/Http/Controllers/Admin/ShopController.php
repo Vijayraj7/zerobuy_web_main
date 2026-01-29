@@ -275,6 +275,8 @@ class ShopController extends Controller
             'returns' => $months->map(fn($m) => (int) ($returnData[$m] ?? 0)),
         ];
 
+        $shop->load('businessCategories');
+
         return view('admin.shop.show', compact('totalSales', 'shop', 'orderOverview', 'subscription', 'daysLeft', 'totalDays', 'chartData'));
     }  
 
@@ -477,7 +479,7 @@ class ShopController extends Controller
                         <a href="'.route('shop.product.edit', $row->id).'" class="btn btn-sm btn-primary">
                             <i class="fa fa-edit"></i>
                         </a>
-                        <a href="'.route('shop.product.show', $row->id).'" class="btn btn-sm btn-secondary mt-1">
+                        <a href="'.route('admin.product.show', $row->id).'" class="btn btn-sm btn-secondary mt-1">
                             <i class="fa fa-eye"></i>
                         </a>
                     ';
