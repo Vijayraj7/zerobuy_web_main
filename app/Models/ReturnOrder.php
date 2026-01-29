@@ -33,4 +33,9 @@ class ReturnOrder extends Model
     {
         return $this->hasMany(ReturnOrderDetail::class);
     }
+
+    public function returnProductImages()
+    {
+        return $this->hasMany(ReturnProductImage::class);
+    }
 }

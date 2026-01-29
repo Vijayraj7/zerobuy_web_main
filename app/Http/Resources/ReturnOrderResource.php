@@ -27,6 +27,13 @@ class ReturnOrderResource extends JsonResource
             'reject_note' => $this->reject_note,
             'return_date' => $this->created_at->format('d-m-Y h:i A'),
             'return_address' => $this->return_address,
+            'images' => $this->returnProductImages->map(function ($image) {
+                return [
+                    'id' => $image->id,
+                    'image_url' => $image->image_url,
+                    'image_path' => $image->image_path,
+                ];
+            }),
         ];
     }
 }

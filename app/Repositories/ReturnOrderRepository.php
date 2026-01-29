@@ -47,6 +47,17 @@ class ReturnOrderRepository extends Repository
             $qnty = (int)$oproduct['quantity'];
             $totalAmount += $orderProduct->pivot->price * $qnty;
         }
+
+        // Handle image uploads
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('return_orders', 'public');
+                $returnOrder->returnProductImages()->create([
+                    'image_path' => $path,
+                ]);
+            }
+        }
+
         $returnOrder->amount = $totalAmount;
         $returnOrder->save();
         return $returnOrder;
