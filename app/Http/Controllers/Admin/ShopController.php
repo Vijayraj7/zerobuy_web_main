@@ -298,7 +298,7 @@ class ShopController extends Controller
 
         return response()->json([
             'status'   => 'success',
-            'message'  => 'Shop updated successfully',
+            'message'  => 'Shop updated successfully.',
             'redirect' => route('admin.shop.index')
         ]);
     }
