@@ -505,12 +505,12 @@
 
 
 <!------------------------------ Revenue ------------------------------>
-@hasPermission('admin.contactUs.index')
+@hasPermission('admin.revenue.index')
     <li>
-        <a href="#"
-            class="menu {{ request()->routeIs('admin.contactUs.*') ? 'active' : '' }}">
+        <a href="{{ route('admin.revenue.index') }}"
+            class="menu {{ request()->routeIs('admin.revenue.*') ? 'active' : '' }}">
             <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/contacts.svg') }}" alt="icon"
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/chart-trend-up.svg') }}" alt="icon"
                     loading="lazy" />
                 {{ __('Revenue') }}
             </span>

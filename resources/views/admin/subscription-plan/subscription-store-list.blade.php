@@ -27,6 +27,17 @@
     <div class="card">
         <div class="card-body">
             <h4 class="m-0 mt-4">{{ __('All Subscription Store Lists') }}</h4> 
+            <ul class="nav nav-tabs mt-3" id="statusTabs">
+                <li class="nav-item">
+                    <a href="#" class="nav-link active" data-filter="all">All</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-filter="Active">Active</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-filter="Expired">Expired</a>
+                </li> 
+            </ul>
 
             <div class="table-responsive mt-3"> 
                 <table id="subscriptionsTable" class="table table-bordered datatableCustomCSS">
@@ -59,10 +70,18 @@
 @push('scripts')
 <script>
 $(function () {  
+    let statusFilter = 'all';
+
     let table = $('#subscriptionsTable').DataTable({
         processing: true,
         serverSide: true, 
-        url: "{{ route('admin.subscription-plan.subscription.all-list') }}",
+        // url: "{{ route('admin.subscription-plan.subscription.all-list') }}",
+        ajax: {
+            url: "{{ route('admin.subscription-plan.subscription.all-list') }}",
+            data: function (d) {
+                d.status = statusFilter; // send tab filter
+            }
+        },
         columns: [
             { data: 'DT_RowIndex', orderable:false, searchable:false },
             { data: 'activation_date' },
@@ -77,6 +96,17 @@ $(function () {
             { data: 'actions', orderable:false, searchable:false },
         ]
     }); 
+
+    // TAB CLICK FILTER
+    $('#statusTabs .nav-link').on('click', function (e) {
+        e.preventDefault();
+
+        $('#statusTabs .nav-link').removeClass('active');
+        $(this).addClass('active');
+
+        statusFilter = $(this).data('filter'); // all | Active | Expired
+        table.ajax.reload();
+    });
 
 });
 

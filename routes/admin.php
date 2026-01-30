@@ -64,6 +64,7 @@ use App\Http\Controllers\Admin\AdvertisementSettingController;
 use App\Http\Controllers\Admin\AdsWalletController;
 use App\Http\Controllers\Admin\ProductStatusController;
 use App\Http\Controllers\Admin\SellerUserNotificationController;
+use App\Http\Controllers\Admin\RevenueController;
 
 /*
 |--------------------------------------------------------------------------
@@ -144,7 +145,12 @@ Route::name('admin.')->group(function () {
             Route::post('/certificates/status/{certificate}', 'status')->name('certificate.status');
         });
 
-        // certificate routes
+        // revenue routes
+        Route::controller(RevenueController::class)->group(function () {
+            Route::get('/revenue', 'index')->name('revenue.index');  
+        });
+
+        // adv routes
         Route::controller(AdvertisementSettingController::class)->group(function () {
             Route::get('/advertisement/settings', 'edit')->name('advrtsettings.edit'); 
             Route::post('/advertisement/settings', 'update')->name('advrtsettings.update');  
