@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\API\Seller;
 
 use App\Models\ReturnOrder;
+use App\Models\ReturnOrderStatusTimeline;
 use Illuminate\Http\Request;
 use App\Enums\ReturnOderStatus;
 use App\Http\Controllers\Controller;
 use Illuminate\Validation\Rules\Enum;
 use App\Http\Resources\ReturnOrderResource;
 use App\Http\Resources\ReturnOrderDetailsResource;
+use Carbon\Carbon;
 
 class ReturnOrderController extends Controller
 {
@@ -69,6 +71,16 @@ class ReturnOrderController extends Controller
         }
 
         $returnOrder->update(['status' => $request->status]);
+
+        ReturnOrderStatusTimeline::updateOrCreate(
+            [
+                'return_order_id' => $returnOrder->id,
+                'status' => $request->status,
+            ],
+            [
+                'changed_at' => Carbon::now(),
+            ]
+        );
 
         return $this->json('success', __('Status updated successfully'));
     }

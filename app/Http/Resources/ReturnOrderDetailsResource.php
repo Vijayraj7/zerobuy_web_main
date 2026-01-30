@@ -4,6 +4,8 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Carbon\Carbon;
+use App\Enums\ReturnOderStatus;
 
 class ReturnOrderDetailsResource extends JsonResource
 {
@@ -14,6 +16,45 @@ class ReturnOrderDetailsResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $statusTimelines = $this->statusTimelines
+            ?->sortBy('changed_at')
+            ?->keyBy('status') ?? collect();
+
+        $orderedStatuses = [
+            ReturnOderStatus::PENDING->value,
+            ReturnOderStatus::APPROVED->value,
+            ReturnOderStatus::COMPLETED->value,
+            ReturnOderStatus::REJECTED->value,
+            ReturnOderStatus::CANCELLED->value,
+        ];
+
+        $currentStatus = $this->status ?? ReturnOderStatus::PENDING->value;
+        $maxIndex = array_search($currentStatus, $orderedStatuses, true);
+        if ($maxIndex === false) {
+            $maxIndex = 0;
+        }
+
+        if ($currentStatus === ReturnOderStatus::CANCELLED->value) {
+            $maxIndex = array_search(ReturnOderStatus::CANCELLED->value, $orderedStatuses, true);
+        }
+
+        $timeline = [];
+        for ($i = 0; $i <= $maxIndex; $i++) {
+            $status = $orderedStatuses[$i];
+            $changedAt = null;
+
+            if ($status === ReturnOderStatus::PENDING->value) {
+                $changedAt = $this->created_at;
+            } elseif ($statusTimelines->has($status)) {
+                $changedAt = $statusTimelines->get($status)?->changed_at;
+            }
+
+            $timeline[] = [
+                'status' => $status,
+                'changed_at' => $changedAt ? Carbon::parse($changedAt)->format('d M, Y h:i A') : null,
+            ];
+        }
+
         // dd($this->returnProduct);
         return [
 
@@ -59,6 +100,7 @@ class ReturnOrderDetailsResource extends JsonResource
                     'image_path' => $image->image_path,
                 ];
             }),
+            'status_timeline' => $timeline,
         ];
     }
 }

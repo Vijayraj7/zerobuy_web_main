@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ReturnOrder extends Model
 {
@@ -33,5 +34,10 @@ class ReturnOrder extends Model
     public function returnProductImages()
     {
         return $this->hasMany(ReturnProductImage::class);
+    }
+
+    public function statusTimelines(): HasMany
+    {
+        return $this->hasMany(ReturnOrderStatusTimeline::class);
     }
 }
