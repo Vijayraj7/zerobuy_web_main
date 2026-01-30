@@ -151,7 +151,6 @@ class SubscriptionPlanController extends Controller
     public function subscriptionAllList(Request $request)
     {
         if ($request->ajax()) {
-
             $query = ShopSubscription::query()
                 ->select('shop_subscriptions.*')
                 ->whereIn('shop_subscriptions.id', function ($q) {
@@ -159,7 +158,20 @@ class SubscriptionPlanController extends Controller
                     ->from('shop_subscriptions')
                     ->groupBy('shop_id');
                 })
-                ->with(['shop:id,name', 'plan:id,name,duration']); 
+                ->with(['shop:id,name', 'plan:id,name,duration']);
+            
+            /** STATUS FILTER */
+            $now = Carbon::now();
+            if ($request->status === 'Active') {
+                $query->where('status', '!=', 'cancelled')
+                    ->where('starts_at', '<=', $now)
+                    ->where('ends_at', '>=', $now);
+            }
+
+            if ($request->status === 'Expired') {
+                $query->where('status', '!=', 'cancelled')
+                    ->where('ends_at', '<', $now);
+            }
 
             return DataTables::of($query)
                 ->addIndexColumn()
@@ -274,69 +286,64 @@ class SubscriptionPlanController extends Controller
             ->count();
 
 
-        return view(
-            'admin.subscription-plan.subscription-store-list',
-            compact('activeCount', 'expiredCount')
-        );
+        return view( 'admin.subscription-plan.subscription-store-list', compact('activeCount', 'expiredCount') );
     }
 
     public function subscriptionHistory($shopId)
-{
-    $shop = Shop::findOrFail($shopId);
+    {
+        $shop = Shop::findOrFail($shopId);
 
-    $today = now()->startOfDay();
+        $today = now()->startOfDay();
 
-    $subscriptions = ShopSubscription::with('plan:id,name,duration')
-        ->where('shop_id', $shopId)
-        ->latest()
-        ->get()
-        ->map(function ($row) use ($today) {
+        $subscriptions = ShopSubscription::with('plan:id,name,duration')
+            ->where('shop_id', $shopId)
+            ->latest()
+            ->get()
+            ->map(function ($row) use ($today) {
 
-            // ---------- STATUS ----------
-            if ($row->status === 'cancelled') {
-                $status = 'Cancelled';
-            } elseif (!$row->starts_at) {
-                $status = 'Pending';
-            } elseif ($row->starts_at->gt($today)) {
-                $status = 'Upcoming';
-            } elseif ($row->ends_at && $row->ends_at->gte($today)) {
-                $status = 'Active';
-            } else {
-                $status = 'Expired';
-            }
-
-            // ---------- REMAINING DAYS ----------
-            if ($row->status === 'cancelled' || !$row->ends_at) {
-                $remaining = '_';
-            } else {
-                $endDate = Carbon::parse($row->ends_at)->startOfDay();
-                $today   = now()->startOfDay();
-
-                if ($endDate->lt($today)) {
-                    $remaining = '0 Days';
+                // ---------- STATUS ----------
+                if ($row->status === 'cancelled') {
+                    $status = 'Cancelled';
+                } elseif (!$row->starts_at) {
+                    $status = 'Pending';
+                } elseif ($row->starts_at->gt($today)) {
+                    $status = 'Upcoming';
+                } elseif ($row->ends_at && $row->ends_at->gte($today)) {
+                    $status = 'Active';
                 } else {
-                    $remaining = $today->diffInDays($endDate, false);
-                    $remaining = max(0, (int) $remaining) . ' Days';
+                    $status = 'Expired';
                 }
-            }
 
-            return [
-                'activation_date' => optional($row->starts_at)->format('d-m-Y'),
-                'plan'            => $row->plan->name ?? '-',
-                'validity'        => $row->duration . ' Days',
-                'remaining_days'  => $remaining,
-                'expiry_date'     => optional($row->ends_at)->format('d-m-Y'),
-                'amount'          => number_format($row->price, 2),
-                'status'          => $status,
-            ];
-        });
+                // ---------- REMAINING DAYS ----------
+                if ($row->status === 'cancelled' || !$row->ends_at) {
+                    $remaining = '_';
+                } else {
+                    $endDate = Carbon::parse($row->ends_at)->startOfDay();
+                    $today   = now()->startOfDay();
 
-    return view(
-        'admin.subscription-plan.subscription-history',
-        compact('shop', 'subscriptions')
-    );
-}
+                    if ($endDate->lt($today)) {
+                        $remaining = '0 Days';
+                    } else {
+                        $remaining = $today->diffInDays($endDate, false);
+                        $remaining = max(0, (int) $remaining) . ' Days';
+                    }
+                }
 
+                return [
+                    'activation_date' => optional($row->starts_at)->format('d-m-Y'),
+                    'plan'            => $row->plan->name ?? '-',
+                    'validity'        => $row->duration . ' Days',
+                    'remaining_days'  => $remaining,
+                    'expiry_date'     => optional($row->ends_at)->format('d-m-Y'),
+                    'amount'          => number_format($row->price, 2),
+                    'status'          => $status,
+                ];
+            });
 
+        return view(
+            'admin.subscription-plan.subscription-history',
+            compact('shop', 'subscriptions')
+        );
+    }
 
 }
