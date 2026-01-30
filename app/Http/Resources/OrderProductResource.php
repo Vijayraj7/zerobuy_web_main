@@ -55,7 +55,7 @@ class OrderProductResource extends JsonResource
 
         // $pivot = $this;
 
-        $pname  = $this->name;
+        $pname  = $this->pivot->product_name;
         $dprice = 0;
         $mprice = (float) number_format((float) $this->price, 2, '.', '');
 
