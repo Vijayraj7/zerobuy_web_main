@@ -17,6 +17,20 @@ return new class extends Migration
             $table->string('product_name')->nullable()->after('product_id');
             $table->integer('return_days')->nullable()->after('product_name');
         });
+        $orderProducts = DB::table('order_products')
+            ->whereNull('product_name')->whereNull('return_days')
+            ->get();
+        foreach ($orderProducts as $orderProduct) {
+            $product = DB::table('products')->where('id', $orderProduct->product_id)->first();
+            if ($product) {
+                DB::table('order_products')
+                    ->where('id', $orderProduct->id)
+                    ->update([
+                        'product_name' => $product->name,
+                        'return_days' => $product->return_period,
+                    ]);
+            }
+        }
     }
 
     /**
