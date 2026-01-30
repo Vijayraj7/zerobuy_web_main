@@ -8,6 +8,7 @@ use App\Http\Requests\OrderIdRequest;
 use App\Http\Requests\StatusUpdateRequest;
 use App\Http\Resources\SellerOrderResource;
 use App\Models\Order;
+use App\Models\OrderStatusTimeline;
 use App\Repositories\NotificationRepository;
 use App\Repositories\OrderRepository;
 use App\Services\NotificationServices;
@@ -211,6 +212,16 @@ class OrderController extends Controller
         $order->update([
             'order_status' => $orderStatus,
         ]);
+
+        OrderStatusTimeline::updateOrCreate(
+            [
+                'order_id' => $order->id,
+                'status' => $orderStatus,
+            ],
+            [
+                'changed_at' => Carbon::now(),
+            ]
+        );
 
         $title = 'Order status updated';
         $message = 'Your order status updated to ' . $request->status . ' order code: ' . $order->prefix . $order->order_code;

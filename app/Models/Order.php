@@ -39,6 +39,11 @@ class Order extends Model
         return $this->hasMany(OrderProduct::class, 'order_id');
     }
 
+    public function statusTimelines(): HasMany
+    {
+        return $this->hasMany(OrderStatusTimeline::class, 'order_id');
+    }
+
 
     /**
      * Get all of the vat taxes for the Order.
