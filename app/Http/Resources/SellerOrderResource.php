@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Enums\PaymentMethod;
+use App\Enums\OrderStatus;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -17,6 +18,45 @@ class SellerOrderResource extends JsonResource
     public function toArray(Request $request): array
     {
         $estimateDays = $this->shop->estimated_delivery_time ?? '2-4 days';
+
+        $statusTimelines = $this->statusTimelines
+            ?->sortBy('changed_at')
+            ?->keyBy('status') ?? collect();
+
+        $orderedStatuses = [
+            OrderStatus::PENDING->value,
+            OrderStatus::CONFIRM->value,
+            OrderStatus::SHIPPED->value,
+            OrderStatus::DELIVERED->value,
+            OrderStatus::CANCELLED->value,
+        ];
+
+        $currentStatus = $this->order_status?->value ?? OrderStatus::PENDING->value;
+        $maxIndex = array_search($currentStatus, $orderedStatuses, true);
+        if ($maxIndex === false) {
+            $maxIndex = 0;
+        }
+
+        if ($currentStatus === OrderStatus::CANCELLED->value) {
+            $maxIndex = array_search(OrderStatus::CANCELLED->value, $orderedStatuses, true);
+        }
+
+        $timeline = [];
+        for ($i = 0; $i <= $maxIndex; $i++) {
+            $status = $orderedStatuses[$i];
+            $changedAt = null;
+
+            if ($status === OrderStatus::PENDING->value) {
+                $changedAt = $this->created_at;
+            } elseif ($statusTimelines->has($status)) {
+                $changedAt = $statusTimelines->get($status)?->changed_at;
+            }
+
+            $timeline[] = [
+                'status' => $status,
+                'changed_at' => $changedAt ? Carbon::parse($changedAt)->format('d M, Y h:i A') : null,
+            ];
+        }
 
         return [
             'id' => $this->id,
@@ -43,6 +83,7 @@ class SellerOrderResource extends JsonResource
             'products' => SellerOrderProductResource::collection($this->orderProducts),
             'rider' => $this->driverOrder ? OrderRiderResource::make($this->driverOrder) : null,
             'invoice_url' => route('shop.download-invoice', $this->id),
+            'status_timeline' => $timeline,
         ];
     }
 }
