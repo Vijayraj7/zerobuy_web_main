@@ -249,6 +249,7 @@ class OrderController extends Controller
         // Find the order
         $order = Order::with([
             'products',     // ✅ only this
+            'statusTimelines', // Add status timelines
         ])->find($request->order_id);
 
         return $this->json('order details', [

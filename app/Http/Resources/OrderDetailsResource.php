@@ -61,6 +61,12 @@ class OrderDetailsResource extends JsonResource
                 ? $this->created_at->copy()->addDays($generaleSetting?->return_order_within_days ?? 3)->format('d M, Y h:i A')
                 : null,
             'is_returnable' => $is_returned,
+            'order_status_timelines' => $this->statusTimelines->map(function ($timeline) {
+                return [
+                    'status' => $timeline->status,
+                    'changed_at' => $timeline->changed_at?->format('d M, Y h:i A'),
+                ];
+            }),
         ];
     }
 }
