@@ -250,7 +250,7 @@ class ProductController extends Controller
     {
         $product = ProductRepository::find($request->product_id);
 
-        $hasReview = $product->reviews()->where('customer_id', auth()->user()->customer->id)->where('order_id', $request->order_id)->first();
+        $hasReview = $product->reviews()->where('customer_id', auth()->user()->customer->id)->where('order_product_id', $request->order_product_id)->first();
 
         if ($hasReview) {
             return $this->json('review already exists', [

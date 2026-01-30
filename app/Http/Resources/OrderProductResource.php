@@ -20,7 +20,10 @@ class OrderProductResource extends JsonResource
         $this->load('brand', 'reviews');
         // $this->pivot->loadMissing(['orderVariant', 'orderBulkItem']);
 
-        $review = $this->reviews()->where('customer_id', auth()->user()->customer?->id)->where('product_id', $this->id)->where('order_id', $request->order_id)->first();
+        $review = $this->reviews()
+            ->where('customer_id', auth()->user()->customer?->id)
+            ->where('order_product_id', $this->pivot->id)
+            ->first();
 
         $price = $this->pivot->price > 0 ? $this->pivot->price : ($this->discount_price > 0 ? $this->discount_price : $this->price);
 

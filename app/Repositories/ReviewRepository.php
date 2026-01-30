@@ -31,6 +31,7 @@ class ReviewRepository extends Repository
             'product_id' => $product->id,
             'shop_id' => $product->shop->id,
             'order_id' => $request->order_id,
+            'order_product_id' => $request->order_product_id,
             'rating' => $request->rating,
             'description' => $request->description,
         ]);

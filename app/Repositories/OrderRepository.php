@@ -194,6 +194,7 @@ class OrderRepository extends Repository
                     'size' => $cart->variant?->size?->name ?? $size?->name,
                     'unit' => $cart->unit,
                     'price' => $cart->variant?->price ?? $cart->bulkItem?->selling_price ?? $price,
+                    'mrp' => $cart->bulkItem?->mrp ?? $product->price,
                 ]);
             }
 

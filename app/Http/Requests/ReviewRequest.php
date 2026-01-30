@@ -24,6 +24,7 @@ class ReviewRequest extends FormRequest
         return [
             'product_id' => 'required|exists:products,id',
             'order_id' => 'required|exists:orders,id',
+            'order_product_id' => 'required|exists:order_products,id',
             'rating' => 'required|numeric|min:1|max:5',
             'description' => 'required|string',
         ];
@@ -43,6 +44,8 @@ class ReviewRequest extends FormRequest
             'product_id.exists' => __('The selected product is invalid.'),
             'order_id.required' => __('The order field is required.'),
             'order_id.exists' => __('The selected order is invalid.'),
+            'order_product_id.required' => __('The order product field is required.'),
+            'order_product_id.exists' => __('The selected order product is invalid.'),
             'rating.required' => __('The rating field is required.'),
             'rating.numeric' => __('The rating must be a number.'),
             'rating.min' => __('The rating must be at least 1.'),

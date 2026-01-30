@@ -65,6 +65,7 @@ class ReturnOrderDetailsResource extends JsonResource
             'amount' => (float)$this->amount,
             'status' => $this->status,
             'payment_status' => $this->payment_status ? 'Paid' : 'Unpaid',
+            'shop_id' => $this->shop->id ?? null,
             'shop_name' => $this->shop->name ?? '',
             'shop_logo' => $this->shop->logo ?? '',
             'shop_rating' => (float) number_format($this->shop?->averageRating, 1, '.', ''),
