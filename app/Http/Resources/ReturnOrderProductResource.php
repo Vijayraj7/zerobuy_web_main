@@ -16,7 +16,7 @@ class ReturnOrderProductResource extends JsonResource
     {
         return [
             'product_id' => (int)$this->product_id,
-            'product_name' => $this->orderProduct->product_name ?? '',
+            'product_name' => $this->product_name ?? '',
             'product_price' => (float)$this->price ?? '',
             'thumbnail' => $this->product->thumbnail ?? '',
             'quantity' => (int)$this->quantity,
