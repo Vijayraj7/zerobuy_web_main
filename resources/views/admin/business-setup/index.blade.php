@@ -163,6 +163,37 @@
                         </div>
                         <div class="check-icon">✅</div>
                     </label>
+
+                    <!-- Partial Payment -->
+                    <label for="partial"
+                        class="payment-card border p-3 rounded {{ $generaleSetting?->partial_payment ? 'selected' : '' }}">
+
+                        <div class="d-flex align-items-center">
+                            <div class="me-3 fs-3">🧾</div>
+                            <span class="fw-semibold">
+                                {{ __('Partial Payment') }}
+                            </span>
+                        </div>
+
+                        <div class="mt-2 d-flex align-items-center gap-2">
+                            <span class="fw-semibold text-muted">
+                                {{ $generaleSetting?->partial_payment ? __('Enable') : __('Disable') }}
+                            </span>
+
+                            <label class="switch mb-0">
+                                <input id="partial" name="partial_payment" type="checkbox"
+                                    {{ $generaleSetting?->partial_payment ? 'checked' : '' }}>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <div class="mt-3">
+                            <div class="input-group">
+                                <input type="number" min="1" max="100" name="partial_payment_percentage" class="form-control" placeholder="{{ $generaleSetting?->partial_payment_percentage ?? 0 }}" value="{{ $generaleSetting?->partial_payment_percentage ?? 0 }}" {{ $generaleSetting?->partial_payment ? '' : 'disabled' }}>
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="check-icon">✅</div>
+                    </label>
                 </div>
 
             </div>
@@ -244,6 +275,25 @@
             } else {
                 $(this).closest('.payment-card').removeClass('selected');
                 $('#commission').closest('.payment-card').addClass('selected');
+            }
+        });
+
+        $('#partial').on('change', function () {
+            const card = $(this).closest('.payment-card');
+            const input = $('input[name="partial_payment_percentage"]');
+
+            if ($(this).is(':checked')) {
+                card.addClass('selected');
+                input.prop('disabled', false);
+
+                // Online payment must be enabled
+                $('#online').prop('checked', true)
+                    .closest('.payment-card')
+                    .addClass('selected');
+
+            } else {
+                card.removeClass('selected');
+                input.prop('disabled', true).val('');
             }
         });
 

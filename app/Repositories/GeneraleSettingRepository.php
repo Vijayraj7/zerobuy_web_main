@@ -185,6 +185,7 @@ class GeneraleSettingRepository extends Repository
         if (! $request->cash_on_delivery && ! $request->online_payment) {
             $cashOnDelivery = true;
         }
+        $partialPayment = $request->partial_payment ? true : false;
 
         return self::query()->updateOrCreate([
             'id' => $generaleSetting?->id ?? null,
@@ -196,6 +197,8 @@ class GeneraleSettingRepository extends Repository
             'shop_type' => $request->shop_type ?? 'multi',
             'cash_on_delivery' => $cashOnDelivery,
             'online_payment' => $request->online_payment ? true : false,
+            'partial_payment' => $partialPayment,
+            'partial_payment_percentage' => $partialPayment ? $request->partial_payment_percentage : null,
             'return_order_within_days' => $request->return_order_within_days ?? 3,
         ]);
     }

@@ -362,6 +362,7 @@ Route::name('admin.')->group(function () {
 
         Route::controller(ProductStatusController::class)->group(function () {
             Route::get('/products-status', 'index')->name('productStatus.status');
+            Route::get('/products-status-all', 'allStatus')->name('productStatus.all-status');
             Route::post('/products-status/store', 'store')->name('productStatus.store');
             Route::post('/products-status/toggle/{status}', 'toggle')->name('productStatus.toggle');
             Route::delete('/products-status/{status}', 'destroy')->name('productStatus.destroy');

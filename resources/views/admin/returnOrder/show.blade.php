@@ -57,6 +57,7 @@
                             </div>
                         </div>
                     </div>
+                    
 
                     <div class="table-responsive mt-4 mb-0">
                         <table class="table border-left-right">
@@ -101,12 +102,53 @@
                         </table>
                     </div>
 
-                    <div class="max-300 ms-auto d-flex flex-column gap-1">
+                    @php
+                        $subTotal = 0;
+                        $discountTotal = 0;
+                        $grandTotal = 0;
+
+                        foreach ($returnOrder->returnProduct as $item) {
+                            $mrp = $item->product?->price ?? 0;
+                            $discountPrice = $item->product?->discount_price ?? $mrp;
+                            $qty = $item->quantity ?? 0;
+
+                            $subTotal += $mrp * $qty;
+                            $discountTotal += ($mrp - $discountPrice) * $qty;
+                            $grandTotal += $discountPrice * $qty;
+                        }
+                    @endphp
+
+                    <div class="max-300 ms-auto d-flex flex-column gap-1 mt-3"> 
+                        <div class="d-flex align-items-center justify-content-between gap-2 text-muted">
+                            <div>{{ __('Sub Total') }}</div>
+                            <div>
+                                <span>{{ showCurrency($subTotal) }}</span>
+                            </div>
+                        </div> 
+                        <div class="d-flex align-items-center justify-content-between gap-2 text-muted">
+                            <div>{{ __('Discount') }}</div>
+                            <div>- {{ showCurrency($discountTotal) }}</div>
+                            <!-- <div>
+                                <span>{{ showCurrency($returnOrder->order->discount) }}</span>
+                            </div> -->
+                        </div> 
+                        {{-- Delivery Charge (Not included in total) --}}
+                        @if($returnOrder->order?->delivery_charge)
+                            <div class="d-flex align-items-center justify-content-between gap-2 text-muted">
+                                <div>{{ __('Delivery Charge') }}</div>
+                                <div>
+                                    <del>{{ showCurrency($returnOrder->order->delivery_charge) }}</del>
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- Total --}}
                         <div class="d-flex align-items-center justify-content-between gap-2">
-                            <div> <strong>{{ __('Total') }}</strong></div>
-                            <div>{{ showCurrency($returnOrder->amount) }}</div>
+                            <div><strong>{{ __('Total') }}</strong></div>
+                            <div><strong>{{ showCurrency($grandTotal) }}</strong></div>
                         </div>
                     </div>
+
                 </div>
             </div>
 
@@ -115,7 +157,7 @@
                 <h5 class="fz-16 border-bottom px-3 py-12 m-0">{{ __('Return Reason') }}</h5>
 
                 <div class="border-bottom px-3 py-2 d-flex  align-items-center gap-3">
-                    <span class="fw-medium">{{ $returnOrder->reason }}</span>
+                    <span class="fw-medium text-danger">{{ $returnOrder->reason }}</span>
                 </div>
             </div>
 
@@ -230,16 +272,89 @@
             </div>
 
             <!--##### Shipping Address #####-->
-            <div class="card mt-3">
+            <!-- <div class="card mt-3">
                 <h5 class="fz-18 border-bottom p-3 m-0">{{ __('Return Address') }}</h5>
 
                 <div class="border-bottom d-flex align-items-center justify-content-between gap-2 px-3 py-12">
                     <span class="fw-medium">{{ $returnOrder->return_address }}</span>
                 </div>
-            </div>
+            </div> -->
+            <!--##### Return Address #####-->
+            <div class="card mt-3">
+                <h5 class="fz-18 border-bottom p-3 m-0">{{ __('Return Address') }}</h5>
 
+                <div class="border-bottom d-flex justify-content-between px-3 py-12">
+                    <span>{{ __('Name') }}:</span>
+                    <span class="fw-medium">
+                        {{ $returnOrder->order?->address?->name }}
+                    </span>
+                </div>
+
+                <div class="border-bottom d-flex justify-content-between px-3 py-12">
+                    <span>{{ __('Phone') }}:</span>
+                    <span class="fw-medium">
+                        {{ $returnOrder->order?->address?->phone }}
+                    </span>
+                </div>
+
+                <div class="border-bottom d-flex justify-content-between px-3 py-12">
+                    <span>{{ __('Address Line 1') }}:</span>
+                    <span class="fw-medium">
+                        {{ $returnOrder->order?->address?->address_line }}
+                    </span>
+                </div>
+
+                <div class="border-bottom d-flex justify-content-between px-3 py-12">
+                    <span>{{ __('Address Line 2') }}:</span>
+                    <span class="fw-medium">
+                        {{ $returnOrder->order?->address?->address_line2 }}
+                    </span>
+                </div>
+
+                <div class="border-bottom d-flex justify-content-between px-3 py-12">
+                    <span>{{ __('State & District') }}:</span>
+                    <span class="fw-medium">
+                        {{ $returnOrder->order?->address?->stateData?->name }},
+                        {{ $returnOrder->order?->address?->districtData?->name }}
+                    </span>
+                </div>
+
+                <div class="border-bottom d-flex justify-content-between px-3 py-12">
+                    <span>{{ __('PIN Code') }}:</span>
+                    <span class="fw-medium">
+                        {{ $returnOrder->order?->address?->post_code }}
+                    </span>
+                </div>
+
+                <div class="border-bottom d-flex justify-content-between px-3 py-12">
+                    <span>{{ __('Address Type') }}:</span>
+                    <span class="fw-medium">
+                        {{ $returnOrder->order?->address?->address_type }}
+                    </span>
+                </div>
+            </div>
         </div>
+
+        {{-- Return Product Images --}}
+        @if($returnOrder->returnProductImages->count())
+            <div class="card mt-4">
+                <h5 class="fz-16 border-bottom px-3 py-12 m-0">
+                    {{ __('Return Images') }}
+                </h5>
+
+                <div class="p-3">
+                    <div class="d-flex flex-wrap gap-3">
+                        @foreach ($returnOrder->returnProductImages as $image)
+                            <div class="border rounded p-1">
+                                <img src="{{ $image->image_url }}" alt="Return Image" width="120" height="120" style="object-fit: cover; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#returnImagePreview" onclick="showReturnImage('{{ $image->image_url }}')">
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
+    
     <form action="{{ route('admin.returnOrder.reject', $returnOrder->id) }}" method="POST">
         @csrf
         <div class="modal fade" id="rejectModal" tabindex="-1">
@@ -277,6 +392,19 @@
             </div>
         </div>
     </form>
+
+    <div class="modal fade" id="returnImagePreview" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <img id="returnPreviewImage" class="img-fluid rounded">
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
 @endsection
 @push('css')
     <style>
@@ -358,4 +486,12 @@
             }
         }
     </style>
+@endpush
+
+@push('scripts')
+<script>
+    function showReturnImage(src) {
+        document.getElementById('returnPreviewImage').src = src;
+    }
+</script>
 @endpush

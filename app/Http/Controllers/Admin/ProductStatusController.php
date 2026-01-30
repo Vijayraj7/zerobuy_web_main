@@ -30,6 +30,23 @@ class ProductStatusController extends Controller
         return view('admin.product.make-status', compact('statuses', 'products'));
     }
 
+    public function allStatus()
+    { 
+        $statuses = ProductStatus::with('product.media', 'shop')
+            ->where(function ($q) {
+                $q->whereNull('expired_at')
+                ->orWhere('expired_at', '>', now());
+            })
+            ->latest()
+            ->get();
+
+        $products = Product::with('media')
+            ->latest()
+            ->get();
+
+        return view('admin.product.all-status', compact('statuses', 'products'));
+    }
+
     public function store(Request $request)
     {
         $request->validate([

@@ -22,7 +22,7 @@ class ReturnOrderController extends Controller
     public function index(Request $request)
     {
         $query = ReturnOrder::query()
-            ->with(['order:id,order_code,created_at', 'customer.user:id,name,phone', 'returnProducts']);
+            ->with(['order:id,order_code,created_at', 'customer.user:id,name,phone', 'returnProduct']);
 
         // FILTERS
         if ($request->status) {
@@ -69,11 +69,11 @@ class ReturnOrderController extends Controller
                         ->select('return_orders.*');
                 })
                 ->addColumn('customer_phone', fn($row) => $row->customer?->user?->phone ?? '-') 
-                ->addColumn('quantity', fn($row) => $row->returnProducts->sum('quantity')) 
-                // ->addColumn('amount', fn($row) => number_format($row->returnProducts->sum(fn($p) => $p->price * $p->quantity), 2)) 
+                ->addColumn('quantity', fn($row) => $row->returnProduct->sum('quantity')) 
+                // ->addColumn('amount', fn($row) => number_format($row->returnProduct->sum(fn($p) => $p->price * $p->quantity), 2)) 
                 // ->editColumn('amount', fn($row) => number_format($row->amount, 2)) 
                 ->addColumn('amount', fn($row) =>
-                    number_format(optional($row->returnProducts->first())->price ?? 0, 2)
+                    number_format(optional($row->returnProduct->first())->price ?? 0, 2)
                 )
                 ->addColumn('total', fn($row) =>
                     number_format($row->amount ?? 0, 2)
@@ -99,6 +99,8 @@ class ReturnOrderController extends Controller
 
     public function show(ReturnOrder $returnOrder)
     {
+        $returnOrder->load('order.address.stateData', 'order.address.districtData', 'returnProduct.product', 'returnProductImages');
+
         $returnStatus = ReturnOderStatus::cases();
         return view('admin.returnOrder.show', compact('returnOrder', 'returnStatus'));
     }
