@@ -65,6 +65,8 @@ use App\Http\Controllers\Admin\AdsWalletController;
 use App\Http\Controllers\Admin\ProductStatusController;
 use App\Http\Controllers\Admin\SellerUserNotificationController;
 use App\Http\Controllers\Admin\RevenueController;
+use App\Http\Controllers\Admin\ShopReportController as AdminShopReportController;
+use App\Http\Controllers\Admin\AnalyticsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -201,6 +203,20 @@ Route::name('admin.')->group(function () {
         Route::controller(ReviewsController::class)->group(function () {
             Route::get('/reviews', 'index')->name('review.index');
             Route::get('/review/{review}/toggle', 'toggleReview')->name('review.toggle');
+        });
+
+        // Shop Reports
+        Route::controller(AdminShopReportController::class)->prefix('shop-reports')->name('shop-reports.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{id}', 'show')->name('show');
+            Route::put('/{id}/status', 'updateStatus')->name('update-status');
+            Route::delete('/{id}', 'destroy')->name('destroy');
+        });
+
+        // Analytics
+        Route::controller(AnalyticsController::class)->prefix('analytics')->name('analytics.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/export', 'export')->name('export');
         });
 
         // Orders

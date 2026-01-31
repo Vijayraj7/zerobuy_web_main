@@ -35,6 +35,7 @@ use App\Http\Controllers\API\SupportTicketMessageController;
 use App\Http\Controllers\API\ChildCategoryController;
 use App\Http\Controllers\API\LocationController;
 use App\Http\Controllers\API\VerifyManageApiController;
+use App\Http\Controllers\API\ShopReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -207,6 +208,12 @@ Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
         Route::post('/follow', 'followStore');
     });
 
+    // shop reports
+    Route::controller(ShopReportController::class)->group(function () {
+        Route::post('/shop-reports', 'store');
+        Route::get('/shop-reports', 'index');
+    });
+
     // favorite add or remove route
     Route::controller(ProductController::class)->group(function () {
         Route::post('/favorite-add-or-remove', 'addFavorite');
@@ -294,6 +301,12 @@ Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
     // statuses from followed shops
     Route::get('/statuses', [App\Http\Controllers\API\StatusController::class, 'index']);
     Route::post('/statuses/{statusId}/view', [App\Http\Controllers\API\StatusController::class, 'incrementView']);
+
+    // shop reports
+    Route::controller(App\Http\Controllers\API\ShopReportController::class)->group(function () {
+        Route::post('/shop-reports', 'store');
+        Route::get('/shop-reports', 'index');
+    });
 
     // check user is online or not
 

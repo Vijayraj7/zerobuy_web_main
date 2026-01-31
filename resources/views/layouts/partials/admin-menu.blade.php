@@ -631,27 +631,27 @@
 
 
 
-<!------------------------------ Store Report ------------------------------>
-@hasPermission('admin.contactUs.index')
+<!------------------------------ Shop Reports ------------------------------>
+@hasPermission('admin.shop-reports.index')
     <li>
-        <a href="#"
-            class="menu {{ request()->routeIs('admin.contactUs.*') ? 'active' : '' }}">
+        <a href="{{ route('admin.shop-reports.index') }}"
+            class="menu {{ request()->routeIs('admin.shop-reports.*') ? 'active' : '' }}">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/contacts.svg') }}" alt="icon"
                     loading="lazy" />
-                {{ __('Store Report') }}
+                {{ __('Shop Reports') }}
             </span>
         </a>
     </li>
 @endhasPermission
-<!------------------------------ End Store Report ------------------------------>
+<!------------------------------ End Shop Reports ------------------------------>
 
 
 <!------------------------------ Analytics ------------------------------>
-@hasPermission('admin.contactUs.index')
+@hasPermission('admin.analytics.index')
     <li>
-        <a href="#"
-            class="menu {{ request()->routeIs('admin.contactUs.*') ? 'active' : '' }}">
+        <a href="{{ route('admin.analytics.index') }}"
+            class="menu {{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/chart-histogram.svg') }}" alt="icon"
                     loading="lazy" />

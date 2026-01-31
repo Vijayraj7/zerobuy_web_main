@@ -114,8 +114,9 @@ class HomeController extends Controller
             ->withAvg('reviews as average_rating', 'rating')
             ->orderByDesc('average_rating')
             ->orderByDesc('orders_count')
-            ->take(6)
-            ->get();
+            ->get()
+            ->shuffle()
+            ->take(6);
 
         $adProductIds = $adProducts->pluck('id')->toArray();
 
@@ -133,7 +134,9 @@ class HomeController extends Controller
             ->withAvg('reviews as average_rating', 'rating')
             ->orderByDesc('average_rating')
             ->orderByDesc('orders_count')
-            ->take(10)->get();
+            ->get()
+            ->shuffle()
+            ->take(10);
 
 
         $popularProductIds = $popularProducts->pluck('id')->toArray();
@@ -152,7 +155,7 @@ class HomeController extends Controller
                 return $query->where('shop_id', $shop->id);
             });
         $total = $justForYou->count();
-        $justForYou = $justForYou->skip($skip)->take($perPage)->get();
+        $justForYou = $justForYou->skip($skip)->take($perPage)->get()->shuffle();
 
         $shops = collect([]);
         $sponsoredShops = collect([]);
