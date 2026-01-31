@@ -570,26 +570,6 @@
         border-left: 1.8px solid #00846f;
     }
 
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-        background: #f1f5f9;
-        border-radius: 10px;
-    }
-
-    ::-webkit-scrollbar-thumb {
-        background: linear-gradient(135deg, #00846f 0%, #006b5a 100%);
-        border-radius: 10px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(135deg, #006b5a 0%, #00846f 100%);
-    }
-
     /* Enhanced Button Styles */
     .btn {
         padding: 6px 14px;
