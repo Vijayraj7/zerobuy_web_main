@@ -116,6 +116,7 @@ class AnalyticsController extends Controller
             'active_shops' => Shop::isActive()->count(),
             'total_reports' => ShopReport::where('created_at', '>=', $startDate)->count(),
             'verified_shops' => Shop::where('is_verified', true)->count(),
+            'branded_shops' => Shop::where('is_branded', true)->count(),
         ];
 
         // Reviews Statistics

@@ -653,7 +653,7 @@
         <a href="{{ route('admin.analytics.index') }}"
             class="menu {{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}">
             <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/chart-histogram.svg') }}" alt="icon"
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/chart-trend-up.svg') }}" alt="icon"
                     loading="lazy" />
                 {{ __('Analytics') }}
             </span>

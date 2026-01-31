@@ -30,14 +30,14 @@
     }
 
     .stat-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #00846f 0%, #006b5a 100%);
         color: white;
         padding: 12px;
         border-radius: 10px;
         position: relative;
         overflow: hidden;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 3px 12px rgba(102, 126, 234, 0.25);
+        box-shadow: 0 3px 12px rgba(0, 132, 111, 0.25);
     }
 
     .stat-card::before {
@@ -74,12 +74,12 @@
 
     .stat-card:hover {
         transform: translateY(-8px) scale(1.02);
-        box-shadow: 0 20px 60px rgba(102, 126, 234, 0.35);
+        box-shadow: 0 20px 60px rgba(0, 132, 111, 0.35);
     }
 
     .stat-card.revenue { 
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+        background: linear-gradient(135deg, #00846f 0%, #006b5a 100%);
+        box-shadow: 0 10px 40px rgba(0, 132, 111, 0.3);
     }
     .stat-card.orders { 
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
@@ -179,7 +179,7 @@
         transform: translateY(-50%);
         width: 2.5px;
         height: 12px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #00846f 0%, #006b5a 100%);
         border-radius: 2px;
     }
 
@@ -218,7 +218,7 @@
         width: 0;
         height: 0;
         border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #00846f 0%, #006b5a 100%);
         transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         transform: translate(-50%, -50%);
         z-index: 0;
@@ -230,9 +230,9 @@
     }
 
     .period-btn:hover {
-        color: #667eea;
+        color: #00846f;
         transform: translateY(-3px) scale(1.05);
-        text-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        text-shadow: 0 2px 8px rgba(0, 132, 111, 0.3);
     }
 
     .period-btn:hover::before {
@@ -246,10 +246,10 @@
     }
 
     .period-btn.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #00846f 0%, #006b5a 100%);
         color: white;
-        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5), 
-                    0 4px 12px rgba(102, 126, 234, 0.3),
+        box-shadow: 0 8px 24px rgba(0, 132, 111, 0.5), 
+                    0 4px 12px rgba(0, 132, 111, 0.3),
                     inset 0 1px 0 rgba(255, 255, 255, 0.3);
         transform: translateY(-3px) scale(1.05);
         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -330,7 +330,7 @@
         padding: 8px 10px;
         margin: 3.6px 0;
         border-radius: 6px;
-        border: 1px solid rgba(102, 126, 234, 0.08);
+        border: 1px solid rgba(0, 132, 111, 0.08);
         background: white;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
@@ -344,17 +344,17 @@
         top: 0;
         height: 100%;
         width: 2.5px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #00846f 0%, #006b5a 100%);
         border-radius: 6px 0 0 6px;
         opacity: 0;
         transition: opacity 0.3s ease;
     }
 
     .top-item:hover {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        background: linear-gradient(135deg, rgba(0, 132, 111, 0.05) 0%, rgba(0, 107, 90, 0.05) 100%);
         transform: translateY(-3px) translateX(2px);
-        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
-        border-color: rgba(102, 126, 234, 0.2);
+        box-shadow: 0 8px 20px rgba(0, 132, 111, 0.15);
+        border-color: rgba(0, 132, 111, 0.2);
     }
 
     .top-item:hover::before {
@@ -375,12 +375,12 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #00846f 0%, #006b5a 100%);
         color: white;
         border-radius: 7px;
         font-weight: 800;
         font-size: 0.66rem;
-        box-shadow: 0 1.5px 6px rgba(102, 126, 234, 0.35), inset 0 0.5px 0 rgba(255, 255, 255, 0.3);
+        box-shadow: 0 1.5px 6px rgba(0, 132, 111, 0.35), inset 0 0.5px 0 rgba(255, 255, 255, 0.3);
         transition: all 0.3s ease;
         flex-shrink: 0;
         position: relative;
@@ -388,7 +388,7 @@
 
     .top-item:hover .item-rank {
         transform: scale(1.15) rotate(8deg);
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 25px rgba(0, 132, 111, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
     }
 
     .item-rank::after {
@@ -429,7 +429,7 @@
         align-items: center;
         gap: 3.6px;
         padding: 2.5px 7px;
-        background: rgba(102, 126, 234, 0.06);
+        background: rgba(0, 132, 111, 0.06);
         border-radius: 5px;
     }
 
@@ -440,7 +440,7 @@
 
     .item-value {
         font-weight: 800;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #00846f 0%, #006b5a 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -457,15 +457,15 @@
         content: '';
         position: absolute;
         inset: 0;
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+        background: linear-gradient(135deg, rgba(0, 132, 111, 0.08), rgba(0, 107, 90, 0.08));
         border-radius: 6px;
         z-index: -1;
-        border: 0.6px solid rgba(102, 126, 234, 0.15);
+        border: 0.6px solid rgba(0, 132, 111, 0.15);
     }
 
     .top-item:hover .item-value::before {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.12), rgba(118, 75, 162, 0.12));
-        border-color: rgba(102, 126, 234, 0.25);
+        background: linear-gradient(135deg, rgba(0, 132, 111, 0.12), rgba(0, 107, 90, 0.12));
+        border-color: rgba(0, 132, 111, 0.25);
     }
 
     .loading-skeleton {
@@ -565,9 +565,9 @@
         margin-bottom: 10px;
         padding-bottom: 6px;
         border-bottom: 1px solid transparent;
-        background: linear-gradient(to right, rgba(102, 126, 234, 0.1), transparent);
+        background: linear-gradient(to right, rgba(0, 132, 111, 0.1), transparent);
         padding-left: 6px;
-        border-left: 1.8px solid #667eea;
+        border-left: 1.8px solid #00846f;
     }
 
     /* Custom Scrollbar */
@@ -582,12 +582,12 @@
     }
 
     ::-webkit-scrollbar-thumb {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #00846f 0%, #006b5a 100%);
         border-radius: 10px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        background: linear-gradient(135deg, #006b5a 0%, #00846f 100%);
     }
 
     /* Enhanced Button Styles */
@@ -634,13 +634,13 @@
     }
 
     .btn-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #00846f 0%, #006b5a 100%);
         color: white;
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 6px 20px rgba(0, 132, 111, 0.4);
     }
 
     .btn-primary:hover {
-        box-shadow: 0 10px 35px rgba(102, 126, 234, 0.5);
+        box-shadow: 0 10px 35px rgba(0, 132, 111, 0.5);
     }
 
     .btn-success {
@@ -673,7 +673,7 @@
     <div class="row g-4 mb-4">
         <div class="col-xl-2 col-md-4 col-sm-6 fade-in" style="animation-delay: 0.1s">
             <div class="stat-card revenue">
-                <i class="fas fa-dollar-sign stat-icon"></i>
+                <i class="fas fa-indian-rupee-sign stat-icon"></i>
                 <div class="stat-label">{{ __('Total Revenue') }}</div>
                 <div class="stat-value">₹{{ number_format($stats['total_revenue'], 0) }}</div>
                 @if($revenueGrowth != 0)
@@ -862,6 +862,10 @@
                         <span>{{ __('Verified Shops') }}</span>
                         <strong>{{ $shopMetrics['verified_shops'] }}</strong>
                     </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span>{{ __('Branded Shops') }}</span>
+                        <strong>{{ $shopMetrics['branded_shops'] ?? 0 }}</strong>
+                    </div>
                     <div class="d-flex justify-content-between align-items-center">
                         <span>{{ __('Shop Reports') }}</span>
                         <strong>{{ $shopMetrics['total_reports'] }}</strong>
@@ -918,8 +922,8 @@
             datasets: [{
                 label: 'Revenue (₹)',
                 data: {!! json_encode($revenueTrend->pluck('revenue')) !!},
-                borderColor: '#667eea',
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderColor: '#00846f',
+                backgroundColor: 'rgba(0, 132, 111, 0.1)',
                 borderWidth: 3,
                 fill: true,
                 tension: 0.4,
