@@ -9,10 +9,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Driver;
 use App\Models\GeneraleSetting;
 use App\Models\Order;
+use App\Models\OrderStatusTimeline;
 use App\Models\User;
 use App\Repositories\NotificationRepository;
 use App\Repositories\OrderRepository;
 use App\Services\NotificationServices;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables; 
 
@@ -163,6 +165,16 @@ class OrderController extends Controller
         $request->validate(['status' => 'required']);
 
         $order->update(['order_status' => $request->status]);
+
+        OrderStatusTimeline::updateOrCreate(
+            [
+                'order_id' => $order->id,
+                'status' => $request->status,
+            ],
+            [
+                'changed_at' => Carbon::now(),
+            ]
+        );
 
         $title = 'Order status updated';
         $message = 'Your order status updated to '.$request->status;
