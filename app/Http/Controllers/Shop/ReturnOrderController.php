@@ -6,7 +6,9 @@ use App\Models\ReturnOrder;
 use Illuminate\Http\Request;
 use App\Enums\ReturnOderStatus;
 use App\Http\Controllers\Controller;
+use App\Models\ReturnOrderStatusTimeline;
 use App\Repositories\ReturnOrderRepository;
+use Carbon\Carbon;
 
 class ReturnOrderController extends Controller
 {
@@ -58,6 +60,16 @@ class ReturnOrderController extends Controller
         }
 
         $returnOrder->update(['status' => $request->status]);
+
+        ReturnOrderStatusTimeline::updateOrCreate(
+            [
+                'return_order_id' => $returnOrder->id,
+                'status' => $request->status,
+            ],
+            [
+                'changed_at' => Carbon::now(),
+            ]
+        );
 
         return back()->with('success', __('Status updated successfully'));
     }

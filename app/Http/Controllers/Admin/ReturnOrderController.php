@@ -7,9 +7,11 @@ use App\Models\Shop;
 use Illuminate\Http\Request;
 use App\Enums\ReturnOderStatus;
 use App\Http\Controllers\Controller;
+use App\Models\ReturnOrderStatusTimeline;
 use App\Repositories\WalletRepository;
 use App\Repositories\ReturnOrderRepository;
 use App\Repositories\TransactionRepository;
+use Carbon\Carbon;
 
 class ReturnOrderController extends Controller
 {
@@ -122,6 +124,16 @@ class ReturnOrderController extends Controller
 
         $returnOrder->update(['status' => $request->status]);
 
+        ReturnOrderStatusTimeline::updateOrCreate(
+            [
+                'return_order_id' => $returnOrder->id,
+                'status' => $request->status,
+            ],
+            [
+                'changed_at' => Carbon::now(),
+            ]
+        );
+
         return back()->with('success', __('Status updated successfully'));
     }
 
@@ -175,6 +187,15 @@ class ReturnOrderController extends Controller
             'status' => $request->status,
             'reject_note' => $request->reject_note
         ]);
+        ReturnOrderStatusTimeline::updateOrCreate(
+            [
+                'return_order_id' => $returnOrder->id,
+                'status' => $request->status,
+            ],
+            [
+                'changed_at' => Carbon::now(),
+            ]
+        );
         return back()->with('success', __('Return order Cancelled successfully'));
     }
 }
