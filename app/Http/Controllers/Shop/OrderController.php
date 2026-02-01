@@ -7,11 +7,13 @@ use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Driver;
 use App\Models\Order;
+use App\Models\OrderStatusTimeline;
 use App\Repositories\NotificationRepository;
 use App\Repositories\OrderRepository;
 use App\Repositories\TransactionRepository;
 use App\Repositories\WalletRepository;
 use App\Services\NotificationServices;
+use Carbon\Carbon;
 use Endroid\QrCode\QrCode as EndroidQrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Http\Request;
@@ -64,6 +66,16 @@ class OrderController extends Controller
         $request->validate(['status' => 'required']);
 
         $order->update(['order_status' => $request->status]);
+
+        OrderStatusTimeline::updateOrCreate(
+            [
+                'order_id' => $order->id,
+                'status' => $request->status,
+            ],
+            [
+                'changed_at' => Carbon::now(),
+            ]
+        );
 
         if ($request->status == OrderStatus::DELIVERED->value) {
             $this->updateWalletAndTransaction($order);
