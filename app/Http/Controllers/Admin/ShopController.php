@@ -587,7 +587,7 @@ class ShopController extends Controller
             return datatables()->eloquent($query)
                 ->addIndexColumn() 
                 ->editColumn('created_at', fn($row) => $row->created_at->format('d-m-Y')) 
-                ->addColumn('return_id', fn($row) => 'RTN0' . $row->id)
+                ->addColumn('return_id', fn($row) => '<a href="'.route('shop.returnOrder.show', $row->id).'" class="text-primary fw-bold">RTN0' . $row->id . '</a>')
                 ->filterColumn('return_id', function ($query, $keyword) {
                     $keyword = str_replace('RTN0', '', $keyword);
                     $query->where('id', 'LIKE', "%$keyword%");
@@ -625,10 +625,10 @@ class ShopController extends Controller
                 }) 
                 ->addColumn('actions', function ($row) {
                     $downloadUrl = route('shop.download-invoice', $row->id);
-                    return '<a href="'.route('shop.order.show',$row->id).'" class="btn btn-primary btn-sm"><i class="fa fa-eye"></i></a>
+                    return '<a href="'.route('shop.returnOrder.show',$row->id).'" class="btn btn-primary btn-sm"><i class="fa fa-eye"></i></a>
                     <a href="'.$downloadUrl.'" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" data-bs-title="Download Invoice">  <i class="fa fa-download"></i> </a>';
                 })
-                ->rawColumns(['status_badge', 'actions'])
+                ->rawColumns(['return_id', 'status_badge', 'actions'])
                 ->toJson();
         }
 
