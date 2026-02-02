@@ -348,7 +348,8 @@ class Product extends Model
     public function scopeIsActive(Builder $builder)
     {
         return $builder->where('is_active', true)
-            ->whereColumn('quantity', '>=', 'min_order_quantity')->where('is_approve', true)->whereHas('shop', function ($query) {
+            ->whereRaw('products.quantity >= COALESCE(products.min_order_quantity, 1)')
+            ->where('is_approve', true)->whereHas('shop', function ($query) {
                 $query->isActive();
             });
     }

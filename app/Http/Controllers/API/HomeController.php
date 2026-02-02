@@ -101,7 +101,7 @@ class HomeController extends Controller
             ->when($shop, function ($query) use ($shop) {
                 return $query->where('shop_id', $shop->id);
             })
-            ->whereColumn('quantity', '>=', 'min_order_quantity')
+            // ->whereColumn('quantity', '>', 'min_order_quantity')
             ->when($businessCategoryId, function ($q) use ($businessCategoryId) {
                 $q->whereHas('categories', function ($qc) use ($businessCategoryId) {
                     $qc->where('categories.business_category_id', $businessCategoryId);
@@ -144,7 +144,7 @@ class HomeController extends Controller
 
 
         $justForYou = ProductRepository::query()->isActive()->latest('id')
-            ->whereColumn('quantity', '>=', 'min_order_quantity')
+            // ->whereColumn('quantity', '>', 'min_order_quantity')
             ->whereNotIn('id', $excludedIds)
             ->when($businessCategoryId, function ($q) use ($businessCategoryId) {
                 $q->whereHas('categories', function ($qc) use ($businessCategoryId) {
@@ -170,13 +170,18 @@ class HomeController extends Controller
                 ->whereHas('products', function ($query) {
                     return $query->isActive();
                 })->withCount('orders')->withAvg('reviews as average_rating', 'rating')->orderByDesc('average_rating')->orderByDesc('orders_count')->take(8)->get();
-            $sponsoredShops = $shops->filter(function ($shop) use ($today) {
-                return $shop->advertisements()
-                    ->active()
-                    ->where('ads_type', 'store')
-                    ->whereNotNull('shop_id')
-                    ->exists();
-            })->shuffle()->take(8);
+            $sponsoredShops = ShopRepository::query()->isActive()
+                ->when(!empty($businesscategorIds), function ($q) use ($businesscategorIds) {
+                    $q->whereHas('businessCategories', function ($qc) use ($businesscategorIds) {
+                        $qc->whereIn('business_categories.id', $businesscategorIds);
+                    });
+                })
+                ->whereHas('advertisements', function ($query) use ($today) {
+                    $query->active()->where('ads_type', 'store');
+                })
+                ->get()
+                ->shuffle()
+                ->take(8);
         }
 
         // $popularProducts = ProductRepository::query()
@@ -184,7 +189,7 @@ class HomeController extends Controller
         //     ->when($shop, function ($query) use ($shop) {
         //         return $query->where('shop_id', $shop->id);
         //     })
-        //     ->whereColumn('quantity', '>', 'min_order_quantity')
+        //    // ->whereColumn('quantity', '>', 'min_order_quantity')
         //     ->whereHas('ads', function ($query) {
         //         $query->where('slider_type', 'product');
         //     })
