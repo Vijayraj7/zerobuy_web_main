@@ -6,16 +6,19 @@
 <div class="card">
     <div class="card-body">
 
+        @php
+            $activeStatus = request('status');
+        @endphp
         {{-- Status Tabs --}}
         <ul class="nav nav-tabs mb-3">
             <li class="nav-item">
-                <a class="nav-link active" href="javascript:void(0)" data-status="">
+                <a class="nav-link {{ empty($activeStatus) ? 'active' : '' }}" href="javascript:void(0)" data-status="">
                     {{ __('All') }}
                 </a>
             </li>
             @foreach (\App\Enums\OrderStatus::cases() as $status)
                 <li class="nav-item">
-                    <a class="nav-link" href="javascript:void(0)"
+                    <a class="nav-link {{ $activeStatus == $status->value ? 'active' : '' }}" href="javascript:void(0)"
                        data-status="{{ $status->value }}">
                         {{ $status->value }}
                     </a>
@@ -51,14 +54,15 @@
 @push('scripts')
 <script>
 $(function () {
-
+    let defaultStatus = "{{ request('status') }}";
     let table = $('#orders-table').DataTable({
         processing: true,
         serverSide: true,
         ajax: {
             url: "{{ route('admin.order.index') }}",
             data: function (d) {
-                d.status = $('.nav-tabs .active').data('status');
+                d.status = $('.nav-tabs .active').data('status') ?? defaultStatus;
+                //d.status = $('.nav-tabs .active').data('status');
             }
         },
         columns: [

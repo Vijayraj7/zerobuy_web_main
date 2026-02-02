@@ -482,7 +482,7 @@
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/wallet.svg') }}" alt="icon"
                     loading="lazy" />
-                {{ __('Wallet') }}
+                {{ __('Ads Wallet') }}
             </span>
         </a>
     </li>

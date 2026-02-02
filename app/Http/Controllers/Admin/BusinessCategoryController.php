@@ -20,7 +20,11 @@ class BusinessCategoryController extends Controller
             $sortBy = 'id';
         }
 
-        $query = BusinessCategory::query();
+        $query = BusinessCategory::withCount([
+            'categories as category_products_count' => function ($q) {
+                $q->join('product_categories', 'categories.id', '=', 'product_categories.category_id');
+            } 
+        ]);
 
         if ($request->filled('search')) {
             $search = $request->search;

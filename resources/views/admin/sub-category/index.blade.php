@@ -29,6 +29,7 @@
                             <th>{!! sortLink('Business Category', 'business_name') !!}</th>
                             <th>{!! sortLink('Category', 'category_name') !!}</th>
                             <th>{!! sortLink('Sub Category', 'sub_category_name') !!}</th> 
+                            <th>Product Count</th>
                             @hasPermission('admin.subcategory.toggle')
                             <th>Status</th>
                             @endhasPermission
@@ -46,6 +47,7 @@
                                 <td>{{ $subCategory->businessCategory?->name ?? 'N/A' }}</td>
                                 <td>{{ $subCategory->category?->name ?? 'N/A' }}</td> 
                                 <td>{{ $subCategory->name }}</td>
+                                <td> {{ $subCategory->products_count }} </td>
                                 @hasPermission('admin.subcategory.toggle')
                                 <td class="text-center"> 
                                     <label class="switch">

@@ -20,7 +20,9 @@ class SubCategoryController extends Controller
         $sortBy    = $request->input('sort_by', 'id');
         $sortOrder = $request->input('sort_order', 'desc');
 
-        $query = SubCategory::with([
+        $query = SubCategory::withCount([
+            'products' 
+        ])->with([
             'businessCategory',
             'category'
         ]);

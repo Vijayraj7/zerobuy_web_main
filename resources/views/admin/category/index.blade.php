@@ -28,6 +28,7 @@
                             <th>Thumbnail</th>
                             <th>{!! sortLink('Business Category', 'business_name') !!}</th>
                             <th>{!! sortLink('Category', 'category_name') !!}</th>
+                            <th>Product Count</th>
                             @hasPermission('admin.category.toggle')
                             <th>Status</th>
                             @endhasPermission
@@ -44,6 +45,7 @@
                                 <td><img src="{{ $Category->thumbnail }}" width="50"></td>
                                 <td>{{ $Category->businessCategory?->name ?? 'N/A' }}</td> 
                                 <td>{{ $Category->name }}</td>
+                                <td>{{ $Category->products_count }}</td>
                                 @hasPermission('admin.category.toggle')
                                 <td class="text-center"> 
                                     <label class="switch">

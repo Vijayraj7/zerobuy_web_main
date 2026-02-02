@@ -36,6 +36,7 @@
                             <th>{!! sortLink('Category', 'category_name') !!}</th>
                             <th>{!! sortLink('Sub Category', 'sub_category_name') !!}</th>
                             <th>{!! sortLink('Child Category', 'child_name') !!}</th>
+                            <th>Product Count</th>
                             @hasPermission('admin.child-category.toggle')
                             <th>Status</th>
                             @endhasPermission
@@ -54,6 +55,7 @@
                                 <td>{{ $childCategory->category?->name ?? 'N/A' }}</td>
                                 <td>{{ $childCategory->subCategory?->name ?? 'N/A' }}</td>
                                 <td>{{ $childCategory->name }}</td>
+                                <td>{{ $childCategory->products_count }}</td>
                                 @hasPermission('admin.child-category.toggle')
                                 <td class="text-center"> 
                                     <label class="switch">
