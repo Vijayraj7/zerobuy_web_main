@@ -69,7 +69,9 @@ class SellerOrderResource extends JsonResource
             'track_url' => $this->track_url,
             'gst' => $this->gst,
             'order_date' => $this->created_at ? Carbon::parse($this->created_at)->format('d M, Y') : null,
-            'pickup_date' => $this->pickup_date ? Carbon::parse($this->pickup_date)->format('d M, Y') : null,
+            'pickup_date' => $this->pickup_date
+                ? Carbon::parse($this->pickup_date)->format('d M, Y h:i A')
+                : ($this->created_at ? Carbon::parse($this->created_at)->format('d M, Y h:i A') : null),
             'delivery_date' => $this->delivery_date ? Carbon::parse($this->delivery_date)->format('d M, Y') : null,
             'order_placed' => Carbon::parse($this->created_at)->format('d M, Y'),
             'delivery_mode' => $this->shop->deliverySetting?->delivery_mode,
