@@ -72,6 +72,7 @@ class ShopDetailsResource extends JsonResource
             'is_verified' => $this->is_verified == 1 ? true : false,
             'is_branded' => $this->is_branded == 1 ? true : false,
             'banners' => BannerResource::collection($this->banners()->where('status', 1)->get()),
+            'certificate_thumbnail' => $this->certificates()->active()->first()?->thumbnail ?? null,
             'estimated_delivery_time' => (string) ($this->estimated_delivery_time ?? '2-3 days'),
             'delivery_charge' => (float) getDeliveryCharge(1),
         ];

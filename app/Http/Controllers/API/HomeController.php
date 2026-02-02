@@ -101,7 +101,7 @@ class HomeController extends Controller
             ->when($shop, function ($query) use ($shop) {
                 return $query->where('shop_id', $shop->id);
             })
-            ->whereColumn('quantity', '>', 'min_order_quantity')
+            ->whereColumn('quantity', '>=', 'min_order_quantity')
             ->when($businessCategoryId, function ($q) use ($businessCategoryId) {
                 $q->whereHas('categories', function ($qc) use ($businessCategoryId) {
                     $qc->where('categories.business_category_id', $businessCategoryId);
@@ -144,7 +144,7 @@ class HomeController extends Controller
 
 
         $justForYou = ProductRepository::query()->isActive()->latest('id')
-            ->whereColumn('quantity', '>', 'min_order_quantity')
+            ->whereColumn('quantity', '>=', 'min_order_quantity')
             ->whereNotIn('id', $excludedIds)
             ->when($businessCategoryId, function ($q) use ($businessCategoryId) {
                 $q->whereHas('categories', function ($qc) use ($businessCategoryId) {
