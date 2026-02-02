@@ -22,7 +22,7 @@ class ChildCategoryController extends Controller
             'businessCategory',
             'category',
             'subCategory'
-        ]);
+        ])->withCount('products');
         // ->latest('id');
 
         if ($request->filled('search')) {

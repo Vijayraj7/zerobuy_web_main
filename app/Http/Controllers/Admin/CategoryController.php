@@ -16,7 +16,7 @@ class CategoryController extends Controller
         $sortBy    = $request->input('sort_by', 'id');
         $sortOrder = $request->input('sort_order', 'desc');
 
-        $query = Category::with(['businessCategory']);
+        $query = Category::with(['businessCategory'])->withCount([ 'products' ]);
 
         if ($request->filled('search')) {
             $search = $request->search;

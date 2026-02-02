@@ -71,6 +71,10 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Wallet::class, 'id', 'user_id');
     }
+    public function adWallet(): BelongsTo
+    {
+        return $this->belongsTo(AdWallet::class, 'id', 'user_id');
+    }
 
     /**
      * get withdraw model for this user.

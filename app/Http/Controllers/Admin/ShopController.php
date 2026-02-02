@@ -275,9 +275,11 @@ class ShopController extends Controller
             'returns' => $months->map(fn($m) => (int) ($returnData[$m] ?? 0)),
         ];
 
+        $deliverySetting = DeliverySetting::where('shop_id', $shop->id)->first();
+
         $shop->load('businessCategories');
 
-        return view('admin.shop.show', compact('totalSales', 'shop', 'orderOverview', 'subscription', 'daysLeft', 'totalDays', 'chartData'));
+        return view('admin.shop.show', compact('totalSales', 'shop', 'orderOverview', 'subscription', 'daysLeft', 'totalDays', 'chartData', 'deliverySetting'));
     }  
 
     public function edit(Shop $shop)
@@ -567,7 +569,7 @@ class ShopController extends Controller
     public function returnOrders(Request $request, Shop $shop)
     {
         $query = ReturnOrder::query()
-            ->with(['order:id,order_code,created_at', 'customer.user:id,name,phone', 'returnProducts'])
+            ->with(['order:id,order_code,created_at', 'customer.user:id,name,phone', 'returnProduct'])
             ->where('shop_id', $shop->id);
 
         // FILTERS
@@ -609,8 +611,8 @@ class ShopController extends Controller
                         ->select('return_orders.*');
                 })
                 ->addColumn('customer_phone', fn($row) => $row->customer?->user?->phone ?? '-') 
-                ->addColumn('quantity', fn($row) => $row->returnProducts->sum('quantity')) 
-                ->addColumn('amount', fn($row) => number_format($row->returnProducts->sum(fn($p) => $p->price * $p->quantity), 2)) 
+                ->addColumn('quantity', fn($row) => $row->returnProduct->sum('quantity')) 
+                ->addColumn('amount', fn($row) => number_format($row->returnProduct->sum(fn($p) => $p->price * $p->quantity), 2)) 
                 ->editColumn('amount', fn($row) => number_format($row->amount, 2)) 
                 ->addColumn('status_badge', function ($row) {
                     return match ($row->status) {

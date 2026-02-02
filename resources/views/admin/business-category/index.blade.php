@@ -25,8 +25,8 @@
                         <tr>
                             <th>SL</th>
                             <th>Thumbnail</th>
-                            <th>{!! sortLink('Business Category', 'name') !!}</th>
-                            <!-- <th>Name</th> -->
+                            <th>{!! sortLink('Business Category', 'name') !!}</th> 
+                            <th>Product Count</th>
                             <th>Status</th>
                             <th class="text-center">Action</th>
                         </tr>
@@ -38,6 +38,7 @@
                             <td>{{ $loop->iteration }}</td>
                             <td><img src="{{ $category->thumbnail }}" width="50"></td>
                             <td>{{ $category->name }}</td>
+                            <td>{{ $category->category_products_count }}</td>
                             <!-- Status -->
                             <td>
                                 <label class="switch">

@@ -208,7 +208,7 @@
                         <div class="card">
                             <div class="card-body">
                                 <div class="row g-3">
-                                    <div class="col-md-6 col-lg-4 col-xl-3">
+                                    <div class="col-md-6 col-lg-4 col-xl-4">
                                         <div class="dashboard-box item-1">
                                             <h2 class="count">{{ showCurrency($totalSales) }}</h2>
                                             <h3 class="title">{{ __('Total Sales') }}</h3>
@@ -218,7 +218,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-md-6 col-lg-4 col-xl-3">
+                                    <div class="col-md-6 col-lg-4 col-xl-4">
                                         <div class="dashboard-box item-2">
                                             <h2 class="count">{{ $shop->products->count() }}</h2>
                                             <h3 class="title">{{ __('Total Products') }}</h3>
@@ -228,7 +228,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-md-6 col-lg-4 col-xl-3">
+                                    <div class="col-md-6 col-lg-4 col-xl-4">
                                         <div class="dashboard-box item-3">
                                             <h2 class="count">{{ $shop->orders->count() }}</h2>
                                             <h3 class="title">{{ __('Total Orders') }}</h3>
@@ -238,10 +238,20 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-md-6 col-lg-4 col-xl-3">
+                                    <div class="col-md-6 col-lg-6 col-xl-6">
                                         <div class="dashboard-box item-4">
                                             <h2 class="count">{{ showCurrency($shop->user?->wallet?->balance) }}</h2>
-                                            <h3 class="title">{{ __('Wallet Balance') }}</h3>
+                                            <h3 class="title">{{ __('Seller Wallet Balance') }}</h3>
+                                            <div class="icon">
+                                                <img src="{{ asset('assets/icons-admin/wallet.svg') }}" alt="icon" loading="lazy" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 col-lg-6 col-xl-6">
+                                        <div class="dashboard-box item-4">
+                                            <h2 class="count">{{ showCurrency($shop->user?->adWallet?->balance) }}</h2>
+                                            <h3 class="title">{{ __('Ads Wallet Balance') }}</h3>
                                             <div class="icon">
                                                 <img src="{{ asset('assets/icons-admin/wallet.svg') }}" alt="icon" loading="lazy" />
                                             </div>
@@ -308,6 +318,30 @@
                                                 <p class="text-muted mb-0">{{ __('No business categories assigned') }}</p>
                                             @endforelse
                                         </div>
+                                    </div>
+                                </div>
+                                <div class="card mt-3">
+                                    <div class="card-body">
+                                        <div class="cardTitleBox">
+                                            <h5 class="card-title chartTitle">
+                                                {{ __('Delivery Mode') }}
+                                            </h5>
+                                        </div>
+
+                                        @if($deliverySetting)
+                                            <h4>
+                                                <span class="badge badge-info clear-badge-font">
+                                                    @switch($deliverySetting->delivery_mode)
+                                                        @case('amount_based') {{ __('Amount Based') }} @break
+                                                        @case('state_wise') {{ __('State Wise') }} @break
+                                                        @case('manual') {{ __('Manual') }} @break
+                                                        @default {{ __('N/A') }}
+                                                    @endswitch
+                                                </span>
+                                            </h4>
+                                        @else
+                                            <p class="text-muted mb-0">{{ __('No delivery mode configured') }}</p>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
