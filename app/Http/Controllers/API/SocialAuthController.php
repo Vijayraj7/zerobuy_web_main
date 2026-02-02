@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SocialAuthRequest;
 use App\Http\Resources\UserResource;
+use App\Enums\CustomerStatus;
 use App\Models\SocialAuth;
 use App\Repositories\UserRepository;
 use Illuminate\Http\Request;
@@ -16,6 +17,18 @@ class SocialAuthController extends Controller
     {
         $provider = $request->auth_type;
         $user = UserRepository::socialAuthCheckOrCreate($request, $provider);
+
+        if (! $user?->customer) {
+            return $this->json('Login as customer only!', [], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (! $user->is_active) {
+            return $this->json('Sorry, your account is not active', [], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if ($user->customer->status !== CustomerStatus::ACTIVE->value) {
+            return $this->json('Sorry, your account is banned', [], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
 
         return $this->json('Login successfully', [
             'user' => new UserResource($user),
@@ -86,6 +99,18 @@ class SocialAuthController extends Controller
 
         $user = UserRepository::socialAuthCheckOrCreate($data, 'google');
 
+        if (! $user?->customer) {
+            return $this->json('Login as customer only!', [], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (! $user->is_active) {
+            return $this->json('Sorry, your account is not active', [], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if ($user->customer->status !== CustomerStatus::ACTIVE->value) {
+            return $this->json('Sorry, your account is banned', [], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
         return $this->json('Login successfully', [
             'user' => new UserResource($user),
             'access' => UserRepository::getAccessToken($user),
@@ -107,6 +132,18 @@ class SocialAuthController extends Controller
         ];
 
         $user = UserRepository::socialAuthCheckOrCreate($data, 'google');
+
+        if (! $user?->customer) {
+            return $this->json('Login as customer only!', [], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (! $user->is_active) {
+            return $this->json('Sorry, your account is not active', [], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if ($user->customer->status !== CustomerStatus::ACTIVE->value) {
+            return $this->json('Sorry, your account is banned', [], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
 
         return $this->json('Login successfully', [
             'user' => new UserResource($user),

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\Auth;
 
 use App\Enums\Roles;
+use App\Enums\CustomerStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CustomerRegistrationRequest;
 use App\Http\Requests\LoginRequest;
@@ -58,6 +59,13 @@ class AuthController extends Controller
         // Authenticate the user
         $user = $this->authenticate($request);
         if ($user?->customer) {
+            if (! $user->is_active) {
+                return $this->json('Sorry, your account is not active', [], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            if ($user->customer->status !== CustomerStatus::ACTIVE->value) {
+                return $this->json('Sorry, your account is banned', [], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
 
             if ($request->device_key) {
                 DeviceKeyRepository::storeByRequest($user, $request);

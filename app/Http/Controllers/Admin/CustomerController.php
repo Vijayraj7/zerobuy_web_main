@@ -93,15 +93,18 @@ class CustomerController extends Controller
             ->addColumn('actions', function ($row) {
                 $id = $row->id;
                 $status = optional($row->customer)->status;
+                $toggleClass = $status === 'banned' ? 'btn-outline-success' : 'btn-outline-danger';
+                $toggleIcon = $status === 'banned' ? 'fa-check' : 'fa-ban';
+                $toggleTitle = $status === 'banned' ? 'Activate' : 'Ban';
 
                 return ' 
                     <a href="'.route('admin.customer.edit', $id).'" class="btn btn-outline-info circleIcon" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Edit"> 
                         <i class="fa fa-eye"></i>
                     </a>
 
-                    <button class="btn btn-outline-danger circleIcon"
+                    <button class="btn '.$toggleClass.' circleIcon" data-bs-title="'.$toggleTitle.'"
                         onclick="confirmToggle('.$id.', `'.$status.'`)">
-                        <i class="fa fa-ban"></i>
+                        <i class="fa '.$toggleIcon.'"></i>
                     </button> 
 
                     <button class="btn btn-outline-danger circleIcon" onclick="confirmDelete('.$id.')" data-bs-title="Delete">
@@ -123,6 +126,11 @@ class CustomerController extends Controller
     public function create()
     {
         return view('admin.customer.create');
+    }
+
+    public function show(User $user)
+    {
+        return $this->edit($user);
     }
 
     public function store(RegistrationRequest $request)
@@ -217,6 +225,10 @@ class CustomerController extends Controller
         }
         $customer->status = ($customer->status === 'active') ? 'banned' : 'active';
         $customer->save();
+
+        if ($customer->status === 'banned') {
+            $user->tokens()->delete();
+        }
 
         return back()->with('success', 'Customer status updated successfully.');
     }

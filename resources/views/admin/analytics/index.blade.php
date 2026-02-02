@@ -102,6 +102,11 @@
         color: white;
         box-shadow: 0 10px 40px rgba(255, 107, 107, 0.3);
     }
+    .stat-card.returns { 
+        background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+        color: white;
+        box-shadow: 0 10px 40px rgba(162, 155, 254, 0.3);
+    }
 
     .stat-value {
         font-size: 1.32rem;
@@ -335,6 +340,7 @@
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        cursor: pointer;
     }
 
     .top-item::before {
@@ -708,6 +714,14 @@
                 <div class="stat-value">{{ number_format($stats['pending_orders']) }}</div>
             </div>
         </div>
+
+        <div class="col-xl-2 col-md-4 col-sm-6 fade-in" style="animation-delay: 0.7s">
+            <div class="stat-card returns">
+                <i class="fas fa-undo stat-icon"></i>
+                <div class="stat-label">{{ __('Total Returns') }}</div>
+                <div class="stat-value">{{ number_format($stats['total_returns']) }}</div>
+            </div>
+        </div>
     </div>
 
     <!-- Revenue & Orders Trends -->
@@ -779,7 +793,7 @@
 
     <!-- Top Products & Top Shops -->
     <div class="row g-4 mb-4">
-        <div class="col-lg-6 fade-in" style="animation-delay: 1.2s">
+        <div class="col-lg-4 fade-in" style="animation-delay: 1.2s">
             <div class="card analytics-card">
                 <div class="chart-header">
                     <h5 class="chart-title">{{ __('Top 10 Products') }}</h5>
@@ -787,23 +801,25 @@
                 <div class="card-body p-0">
                     <ul class="top-items-list">
                         @foreach($topProducts as $index => $product)
-                            <li class="top-item">
-                                <div class="d-flex align-items-center flex-1">
-                                    <div class="item-rank">{{ $index + 1 }}</div>
-                                    <div class="item-info">
-                                        <div class="item-name">{{ Str::limit($product->name, 40) }}</div>
-                                        <div class="item-meta">{{ $product->shop?->name ?? 'N/A' }}</div>
+                            <a href="{{ route('admin.product.show', $product->id) }}" style="text-decoration: none; color: inherit;">
+                                <li class="top-item">
+                                    <div class="d-flex align-items-center flex-1">
+                                        <div class="item-rank">{{ $index + 1 }}</div>
+                                        <div class="item-info">
+                                            <div class="item-name">{{ Str::limit($product->name, 40) }}</div>
+                                            <div class="item-meta">{{ $product->shop?->name ?? 'N/A' }}</div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="item-value">{{ $product->order_items_count }} {{ __('sales') }}</div>
-                            </li>
+                                    <div class="item-value">{{ $product->order_items_count }} {{ __('sales') }}</div>
+                                </li>
+                            </a>
                         @endforeach
                     </ul>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-6 fade-in" style="animation-delay: 1.3s">
+        <div class="col-lg-4 fade-in" style="animation-delay: 1.3s">
             <div class="card analytics-card">
                 <div class="chart-header">
                     <h5 class="chart-title">{{ __('Top 10 Shops by Revenue') }}</h5>
@@ -811,16 +827,44 @@
                 <div class="card-body p-0">
                     <ul class="top-items-list">
                         @foreach($topShops as $index => $shop)
-                            <li class="top-item">
-                                <div class="d-flex align-items-center flex-1">
-                                    <div class="item-rank">{{ $index + 1 }}</div>
-                                    <div class="item-info">
-                                        <div class="item-name">{{ $shop->name }}</div>
-                                        <div class="item-meta">{{ $shop->products->count() ?? 0 }} Products</div>
+                            <a href="{{ route('admin.shop.show', $shop->id) }}" style="text-decoration: none; color: inherit;">
+                                <li class="top-item">
+                                    <div class="d-flex align-items-center flex-1">
+                                        <div class="item-rank">{{ $index + 1 }}</div>
+                                        <div class="item-info">
+                                            <div class="item-name">{{ $shop->name }}</div>
+                                            <div class="item-meta">{{ $shop->products->count() ?? 0 }} Products</div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="item-value">₹{{ number_format($shop->revenue ?? 0, 0) }}</div>
-                            </li>
+                                    <div class="item-value">₹{{ number_format($shop->revenue ?? 0, 0) }}</div>
+                                </li>
+                            </a>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 fade-in" style="animation-delay: 1.4s">
+            <div class="card analytics-card">
+                <div class="chart-header">
+                    <h5 class="chart-title">{{ __('Top 10 Customers') }}</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="top-items-list">
+                        @foreach($topCustomers as $index => $customer)
+                            <a href="{{ route('admin.customer.show', $customer->user_id) }}" style="text-decoration: none; color: inherit;">
+                                <li class="top-item">
+                                    <div class="d-flex align-items-center flex-1">
+                                        <div class="item-rank">{{ $index + 1 }}</div>
+                                        <div class="item-info">
+                                            <div class="item-name">{{ $customer->user?->name ?? 'N/A' }}</div>
+                                            <div class="item-meta">₹{{ number_format($customer->total_spent ?? 0, 0) }} spent</div>
+                                        </div>
+                                    </div>
+                                    <div class="item-value">{{ $customer->orders_count }} {{ __('orders') }}</div>
+                                </li>
+                            </a>
                         @endforeach
                     </ul>
                 </div>
@@ -830,7 +874,7 @@
 
     <!-- Additional Metrics -->
     <div class="row g-4 mb-4">
-        <div class="col-lg-4 fade-in" style="animation-delay: 1.4s">
+        <div class="col-lg-4 fade-in" style="animation-delay: 1.5s">
             <div class="card analytics-card">
                 <div class="card-body">
                     <h6 class="mb-3">{{ __('Shop Metrics') }}</h6>
@@ -846,15 +890,27 @@
                         <span>{{ __('Branded Shops') }}</span>
                         <strong>{{ $shopMetrics['branded_shops'] ?? 0 }}</strong>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
                         <span>{{ __('Shop Reports') }}</span>
                         <strong>{{ $shopMetrics['total_reports'] }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span>{{ __('Subscribed Shops') }}</span>
+                        <strong>{{ $shopMetrics['total_subscribed_shops'] }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span>{{ __('Active Subscribed') }}</span>
+                        <strong>{{ $shopMetrics['active_subscribed_shops'] }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>{{ __('Inactive Subscribed') }}</span>
+                        <strong>{{ $shopMetrics['inactive_subscribed_shops'] }}</strong>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-4 fade-in" style="animation-delay: 1.5s">
+        <div class="col-lg-4 fade-in" style="animation-delay: 1.6s">
             <div class="card analytics-card">
                 <div class="card-body">
                     <h6 class="mb-3">{{ __('Review Statistics') }}</h6>
@@ -873,7 +929,7 @@
             </div>
         </div>
 
-        <div class="col-lg-4 fade-in" style="animation-delay: 1.6s">
+        <div class="col-lg-4 fade-in" style="animation-delay: 1.7s">
             <div class="card analytics-card">
                 <div class="chart-header">
                     <h5 class="chart-title">{{ __('Payment Methods') }}</h5>

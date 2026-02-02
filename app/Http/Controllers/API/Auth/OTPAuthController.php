@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\Auth;
 
 use App\Enums\Roles;
+use App\Enums\CustomerStatus;
 use App\Events\SendOTPMail;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\OTPRequest;
@@ -33,8 +34,12 @@ class OTPAuthController extends Controller
 
         // For new users, we still send OTP but don't create the user yet
         // For existing users, check if account is active
-        if (!$isNewUser && !$user->is_active) {
+        if (! $isNewUser && ! $user->is_active) {
             return $this->json('Sorry, your account is not active', [], 422);
+        }
+
+        if (! $isNewUser && $user?->customer && $user->customer->status !== CustomerStatus::ACTIVE->value) {
+            return $this->json('Sorry, your account is banned', [], 422);
         }
 
         $verifyManage = Cache::rememberForever('verify_manage', function () {
@@ -133,6 +138,14 @@ class OTPAuthController extends Controller
             // (same rule as AuthController::login)
             if (! $user?->customer) {
                 return $this->json('Login as customer only!', [], Response::HTTP_BAD_REQUEST);
+            }
+
+            if (! $user->is_active) {
+                return $this->json('Sorry, your account is not active', [], 422);
+            }
+
+            if ($user->customer->status !== CustomerStatus::ACTIVE->value) {
+                return $this->json('Sorry, your account is banned', [], 422);
             }
 
             // Existing user - login directly

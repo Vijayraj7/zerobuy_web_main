@@ -35,6 +35,7 @@ class ProductController extends Controller
         $shopID = $request->shop_id;
         $categoryID = $request->category_id;
         $subCategoryID = $request->sub_category_id;
+        $businessCategoryID = $request->business_category_id;
 
         $rating = $request->rating; // 4.0
         $sortType = $request->sort_type;
@@ -103,6 +104,10 @@ class ProductController extends Controller
             })->when($subCategoryID, function ($query) use ($subCategoryID) {
                 $query->whereHas('subcategories', function ($query) use ($subCategoryID) {
                     return $query->where('id', $subCategoryID);
+                });
+            })->when($businessCategoryID, function ($query) use ($businessCategoryID) {
+                return $query->whereHas('categories', function ($q) use ($businessCategoryID) {
+                    $q->where('business_category_id', $businessCategoryID);
                 });
             })->when($stateID, function ($query) use ($stateID) {
                 return $query->whereHas('shop', function ($query) use ($stateID) {

@@ -36,6 +36,7 @@ use App\Http\Controllers\API\ChildCategoryController;
 use App\Http\Controllers\API\LocationController;
 use App\Http\Controllers\API\VerifyManageApiController;
 use App\Http\Controllers\API\ShopReportController;
+use App\Http\Controllers\API\SearchController;
 
 /*
 |--------------------------------------------------------------------------
@@ -130,6 +131,9 @@ Route::controller(ProductController::class)->group(function () {
     Route::get('/products', 'index');
     Route::get('/product-details', 'show');
 });
+
+// search suggestions route
+Route::get('/search-suggestions', [SearchController::class, 'getSearchSuggestions']);
 
 // review route
 Route::controller(ReviewController::class)->group(function () {

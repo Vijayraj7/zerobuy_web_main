@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\Shop;
 use App\Models\Review;
 use App\Models\ShopReport;
+use App\Models\ReturnOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -30,6 +31,7 @@ class AnalyticsController extends Controller
             'total_products' => Product::where('created_at', '>=', $startDate)->count(),
             'total_shops' => Shop::where('created_at', '>=', $startDate)->count(),
             'pending_orders' => Order::where('order_status', 'pending')->count(),
+            'total_returns' => ReturnOrder::where('created_at', '>=', $startDate)->count(),
             'completed_orders' => Order::where('order_status', 'delivered')
                 ->where('created_at', '>=', $startDate)
                 ->count(),
@@ -78,6 +80,18 @@ class AnalyticsController extends Controller
             ->limit(10)
             ->get();
 
+        // Top Customers by Order Count
+        $topCustomers = Customer::withCount(['orders' => function ($query) use ($startDate) {
+            $query->where('created_at', '>=', $startDate);
+        }])
+            ->withSum(['orders as total_spent' => function ($query) use ($startDate) {
+                $query->where('created_at', '>=', $startDate)
+                    ->where('payment_status', 'paid');
+            }], 'total_amount')
+            ->orderBy('orders_count', 'desc')
+            ->limit(10)
+            ->get();
+
         // Customer Growth
         $customerGrowth = Customer::selectRaw('DATE(created_at) as date, COUNT(*) as count')
             ->where('created_at', '>=', $startDate)
@@ -117,6 +131,9 @@ class AnalyticsController extends Controller
             'total_reports' => ShopReport::where('created_at', '>=', $startDate)->count(),
             'verified_shops' => Shop::where('is_verified', true)->count(),
             'branded_shops' => Shop::where('is_branded', true)->count(),
+            'total_subscribed_shops' => Shop::whereHas('currentSubscription')->count(),
+            'active_subscribed_shops' => Shop::where('status', 1)->whereHas('currentSubscription')->count(),
+            'inactive_subscribed_shops' => Shop::where('status', 0)->whereHas('currentSubscription')->count(),
         ];
 
         // Reviews Statistics
@@ -154,6 +171,7 @@ class AnalyticsController extends Controller
             'ordersByStatus',
             'topProducts',
             'topShops',
+            'topCustomers',
             'customerGrowth',
             'categoryPerformance',
             'paymentMethods',
