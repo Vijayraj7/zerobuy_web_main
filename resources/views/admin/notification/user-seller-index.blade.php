@@ -8,27 +8,29 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="my-3 card">
-                    <div class="card-body"> 
+                    <div class="card-body">
                         <div class="d-flex align-items-center flex-wrap gap-3 justify-content-between px-3">
                             <h4>{{ __('User Notifications') }}</h4>
 
-                            <a href="javascript:void(0);" class="btn py-2 btn-primary" data-bs-toggle="modal" data-bs-target="#userNotificationModal">
+                            <a href="javascript:void(0);" class="btn py-2 btn-primary" data-bs-toggle="modal"
+                                data-bs-target="#userNotificationModal">
                                 <i class="fa fa-plus-circle"></i>
                                 {{ __('User Notifications ') }}
-                            </a> 
+                            </a>
                         </div>
                         <div class="row mt-4">
-                            @foreach($userNotifications as $noti)
+                            @foreach ($userNotifications as $noti)
                                 <div class="col-md-6 mb-3">
                                     <div class="card p-2">
                                         <img src="{{ $noti->thumbnail }}" class="w-100 rounded">
 
                                         <div class="mt-2">
                                             <div class="small text-muted">
-                                                Type: <b>{{ $noti->notification_option_type }} | {{ $noti->optionName() ?? 'N/A' }}</b>
-                                            </div> 
+                                                Type: <b>{{ $noti->notification_option_type }} |
+                                                    {{ $noti->optionName() ?? 'N/A' }}</b>
+                                            </div>
 
-                                            @if($noti->message)
+                                            @if ($noti->message)
                                                 <div class="small mt-1">
                                                     Message: <span>{{ $noti->message }}</span>
                                                 </div>
@@ -36,10 +38,22 @@
                                         </div>
 
                                         <div class="d-flex justify-content-center gap-2 mt-2">
-                                            <a href="{{ route('admin.notification.resend', $noti->id) }}" class="btn btn-info">
+                                            <button type="button" class="btn btn-success btn-edit-user"
+                                                data-id="{{ $noti->id }}"
+                                                data-business-category="{{ $noti->business_category_id }}"
+                                                data-option-type="{{ $noti->notification_option_type }}"
+                                                data-option-link="{{ $noti->notification_option_link }}"
+                                                data-option-name="{{ $noti->optionName() ?? 'N/A' }}"
+                                                data-message="{{ $noti->message }}"
+                                                data-thumbnail="{{ $noti->thumbnail }}">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <a href="{{ route('admin.notification.resend', $noti->id) }}"
+                                                class="btn btn-info">
                                                 <i class="fa fa-bell"></i>
                                             </a>
-                                            <form action="{{ route('admin.notification.delete', $noti->id) }}" method="POST" class="delete-form d-inline">
+                                            <form action="{{ route('admin.notification.delete', $noti->id) }}"
+                                                method="POST" class="delete-form d-inline">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="button" class="btn btn-danger btn-delete">
@@ -50,24 +64,25 @@
                                     </div>
                                 </div>
                             @endforeach
-                        </div>  
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div class="col-md-6">
                 <div class="my-3 card">
-                    <div class="card-body"> 
+                    <div class="card-body">
                         <div class="d-flex align-items-center flex-wrap gap-3 justify-content-between px-3">
                             <h4>{{ __('Seller Notifications') }}</h4>
 
-                            <a href="javascript:void(0);" class="btn py-2 btn-warning" data-bs-toggle="modal" data-bs-target="#sellerNotificationModal">
+                            <a href="javascript:void(0);" class="btn py-2 btn-warning" data-bs-toggle="modal"
+                                data-bs-target="#sellerNotificationModal">
                                 <i class="fa fa-plus-circle"></i>
                                 {{ __('Seller Notifications ') }}
                             </a>
                         </div>
                         <div class="row mt-4">
-                            @foreach($sellerNotifications as $noti)
+                            @foreach ($sellerNotifications as $noti)
                                 <div class="col-md-6 mb-3">
                                     <div class="card p-2">
                                         <img src="{{ $noti->thumbnail }}" class="w-100 rounded">
@@ -76,7 +91,7 @@
                                                 Shop: <b>{{ $noti->shop?->name ?? 'N/A' }}</b>
                                             </div>
 
-                                            @if($noti->message)
+                                            @if ($noti->message)
                                                 <div class="small mt-1">
                                                     Message: <span>{{ $noti->message }}</span>
                                                 </div>
@@ -84,10 +99,21 @@
                                         </div>
 
                                         <div class="d-flex justify-content-center gap-2 mt-2">
-                                            <a href="{{ route('admin.notification.resend', $noti->id) }}" class="btn btn-info">
+                                            <button type="button" class="btn btn-success btn-edit-seller"
+                                                data-id="{{ $noti->id }}"
+                                                data-business-category="{{ $noti->business_category_id }}"
+                                                data-shop-id="{{ $noti->shop_id }}"
+                                                data-shop-name="{{ $noti->shop?->name ?? 'N/A' }}"
+                                                data-message="{{ $noti->message }}"
+                                                data-thumbnail="{{ $noti->thumbnail }}">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <a href="{{ route('admin.notification.resend', $noti->id) }}"
+                                                class="btn btn-info">
                                                 <i class="fa fa-bell"></i>
                                             </a>
-                                            <form action="{{ route('admin.notification.delete', $noti->id) }}" method="POST" class="delete-form d-inline">
+                                            <form action="{{ route('admin.notification.delete', $noti->id) }}"
+                                                method="POST" class="delete-form d-inline">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="button" class="btn btn-danger btn-delete">
@@ -102,30 +128,33 @@
                     </div>
                 </div>
             </div>
-        </div>         
+        </div>
     </div>
 
 
     <div class="modal fade" id="userNotificationModal">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content"> 
-                <form method="POST" method="POST" id="userNotificationForm" action="{{ route('admin.user.notification.store') }}" enctype="multipart/form-data">
+            <div class="modal-content">
+                <form method="POST" id="userNotificationForm" action="{{ route('admin.user.notification.store') }}"
+                    enctype="multipart/form-data">
                     @csrf
-                    <input type="hidden" name="_method" id="method">
-                    <div class="modal-header"> 
-                        <h4 class="modal-title">User Notification</h4>
+                    <input type="hidden" name="_method" id="user_method" value="POST">
+                    <input type="hidden" name="notification_id" id="user_notification_id">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="userModalTitle">User Notification</h4>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    
+
                     <div class="modal-body row">
                         <div class="mb-3">
-                            <x-select name="business_category_id" id="business_category_id" label="Business Category" class="select2 mb-3" required>
+                            <x-select name="business_category_id" id="business_category_id" label="Business Category"
+                                class="select2 mb-3" required>
                                 <option value="">--Main Notification Category--</option>
-                                @foreach($businessCategories as $bc)
-                                <option value="{{ $bc->id }}">{{ $bc->name }}</option>
+                                @foreach ($businessCategories as $bc)
+                                    <option value="{{ $bc->id }}">{{ $bc->name }}</option>
                                 @endforeach
                             </x-select>
-                        </div> 
+                        </div>
 
                         <div class="mb-3">
                             <x-select name="notification_option_type" label="Slider Type" id="notification_option_type">
@@ -138,23 +167,26 @@
                         </div>
 
                         <div class="mb-3">
-                            <x-select name="notification_option_link" label="Option Types" id="notification_option_link" class="select2"></x-select>
+                            <x-select name="notification_option_link" label="Option Types" id="notification_option_link"
+                                class="select2"></x-select>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Message</label>
-                            <textarea name="message" class="form-control" rows="3"></textarea>
+                            <textarea name="message" id="user_message" class="form-control" rows="3"></textarea>
                         </div>
 
                         <div class="mt-4">
                             <div class="d-flex align-items-center justify-content-center mb-2">
                                 <div class="ratio4x1">
-                                    <img src="https://placehold.co/2000x500/f1f5f9/png" id="notification_banner" alt="" width="100%">
+                                    <img src="https://placehold.co/2000x500/f1f5f9/png" id="notification_banner"
+                                        alt="" width="100%">
                                 </div>
                             </div>
-                            <x-file name="notification_banner" label="Notification Banner Ratio 4:1 (2000 x 500 px) *" preview="notification_banner" />
-                        </div>  
-                    </div> 
+                            <x-file name="notification_banner" label="Notification Banner Ratio 4:1 (2000 x 500 px)"
+                                preview="notification_banner" />
+                        </div>
+                    </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         <button class="btn btn-primary">Save</button>
@@ -167,13 +199,14 @@
     <div class="modal fade" id="sellerNotificationModal">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
-                <form method="POST" id="sellerNotificationForm"
-                    action="{{ route('admin.seller.notification.store') }}"
+                <form method="POST" id="sellerNotificationForm" action="{{ route('admin.seller.notification.store') }}"
                     enctype="multipart/form-data">
                     @csrf
+                    <input type="hidden" name="_method" id="seller_method" value="POST">
+                    <input type="hidden" name="notification_id" id="seller_notification_id">
 
                     <div class="modal-header">
-                        <h4 class="modal-title">Seller Notification</h4>
+                        <h4 class="modal-title" id="sellerModalTitle">Seller Notification</h4>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
 
@@ -184,32 +217,40 @@
                                 <label class="form-label">Business Category</label>
                                 <select name="seller_business_category_id" class="form-control select2Seller" required>
                                     <option value="">--Main Notification Category--</option>
-                                    @foreach($businessCategories as $bc)
+                                    @foreach ($businessCategories as $bc)
                                         <option value="{{ $bc->id }}">{{ $bc->name }}</option>
                                     @endforeach
                                 </select>
-                            </div> 
+                            </div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Store / Seller (Shop)</label>
-                            <select name="shop_id" id="seller_shop_id" class="form-control select2Seller" required></select>
+                            <div class="d-flex gap-2">
+                                <select name="shop_id" id="seller_shop_id" class="form-control select2Seller" style="flex: 1;">
+                                    <option>All Sellers</option>
+                                </select>
+                                <button type="button" class="btn btn-secondary" id="selectAllSellers">
+                                    <i class="fa fa-users"></i> All Sellers
+                                </button>
+                            </div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Message</label>
-                            <textarea name="message" class="form-control" rows="3"></textarea>
+                            <textarea name="message" id="seller_message" class="form-control" rows="3"></textarea>
                         </div>
 
                         <div class="mt-2">
                             <div class="d-flex align-items-center justify-content-center mb-2">
                                 <div class="ratio4x1">
-                                    <img src="https://placehold.co/2000x500/f1f5f9/png" id="seller_notification_banner_preview" width="100%">
+                                    <img src="https://placehold.co/2000x500/f1f5f9/png"
+                                        id="seller_notification_banner_preview" width="100%">
                                 </div>
                             </div>
 
-                            <x-file name="notification_banner" label="Notification Banner Ratio 4:1 (2000 x 500 px) *"
-                                    preview="seller_notification_banner_preview" />
+                            <x-file name="notification_banner" label="Notification Banner Ratio 4:1 (2000 x 500 px)"
+                                preview="seller_notification_banner_preview" />
                         </div>
 
                     </div>
@@ -226,41 +267,209 @@
 @endsection
 
 @push('scripts')
-<script>
-    $(document).ready(function () {
-        $('.select2').select2({
-            dropdownParent: $('#userNotificationModal'),
-            width: '100%'
-        });
+    <script>
+        $(document).ready(function() {
+            $('.select2').select2({
+                dropdownParent: $('#userNotificationModal'),
+                width: '100%'
+            });
 
-        /* ========= LOAD OPTION TYPES ========= */
-        function loadSliderLinks() {
-            let type = $('#notification_option_type').val();
-            let businessCategoryId = $('#business_category_id').val();
+            /* ========= LOAD OPTION TYPES ========= */
+            function loadSliderLinks() {
+                let type = $('#notification_option_type').val();
+                let businessCategoryId = $('#business_category_id').val();
 
-            if (!type || !businessCategoryId) {
-                $('#notification_option_link').empty().trigger('change');
-                return;
+                if (!type || !businessCategoryId) {
+                    $('#notification_option_link').empty().trigger('change');
+                    return;
+                }
+
+                $('#notification_option_link').select2('destroy');
+
+                $('#notification_option_link').select2({
+                    dropdownParent: $('#userNotificationModal'),
+                    width: '100%',
+                    placeholder: 'Select Option Types',
+                    ajax: {
+                        url: "{{ route('admin.user_seller.option_types') }}",
+                        dataType: 'json',
+                        delay: 300,
+                        data: function(params) {
+                            return {
+                                type: $('#notification_option_type').val(),
+                                business_category_id: $('#business_category_id').val(),
+                                search: params.term
+                            };
+                        },
+                        processResults: function(data) {
+                            return {
+                                results: data.map(item => ({
+                                    id: item.id,
+                                    text: item.name
+                                }))
+                            };
+                        }
+                    }
+                });
             }
 
-            $('#notification_option_link').select2('destroy');
+            $('#notification_option_type, #business_category_id').on('change', function() {
+                $('#notification_option_link').val(null).trigger('change');
+                loadSliderLinks();
+            });
 
-            $('#notification_option_link').select2({
-                dropdownParent: $('#userNotificationModal'),
+            /* ========= STORE NAME FOR SUB / CHILD ========= */
+            $('#userNotificationForm').on('submit', function() {
+                let type = $('#notification_option_type').val();
+            });
+
+            /* ========= ADD NOTIFICATION ========= */
+            $('button[data-bs-target="#userNotificationModal"]').on('click', function() {
+                $('#userNotificationForm')[0].reset();
+                $('#user_method').val('POST');
+                $('#user_notification_id').val('');
+                $('#userModalTitle').text('User Notification');
+                $('#userNotificationForm').attr('action', "{{ route('admin.user.notification.store') }}");
+                $('#notification_option_link').empty().trigger('change');
+                $('#notification_banner').attr('src', 'https://placehold.co/2000x500/f1f5f9/png');
+            });
+
+            /* ========= EDIT USER NOTIFICATION ========= */
+            $(document).on('click', '.btn-edit-user', function() {
+                const id = $(this).data('id');
+                const businessCategory = $(this).data('business-category');
+                const optionType = $(this).data('option-type');
+                const optionLink = $(this).data('option-link');
+                const optionName = $(this).data('option-name');
+                const message = $(this).data('message');
+                const thumbnail = $(this).data('thumbnail');
+
+                $('#user_method').val('PUT');
+                $('#user_notification_id').val(id);
+                $('#userModalTitle').text('Edit User Notification');
+                $('#userNotificationForm').attr('action', `/admin/user-notification/${id}/update`);
+
+                $('#business_category_id').val(businessCategory).trigger('change');
+                $('#notification_option_type').val(optionType).trigger('change');
+                $('#user_message').val(message);
+                $('#notification_banner').attr('src', thumbnail);
+
+                // Load option link after option type is set
+                setTimeout(() => {
+                    $('#notification_option_link').empty()
+                        .append(new Option(optionName, optionLink, true, true))
+                        .trigger('change');
+
+                    // Trigger option types load
+                    loadSliderLinks();
+                }, 500);
+
+                $('#userNotificationModal').modal('show');
+            });
+
+            /* ========= RESET ON MODAL CLOSE ========= */
+            $('#userNotificationModal').on('hidden.bs.modal', function() {
+                $('#userNotificationForm')[0].reset();
+                $('#user_method').val('POST');
+                $('#user_notification_id').val('');
+                $('#userModalTitle').text('User Notification');
+                $('#userNotificationForm').attr('action', "{{ route('admin.user.notification.store') }}");
+                $('#notification_option_link').empty().trigger('change');
+                $('#notification_banner').attr('src', 'https://placehold.co/2000x500/f1f5f9/png');
+                $('#forShop').prop('checked', false);
+            });
+
+            $('.select2Seller').select2({
+                dropdownParent: $('#sellerNotificationModal'),
+                width: '100%'
+            });
+
+            /* ========= ADD SELLER NOTIFICATION ========= */
+            $('button[data-bs-target="#sellerNotificationModal"]').on('click', function() {
+                $('#sellerNotificationForm')[0].reset();
+                $('#seller_method').val('POST');
+                $('#seller_notification_id').val('');
+                $('#sellerModalTitle').text('Seller Notification');
+                $('#sellerNotificationForm').attr('action',
+                    "{{ route('admin.seller.notification.store') }}");
+                $('#seller_notification_banner_preview').attr('src',
+                    'https://placehold.co/2000x500/f1f5f9/png');
+                $('#selectAllSellers').removeClass('btn-success').addClass('btn-secondary');
+                $('#selectAllSellers').html('<i class="fa fa-users"></i> All Sellers');
+                $('#seller_shop_id').prop('disabled', false);
+            });
+
+            /* ========= EDIT SELLER NOTIFICATION ========= */
+            $(document).on('click', '.btn-edit-seller', function() {
+                const id = $(this).data('id');
+                const businessCategory = $(this).data('business-category');
+                const shopId = $(this).data('shop-id');
+                const shopName = $(this).data('shop-name');
+                const message = $(this).data('message');
+                const thumbnail = $(this).data('thumbnail');
+
+                $('#seller_method').val('PUT');
+                $('#seller_notification_id').val(id);
+                $('#sellerModalTitle').text('Edit Seller Notification');
+                $('#sellerNotificationForm').attr('action', `/admin/seller-notification/${id}/update`);
+
+                $('select[name="seller_business_category_id"]').val(businessCategory).trigger('change');
+                $('#seller_message').val(message);
+                $('#seller_notification_banner_preview').attr('src', thumbnail);
+
+                // Load and set shop
+                if (shopId) {
+                    $('#seller_shop_id').empty()
+                        .append(new Option('All Sellers', '', false, false))
+                        .append(new Option(shopName, shopId, true, true))
+                        .trigger('change');
+                    $('#seller_shop_id').prop('disabled', false);
+                    $('#selectAllSellers').removeClass('btn-success').addClass('btn-secondary');
+                    $('#selectAllSellers').html('<i class="fa fa-users"></i> All Sellers');
+                } else {
+                    $('#seller_shop_id').empty()
+                        .append(new Option('All Sellers', '', true, true))
+                        .trigger('change');
+                    $('#seller_shop_id').prop('disabled', true);
+                    $('#selectAllSellers').removeClass('btn-secondary').addClass('btn-success');
+                    $('#selectAllSellers').html('<i class="fa fa-check"></i> All Sellers');
+                }
+
+                $('#sellerNotificationModal').modal('show');
+            });
+
+            /* ========= RESET SELLER MODAL ON CLOSE ========= */
+            $('#sellerNotificationModal').on('hidden.bs.modal', function() {
+                $('#sellerNotificationForm')[0].reset();
+                $('#seller_method').val('POST');
+                $('#seller_notification_id').val('');
+                $('#sellerModalTitle').text('Seller Notification');
+                $('#sellerNotificationForm').attr('action',
+                    "{{ route('admin.seller.notification.store') }}");
+                $('#seller_notification_banner_preview').attr('src',
+                    'https://placehold.co/2000x500/f1f5f9/png');
+                $('#seller_shop_id').empty().append(new Option('All Sellers', '', false, false)).trigger(
+                    'change');
+                $('#selectAllSellers').removeClass('btn-success').addClass('btn-secondary');
+                $('#selectAllSellers').html('<i class="fa fa-users"></i> All Sellers');
+                $('#seller_shop_id').prop('disabled', false);
+            });
+
+            $('#seller_shop_id').select2({
+                dropdownParent: $('#sellerNotificationModal'),
                 width: '100%',
-                placeholder: 'Select Option Types',
+                placeholder: "Select Seller Store",
+                allowClear: true,
                 ajax: {
-                    url: "{{ route('admin.user_seller.option_types') }}",
+                    url: "{{ route('admin.seller.shops') }}",
                     dataType: 'json',
-                    delay: 300, 
-                    data: function (params) {
+                    delay: 300,
+                    data: function(params) {
                         return {
-                            type: $('#notification_option_type').val(),
-                            business_category_id: $('#business_category_id').val(),
-                            search: params.term   
+                            search: params.term
                         };
                     },
-                    processResults: function (data) {
+                    processResults: function(data) {
                         return {
                             results: data.map(item => ({
                                 id: item.id,
@@ -270,83 +479,44 @@
                     }
                 }
             });
-        }
 
-        $('#notification_option_type, #business_category_id').on('change', function () {
-            $('#notification_option_link').val(null).trigger('change');
-            loadSliderLinks();
-        });
-
-        /* ========= STORE NAME FOR SUB / CHILD ========= */
-        $('#userNotificationForm').on('submit', function () {
-            let type = $('#notification_option_type').val(); 
-        });
-
-        /* ========= ADD NOTIFICATION ========= */
-        $('button[data-bs-target="#userNotificationModal"]').on('click', function () {
-            $('#userNotificationForm')[0].reset();
-            $('#method').val('');
-            $('#userNotificationForm').attr('action', "{{ route('admin.user.notification.store') }}");
-            $('#notification_option_link').empty().trigger('change');
-            $('#notification').attr('src', 'https://placehold.co/2000x500/f1f5f9/png');
-        });
-
-        /* ========= RESET ON MODAL CLOSE ========= */
-        $('#userNotificationModal').on('hidden.bs.modal', function () {
-            $('#userNotificationForm')[0].reset();
-            $('#method').val('');
-            $('#userNotificationForm').attr('action', "{{ route('admin.user.notification.store') }}");
-            $('#notification_option_link').empty().trigger('change');
-            $('#notification').attr('src', 'https://placehold.co/2000x500/f1f5f9/png');
-            $('#forShop').prop('checked', false);
-        });
-
-        $('.select2Seller').select2({
-            dropdownParent: $('#sellerNotificationModal'),
-            width: '100%'
-        });
-
-        $('#seller_shop_id').select2({
-            dropdownParent: $('#sellerNotificationModal'),
-            width: '100%',
-            placeholder: "Select Seller Store",
-            ajax: {
-                url: "{{ route('admin.seller.shops') }}",
-                dataType: 'json',
-                delay: 300,
-                data: function (params) {
-                    return { search: params.term };
-                },
-                processResults: function (data) {
-                    return {
-                        results: data.map(item => ({
-                            id: item.id,
-                            text: item.name
-                        }))
-                    };
-                }
-            }
-        });
-
-        $(document).on('click', '.btn-delete', function () {
-            let form = $(this).closest('form');
-
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "This notification will be deleted!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Yes, Delete',
-                cancelButtonText: 'No',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit();
+            /* ========= SELECT ALL SELLERS BUTTON ========= */
+            $('#selectAllSellers').on('click', function() {
+                let $btn = $(this);
+                let $dropdown = $('#seller_shop_id');
+                
+                if ($btn.hasClass('btn-success')) {
+                    // Uncheck - enable dropdown
+                    $btn.removeClass('btn-success').addClass('btn-secondary');
+                    $btn.html('<i class="fa fa-users"></i> All Sellers');
+                    $dropdown.prop('disabled', false);
+                } else {
+                    // Check - disable dropdown and set to null
+                    $btn.removeClass('btn-secondary').addClass('btn-success');
+                    $btn.html('<i class="fa fa-check"></i> All Sellers');
+                    $dropdown.val(null).trigger('change');
+                    $dropdown.prop('disabled', true);
                 }
             });
+
+            $(document).on('click', '.btn-delete', function() {
+                let form = $(this).closest('form');
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "This notification will be deleted!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, Delete',
+                    cancelButtonText: 'No',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+
         });
-
-    });
-
-</script>
-@endpush 
+    </script>
+@endpush

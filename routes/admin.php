@@ -397,7 +397,9 @@ Route::name('admin.')->group(function () {
             Route::get('/new-notifications', 'index')->name('dashboard.notification');
             Route::get('/notifications/option-types', 'optionTypes')->name('user_seller.option_types');
             Route::post('/user-notification/store', 'storeUser')->name('user.notification.store');
+            Route::put('/user-notification/{id}/update', 'updateUser')->name('user.notification.update');
             Route::post('/seller-notification/store', 'storeSeller')->name('seller.notification.store');
+            Route::put('/seller-notification/{id}/update', 'updateSeller')->name('seller.notification.update');
             Route::get('/notification/{id}/resend', 'resend')->name('notification.resend');
             Route::delete('/notification/{id}/delete', 'delete')->name('notification.delete');
         });
