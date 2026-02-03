@@ -562,6 +562,8 @@ Route::name('admin.')->group(function () {
             Route::post('/customers/{user}/reset-password', 'resetPassword')->name('customer.reset-password')->middleware('demoMode');
             Route::get('/customers/{user}/ban', 'statusToggle')->name('customer.ban');
             Route::get('/customerorders/{customerId}/all-orders', 'customerOrders')->name('customer.orders');
+            Route::get('/customers/{customerId}/following-shop', 'getFollowingShop')->name('customer.following-shop');
+            Route::get('/customers/{customerId}/return-orders', 'getReturnOrders')->name('customer.return-orders');
         });
 
         // firebase route
