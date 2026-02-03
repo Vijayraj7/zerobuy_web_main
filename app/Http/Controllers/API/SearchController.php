@@ -22,38 +22,38 @@ class SearchController extends Controller
     {
         $query = $request->input('query', '');
         $businessCategoryId = $request->input('business_category_id');
-        
+
         if (empty($query)) {
             return $this->json('Query is required', [], Response::HTTP_BAD_REQUEST);
         }
 
         $suggestions = [];
-        
+
         // Search in products
         $productsQuery = Product::where('name', 'LIKE', "%{$query}%")
             ->isActive()
             ->with(['categories', 'subcategories']);
-            
+
         if ($businessCategoryId) {
             // Filter products through their categories
             $productsQuery->whereHas('categories', function ($q) use ($businessCategoryId) {
                 $q->where('business_category_id', $businessCategoryId);
             });
         }
-        
+
         $products = $productsQuery->limit(5)->get();
 
         foreach ($products as $product) {
             // Get first category and subcategory (products can have multiple)
             $firstCategory = $product->categories->first();
             $firstSubCategory = $product->subcategories->first();
-            
+
             $suggestions[] = [
-                'product_id' => $product->id,
+                'product_id' => (int)$product->id,
                 'product_name' => $product->name,
-                'category_id' => $firstCategory?->id,
+                'category_id' => (int)($firstCategory?->id),
                 'category_name' => $firstCategory?->name,
-                'sub_category_id' => $firstSubCategory?->id,
+                'sub_category_id' => (int)($firstSubCategory?->id),
                 'sub_category_name' => $firstSubCategory?->name,
                 'sort_type' => null,
                 'sub_categories' => [],
@@ -66,11 +66,11 @@ class SearchController extends Controller
         $categoriesQuery = Category::where('name', 'LIKE', "%{$query}%")
             ->active()
             ->with(['subCategories', 'businessCategory']);
-            
+
         if ($businessCategoryId) {
             $categoriesQuery->where('business_category_id', $businessCategoryId);
         }
-        
+
         $categories = $categoriesQuery->limit(3)->get();
 
         foreach ($categories as $category) {
@@ -98,19 +98,19 @@ class SearchController extends Controller
         $subCategoriesQuery = SubCategory::where('name', 'LIKE', "%{$query}%")
             ->isActive()
             ->with('category');
-            
+
         if ($businessCategoryId) {
             $subCategoriesQuery->where('business_category_id', $businessCategoryId);
         }
-        
+
         $subCategories = $subCategoriesQuery->limit(3)->get();
 
         foreach ($subCategories as $subCategory) {
             $suggestions[] = [
                 'product_name' => null,
-                'category_id' => $subCategory->category_id,
+                'category_id' => (int)$subCategory->category_id,
                 'category_name' => $subCategory->category?->name,
-                'sub_category_id' => $subCategory->id,
+                'sub_category_id' => (int)$subCategory->id,
                 'sub_category_name' => $subCategory->name,
                 'sort_type' => null,
                 'sub_categories' => [],
@@ -148,10 +148,10 @@ class SearchController extends Controller
     private function getPopularSearchTerms($query)
     {
         $terms = [];
-        
+
         // You can enhance this with actual analytics data
         // For now, we'll return some smart suggestions based on common patterns
-        
+
         if (stripos($query, 'new') !== false || stripos($query, 'latest') !== false) {
             $terms[] = [
                 'product_name' => null,
@@ -163,7 +163,7 @@ class SearchController extends Controller
                 'sub_categories' => [],
             ];
         }
-        
+
         if (stripos($query, 'popular') !== false || stripos($query, 'best') !== false) {
             $terms[] = [
                 'product_name' => null,
@@ -175,7 +175,7 @@ class SearchController extends Controller
                 'sub_categories' => [],
             ];
         }
-        
+
         return $terms;
     }
 
@@ -191,10 +191,10 @@ class SearchController extends Controller
         $seen = [];
 
         foreach ($suggestions as $suggestion) {
-            $key = ($suggestion['product_name'] ?? '') . 
-                   ($suggestion['category_id'] ?? '') . 
-                   ($suggestion['sub_category_id'] ?? '');
-            
+            $key = ($suggestion['product_name'] ?? '') .
+                ($suggestion['category_id'] ?? '') .
+                ($suggestion['sub_category_id'] ?? '');
+
             if (!isset($seen[$key])) {
                 $seen[$key] = true;
                 $unique[] = $suggestion;
