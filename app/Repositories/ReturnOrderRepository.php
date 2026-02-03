@@ -7,6 +7,7 @@ use App\Models\ReturnOrder;
 use App\Models\OrderProduct;
 use App\Enums\ReturnOderStatus;
 use Abedin\Maker\Repositories\Repository;
+use Illuminate\Support\Facades\Log;
 
 class ReturnOrderRepository extends Repository
 {
@@ -48,14 +49,19 @@ class ReturnOrderRepository extends Repository
             $totalAmount += $orderProduct->pivot->price * $qnty;
         }
 
-        // Handle image uploads
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('return_orders', 'public');
-                $returnOrder->returnProductImages()->create([
-                    'image_path' => $path,
-                ]);
+        try {
+            // Handle image uploads
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $path = $image->store('return_orders', 'public');
+                    $returnOrder->returnProductImages()->create([
+                        'image_path' => $path,
+                    ]);
+                }
             }
+        } catch (\Exception $e) {
+            // Log the error or handle it as needed
+            Log::error('Return Order Image Upload Error: ' . $e->getMessage());
         }
 
         $returnOrder->amount = $totalAmount;

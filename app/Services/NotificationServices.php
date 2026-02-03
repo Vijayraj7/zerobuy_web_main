@@ -5,6 +5,7 @@ namespace App\Services;
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Messaging\Notification;
+use Kreait\Firebase\Messaging\AndroidConfig;
 
 class NotificationServices
 {
@@ -12,7 +13,7 @@ class NotificationServices
     {
         $notification = Notification::create($title, $body);
 
-        $firebaseCredentials = storage_path('app/public/firebase_credentials.json');
+        $firebaseCredentials = storage_path('app/public/firebase/firebase_credentials.json');
 
         if (! file_exists($firebaseCredentials)) {
             return [
@@ -23,7 +24,17 @@ class NotificationServices
 
         $messaging = (new Factory)->withServiceAccount($firebaseCredentials)->createMessaging();
 
-        $message = CloudMessage::new()->withNotification($notification);
+        $androidConfig = AndroidConfig::fromArray([
+            'notification' => [
+                'icon' => 'notification_icon',
+                // 'channel_id' => 'high_importance_channel',
+                'sound' => 'default',
+            ],
+        ]);
+
+        $message = CloudMessage::new()
+            ->withNotification($notification);
+        // ->withAndroidConfig($androidConfig);
 
         try {
             $messaging->sendMulticast($message, $tokens);

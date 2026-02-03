@@ -227,8 +227,9 @@ class OrderController extends Controller
         $message = 'Your order status updated to ' . $request->status . ' order code: ' . $order->prefix . $order->order_code;
         $deviceKeys = $order->customer->user->devices->pluck('key')->toArray();
 
+        $noty = null;
         try {
-            NotificationServices::sendNotification($message, $deviceKeys, $title);
+            $noty =  NotificationServices::sendNotification($message, $deviceKeys, $title);
         } catch (\Throwable $th) {
         }
 
@@ -245,6 +246,7 @@ class OrderController extends Controller
         // OrderMailEvent::dispatch($order);
 
         return $this->json('Order status updated successfully!', [
+            'noty' => $noty,
             'order' => SellerOrderResource::make($order),
         ]);
     }
