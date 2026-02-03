@@ -11,6 +11,8 @@ use App\Http\Requests\ShopPasswordResetRequest;
 use App\Http\Requests\UserRequest;
 use App\Models\User;
 use App\Models\Order;
+use App\Models\Shop;
+use App\Models\ReturnOrder;
 use Illuminate\Http\Request;
 use App\Repositories\CustomerRepository;
 use App\Repositories\UserRepository;
@@ -167,6 +169,8 @@ class CustomerController extends Controller
             'user'               => $user,
             'orders'             => $orders,
             'customerId'        => $customerId,
+            'totalFollowingStores' => $user->customer->followings()->count(),
+            'totalReturnOrders' => $user->customer->returnOrders()->count(),
             'totalOrdersCount'   => Order::where('customer_id', $customerId)->count(),
             'totalOrderAmount'   => Order::where('customer_id', $customerId)->sum('payable_amount'),
             'totalDelivered'     => Order::where('customer_id', $customerId)->where('order_status', 'Delivered')->count(),
@@ -343,6 +347,101 @@ class CustomerController extends Controller
         }
 
         return view('admin.customer.cust_orders', compact('customerId'));
+    } 
+
+    public function getFollowingShop(Request $request, $customerId)
+    {
+        $search = $request->search;
+
+        $stores = Shop::join('shop_followers', 'shops.id', '=', 'shop_followers.shop_id')
+            ->where('shop_followers.customer_id', $customerId)
+            ->when($search, function ($q) use ($search) {
+                $q->where('shops.name', 'like', "%{$search}%");
+            })
+            ->select(
+                'shops.*',
+                'shop_followers.created_at as followed_at'
+            )
+            ->paginate(20);
+
+        return view('admin.customer.following-shop', compact('stores', 'customerId'));
+    }
+
+    public function getReturnOrders(Request $request, $customerId)
+    {
+        $query = ReturnOrder::query()
+            ->with(['order:id,order_code,created_at', 'customer.user:id,name,phone', 'returnProduct'])
+            ->where('return_orders.customer_id', $customerId);
+
+        // FILTERS
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+        if ($request->startDate) {
+            $query->whereDate('created_at', '>=', $request->startDate);
+        }
+        if ($request->endDate) {
+            $query->whereDate('created_at', '<=', $request->endDate);
+        }
+
+        if ($request->ajax()) {
+            return datatables()->eloquent($query)
+                ->addIndexColumn() 
+                ->editColumn('created_at', fn($row) => $row->created_at->format('d-m-Y')) 
+                ->addColumn('return_id', fn($row) => 'RTN0' . $row->id)
+                ->filterColumn('return_id', function ($query, $keyword) {
+                    $keyword = str_replace('RTN0', '', $keyword);
+                    $query->where('id', 'LIKE', "%$keyword%");
+                })  
+                ->addColumn('order_date', fn($row) => optional($row->order)->created_at?->format('d-m-Y') ?? '-') 
+                ->addColumn('shop_id', fn($row) => 'STR0' . $row->shop_id)
+                ->filterColumn('shop_id', function ($query, $keyword) {
+                    $keyword = str_replace('STR0', '', $keyword);
+                    $query->where('shop_id', 'LIKE', "%$keyword%");
+                }) 
+                ->addColumn('shop_name', fn($row) => $row->shop?->name ?? '-')
+                ->filterColumn('shop_name', function ($query, $keyword) {
+                    $query->whereHas('shop', function ($q) use ($keyword) {
+                        $q->where('name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->addColumn('customer_name', fn($row) => $row->customer?->user?->name ?? '-')
+                ->filterColumn('customer_name', function ($query, $keyword) {
+                    $query->whereHas('customer.user', function ($q) use ($keyword) {
+                        $q->where('name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->orderColumn('customer_name', function ($query, $order) {
+                    $query->join('customers', 'customers.id', '=', 'return_orders.customer_id')
+                        ->join('users', 'users.id', '=', 'customers.user_id')
+                        ->orderBy('users.name', $order)
+                        ->select('return_orders.*');
+                })
+                ->addColumn('customer_phone', fn($row) => $row->customer?->user?->phone ?? '-') 
+                ->addColumn('quantity', fn($row) => $row->returnProduct->sum('quantity'))  
+                ->addColumn('amount', fn($row) =>
+                    number_format(optional($row->returnProduct->first())->price ?? 0, 2)
+                )
+                ->addColumn('total', fn($row) =>
+                    number_format($row->amount ?? 0, 2)
+                )
+                ->addColumn('status_badge', function ($row) {
+                    return match ($row->status) {
+                        'Pending'   => '<span class="badge bg-warning">Pending</span>',
+                        'Approved'  => '<span class="badge bg-info">Approved</span>',
+                        'Completed'  => '<span class="badge bg-success">Completed</span>',
+                        'Rejected'  => '<span class="badge bg-danger">Rejected</span>',
+                        default     => '<span class="badge bg-secondary">'.ucfirst($row->status).'</span>',
+                    };
+                }) 
+                ->addColumn('actions', function ($row) { 
+                    return '<a href="'.route('admin.returnOrder.show',$row->id).'" class="btn btn-primary btn-sm"><i class="fa fa-eye"></i></a>'; 
+                })
+                ->rawColumns(['status_badge', 'actions'])
+                ->toJson();
+        }
+
+        return view('admin.customer.return-orders', compact('customerId'));
     }
 
 }

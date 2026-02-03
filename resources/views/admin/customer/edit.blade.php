@@ -70,10 +70,10 @@
                                 <div class="item">
                                     <strong>Total Following Store</strong>
                                     <div class="ms-2">
-                                        <a href="#" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-title="see following stores">
+                                        <a href="{{route('admin.customer.following-shop', $customerId)}}" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-title="see following stores">
                                             <i class="fa fa-eye"></i>
                                         </a>
-                                        <span class="btn btn-secondary btn-sm">0</span>
+                                        <span class="btn btn-secondary btn-sm">{{ $totalFollowingStores }}</span>
                                     </div>
                                 </div>
                                 <div class="item">
@@ -100,10 +100,10 @@
                                 <div class="item">
                                     <strong class="text-danger">Total Returned Orders</strong>
                                     <div class="ms-2">
-                                        <a href="#" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-title="see returned orders">
+                                        <a href="{{route('admin.customer.return-orders', $customerId)}}" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-title="see returned orders">
                                             <i class="fa fa-eye"></i>
                                         </a>
-                                        <span class="btn btn-secondary btn-sm">0</span>
+                                        <span class="btn btn-secondary btn-sm">{{ $totalReturnOrders }}</span>
                                     </div>
                                 </div>
                             </div>
