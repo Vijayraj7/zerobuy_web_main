@@ -37,6 +37,7 @@ use App\Http\Controllers\API\LocationController;
 use App\Http\Controllers\API\VerifyManageApiController;
 use App\Http\Controllers\API\ShopReportController;
 use App\Http\Controllers\API\SearchController;
+use App\Http\Controllers\API\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -310,6 +311,14 @@ Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
     Route::controller(App\Http\Controllers\API\ShopReportController::class)->group(function () {
         Route::post('/shop-reports', 'store');
         Route::get('/shop-reports', 'index');
+    });
+
+    // notifications
+    Route::controller(NotificationController::class)->group(function () {
+        Route::get('/notifications', 'index');
+        Route::post('/notifications/{id}/read', 'markAsRead');
+        Route::post('/notifications/read-all', 'markAllAsRead');
+        Route::delete('/notifications/clear-all', 'clearAll');
     });
 
     // check user is online or not
