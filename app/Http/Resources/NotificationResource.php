@@ -11,12 +11,18 @@ class NotificationResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'title' => $this->title,
-            'message' => $this->content,
-            'type' => $this->type,
+            'title' => $this->title ?? '',
+            'content' => $this->content ?? '',
+            'message' => $this->content ?? '',
             'url' => $this->url,
-            'created_at' => $this->created_at->diffForHumans(),
+            'icon' => $this->icon,
+            'type' => $this->type ?? '',
+            'shop_id' => $this->shop_id,
+            'user_id' => $this->user_id,
             'is_read' => (bool) $this->is_read,
+            'created_at' => optional($this->created_at)->toIso8601String(),
+            'updated_at' => optional($this->updated_at)->toIso8601String(),
+            'withdraw_id' => $this->withdraw_id,
 
         ];
     }

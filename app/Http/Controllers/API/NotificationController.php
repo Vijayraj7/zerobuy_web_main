@@ -16,7 +16,7 @@ class NotificationController extends Controller
     {
         try {
             $user = Auth::user();
-            
+
             $notifications = Notification::where('user_id', $user->id)
                 ->orderBy('created_at', 'desc')
                 ->get()
@@ -31,21 +31,17 @@ class NotificationController extends Controller
                         'shop_id' => $notification->shop_id,
                         'user_id' => $notification->user_id,
                         'is_read' => $notification->is_read ? 1 : 0,
-                        'created_at' => $notification->created_at->toIso8601String(),
-                        'updated_at' => $notification->updated_at->toIso8601String(),
+                        'created_at' => optional($notification->created_at)->toIso8601String(),
+                        'updated_at' => optional($notification->updated_at)->toIso8601String(),
                         'withdraw_id' => $notification->withdraw_id,
                     ];
                 });
 
-            return response()->json([
-                'success' => true,
-                'data' => $notifications,
-                'message' => 'Notifications fetched successfully',
-            ], 200);
+            return $this->json('notifications', [
+                'notifications' => $notifications,
+            ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch notifications',
+            return $this->json('failed to fetch notifications', [
                 'error' => $e->getMessage(),
             ], 500);
         }
