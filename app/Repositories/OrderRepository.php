@@ -211,8 +211,8 @@ class OrderRepository extends Repository
             }
 
             $user = auth()->user();
-            $title = 'Order placed successfully';
-            $message = 'Your order was placed successfully. Order code: ' . $order->prefix . $order->order_code;
+            $title = 'Order Received';
+            $message =  'Order amount: ' . $totalPayableAmount  . ' Order code: ' . $order->prefix . $order->order_code;
             $deviceKeys = $order->shop->user->devices->pluck('key')->toArray();
 
             $noty = null;
