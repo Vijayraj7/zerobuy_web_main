@@ -212,7 +212,7 @@ class OrderRepository extends Repository
 
             $user = auth()->user();
             $title = 'Order Received';
-            $message =  'Order amount: ' . $totalPayableAmount  . ' Order code: ' . $order->prefix . $order->order_code;
+            $message =  'Order amount: ₹' . $totalPayableAmount  . ' Order id: ' . $order->prefix . $order->order_code;
             $deviceKeys = $order->shop->user->devices->pluck('key')->toArray();
 
             $noty = null;

@@ -12,6 +12,8 @@ use App\Http\Requests\ReturnOrderRequest;
 use App\Http\Resources\ReturnOrderResource;
 use App\Repositories\ReturnOrderRepository;
 use App\Http\Resources\ReturnOrderDetailsResource;
+use App\Repositories\NotificationRepository;
+use App\Services\NotificationServices;
 
 class ReturnOrderController extends Controller
 {
@@ -106,6 +108,26 @@ class ReturnOrderController extends Controller
         }
 
         $returnOrder->update(['status' => 'cancelled']);
+
+        $title = 'Return Cancelled';
+        $message =  'Return Cancelled by User';
+        $deviceKeys = $returnOrder->order->shop->user->devices->pluck('key')->toArray();
+
+        $noty = null;
+        try {
+            $noty =  NotificationServices::sendNotificationToTopic($message, 'topic_seller_' . $returnOrder->order->shop->id, $title);
+        } catch (\Throwable $th) {
+        }
+
+        $notify = (object) [
+            'title' => $title,
+            'content' => $message,
+            'user_id' => $returnOrder->order->shop->user_id,
+            'shop_id' => $returnOrder->order->shop->id,
+            'type' => 'return',
+        ];
+
+        NotificationRepository::storeByRequest($notify);
 
         return $this->json('Return order cancelled successfully', [
             'returnOrder' => ReturnOrderDetailsResource::make($returnOrder),

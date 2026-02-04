@@ -223,8 +223,8 @@ class OrderController extends Controller
             ]
         );
 
-        $title = 'Order status updated';
-        $message = 'Your order status updated to ' . $request->status . ' order code: ' . $order->prefix . $order->order_code;
+        $title = 'Order status ' . $orderStatus;
+        $message = 'Your order ' . $orderStatus . ' order id: ' . $order->prefix . $order->order_code;
         $deviceKeys = $order->customer->user->devices->pluck('key')->toArray();
 
         $noty = null;

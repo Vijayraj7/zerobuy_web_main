@@ -7,6 +7,7 @@ use App\Models\ReturnOrder;
 use App\Models\OrderProduct;
 use App\Enums\ReturnOderStatus;
 use Abedin\Maker\Repositories\Repository;
+use App\Services\NotificationServices;
 use Illuminate\Support\Facades\Log;
 
 class ReturnOrderRepository extends Repository
@@ -66,6 +67,27 @@ class ReturnOrderRepository extends Repository
 
         $returnOrder->amount = $totalAmount;
         $returnOrder->save();
+
+        $title = 'New Return Received';
+        $message =  'Return amount: ₹' . $returnOrder->amount;
+        $deviceKeys = $order->shop->user->devices->pluck('key')->toArray();
+
+        $noty = null;
+        try {
+            $noty =  NotificationServices::sendNotificationToTopic($message, 'topic_seller_' . $order->shop->id, $title);
+        } catch (\Throwable $th) {
+        }
+
+        $notify = (object) [
+            'title' => $title,
+            'content' => $message,
+            'user_id' => $order->shop->user_id,
+            'shop_id' => $order->shop->id,
+            'type' => 'return',
+        ];
+
+        NotificationRepository::storeByRequest($notify);
+
         return $returnOrder;
     }
 }
