@@ -211,6 +211,25 @@ class OrderRepository extends Repository
             }
 
             $user = auth()->user();
+            $title = 'Order placed successfully';
+            $message = 'Your order was placed successfully. Order code: ' . $order->prefix . $order->order_code;
+            $deviceKeys = $order->shop->user->devices->pluck('key')->toArray();
+
+            $noty = null;
+            try {
+                $noty =  NotificationServices::sendNotificationToTopic($message, 'topic_seller_' . $order->shop->id, $title);
+            } catch (\Throwable $th) {
+            }
+
+            $notify = (object) [
+                'title' => $title,
+                'content' => $message,
+                'user_id' => $order->shop->user_id,
+                'type' => 'order',
+            ];
+
+            NotificationRepository::storeByRequest($notify);
+
             if ($user?->email) {
                 try {
                     OrderMailEvent::dispatch($user->email, $order);
