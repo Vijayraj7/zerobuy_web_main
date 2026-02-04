@@ -28,6 +28,7 @@
                                 <th>{!! sortLink('Business Category', 'business_name') !!}</th>
                                 <th>{!! sortLink('Category', 'category_name') !!}</th>
                                 <th>{!! sortLink('Sub Category', 'sub_category_name') !!}</th>  
+                                <th>Product Count</th>
                                 <th>Status</th> 
                             </tr>
                         </thead>
@@ -40,6 +41,7 @@
                                     <td>{{ $subCategory->businessCategory?->name ?? 'N/A' }}</td>
                                     <td>{{ $subCategory->category?->name ?? 'N/A' }}</td> 
                                     <td>{{ $subCategory->name }}</td> 
+                                    <td>{{ $subCategory->products_count }} </td>
                                     <td>
                                         <label class="switch mb-0">
                                             <a href="javascript:void(0);">

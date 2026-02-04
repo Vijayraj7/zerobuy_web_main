@@ -23,10 +23,21 @@ class SubCategoryController extends Controller
 
     public function index(Request $request)
     {
+        $shop = generaleSetting('shop');
+        $shopId = $shop->id;
+
         $sortBy    = $request->input('sort_by', 'id');
         $sortOrder = $request->input('sort_order', 'desc');
 
-        $query = SubCategory::with([
+        // $query = SubCategory::with([
+        //     'businessCategory',
+        //     'category'
+        // ]);
+        $query = SubCategory::withCount([
+            'products as products_count' => function ($q) use ($shopId) {
+                $q->where('shop_id', $shopId);
+            }
+        ])->with([
             'businessCategory',
             'category'
         ]);
