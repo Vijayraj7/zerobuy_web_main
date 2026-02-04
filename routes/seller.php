@@ -137,6 +137,7 @@ Route::prefix('/seller')->group(function () {
         Route::controller(NotificationController::class)->group(function () {
             Route::get('/notifications', 'index');
             Route::post('/notifications/{notification}', 'update');
+            Route::post('/notifications/read-all', 'readAll');
             Route::delete('/notifications/{notification}', 'delete');
         });
 

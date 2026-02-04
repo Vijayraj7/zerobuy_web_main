@@ -54,4 +54,15 @@ class NotificationController extends Controller
 
         return $this->json('Notification deleted successfully');
     }
+
+    public function readAll(Request $request)
+    {
+        $shop = generaleSetting('shop');
+
+        NotificationRepository::query()
+            ->whereShopId($shop->id)
+            ->update(['is_read' => 1]);
+
+        return $this->json('All notifications marked as read');
+    }
 }
