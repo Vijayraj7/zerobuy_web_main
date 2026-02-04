@@ -116,7 +116,7 @@
                 @endphp
                 <div class="d-flex flex-wrap gap-3 orderStatus">
                     @foreach ($orderStatuses as $status)
-                        <a href="{{ route('admin.order.index', str_replace(' ', '_', $status->value)) }}"
+                        <a href="{{ route('shop.order.index', str_replace(' ', '_', $status->value)) }}"
                             class="d-flex status flex-grow-1 {{ Str::camel($status->value) }}">
                             <div class="d-flex align-items-center gap-2 justify-content-between w-100">
                                 <div class="d-flex align-items-center gap-2">

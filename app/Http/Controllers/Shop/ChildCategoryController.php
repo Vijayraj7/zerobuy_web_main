@@ -12,15 +12,27 @@ class ChildCategoryController extends Controller
 {
     public function index(Request $request)
     {
+        $shop = generaleSetting('shop');
+        $shopId = $shop->id;
+        
         $sortBy    = $request->input('sort_by', 'id');
         $sortOrder = $request->input('sort_order', 'desc');
 
+        // $query = ChildCategory::with([
+        //     'businessCategory',
+        //     'category',
+        //     'subCategory'
+        // ]);
+        // ->latest('id');
         $query = ChildCategory::with([
             'businessCategory',
             'category',
             'subCategory'
+        ])->withCount([
+            'products as products_count' => function ($q) use ($shopId) {
+                $q->where('shop_id', $shopId);
+            }
         ]);
-        // ->latest('id');
 
         if ($request->filled('search')) {
             $search = $request->search;
