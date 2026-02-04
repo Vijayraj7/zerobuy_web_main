@@ -225,6 +225,7 @@ class OrderRepository extends Repository
                 'title' => $title,
                 'content' => $message,
                 'user_id' => $order->shop->user_id,
+                'shop_id' => $order->shop->id,
                 'type' => 'order',
             ];
 

@@ -20,7 +20,7 @@ class NotificationController extends Controller
 
         $shop = generaleSetting('shop');
 
-        $notifications = NotificationRepository::query()->whereShopId($shop->id)->orderBy('is_read', 'asc')->orderBy('id', 'desc')
+        $notifications = NotificationRepository::query()->whereShopId($shop->id)->orWhere('user_id', $shop->user_id)->orderBy('is_read', 'asc')->orderBy('id', 'desc')
             ->when($isRead, function ($query) use ($isRead) {
                 return $query->whereIsRead($isRead);
             })
