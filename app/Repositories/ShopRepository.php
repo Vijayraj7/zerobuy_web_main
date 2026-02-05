@@ -12,6 +12,7 @@ use App\Models\DeliverySetting;
 use App\Models\DeliveryStateCharge;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ShopRepository extends Repository
 {
@@ -47,8 +48,13 @@ class ShopRepository extends Repository
         $state = State::find($request->state_id);
         $district = District::find($request->district_id);
 
+        do {
+            $shopCode = strtoupper(Str::random(10));
+        } while (Shop::query()->where('shop_code', $shopCode)->exists());
+
         // create new shop and return
         $shop = self::create([
+            'shop_code' => $shopCode,
             'user_id' => $user->id,
             'name' => $request->shop_name,
             'logo_id' => $thumbnail ? $thumbnail->id : null,

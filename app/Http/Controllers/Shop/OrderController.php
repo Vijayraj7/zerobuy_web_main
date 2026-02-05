@@ -105,22 +105,15 @@ class OrderController extends Controller
             }
         }
 
-        $title = 'Order status updated';
-        $message = 'Your order status updated to ' . $request->status . ' order code: ' . $order->prefix . $order->order_code;
+        $title = 'Order status ' . $request->status;
+        $message = 'Your order ' . $request->status . ' order id: #' . $order->order_code;
         $deviceKeys = $order->customer->user->devices->pluck('key')->toArray();
 
+        $noty = null;
         try {
-            NotificationServices::sendNotification($message, $deviceKeys, $title);
+            $noty =  NotificationServices::sendNotification($message, $deviceKeys, $title);
         } catch (\Throwable $th) {
         }
-
-        $notify = (object) [
-            'title' => $title,
-            'content' => $message,
-            'user_id' => $order->customer->user_id,
-            'type' => 'order',
-        ];
-        NotificationRepository::storeByRequest($notify);
 
         return back()->with('success', __('Order status updated successfully.'));
     }

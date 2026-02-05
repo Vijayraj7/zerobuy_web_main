@@ -253,7 +253,10 @@ class OrderRepository extends Repository
 
     private static function createNewOrder($request, $shop, $paymentMethod, $getCartAmounts)
     {
-        $lastOrderId = self::query()->max('id');
+        // Generate unique random order code
+        do {
+            $orderCode = strtoupper(substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10));
+        } while (self::query()->where('order_code', $orderCode)->exists());
 
         $address = Address::find($request->address_id);
 
@@ -279,8 +282,9 @@ class OrderRepository extends Repository
 
         $order = self::create([
             'shop_id' => $shop->id,
-            'order_code' => str_pad($lastOrderId + 1, 6, '0', STR_PAD_LEFT),
-            'prefix' => $shop->prefix ?? 'RC',
+            'order_code' => $orderCode,
+            'prefix' => 'ORD',
+            // 'prefix' => $shop->prefix ?? 'RC',
             'gst' => $request->gst,
             'customer_id' => auth()->user()->customer->id,
             'coupon_id' => $getCartAmounts['coupon'],
@@ -437,11 +441,14 @@ class OrderRepository extends Repository
      */
     public static function reOrder(Order $order, $payment): Order
     {
-        $lastOrderId = self::query()->max('id');
+        // Generate unique random order code
+        do {
+            $orderCode = strtoupper(substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10));
+        } while (self::query()->where('order_code', $orderCode)->exists());
 
         $newOrder = self::create([
             'shop_id' => $order->shop_id,
-            'order_code' => str_pad($lastOrderId + 1, 6, '0', STR_PAD_LEFT),
+            'order_code' => $orderCode,
             'prefix' => 'RC',
             'customer_id' => $order->customer_id,
             'coupon_id' => $order->coupon_id ?? null,

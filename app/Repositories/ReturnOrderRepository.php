@@ -9,6 +9,7 @@ use App\Enums\ReturnOderStatus;
 use Abedin\Maker\Repositories\Repository;
 use App\Services\NotificationServices;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ReturnOrderRepository extends Repository
 {
@@ -22,7 +23,13 @@ class ReturnOrderRepository extends Repository
     {
         $order = Order::find($request->order_id);
         $totalAmount = 0;
+
+        do {
+            $returnCode = strtoupper(Str::random(10));
+        } while (self::query()->where('return_code', $returnCode)->exists());
+
         $returnOrder = self::create([
+            'return_code' => $returnCode,
             'order_id' => $request->order_id,
             'reason' => $request->reason,
             'bank_account_number' => $request->bank_account_number,

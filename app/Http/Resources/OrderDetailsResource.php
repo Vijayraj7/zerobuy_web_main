@@ -33,7 +33,7 @@ class OrderDetailsResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'order_code' => (string) '#' . $this->prefix . '' . $this->order_code,
+            'order_code' => (string) '#' . $this->order_code,
             'order_status' => $this->order_status->value,
             'created_at' => $this->created_at,
             'placed_at' => $this->created_at->format('d M, Y h:i A'),

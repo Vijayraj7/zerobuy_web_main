@@ -86,7 +86,7 @@ class ReturnOrderController extends Controller
 
 
         $title = 'Return ' . $request->status;
-        $message =  'Return Status Updated to ' . $request->status . ' for Return #' . $returnOrder->id;
+        $message =  'Return Status Updated to ' . $request->status . ' for Return #' . $returnOrder->return_code;
         $deviceKeys = $returnOrder->customer->user->devices->pluck('key')->toArray();
 
         $noty = null;

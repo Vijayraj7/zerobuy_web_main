@@ -59,6 +59,7 @@ class ReturnOrderDetailsResource extends JsonResource
         return [
 
             'id' => $this->id,
+            'return_code' => $this->return_code,
             'orderid' => $this->order_id,
             'order_id' => $this->order->prefix . $this->order->order_code,
             'reason' => $this->reason,

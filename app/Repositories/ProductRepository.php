@@ -863,7 +863,12 @@ class ProductRepository extends Repository
             /** -----------------------------
              * 1. Create Product
              * ----------------------------- */
+            do {
+                $productCode = strtoupper(Str::random(10));
+            } while (Product::query()->where('product_code', $productCode)->exists());
+
             $product = Product::create([
+                'product_code'      => $productCode,
                 'shop_id'            => $shop?->id,
                 'name'               => $data['name'],
                 'description'        => $data['description'] ?? null,
