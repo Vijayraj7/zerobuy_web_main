@@ -379,7 +379,13 @@ class OrderRepository extends Repository
         }
 
         $address = Address::find(request()->address_id ?? $addressId);
-        $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, $address->state_id);
+        $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, request()->state_id);
+        if ($deliveryCharge === null) {
+            $isDeliverable = false;
+            $deliveryCharge = 0.00;
+        } else {
+            $isDeliverable = true;
+        }
 
         // order vat taxes
         $vatTaxes = VatTaxRepository::getActiveVatTaxes();

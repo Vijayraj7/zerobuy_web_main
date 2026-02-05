@@ -10,6 +10,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Validation\Rules\Enum;
 use App\Http\Resources\ReturnOrderResource;
 use App\Http\Resources\ReturnOrderDetailsResource;
+use App\Repositories\NotificationRepository;
+use App\Services\NotificationServices;
 use Carbon\Carbon;
 
 class ReturnOrderController extends Controller
@@ -81,6 +83,29 @@ class ReturnOrderController extends Controller
                 'changed_at' => Carbon::now(),
             ]
         );
+
+
+        $title = 'Return ' . $request->status;
+        $message =  'Return Status Updated to ' . $request->status . ' for Return #' . $returnOrder->id;
+        $deviceKeys = $returnOrder->customer->user->devices->pluck('key')->toArray();
+
+        $noty = null;
+        try {
+            $noty =  NotificationServices::sendNotification($message, $deviceKeys, $title);
+        } catch (\Throwable $th) {
+        }
+
+
+        $notify = (object) [
+            'title' => $title,
+            'content' => $message,
+            'user_id' => $returnOrder->customer->user_id,
+            // 'shop_id' => $returnOrder->order->shop->id,
+            'type' => 'return',
+        ];
+
+        NotificationRepository::storeByRequest($notify);
+
 
         return $this->json('success', __('Status updated successfully'));
     }

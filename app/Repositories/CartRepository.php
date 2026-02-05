@@ -187,16 +187,10 @@ class CartRepository extends Repository
 
             $isDeliverable = true;
             $deliveryCharge = 0.00;
-            $setting = DeliverySetting::where('shop_id', $shop?->id)->first();
-            if ($setting->delivery_mode == 'manual') {
-                $isDeliverable = true;
+            $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, request()->state_id);
+            if ($deliveryCharge === null) {
+                $isDeliverable = false;
                 $deliveryCharge = 0.00;
-            } else {
-                $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, request()->state_id);
-                if ($deliveryCharge == null) {
-                    $isDeliverable = false;
-                    $deliveryCharge = 0.00;
-                }
             }
 
             $checkout = CartRepository::checkoutByRequest($request, $products);
@@ -219,6 +213,11 @@ class CartRepository extends Repository
 
                 // 'payable_amount' => $checkout['payable_amount'],
                 'is_deliverable' => $checkout['is_deliverable'],
+
+                'selected_state_ids' => DeliverySetting::where('shop_id', $shop?->id)->first()->selected_state_ids,
+                'state_id' => request()->state_id,
+                'is_dely' => in_array((string)request()->state_id, DeliverySetting::where('shop_id', $shop?->id)->first()->selected_state_ids),
+                'delivery_mode' => DeliverySetting::where('shop_id', $shop?->id)->first()->delivery_mode,
 
                 'totalAmount' => $checkout['total_amount'],
                 'payableAmount' => $checkout['payable_amount'],
@@ -504,7 +503,7 @@ class CartRepository extends Repository
 
         $isDeliverable = true;
         $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, request()->state_id);
-        if ($deliveryCharge == null) {
+        if ($deliveryCharge === null) {
             $isDeliverable = false;
             $deliveryCharge = 0.00;
         }

@@ -130,14 +130,9 @@ if (! function_exists('getShopDeliveryCharge')) {
      * @param  int  $orderQuantity
      */
 
-    function getShopDeliveryCharge($totalAmount, $shop, $state_id): ?float
+    function getShopDeliveryCharge($totalAmount, $shop, $state_id)
     {
-        // $shop = generaleSetting('shop');
-        // $deliveryCharge = DeliveryCharge::where('min_qty', '<=', $orderQuantity)
-        //     ->where('max_qty', '>=', $orderQuantity)
-        //     ->first();
-
-        $deliveryCharge = 0.00;
+        $deliveryChargere = 0.00;
         $setting = DeliverySetting::where('shop_id', $shop?->id)->first();
 
         if ($setting) {
@@ -147,11 +142,13 @@ if (! function_exists('getShopDeliveryCharge')) {
                 if ($state_id != null) {
                     $stateDelivery = DeliveryStateCharge::where('delivery_setting_id', $setting->id)->where('state_id', $state_id)->first();
                     if ($stateDelivery) {
-                        $deliveryCharge = $stateDelivery->charge;
+                        $deliveryChargere = $stateDelivery->charge;
                     } else {
-                        $deliveryCharge = null;
+                        $deliveryChargere = null;
                     }
                 }
+            } else if ($type == 'manual') {
+                $deliveryChargere = 0.00;
             } else if ($type == 'amount_based') {
                 if (
                     $setting->amountRules->count() > 0
@@ -160,24 +157,20 @@ if (! function_exists('getShopDeliveryCharge')) {
                         ->where('max_amount', '>=', $totalAmount)
                         ->first();
                     if ($amountCharge) {
-                        $deliveryCharge = $amountCharge->charge;
+                        $deliveryChargere = $amountCharge->charge;
                     } else {
-                        $deliveryCharge = $setting->amountRules->sortByDesc('max_amount')->first()->charge;
+                        $deliveryChargere = $setting->amountRules->sortByDesc('max_amount')->first()->charge;
                     }
                 }
             }
         }
 
-        return $deliveryCharge;
+        // Check if state_id is in selected_state_ids
+        if (!in_array($state_id, $setting->selected_state_ids)) {
+            return null;
+        }
+        return $deliveryChargere;
     }
-    // function getDeliveryCharge($orderQuantity): float
-    // {
-    //     $deliveryCharge = DeliveryCharge::where('min_qty', '<=', $orderQuantity)
-    //         ->where('max_qty', '>=', $orderQuantity)
-    //         ->first();
-
-    //     return $deliveryCharge?->charge ?? 0;
-    // }
 }
 
 
