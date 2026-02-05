@@ -230,7 +230,7 @@ class CartRepository extends Repository
 
                 'is_deliverable' => $isDeliverable,
                 // 'delivery_charge' => $totalAmount,
-                'delivery_charge' => $deliveryCharge,
+                'delivery_charge' => (float)$deliveryCharge,
                 'shop_name' => $shop->name,
                 'shop_logo' => $shop->logo,
                 'shop_address' => $shop->districts->name . ', ' . $shop->states->name,
