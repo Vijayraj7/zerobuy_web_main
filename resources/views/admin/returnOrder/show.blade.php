@@ -134,6 +134,7 @@
                         </div> 
                         {{-- Delivery Charge (Not included in total) --}}
                         @if($returnOrder->order?->delivery_charge)
+                            <hr class="my-2">
                             <div class="d-flex align-items-center justify-content-between gap-2 text-muted">
                                 <div>{{ __('Delivery Charge') }}</div>
                                 <div>
@@ -225,23 +226,23 @@
                     </div>
 
                 </div>
-                <!-- <div class="border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 p-3">
+                <div class="border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 p-3">
                     <div class="text-color">{{ __('Payment Status') }}</div>
-                    <div class="d-flex align-items-center gap-1">
+                    <div class="d-flex align-items-center gap-2">
                         <span>{{ $returnOrder->payment_status ? 'Paid' : 'Unpaid' }}</span>
-                        @if (!$returnOrder->payment_status)
-                            @hasPermission('admin.returnOrder.payment.status')
-                                <label class="switch mb-0">
-                                    <a href="{{ route('admin.returnOrder.payment.status', $returnOrder->id) }}">
-                                        <input type="checkbox" {{ $returnOrder->payment_status == 1 ? 'checked' : '' }}>
-                                        <span class="slider round"></span>
-                                    </a>
-                                </label>
-                            @endhasPermission
-                        @endif
-
+                        @hasPermission('admin.returnOrder.payment.status')
+                            <form action="{{ route('admin.returnOrder.payment.status', $returnOrder->id) }}" method="POST">
+                                @csrf
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                        id="adminReturnPaymentStatus"
+                                        {{ $returnOrder->payment_status ? 'checked disabled' : '' }}
+                                        onchange="this.form.submit()">
+                                </div>
+                            </form>
+                        @endhasPermission
                     </div>
-                </div> -->
+                </div>
 
                  @if ($returnOrder->payment_status == 0 && $returnOrder->status != 'Cancelled')
                     <div class="px-3 py-2 d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom">

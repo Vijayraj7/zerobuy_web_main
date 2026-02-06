@@ -5,61 +5,28 @@
 @section('content')
     <div class="card">
         <div class="card-body">
-            <div class="table-responsive">
+            <div class="table-responsive mt-3">
 
-                <table class="table border-left-right table-responsive-lg">
+                <table id="returnOrderTable" class="table table-bordered mt-3 datatableCustomCSS">
                     <thead>
                         <tr>
-                            <th style="min-width: 85px">{{ __('Order ID') }}</th>
+                            <th>#</th>
+                            <th>{{ __('Image') }}</th>
                             <th>{{ __('Return Date') }}</th>
-                            <th>{{ __('Customer') }}</th>
-                            @if ($businessModel == 'multi')
-                                <th>{{ __('Shop') }}</th>
-                            @endif
+                            <th>{{ __('Order ID') }}</th>
+                            <th>{{ __('Return ID') }}</th>
+                            <th>{{ __('Order Date') }}</th>
+                            <th>{{ __('Customer Name') }}</th>
+                            <th>{{ __('Mobile No') }}</th>
+                            <th>{{ __('Quantity') }}</th>
                             <th>{{ __('Amount') }}</th>
+                            <th>{{ __('Total Amount') }}</th>
+                            <th>{{ __('Reason') }}</th>
                             <th>{{ __('Status') }}</th>
-                            <th>{{ __('Payment Status') }}</th>
                             <th>{{ __('Action') }}</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @forelse ($returnOrder as $order)
-                            <tr>
-                                <td class="w-auto">{{ $order->order->prefix . $order->order->order_code }}</td>
-                                <td class="w-min">{{ $order->created_at->format('d M Y, h:i A') }}</td>
-                                <td class="w-min">{{ $order->customer?->user?->name }}</td>
-
-                                @if ($businessModel == 'multi')
-                                    <td class="w-min">
-                                        {{ $order->shop?->name }}
-                                    </td>
-                                @endif
-                                <td class="w-min">
-                                    {{ showCurrency($order->amount) }}
-                                </td>
-                                <td class="w-min">
-                                    {{ $order->status }}
-                                </td>
-                                <td><button class="badge rounded-pill text-bg-{{ $order->payment_status ? 'success' : 'danger' }}">{{ $order->payment_status ? 'Paid' : 'Unpaid' }}</button></td>
-                                <td class="w-min">
-                                    @hasPermission('admin.returnOrder.show')
-                                        <a href="{{ route('shop.returnOrder.show', $order->id) }}" data-bs-toggle="tooltip"
-                                            data-bs-placement="top" data-bs-title="{{ __('view details') }}"
-                                            class="circleIcon svg-bg">
-                                            <img src="{{ asset('assets/icons-admin/eye.svg') }}" alt="icon"
-                                                loading="lazy" />
-                                        </a>
-                                    @endhasPermission
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="100%" class="text-center">
-                                    {{ __('No order found') }}
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
+                    <tbody></tbody>
                 </table>
 
             </div>
@@ -67,8 +34,93 @@
         </div>
     </div>
 
-    <div class="my-3">
-        {{ $returnOrder->links() }}
-    </div>
-
 @endsection
+
+@push('scripts')
+<script>
+    $(function () {
+        const table = $('#returnOrderTable').DataTable({
+            responsive: true,
+            processing: true,
+            stateSave: false,
+            paging: false,
+            pageLength: -1,
+            lengthMenu: [[-1, 10, 25, 50, 100], ['All', 10, 25, 50, 100]],
+            ajax: {
+                url: "{{ route('shop.returnOrder.api.index') }}",
+                dataSrc: 'data.return_orders'
+            },
+            columns: [
+                {
+                    data: null,
+                    orderable: false,
+                    searchable: false,
+                    render: function (data, type, row, meta) {
+                        return meta.row + 1;
+                    }
+                },
+                {
+                    data: 'thumbnail',
+                    orderable: false,
+                    searchable: false,
+                    render: function (data) {
+                        const src = data || "{{ asset('default/default.jpg') }}";
+                        return `<img src="${src}" alt="product" width="40" height="40" class="rounded" loading="lazy">`;
+                    }
+                },
+                {
+                    data: 'return_date',
+                    render: function (data) {
+                        if (!data) return '-';
+                        const parts = data.split(',');
+                        const datePart = (parts[0] || '').trim();
+                        const timePart = (parts[1] || '').trim();
+                        return `<div>${datePart}</div><div class="small text-muted">${timePart}</div>`;
+                    }
+                },
+                { data: 'order_id' },
+                { data: 'return_id' },
+                {
+                    data: 'order_date',
+                    render: function (data) {
+                        if (!data) return '-';
+                        const parts = data.split(',');
+                        const datePart = (parts[0] || '').trim();
+                        const timePart = (parts[1] || '').trim();
+                        return `<div>${datePart}</div><div class="small text-muted">${timePart}</div>`;
+                    }
+                },
+                { data: 'customer_name' },
+                { data: 'mobile_no' },
+                { data: 'quantity' },
+                { data: 'amount' },
+                { data: 'total_amount' },
+                { data: 'reason' },
+                {
+                    data: 'status',
+                    render: function (data, type, row) {
+                        return `<span class="badge rounded-pill text-bg-${row.status_class} text-white">${data}</span>`;
+                    }
+                },
+                {
+                    data: 'details_url',
+                    orderable: false,
+                    searchable: false,
+                    render: function (data) {
+                        return `<a href="${data}" class="circleIcon svg-bg" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ __('view details') }}">
+                            <img src="{{ asset('assets/icons-admin/eye.svg') }}" alt="icon" loading="lazy" />
+                        </a>`;
+                    }
+                }
+            ]
+        });
+
+        const initialStatus = "{{ request('status') }}";
+        if (initialStatus) {
+            table.column(11).search('^' + initialStatus + '$', true, false).draw();
+        } else {
+            table.search('').columns().search('').draw();
+        }
+    });
+</script>
+@endpush

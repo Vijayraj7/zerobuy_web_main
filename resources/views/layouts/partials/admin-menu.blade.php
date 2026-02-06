@@ -11,7 +11,14 @@
 
 @php
     use App\Enums\OrderStatus;
+    use App\Models\ReturnOrder;
     $orderStatuses = OrderStatus::cases();
+    $returnStatuses = \App\Enums\ReturnOderStatus::visibleStatuses();
+    $returnAllCount = ReturnOrder::count();
+    $returnStatusCounts = [];
+    foreach ($returnStatuses as $status) {
+        $returnStatusCounts[$status->value] = ReturnOrder::where('status', $status->value)->count();
+    }
 @endphp
 
 <!------------------------------ Users Management ------------------------------>
@@ -175,7 +182,7 @@
 <!------------------------------ Order Management ------------------------------>
 @hasPermission('admin.order.index')
     <li>
-        <a class="menu {{ $request->routeIs('admin.order.*','admin.returnOrder.*') ? 'active' : '' }}" data-bs-toggle="collapse"
+        <a class="menu {{ $request->routeIs('admin.order.*') ? 'active' : '' }}" data-bs-toggle="collapse"
             href="#OrderManagementMenu">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/orders.svg') }}" alt="icon"
@@ -184,16 +191,11 @@
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
-        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.order.*','admin.returnOrder.*') ? 'show' : '' }}" id="OrderManagementMenu">
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.order.*') ? 'show' : '' }}" id="OrderManagementMenu">
             <div class="listBar">
                 @hasPermission('admin.order.index')
                     <a href="{{ route('admin.order.index') }}" class="subMenu hasCount {{ request()->routeIs('admin.order.index') ? 'active' : '' }}">
                         {{ __('All Orders') }}
-                    </a>
-                @endhasPermission
-                @hasPermission('admin.returnOrder.index')
-                    <a href="{{ route('admin.returnOrder.index') }}" class="subMenu hasCount {{ request()->routeIs('admin.returnOrder.index') ? 'active' : '' }}">
-                        {{ __('Return Orders') }}
                     </a>
                 @endhasPermission
             </div>
@@ -201,6 +203,54 @@
     </li>
 @endhasPermission
 <!------------------------------ End Order Management ------------------------------>
+
+
+<!------------------------------ Return Order Management ------------------------------>
+@hasPermission('admin.returnOrder.index')
+    <li>
+        <a class="menu {{ request()->routeIs('admin.returnOrder.*') ? 'active' : '' }}" data-bs-toggle="collapse"
+            href="#returnOrderMenu">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/orders.svg') }}" alt="icon"
+                    loading="lazy" />
+                {{ __('Return Orders') }}
+            </span>
+            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
+        </a>
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.returnOrder.*') ? 'show' : '' }}"
+            id="returnOrderMenu">
+            <div class="listBar">
+                <a href="{{ route('admin.returnOrder.index') }}"
+                    class="subMenu hasCount {{ request()->routeIs('admin.returnOrder.index') && !request()->get('status') ? 'active' : '' }}">
+                    <span>{{ __('All') }}</span>
+                    <span class="count badge rounded-pill text-bg-secondary text-white">
+                        {{ $returnAllCount > 99 ? '99+' : $returnAllCount }}
+                    </span>
+                </a>
+                @foreach ($returnStatuses as $status)
+                    @php
+                        $statusClass = match ($status->value) {
+                            'Pending' => 'warning',
+                            'Approved' => 'info',
+                            'Completed' => 'success',
+                            'Rejected', 'Cancelled' => 'danger',
+                            default => 'secondary',
+                        };
+                        $statusCount = $returnStatusCounts[$status->value] ?? 0;
+                    @endphp
+                    <a href="{{ route('admin.returnOrder.index', ['status' => $status->value]) }}"
+                        class="subMenu hasCount {{ request()->get('status') === $status->value ? 'active' : '' }}">
+                        <span>{{ __($status->value) }}</span>
+                        <span class="count badge rounded-pill text-bg-{{ $statusClass }} text-white">
+                            {{ $statusCount > 99 ? '99+' : $statusCount }}
+                        </span>
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    </li>
+@endhasPermission
+<!------------------------------ End Return Order Management ------------------------------>
     
 
 <!------------------------------ Shop Management ------------------------------>

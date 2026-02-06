@@ -12,10 +12,29 @@
         @endphp
         @if ($current)
             @php
-                $daysLeft = 'Unlimited';
+                $timeLeft = 'Unlimited';
+                $expiresAtLabel = $current->ends_at ? $current->ends_at->format('d M Y') : __('Never');
+                $lastPurchaseAmount = $current->price ?? $current->payment?->amount;
 
                 if ($current->ends_at) {
-                    $daysLeft = diffInLargestUnit(now(), $current->ends_at);
+                    if ($current->ends_at->isFuture()) {
+                        $diff = now()->diff($current->ends_at);
+                        $parts = [];
+
+                        if ($diff->y > 0) {
+                            $parts[] = $diff->y . ' ' . ($diff->y === 1 ? 'year' : 'years');
+                        }
+                        if ($diff->m > 0) {
+                            $parts[] = $diff->m . ' ' . ($diff->m === 1 ? 'month' : 'months');
+                        }
+                        if ($diff->d > 0 || empty($parts)) {
+                            $parts[] = $diff->d . ' ' . ($diff->d === 1 ? 'day' : 'days');
+                        }
+
+                        $timeLeft = implode(' ', $parts);
+                    } else {
+                        $timeLeft = __('Expired');
+                    }
                 }
             @endphp
 
@@ -25,16 +44,20 @@
                     <strong>{{ $current->plan->name ?? __('(Unknown Plan)') }}</strong>
                 </h5>
 
-                @if ($expired)
-                    <p class="mb-0 text-danger">
-                        {{ __('Your subscription has expired.') }}
-                    </p>
-                @else
-                    <p class="mb-0">
-                        {{ __('Time left:') }} <strong>{{ $daysLeft }}</strong>
-                        | {{ __('Sales left:') }} <strong>{{ $remainingSales ?? __('Unlimited') }}</strong>
-                    </p>
-                @endif
+                <p class="mb-0">
+                    @if ($expired)
+                        <span class="text-danger">{{ __('Your subscription has expired.') }}</span>
+                        | {{ __('Time left:') }} <strong>{{ $timeLeft }}</strong>
+                    @else
+                        {{ __('Time left:') }} <strong>{{ $timeLeft }}</strong>
+                    @endif
+                    | {{ __('Sales left:') }} <strong>{{ $remainingSales ?? __('Unlimited') }}</strong>
+                    | {{ __('Expire date:') }} <strong>{{ $expiresAtLabel }}</strong>
+                    | {{ __('Last purchase:') }}
+                    <strong>
+                        {{ $lastPurchaseAmount !== null ? showCurrency($lastPurchaseAmount + 0) : __('N/A') }}
+                    </strong>
+                </p>
             </div>
         @else
             <div style="margin-bottom: 48px;"></div>
@@ -53,15 +76,22 @@
                         $buttonLabel = __('Change Plan');
                     }
                 @endphp
-                <div class="subscription-plan {{ $subscriptionPlan->is_popular ? 'popular' : 'position-relative' }}">
+                <div class="subscription-plan {{ $subscriptionPlan->is_popular ? 'popular' : '' }}">
                     @if ($subscriptionPlan->is_popular)
                         <div class="popular-plan position-relative">
                     @endif
-                    @if ($isCurrentPlan)
-                        <span class="badge bg-success position-absolute top-0 end-0 m-2 px-3 py-2 rounded-pill">
-                            {{ __('Current Plan') }}
-                        </span>
-                    @endif
+                    <div class="plan-badges">
+                        @if ($subscriptionPlan->is_popular)
+                            <span class="popular-pill">
+                                {{ __('Most Popular') }}
+                            </span>
+                        @endif
+                        @if ($isCurrentPlan)
+                            <span class="badge bg-success px-3 py-2 rounded-pill current-plan-badge">
+                                {{ __('Current Plan') }}
+                            </span>
+                        @endif
+                    </div>
                     <div class="w-100">
                         <div
                             style="align-self: stretch; padding-left: 24px; padding-right: 24px; padding-top: 32px; padding-bottom: 12px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 16px; display: flex">
@@ -107,14 +137,6 @@
                                 @endif
                             </div>
                         </div>
-                        @if ($subscriptionPlan->is_popular)
-                            <div
-                                style="padding-left: 8px; padding-right: 8px; padding-top: 6px; padding-bottom: 6px; right: 24px; top: 24px; position: absolute; background: rgba(255, 255, 255, 0.09); border-radius: 8px; justify-content: center; align-items: center; gap: 4px; display: inline-flex">
-                                <div
-                                    style="text-align: center; color: #FFC107; font-size: 12px; font-family: Inter; font-weight: 500; letter-spacing: 0.24px; word-wrap: break-word">
-                                    Most Popular</div>
-                            </div>
-                        @endif
                         <div class="w-100 px-4 d-flex gap-3 justify-content-between text-white">
                             <div class="plan-info-box">
                                 <span class="label">Sale limit</span>
@@ -238,6 +260,37 @@
             align-items: center;
             display: inline-flex;
             transform: translateY(24px);
+        }
+
+        .plan-badges {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 16px 18px 0 18px;
+        }
+
+        .popular-pill {
+            background: rgba(255, 255, 255, 0.09);
+            color: #FFC107;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 8px;
+            letter-spacing: 0.24px;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .current-plan-badge {
+            max-width: calc(100% - 24px);
+            white-space: normal;
+            text-align: center;
+            line-height: 1.2;
+            font-size: 12px;
         }
 
         .subscription-plan.popular {

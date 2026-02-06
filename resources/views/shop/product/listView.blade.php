@@ -2,12 +2,16 @@
     <table class="table border-left-right table-responsive-lg">
         <thead>
             <tr>
-                <th class="text-center">{{ __('SL') }}.</th>
-                <th>{{ __('Thumbnail') }}</th>
+                <th class="text-center">{{ __('SL') }}</th>
+                <th>{{ __('Create Date') }}</th>
+                <th>{{ __('Product ID') }}</th>
                 <th style="min-width: 150px">{{ __('Product Name') }}</th>
-                <th style="min-width: 100px">{{ __('Brand') }}</th>
-                <th class="text-center">{{ __('Price') }}</th>
-                <th class="text-center" style="min-width: 120px">{{ __('Discount Price') }}</th>
+                <th>{{ __('Image') }}</th>
+                <th class="text-center">{{ __('Qty') }}</th>
+                <th class="text-center">{{ __('MRP') }}</th>
+                <th class="text-center" style="min-width: 120px">{{ __('Selling Price') }}</th>
+                <th class="text-center">{{ __('Total Sales') }}</th>
+                <th class="text-center">{{ __('Variants') }}</th>
                 <th class="text-center">{{ __('Status') }}</th>
                 <th class="text-center">{{ __('Action') }}</th>
             </tr>
@@ -15,23 +19,17 @@
         @forelse($products as $key => $product)
             <tr>
                 <td class="text-center">{{ ++$key }}</td>
-
-                <td>
-                    <img src="{{ $product->thumbnail }}" width="50">
-                </td>
-
+                <td>{{ $product->created_at?->format('d-m-Y | h:i A') ?? '-' }}</td>
+                <td>{{ $product->formatted_id ?? ('PRD0' . $product->id) }}</td>
                 <td>{{ Str::limit($product->name, 50, '...') }}</td>
                 <td>
-                    {{ $product?->brand?->name ?? 'N/A' }}
+                    <img src="{{ $product->thumbnail }}" width="40" height="40" class="rounded" loading="lazy">
                 </td>
-
-                <td class="text-center">
-                    {{ showCurrency($product->price) }}
-                </td>
-
-                <td class="text-center">
-                    {{ showCurrency($product->discount_price) }}
-                </td>
+                <td class="text-center">{{ $product->quantity ?? 0 }}</td>
+                <td class="text-center">{{ showCurrency($product->price) }}</td>
+                <td class="text-center">{{ showCurrency($product->discount_price) }}</td>
+                <td class="text-center">{{ $product->orderItems?->sum('quantity') ?? 0 }}</td>
+                <td class="text-center">{{ $product->variants?->count() ?? 0 }}</td>
                 <td class="text-center">
                     <label class="switch mb-0" data-bs-toggle="tooltip" data-bs-placement="left"
                         data-bs-title="{{ __('Update product status') }}">
@@ -54,13 +52,6 @@
                             class="svg-bg btn-outline-primary circleIcon btn-sm" data-bs-toggle="tooltip"
                             data-bs-placement="left" data-bs-title="{{ __('View Product') }}">
                             <img src="{{ asset('assets/icons-admin/eye.svg') }}" alt="icon" loading="lazy" />
-                        </a>
-                    @endhasPermission
-                    @hasPermission('shop.product.barcode')
-                        <a href="{{ route('shop.product.barcode', $product->id) }}"
-                            class="btn-outline-secondary circleIcon btn-sm" data-bs-toggle="tooltip" data-bs-placement="top"
-                            data-bs-title="{{ __('Generate Barcode for this product') }}">
-                            <img src="{{ asset('assets/icons-admin/scanner.svg') }}" alt="icon" loading="lazy" />
                         </a>
                     @endhasPermission
 

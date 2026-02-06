@@ -2,6 +2,9 @@
 @section('header-title', __('Product List'))
 
 @section('content')
+    @php
+        $viewType = request('view_type', 'list');
+    @endphp
     <div class="d-flex align-items-center flex-wrap gap-3 justify-content-between px-3 pb-3">
         <h4 class="mb-0">
             {{ __('Product List') }}
@@ -9,10 +12,10 @@
         <div class="d-flex gap-2">
             <div class="mt-2 d-flex gap-2 justify-content-end">
                 <a href=" {{ route('shop.product.index', ['view_type' => 'grid']) }}"
-                    class="btn {{ request('view_type') == 'list' ? 'btn-secondary' : 'btn-primary' }}"><i
+                    class="btn {{ $viewType == 'list' ? 'btn-secondary' : 'btn-primary' }}"><i
                         class="bi bi-grid"></i></a>
                 <a href=" {{ route('shop.product.index', ['view_type' => 'list']) }}"
-                    class="btn  {{ request('view_type') == 'list' ? 'btn-primary' : 'btn-secondary' }}"><i
+                    class="btn  {{ $viewType == 'list' ? 'btn-primary' : 'btn-secondary' }}"><i
                         class="bi bi-list-ul"></i></a>
             </div>
             @hasPermission('shop.product.create')
@@ -88,7 +91,7 @@
                                         </option>
                                     @endforeach
                                 </x-select>
-                                <input type="hidden" name="view_type" value="{{ request('view_type') }}">
+                                <input type="hidden" name="view_type" value="{{ $viewType }}">
                             </div>
 
                             <div class="mt-3">
@@ -146,14 +149,14 @@
                     <div class="input-group" style="max-width: 400px">
                         <input type="text" name="search" class="form-control"
                             placeholder="{{ __('Search by product name') }}" value="{{ request('search') }}">
-                        <input type="hidden" name="view_type" value="{{ request('view_type') }}">
+                        <input type="hidden" name="view_type" value="{{ $viewType }}">
                         <button type="submit" class="input-group-text btn btn-primary">
                             <i class="fa fa-search"></i> {{ __('Search') }}
                         </button>
                     </div>
                 </form>
 
-                @if (request('view_type') == 'list')
+                @if ($viewType == 'list')
                     @include('shop.product.listView')
                 @else
                     @include('shop.product.gridView')
@@ -169,6 +172,15 @@
 @endsection
 @push('scripts')
     <script>
+        (function () {
+            const viewType = "{{ $viewType }}";
+            if (viewType === 'grid') {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('view_type');
+                window.history.replaceState({}, document.title, url.toString());
+            }
+        })();
+
         $(".confirmApprove").on("click", function(e) {
             e.preventDefault();
             const url = $(this).attr("href");

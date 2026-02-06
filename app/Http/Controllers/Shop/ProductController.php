@@ -38,7 +38,7 @@ class ProductController extends Controller
         $shop = generaleSetting('shop');
 
         // filter products based on category, brand, color and search
-        $products = $shop?->products()->when($brand, function ($query) use ($brand) {
+        $products = $shop?->products()->with(['variants', 'orderItems'])->when($brand, function ($query) use ($brand) {
             return $query->where('brand_id', $brand);
         })->when($category, function ($query) use ($category) {
             return $query->whereHas('categories', function ($query) use ($category) {
@@ -67,6 +67,20 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
+        $product->load([
+            'media',
+            'medias',
+            'orders',
+            'reviews',
+            'categories',
+            'colors',
+            'sizes',
+            'variants.color',
+            'variants.size',
+            'itemDetails',
+            'bulkItems',
+        ]);
+
         return view('shop.product.show', compact('product'));
     }
 

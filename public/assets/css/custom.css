@@ -4,6 +4,8 @@
 }
 .datatableCustomCSS tbody tr {
     display: table-row !important;
+    opacity: 1 !important;
+    animation: none !important;
 }
 .datatableCustomCSS tbody td {
     display: table-cell !important;

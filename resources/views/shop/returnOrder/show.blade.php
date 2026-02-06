@@ -8,18 +8,14 @@
             <div class="card">
                 <div class="card-header d-flex align-items-center justify-content-between gap-2 py-3">
                     <h4 class="card-title mb-0">{{ __('Return Order Details') }}</h4>
+
                 </div>
                 <div class="card-body">
                     <div class="d-flex gap-3 flex-wrap align-items-center">
                         <div class="flex-grow-1">
                             <div class="order-item">
                                 <label class="label">{{ __('Order Id') }}:</label>
-                                <span
-                                    class="value">#{{ $returnOrder->order->prefix . $returnOrder->order->order_code }}</span>
-                            </div>
-                            <div class="order-item">
-                                <label class="label">{{ __('Payment Status') }}:</label>
-                                <span class="value">{{ $returnOrder->order->payment_status }}</span>
+                                <span class="value">#{{ $returnOrder->order->prefix . $returnOrder->order->order_code }}</span>
                             </div>
                             <div class="order-item">
                                 <label class="label">{{ __('Order Status') }}:</label>
@@ -27,13 +23,21 @@
                             </div>
                             <div class="order-item">
                                 <label class="label">{{ __('Order Date') }}:</label>
-                                <span class="value">{{ $returnOrder->order->created_at->format('M d, Y') }}</span>
+                                <span class="value">{{ $returnOrder->order->created_at->format('M d, Y | h:i A') }}</span>
+                            </div>
+                            <div class="order-item">
+                                <label class="label">{{ __('GST') }}:</label>
+                                <span class="value">{{ $returnOrder->order->gst ?? '_' }}</span>
                             </div>
                         </div>
 
                         <div class="item-divider"></div>
 
                         <div class="flex-grow-1">
+                            <div class="order-item">
+                                <label class="label">{{ __('Return Id') }}:</label>
+                                <span class="value">#RTN0{{ $returnOrder->id }}</span>
+                            </div>
                             <div class="order-item">
                                 <label class="label">{{ __('Return Status') }}:</label>
                                 <span class="value">{{ $returnOrder->status }}</span>
@@ -44,11 +48,11 @@
                             </div>
                             <div class="order-item">
                                 <label class="label">{{ __('Return Date') }}:</label>
-                                <span
-                                    class="value">{{ $returnOrder->created_at ? Carbon\Carbon::parse($returnOrder->created_at)->format('M d, Y') : '-' }}</span>
+                                <span class="value">{{ $returnOrder->created_at ? Carbon\Carbon::parse($returnOrder->created_at)->format('M d, Y | h:i A') : '-' }}</span>
                             </div>
                         </div>
                     </div>
+
 
                     <div class="table-responsive mt-4 mb-0">
                         <table class="table border-left-right">
@@ -59,6 +63,7 @@
                                     <th>{{ __('Size') }}</th>
                                     <th>{{ __('Color') }}</th>
                                     <th>{{ __('Price') }}</th>
+                                    <th>{{ __('Payment Method') }}</th>
                                     <th class="text-end">{{ __('Total') }}</th>
                                 </tr>
                             </thead>
@@ -67,17 +72,16 @@
                                     <tr>
                                         <td>
                                             <div class="d-flex gap-1 align-items-center">
-                                                <img src="{{ $product->product->thumbnail }}" alt="" width="40"
+                                                <img src="{{ $product->product?->thumbnail }}" alt="" width="40"
                                                     height="40" loading="lazy">
-                                                <span>{{ $product->product->name }}</span>
+                                                <span>{{ $product->product->name ?? '-' }}</span>
                                             </div>
                                         </td>
                                         <td>{{ $product->quantity ?? 0 }}</td>
                                         <td>{{ $product->size ?? '-' }}</td>
                                         <td>{{ $product->color ?? '-' }}</td>
-                                        <td>
-                                            {{ showCurrency($product->price) }}
-                                        </td>
+                                        <td>{{ showCurrency($product->price) }}</td>
+                                        <td>{{ $returnOrder->order?->payment_method ?? '-' }}</td>
                                         <td class="text-end">
                                             {{ showCurrency($product->quantity * $product->price) }}
                                         </td>
@@ -87,12 +91,51 @@
                         </table>
                     </div>
 
-                    <div class="max-300 ms-auto d-flex flex-column gap-1">
+                    @php
+                        $subTotal = 0;
+                        $discountTotal = 0;
+                        $grandTotal = 0;
+
+                        foreach ($returnOrder->returnProduct as $item) {
+                            $mrp = $item->product?->price ?? 0;
+                            $discountPrice = $item->product?->discount_price ?? $mrp;
+                            $qty = $item->quantity ?? 0;
+
+                            $subTotal += $mrp * $qty;
+                            $discountTotal += ($mrp - $discountPrice) * $qty;
+                            $grandTotal += $discountPrice * $qty;
+                        }
+                    @endphp
+
+                    <div class="max-300 ms-auto d-flex flex-column gap-1 mt-3">
+                        <div class="d-flex align-items-center justify-content-between gap-2 text-muted">
+                            <div>{{ __('Sub Total') }}</div>
+                            <div>
+                                <span>{{ showCurrency($subTotal) }}</span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between gap-2 text-muted">
+                            <div>{{ __('Discount') }}</div>
+                            <div>- {{ showCurrency($discountTotal) }}</div>
+                        </div>
+                        @if($returnOrder->order?->delivery_charge !== null)
+                            <hr class="my-2">
+                        @endif
+                        @if($returnOrder->order?->delivery_charge !== null)
+                            <div class="d-flex align-items-center justify-content-between gap-2 text-muted">
+                                <div>{{ __('Delivery Charge') }}</div>
+                                <div>
+                                    <del>{{ showCurrency($returnOrder->order->delivery_charge) }}</del>
+                                </div>
+                            </div>
+                        @endif
+
                         <div class="d-flex align-items-center justify-content-between gap-2">
-                            <div> <strong>{{ __('Total') }}</strong></div>
-                            <div>{{ showCurrency($returnOrder->amount) }}</div>
+                            <div><strong>{{ __('Total') }}</strong></div>
+                            <div><strong>{{ showCurrency($grandTotal) }}</strong></div>
                         </div>
                     </div>
+
                 </div>
             </div>
 
@@ -101,7 +144,7 @@
                 <h5 class="fz-16 border-bottom px-3 py-12 m-0">{{ __('Return Reason') }}</h5>
 
                 <div class="border-bottom px-3 py-2 d-flex  align-items-center gap-3">
-                    <span class="fw-medium">{{ $returnOrder->reason }}</span>
+                    <span class="fw-medium text-danger">{{ $returnOrder->reason }}</span>
                 </div>
             </div>
 
@@ -118,7 +161,6 @@
                     <span class="fw-medium">{{ $returnOrder->customer?->user?->phone }}</span>
                 </div>
             </div>
-
             @if ($returnOrder->status == 'Cancelled')
                 <!--##### Cancelled Info #####-->
                 <div class="mt-3 card">
@@ -130,6 +172,7 @@
                 </div>
             @endif
 
+
         </div>
 
         <div class="col-lg-4">
@@ -139,6 +182,7 @@
 
                 <div class="px-3 py-2 d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom">
                     <div class="text-color">{{ __('Change Order Status') }}</div>
+
                     <div class="dropdown">
                         <a class="btn border text-start dropdown-toggle" href="#" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false">
@@ -147,18 +191,22 @@
                         @if ($returnOrder->status != 'Cancelled' && $returnOrder->status != 'Refunded')
                             @hasPermission(['shop.order.status.change'])
                                 <ul class="dropdown-menu order-status">
-                                    @foreach ($returnStatus as $status)
+                                    @foreach(\App\Enums\ReturnOderStatus::visibleStatuses() as $status)
                                         <li>
-                                            <a class="dropdown-item"
-                                                href="{{ route('shop.returnOrder.status.change', $returnOrder->id) }}?status={{ $status->value }}">
-                                                {{ __($status->value) }}
-                                            </a>
+                                            <form action="{{ route('shop.returnOrder.status.change', $returnOrder->id) }}" method="POST">
+                                                @csrf
+                                                <input type="hidden" name="status" value="{{ $status->value }}">
+                                                <button type="submit" class="dropdown-item">
+                                                    {{ __($status->value) }}
+                                                </button>
+                                            </form>
                                         </li>
                                     @endforeach
                                 </ul>
                             @endhasPermission
                         @endif
                     </div>
+
                 </div>
 
                 <div class="border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 p-3">
@@ -167,12 +215,26 @@
                         <span>{{ $returnOrder->payment_status ? 'Paid' : 'Unpaid' }}</span>
                     </div>
                 </div>
-
+                @hasPermission('shop.returnOrder.payment.status')
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 p-3 border-bottom">
+                        <div class="text-color">{{ __('Update Payment Status') }}</div>
+                        <form action="{{ route('shop.returnOrder.payment.status', $returnOrder->id) }}" method="POST">
+                            @csrf
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                    id="shopReturnPaymentStatus"
+                                    {{ $returnOrder->payment_status ? 'checked disabled' : '' }}
+                                    onchange="this.form.submit()">
+                            </div>
+                        </form>
+                    </div>
+                @endhasPermission
 
             </div>
             <!--##### Bank Info #####-->
             <div class="card">
                 <h5 class="fz-18 border-bottom p-3 m-0">{{ __('Bank Information') }}</h5>
+
                 <div class="border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 p-3">
                     <div class="text-color">{{ __('Account No') }}</div>
                     <div class="d-flex align-items-center gap-1">
@@ -182,19 +244,95 @@
 
             </div>
 
-            <!--##### Shipping Address #####-->
+            <!--##### Return Address #####-->
             <div class="card mt-3">
                 <h5 class="fz-18 border-bottom p-3 m-0">{{ __('Return Address') }}</h5>
 
-                <div class="border-bottom d-flex align-items-center justify-content-between gap-2 px-3 py-12">
-                    <span class="fw-medium">{{ $returnOrder->return_address }}</span>
+                <div class="border-bottom d-flex justify-content-between px-3 py-12">
+                    <span>{{ __('Name') }}:</span>
+                    <span class="fw-medium">
+                        {{ $returnOrder->order?->address?->name }}
+                    </span>
+                </div>
+
+                <div class="border-bottom d-flex justify-content-between px-3 py-12">
+                    <span>{{ __('Phone') }}:</span>
+                    <span class="fw-medium">
+                        {{ $returnOrder->order?->address?->phone }}
+                    </span>
+                </div>
+
+                <div class="border-bottom d-flex justify-content-between px-3 py-12">
+                    <span>{{ __('Address Line 1') }}:</span>
+                    <span class="fw-medium">
+                        {{ $returnOrder->order?->address?->address_line }}
+                    </span>
+                </div>
+
+                <div class="border-bottom d-flex justify-content-between px-3 py-12">
+                    <span>{{ __('Address Line 2') }}:</span>
+                    <span class="fw-medium">
+                        {{ $returnOrder->order?->address?->address_line2 }}
+                    </span>
+                </div>
+
+                <div class="border-bottom d-flex justify-content-between px-3 py-12">
+                    <span>{{ __('State & District') }}:</span>
+                    <span class="fw-medium">
+                        {{ $returnOrder->order?->address?->stateData?->name }},
+                        {{ $returnOrder->order?->address?->districtData?->name }}
+                    </span>
+                </div>
+
+                <div class="border-bottom d-flex justify-content-between px-3 py-12">
+                    <span>{{ __('PIN Code') }}:</span>
+                    <span class="fw-medium">
+                        {{ $returnOrder->order?->address?->post_code }}
+                    </span>
+                </div>
+
+                <div class="border-bottom d-flex justify-content-between px-3 py-12">
+                    <span>{{ __('Address Type') }}:</span>
+                    <span class="fw-medium">
+                        {{ $returnOrder->order?->address?->address_type }}
+                    </span>
                 </div>
             </div>
+        </div>
 
+        @if($returnOrder->returnProductImages->count())
+            <div class="card mt-4">
+                <h5 class="fz-16 border-bottom px-3 py-12 m-0">
+                    {{ __('Return Images') }}
+                </h5>
+
+                <div class="p-3">
+                    <div class="d-flex flex-wrap gap-3">
+                        @foreach ($returnOrder->returnProductImages as $image)
+                            <div class="border rounded p-1">
+                                <img src="{{ $image->image_url }}" alt="Return Image" width="120" height="120" style="object-fit: cover; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#returnImagePreview" onclick="showReturnImage('{{ $image->image_url }}')">
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endif
+    </div>
+
+    <div class="modal fade" id="returnImagePreview" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <img id="returnPreviewImage" class="img-fluid rounded">
+                </div>
+            </div>
         </div>
     </div>
 
+
+
 @endsection
+
 @push('css')
     <style>
         .dropdown-menu.order-status {
@@ -208,13 +346,8 @@
             border-bottom: 1px solid #f1f1f1;
         }
 
-        .app-theme-dark .dropdown-menu.order-status {
-            border: 1px solid #343a40;
-            box-shadow: 0 0 10px #343a40;
-        }
-
-        .app-theme-dark .dropdown-menu.order-status .dropdown-item {
-            border-bottom: 1px solid #343a40;
+        .dropdown-menu.order-status .dropdown-item:last-child {
+            border-bottom: none;
         }
 
         .max-300 {
@@ -275,4 +408,12 @@
             }
         }
     </style>
+@endpush
+
+@push('scripts')
+<script>
+    function showReturnImage(url) {
+        document.getElementById('returnPreviewImage').src = url;
+    }
+</script>
 @endpush

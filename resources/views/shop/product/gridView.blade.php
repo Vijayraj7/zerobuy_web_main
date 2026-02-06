@@ -27,13 +27,6 @@
                                     <img src="{{ asset('assets/icons-admin/eye.svg') }}" alt="icon" loading="lazy" />
                                 </a>
                             @endhasPermission
-                            @hasPermission('shop.product.barcode')
-                                <a href="{{ route('shop.product.barcode', $product->id) }}"
-                                    class="btn-outline-info circleIcon btn-sm" data-bs-toggle="tooltip"
-                                    data-bs-placement="top" data-bs-title="{{ __('Generate Barcode for this product') }}">
-                                    <i class="bi bi-upc-scan"></i>
-                                </a>
-                            @endhasPermission
                             @hasPermission('shop.product.edit')
                                 <a href="{{ route('shop.product.edit', $product->id) }}"
                                     class="btn-outline-info circleIcon btn-sm" data-bs-toggle="tooltip"

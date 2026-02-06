@@ -3,117 +3,291 @@
 @section('header-title', __('Product Details'))
 
 @section('content')
-    <div>
-        <h4>
-            {{ __('Product Details') }}
-        </h4>
-    </div>
+    <div><h4>{{ __('Product Details') }}</h4></div>
+
 
     <div class="card mt-3 shadow-sm">
         <div class="card-body">
-            <div class="row g-4">
-
-                <!-- Product Image Section -->
-                <div class="col-lg-5">
-                    <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
-                        <div class="carousel-inner">
-                            <div class="carousel-item active">
-                                <img src="{{ $product->thumbnail }}" class="d-block w-100" alt="Product Image">
-                            </div>
-                            @foreach ($product->thumbnails() as $photo)
-                                <div class="carousel-item">
-                                    <img src="{{ $photo->thumbnail }}" class="d-block w-100" alt="Product Image">
-                                </div>
-                            @endforeach
-                        </div>
-                        <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel"
-                            data-bs-slide="prev">
-                            <span class="carousel-control-prev-icon"></span>
-                        </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#productCarousel"
-                            data-bs-slide="next">
-                            <span class="carousel-control-next-icon"></span>
-                        </button>
+            <div class="d-flex gap-3">
+                <div class="text-center">
+                    <div class="rounded overflow-hidden ratio1x1">
+                        <img src="{{ $product->thumbnail }}" alt="" width="140">
                     </div>
-
-                    <!-- Thumbnail Images -->
-                    <div class="d-flex mt-3">
-                        @foreach ($product->thumbnails() as $photo)
-                            <img src="{{ $photo->thumbnail }}" class="img-thumbnail me-2" style="width: 50px;">
-                        @endforeach
-                    </div>
-                </div>
-
-                <!-- Product Details Section -->
-                <div class="col-lg-7">
-                    <span class="badge bg-primary">{{ $product->brand?->name }}</span>
-                    <h2 class="mt-3">{{ $product->name }}</h2>
-                    <p class="text-muted">
-                        {{ $product->short_description }}
-                    </p>
-
-                    <div class="d-flex align-items-center">
-                        <div class="me-2 text-warning">
-                            ★★★★☆
-                        </div>
-                        <span class="fw-bold">4</span>
-                        <span class="text-muted ms-2">({{ $product->reviews->count() }} Reviews)</span>
-                        <span class="mx-3 border-start px-3">{{ $product->orders->count() }} Sold</span>
-                    </div>
-
-                    <!-- Pricing -->
-                    <div class="my-4">
-                        <h3 class="text-danger">
-                            {{ showCurrency($product->discount_price > 0 ? $product->discount_price : $product->price) }}
-                            @if ($product->discount_price > 0)
-                                <del class="text-muted">{{ showCurrency($product->price) }}</del>
-                            @endif
-                        </h3>
-                        @if ($product->getDiscountPercentage($product->price, $product->discount_price) > 0)
-                            <span class="badge bg-danger">Save
-                                {{ number_format($product->getDiscountPercentage($product->price, $product->discount_price)) }}%</span>
-                        @endif
-                    </div>
-
-                    <!-- Size Selection -->
-                    <div class="mb-3">
-                        <label class="fw-bold">Size</label>
-                        <div class="d-flex gap-2">
-                            @foreach ($product->sizes as $size)
-                                <input type="radio" class="btn-check" name="size" id="size{{ $size->id }}">
-                                <label class="btn btn-outline-secondary"
-                                    for="size{{ $size->id }}">{{ $size->name }}</label>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <!-- Color Selection -->
-                    <div class="mb-3">
-                        <label class="fw-bold">Color</label>
-                        <div class="d-flex gap-2">
-                            @foreach ($product->colors as $color)
-                                <input type="radio" class="btn-check" name="color" id="color{{ $color->id }}">
-                                <label class="btn btn-outline-secondary"
-                                    for="color{{ $color->id }}">{{ $color->name }}</label>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <!-- Quantity Selection -->
-                    <div class="mb-3">
-                        <label class="fw-bold">Quantity:</label>
-                        <span>{{ $product->quantity }}</span>
-                    </div>
-
-                    <a href="/products/{{ $product->id }}/details" target="_blank" class="btn btn-outline-primary">
+                    <a href="/products/{{ $product->id }}/details" target="_blank" class="btn btn-outline-primary mt-3">
                         <i class="fa-solid fa-globe"></i> {{ __('View Live') }}
                     </a>
                 </div>
+
+                <div class="flex-grow-1">
+                    <div class="d-flex flex-wrap gap-3 justify-content-between">
+                        <div class="d-flex gap-3 productThumbnail">
+                            @foreach ($product->thumbnails() as $photo)
+                                <img src="{{ $photo->thumbnail }}" alt="product" />
+                            @endforeach
+                        </div>
+
+                        <div>
+                            <div class="d-flex gap-3 border p-2 rounded fw-bold">
+                                <div>{{ $product->orders->count() }} {{ __('Orders') }}</div>
+
+                                <div class="border-start w-0" style="height: 20px"></div>
+
+                                <div>
+                                    <i class="fa-solid fa-star text-warning"></i>
+                                    {{ number_format($product->reviews->avg('rating'), 1) }}
+                                </div>
+
+                                <div class="border-start w-0" style="height: 20px"></div>
+
+                                <div>{{ number_format($product->reviews->count(), 1) }} {{ __('Reviews') }}</div>
+                            </div>
+                            <div class="mt-2">
+                                <div>
+                                    {{ __('status') }}:
+                                    @if ($product->is_approve)
+                                        <span class="status-approved">
+                                            <i class="fa fa-check text-success"></i> {{ __('Approved') }}
+                                        </span>
+                                    @else
+                                        <span class="status-pending">
+                                            <i class="fa-solid fa-triangle-exclamation"></i>
+                                            {{ __('Pending') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+                    <h3 class="mb-2 mt-3 pb-1">{{ $product->name }}</h3>
+
+                    <div>
+                        <h6 class="mb-1 text-muted">
+                            {{ __('Short Description') }}
+                        </h6>
+                        <p>{{ $product->short_description }}</p>
+                    </div>
+                </div>
             </div>
 
-            <h5 class="text-dark fw-bold mt-4">
-                {{ __('Description') }}
-            </h5>
+            <div class="border-top my-3"></div>
+
+            <!-- General Information -->
+            <div class="d-flex gap-4 flex-wrap justify-content-lg-between">
+
+                <div>
+                    @php
+                        $categories = $product->categories?->pluck('name')->join(', ');
+                        $colors = $product->colors?->pluck('name')->join(', ');
+                        $sizes = $product->sizes?->pluck('name')->join(', ');
+                    @endphp
+                    <h5 class="text-dark fw-bold">
+                        {{ __('General Information') }}
+                    </h5>
+                    <table class="table table-borderless mb-0 border-0">
+                        <!-- <tr>
+                            <td class="ps-0 py-1">{{ __('Brand') }}</td>
+                            <td class="py-1">
+                                : {{ __($product->brand?->name) }}
+                            </td>
+                        </tr> -->
+                        <tr>
+                            <td class="ps-0 py-1">{{ __('Categories') }}</td>
+                            <td class="py-1">
+                                : {{ $categories }}
+                            </td>
+                        </tr>
+                        <!-- <tr>
+                            <td class="ps-0 py-1">{{ __('Colors') }}</td>
+                            <td class="py-1">
+                                : {{ $colors }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="ps-0 py-1">{{ __('Sizes') }}</td>
+                            <td class="py-1">
+                                : {{ $sizes }}
+                            </td>
+                        </tr> -->
+                    </table>
+                </div>
+
+                <div>
+                    <h5 class="text-dark fw-bold">{{ __('Price Information') }}</h5>
+                    <table class="table table-borderless mb-0 border-0">
+                        <tr>
+                            <td class="ps-0 py-1">{{ __('MRP') }}</td>
+                            <td class="py-1">: {{ showCurrency($product->price) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="ps-0 py-1">{{ __('Selling Price') }}</td>
+                            <td class="py-1">
+                                : {{ showCurrency($product->discount_price) }}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div>
+                    <h5 class="text-dark fw-bold">
+                        {{ __('Current Stock Quantity') }}
+                    </h5>
+                    <p class="mb-0 fw-bold">
+                        {{ $product->quantity }}
+                    </p>
+                </div>
+            </div>
+
+            @if ($product->itemDetails->isNotEmpty())
+                <div class="border-top my-3"></div>
+
+                <h5 class="fw-bold">{{ __('Product Item Details') }}</h5>
+
+                <table class="table table-sm table-bordered w-50">
+                    @foreach ($product->itemDetails as $detail)
+                        <tr>
+                            <th>{{ $detail->item_name }}</th>
+                            <td>{{ $detail->item_value }}</td>
+                        </tr>
+                    @endforeach
+                </table>
+            @endif
+
+            @php
+                $hasColor = $product->variants->whereNotNull('color_id')->count() > 0;
+                $hasSize  = $product->variants->whereNotNull('size_id')->count() > 0;
+            @endphp
+
+
+            @if ($product->variants->isNotEmpty())
+                <div class="border-top my-4"></div>
+
+                <h5 class="fw-bold mb-3">{{ __('Product Variants') }}</h5>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+
+                                @if ($hasColor)
+                                    <th>{{ __('Color') }}</th>
+                                @endif
+
+                                @if ($hasSize)
+                                    <th>{{ __('Size') }}</th>
+                                @endif
+
+                                <th>{{ __('Price') }}</th>
+                                <th>{{ __('Quantity') }}</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach ($product->variants as $index => $variant)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+
+                                    {{-- COLOR --}}
+                                    @if ($hasColor)
+                                        <td>
+                                            @if ($variant->color)
+                                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                                    <!-- <span class="color-box"
+                                                        style="background-color: {{ $variant->color->color_code }}">
+                                                    </span> -->
+                                                    <span class="fw-semibold">
+                                                        {{ $variant->color->name }}
+                                                    </span>
+                                                </div>
+                                            @else
+                                                —
+                                            @endif
+                                        </td>
+                                    @endif
+
+                                    {{-- SIZE --}}
+                                    @if ($hasSize)
+                                        <td>
+                                            {{ $variant->size?->name ?? '—' }}
+                                        </td>
+                                    @endif
+
+                                    <td class="fw-semibold">
+                                        {{ showCurrency($variant->price) }}
+                                    </td>
+
+                                    <td>
+                                        <span class="badge bg-success">
+                                            {{ $variant->quantity }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+
+
+            @if ($product->bulkItems->isNotEmpty())
+                <div class="border-top my-3"></div>
+
+                <h5 class="fw-bold">{{ __('Bulk Items') }}</h5>
+
+                <table class="table table-bordered table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{{ __('Item Name') }}</th>
+                            <th>{{ __('Quantity') }}</th>
+                            <th>{{ __('MOQ') }}</th>
+                            <th>{{ __('MRP') }}</th>
+                            <th>{{ __('Selling Price') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($product->bulkItems as $item)
+                            <tr>
+                                <td>{{ $item->name }}</td>
+                                <td>{{ $item->quantity }}</td>
+                                <td>{{ $item->moq }}</td>
+                                <td>{{ showCurrency($item->mrp) }}</td>
+                                <td>{{ showCurrency($item->selling_price) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+
+            @if ($product->bulkPrices->isNotEmpty())
+                <div class="border-top my-3"></div>
+
+                <h5 class="fw-bold">{{ __('Bulk Prices') }}</h5>
+
+                <table class="table table-bordered table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{{ __('Min Quantity') }}</th>
+                            <th>{{ __('Max Quantity') }}</th>
+                            <th>{{ __('Price') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($product->bulkPrices as $bulkPrice)
+                            <tr>
+                                <td>{{ $bulkPrice->min_quantity }}</td>
+                                <td>{{ $bulkPrice->max_quantity }}</td>
+                                <td>{{ showCurrency($bulkPrice->price) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+
+            <div class="border-top my-3"></div>
+
+            <h5 class="fw-bold">{{ __('Description') }}</h5>
             <p>
                 {!! $product->description !!}
             </p>
@@ -121,11 +295,3 @@
     </div>
 
 @endsection
-
-@push('css')
-    <style>
-        iframe {
-            height: 380px;
-        }
-    </style>
-@endpush

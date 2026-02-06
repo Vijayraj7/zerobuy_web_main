@@ -144,6 +144,9 @@
                         </div>
                     </div>
                     @hasPermission(['admin.dashboard.notification', 'shop.dashboard.notification'])
+                    @php
+                        $isAdminRoute = request()->is('admin/*', 'admin');
+                    @endphp
                     <!-- Notification Section -->
                     <div class="badgeButtonBox me-1 me-md-3">
                         <div class="notificationIcon">
@@ -155,21 +158,15 @@
                                 <div class="dropdown-item emailNotification">
                                     <div class="emailHeader">
                                         <h6 class="massTitle">{{ __('Notifications') }}</h6>
-                                        <a href="@hasPermission('admin.dashboard.notification') 
-                                                    {{ route('admin.notification.readAll') }}
-                                                @else
-                                                    {{ route('shop.notification.readAll') }}
-                                                @endhasPermission" class="text-dark">
+                                        <a href="{{ $isAdminRoute ? route('admin.notification.readAll') : route('shop.notification.readAll') }}"
+                                            class="text-dark">
                                             {{ __('Marks all as read') }}
                                         </a>
                                     </div>
                                     <div class="message-section" id="notifications"> </div>
                                     <div class="emailFooter">
-                                        <a href="@hasPermission('admin.dashboard.notification')
-                                                    {{ route('admin.notification.show') }}
-                                                @else
-                                                    {{ route('shop.notification.show') }}
-                                                @endhasPermission" class="massPera text-dark">
+                                        <a href="{{ $isAdminRoute ? route('admin.notification.show') : route('shop.notification.show') }}"
+                                            class="massPera text-dark">
                                             {{ __('View All Notifications') }}
                                         </a>
                                     </div>

@@ -149,7 +149,7 @@ class ReturnOrderController extends Controller
             return back()->with('error', __('Payment status updated successfully'));
         }
 
-        $returnOrder->update(['payment_status' => 1, 'status' => 'Refunded']);
+        $returnOrder->update(['payment_status' => 1]);
 
         $this->updateWalletAndTransaction($returnOrder);
 

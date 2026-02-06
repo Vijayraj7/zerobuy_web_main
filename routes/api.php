@@ -38,6 +38,7 @@ use App\Http\Controllers\API\VerifyManageApiController;
 use App\Http\Controllers\API\ShopReportController;
 use App\Http\Controllers\API\SearchController;
 use App\Http\Controllers\API\NotificationController;
+use App\Http\Controllers\API\DashboardCountController;
 
 /*
 |--------------------------------------------------------------------------
@@ -320,6 +321,9 @@ Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
         Route::post('/notifications/read-all', 'markAllAsRead');
         Route::delete('/notifications/clear-all', 'clearAll');
     });
+
+    // dashboard counts
+    Route::get('/dashboard-counts', [DashboardCountController::class, 'index']);
 
     // check user is online or not
 

@@ -30,13 +30,53 @@ class OrderController extends Controller
     {
         $status = $status ? str_replace('_', ' ', $status) : '';
 
+        return view('shop.order.index', compact('status'));
+    }
+
+    public function apiIndex(Request $request)
+    {
+        $status = $request->get('status');
         $shop = generaleSetting('shop');
+        $shopId = $shop?->id;
 
-        $orders = $shop?->orders()->when($status, function ($query) use ($status) {
-            $query->where('order_status', $status);
-        })->latest('id')->paginate(20);
+        if (! $shopId) {
+            return $this->json('Order list', ['orders' => []]);
+        }
 
-        return view('shop.order.index', compact('orders', 'status'));
+        $orders = Order::query()
+            ->where('shop_id', $shopId)
+            ->with([
+                'customer.user:id,name,phone',
+                'orderProducts:id,order_id,product_id,quantity',
+                'orderProducts.product.media:id,src',
+            ])
+            ->when($status, function ($query) use ($status) {
+                $query->where('order_status', $status);
+            })
+            ->latest('id')
+            ->get();
+
+        $data = $orders->map(function ($order) {
+            $firstProduct = $order->orderProducts?->first()?->product;
+            $thumbnail = $firstProduct?->thumbnail ?? asset('default/default.jpg');
+
+            return [
+                'id' => $order->id,
+                'thumbnail' => $thumbnail,
+                'created_at' => $order->created_at?->format('d-m-Y | h:i A') ?? '-',
+                'order_id' => ($order->prefix ?? '') . ($order->order_code ?? ''),
+                'customer_name' => $order->customer?->user?->name ?? '-',
+                'mobile_no' => $order->customer?->user?->phone ?? '-',
+                'quantity' => $order->orderProducts?->sum('quantity') ?? 0,
+                'total_amount' => showCurrency($order->payable_amount ?? 0),
+                'payment_method' => __($order->payment_method?->value ?? '-'),
+                'status' => __($order->order_status?->value ?? '-'),
+                'details_url' => route('shop.order.show', $order->id),
+                'invoice_url' => route('shop.download-invoice', $order->id),
+            ];
+        })->values();
+
+        return $this->json('Order list', ['orders' => $data]);
     }
 
     /**

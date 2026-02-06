@@ -14,6 +14,7 @@ use App\Http\Controllers\Shop\FlashSaleController;
 use App\Http\Controllers\Shop\GalleryController;
 use App\Http\Controllers\Shop\NotificationController;
 use App\Http\Controllers\Shop\OrderController;
+use App\Http\Controllers\Shop\AnalyticsController as ShopAnalyticsController;
 use App\Http\Controllers\Shop\POSController;
 use App\Http\Controllers\Shop\ProductController;
 use App\Http\Controllers\Shop\ProfileController;
@@ -79,9 +80,15 @@ Route::name('shop.')->group(function () {
         // Orders
         Route::controller(OrderController::class)->group(function () {
             Route::get('/orders/{status?}', 'index')->name('order.index');
+            Route::get('/api/orders', 'apiIndex')->name('order.api.index');
             Route::get('/orders/{order}/show', 'show')->name('order.show');
             Route::get('/orders/{order}/status-change', 'statusChange')->name('order.status.change');
             Route::get('/orders/{order}/payment-status-toggle', 'paymentStatusToggle')->name('order.payment.status.toggle');
+        });
+
+        // Analytics
+        Route::controller(ShopAnalyticsController::class)->prefix('analytics')->name('analytics.')->group(function () {
+            Route::get('/', 'index')->name('index');
         });
 
 
@@ -134,6 +141,10 @@ Route::name('shop.')->group(function () {
 
             // SHOW SINGLE RETURN ORDER
             Route::get('/return-order/{returnOrder}/show', 'show')->name('returnOrder.show');
+
+            // UPDATE PAYMENT STATUS
+            Route::post('/return-order/{returnOrder}/payment-status', 'paymentStatus')
+                ->name('returnOrder.payment.status');
 
             // LIST REFUNDED ORDERS
             Route::get('/refund-orders', 'refundIndex')->name('returnOrder.refundIndex');
