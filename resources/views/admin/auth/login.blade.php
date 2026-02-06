@@ -142,6 +142,13 @@
 
                     <button class="btn loginButton" type="submit">Login</button>
 
+                    @if (!app()->isLocal())
+                        <div class="mt-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <a href="{{ route('shop.register') }}"
+                                class="btn btn-sm btn-outline-primary text-decoration-none">Register As Seller</a>
+                        </div>
+                    @endif
+
                     @if (app()->isLocal())
                         <div class="credentials-section">
                             <div class="item">

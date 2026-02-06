@@ -186,7 +186,12 @@ class ShopController extends Controller
         $states = State::orderBy('name')->get();
         $sellerTerms = Page::where('slug', 'seller-terms-of-service')->where('is_active', 1)->first();
         $businessCategories = BusinessCategory::where('status', 1)->get();
-        return view('admin.shop.create-edit', compact('states', 'businessCategories', 'sellerTerms'));
+        return view('admin.shop.create-edit', [
+            'states' => $states,
+            'businessCategories' => $businessCategories,
+            'sellerTerms' => $sellerTerms,
+            'formAction' => route('admin.shop.store'),
+        ]);
     }
     
     public function store(ShopCreateRequest $request)
@@ -289,7 +294,13 @@ class ShopController extends Controller
         $businessCategories = BusinessCategory::where('status', 1)->get();
         $setting = DeliverySetting::with(['amountRules', 'stateCharges.state',])->where('shop_id', $shop->id)->first();
 
-        return view('admin.shop.create-edit', compact('shop', 'states', 'businessCategories', 'setting'));
+        return view('admin.shop.create-edit', [
+            'shop' => $shop,
+            'states' => $states,
+            'businessCategories' => $businessCategories,
+            'setting' => $setting,
+            'formAction' => route('admin.shop.update', $shop->id),
+        ]);
     } 
 
     public function update(Request $request, Shop $shop)

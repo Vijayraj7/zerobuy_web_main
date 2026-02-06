@@ -34,7 +34,13 @@ class ProfileController extends Controller
         $businessCategories = BusinessCategory::where('status', 1)->get();
         $setting = DeliverySetting::with(['amountRules', 'stateCharges.state',])->where('shop_id', $shop->id)->first();
 
-        return view('admin.shop.create-edit', compact('shop', 'states', 'businessCategories', 'setting'));
+        return view('admin.shop.create-edit', [
+            'shop' => $shop,
+            'states' => $states,
+            'businessCategories' => $businessCategories,
+            'setting' => $setting,
+            'formAction' => route('shop.shop.update', $shop->id),
+        ]);
     }
 
     /**

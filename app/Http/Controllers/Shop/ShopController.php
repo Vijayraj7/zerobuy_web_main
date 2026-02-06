@@ -33,7 +33,12 @@ class ShopController extends Controller
         $states = State::orderBy('name')->get();
         $sellerTerms = Page::where('slug', 'seller-terms-of-service')->where('is_active', 1)->first();
         $businessCategories = BusinessCategory::where('status', 1)->get();
-        return view('admin.shop.create-edit', compact('states', 'businessCategories', 'sellerTerms'));
+        return view('admin.shop.create-edit', [
+            'states' => $states,
+            'businessCategories' => $businessCategories,
+            'sellerTerms' => $sellerTerms,
+            'formAction' => route('shop.shop.store'),
+        ]);
     }
 
     public function store(ShopCreateRequest $request)

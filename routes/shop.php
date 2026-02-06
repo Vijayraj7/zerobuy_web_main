@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\ChatController;
+use App\Http\Controllers\API\LocationController;
 use App\Http\Controllers\Shop\Auth\LoginController;
 use App\Http\Controllers\Shop\BannerController;
 use App\Http\Controllers\Shop\BrandController;
@@ -53,6 +54,9 @@ Route::name('shop.')->group(function () {
         Route::get(('/register'), 'create')->name('register')->middleware('throttle:5,5');
         Route::post(('/register'), 'store')->name('register.submit');
     });
+
+    Route::get('/get-districts/{stateId}', [LocationController::class, 'getDistricts'])
+        ->name('get-districts');
 
     Route::middleware(['authShop', 'checkPermission'])->group(function () {
 

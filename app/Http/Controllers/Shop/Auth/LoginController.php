@@ -6,7 +6,10 @@ use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AdminLoginRequest;
 use App\Http\Requests\ShopCreateRequest;
+use App\Models\BusinessCategory;
 use App\Models\GoogleReCaptcha;
+use App\Models\Page;
+use App\Models\State;
 use App\Models\User;
 use App\Repositories\ShopRepository;
 use Illuminate\Http\Request;
@@ -104,7 +107,18 @@ class LoginController extends Controller
 
     public function create()
     {
-        return view('shop.auth.create');
+        $states = State::orderBy('name')->get();
+        $sellerTerms = Page::where('slug', 'seller-terms-of-service')->where('is_active', 1)->first();
+        $businessCategories = BusinessCategory::where('status', 1)->get();
+
+        return view('admin.shop.create-edit', [
+            'states' => $states,
+            'businessCategories' => $businessCategories,
+            'sellerTerms' => $sellerTerms,
+            'layout' => 'layouts.guest',
+            'isPublicRegistration' => true,
+            'formAction' => route('shop.register.submit'),
+        ]);
     }
 
     public function store(ShopCreateRequest $request)
@@ -138,15 +152,15 @@ class LoginController extends Controller
         ];
 
         foreach (OrderStatus::cases() as $status) {
-            $cacheKeys[] = 'admin_status_'.Str::camel($status->value);
-            $cacheKeys[] = 'shop_status_'.Str::camel($status->value);
+            $cacheKeys[] = 'admin_status_' . Str::camel($status->value);
+            $cacheKeys[] = 'shop_status_' . Str::camel($status->value);
         }
 
         foreach ($cacheKeys as $key) {
             Cache::forget($key);
         }
-        Cache::forget('user_permissions_'.$user->id);
-        Cache::forget('user_non_permissions_'.$user->id);
+        Cache::forget('user_permissions_' . $user->id);
+        Cache::forget('user_non_permissions_' . $user->id);
 
         return to_route('shop.login')->withSuccess('Logout successfully');
     }

@@ -1,29 +1,52 @@
-@extends('layouts.app')
+@extends($layout ?? 'layouts.app')
+@php
+    $isEdit = isset($shop);
+    $isPublicRegistration = $isPublicRegistration ?? false;
+    $shop = $shop ?? new \App\Models\Shop();
+    $setting = $setting ?? new \App\Models\DeliverySetting();
+    $setting->setRelation('amountRules', $setting->amountRules ?? collect());
+    $setting->setRelation('stateCharges', $setting->stateCharges ?? collect());
+    $shop->setRelation('deliverySetting', $shop->deliverySetting ?? new \App\Models\DeliverySetting());
+    $formAction = $formAction ?? ($isEdit ? route('shop.shop.update', $shop->id) : route('shop.shop.store'));
+    $pageHeading = $isEdit ? __('Edit Shop') : ($isPublicRegistration ? __('Register as Seller') : __('Add New Shop'));
+@endphp
+@section('header-title', $pageHeading)
 @section('content')
-    @php
-        $isEdit = false;
-        if (isset($shop)) {
-            $isEdit = true;
-        }
-    @endphp
-@section('header-title', $isEdit ? 'Edit Shop' : __('Add New Shop'))
-<div class="page-title">
-    <div class="d-flex gap-2 align-items-center">
-        <i class="fa-solid fa-shop"></i> {{ $isEdit ? 'Edit Shop' : __('Add New Shop') }}
+@if (! $isPublicRegistration)
+    <div class="page-title">
+        <div class="d-flex gap-2 align-items-center">
+            <i class="fa-solid fa-shop"></i> {{ $pageHeading }}
+        </div>
     </div>
-</div>
+@endif
 
 <script>
     const SELECTED_DISTRICT_ID = @json(old('district_id', $shop->district_id ?? null));
 </script>
 
-<form id="shopForm" action="{{ $isEdit ? route('shop.shop.update', $shop->id) : route('shop.shop.store') }}"
+<form id="shopForm" action="{{ $formAction }}"
     method="POST" enctype="multipart/form-data">@csrf
+    @if ($errors->any())
+        <div class="alert alert-danger" id="formErrorBox">
+            <strong>{{ __('Please fix the following errors:') }}</strong>
+            <ul class="mb-0 mt-2">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @else
+        <div class="alert alert-danger d-none" id="formErrorBox">
+            <strong>{{ __('Please fix the following errors:') }}</strong>
+            <ul class="mb-0 mt-2"></ul>
+        </div>
+    @endif
     <div class="card">
         <div class="card-body">
             <div class="d-flex justify-content-end mt-4">
-                <button type="button" class="btn btn-primary py-2 px-5" id="ajaxSubmitBtn">
-                    {{ $isEdit ? 'Update' : 'Submit' }}
+                <button type="{{ $isPublicRegistration ? 'submit' : 'button' }}" class="btn btn-primary py-2 px-5"
+                    id="ajaxSubmitBtn">
+                    {{ $isEdit ? 'Update' : ($isPublicRegistration ? 'Register' : 'Submit') }}
                 </button>
             </div>
             <ul class="nav nav-tabs mt-3" id="productTabs">
@@ -132,6 +155,26 @@
                                             placeholder="Enter Store Since"
                                             value="{{ old('store_since', $isEdit ? $shop->store_since : '') }}"
                                             required="true" />
+                                    </div>
+                                    <div class="col-md-6 mt-3">
+                                        @php
+                                            $deliveryOptionsStep1 = [
+                                                '2 to 7 days' => 'Delivery in 2 to 7 Days',
+                                                '4 to 10 days' => 'Delivery in 4 to 10 Days',
+                                                '5 to 12 days' => 'Delivery in 5 to 12 Days',
+                                                '7 to 14 days' => 'Delivery in 7 to 14 Days',
+                                            ];
+                                            $deliverySelected = old('delivery_days', $shop->estimated_delivery_time ?? '');
+                                        @endphp
+                                        <label for="delivery_days_select" class="form-label">{{ __('Delivery Days') }}</label>
+                                        <select id="delivery_days_select" class="form-control">
+                                            <option value="">-- {{ __('Select Delivery Days') }} --</option>
+                                            @foreach ($deliveryOptionsStep1 as $key => $label)
+                                                <option value="{{ $key }}" {{ $deliverySelected == $key ? 'selected' : '' }}>
+                                                    {{ $label }}
+                                                </option>
+                                            @endforeach
+                                        </select>
                                     </div>
                                     <div class="col-md-6 mt-3">
                                         <label for="">{{ __('Return Policy') }} <span
@@ -564,6 +607,8 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 <script>
     const IS_EDIT = @json($isEdit);
+    const IS_PUBLIC = @json($isPublicRegistration);
+    var DISTRICTS_URL_TEMPLATE = "{{ route('shop.get-districts', ['stateId' => 'STATE_ID']) }}";
     $(document).ready(function() {
 
         function uid() {
@@ -768,6 +813,8 @@ document.addEventListener('DOMContentLoaded', function () {
             $('.invalid-feedback').remove();
             $('#businessCategoryError').text('');
             $('#deliveryStateError').text('');
+            $('#formErrorBox').addClass('d-none');
+            $('#formErrorBox ul').empty();
         }
 
         const initialStateId = $('#state_id').val();
@@ -775,7 +822,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (initialStateId) {
             loadDistricts(initialStateId, SELECTED_DISTRICT_ID);
         }
-
 
         function loadDistricts(stateId, selectedDistrictId = null) {
             $('#district_id').prop('disabled', true);
@@ -785,19 +831,25 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            $.get(`/api/get-districts/${stateId}`)
+            const districtsUrl = DISTRICTS_URL_TEMPLATE.replace('STATE_ID', stateId);
+
+            $.get(districtsUrl)
                 .done(function(response) {
 
                     let districts = [];
-
-                    console.log(response.data);
 
                     // ✅ SAFELY extract districts
                     if (Array.isArray(response)) {
                         districts = response;
                     } else if (response && Array.isArray(response.data)) {
                         districts = response.data;
+                    } else if (response && response.data && Array.isArray(response.data.data)) {
+                        districts = response.data.data;
                     }
+
+                    districts = districts.filter(function(district) {
+                        return district && typeof district === 'object' && district.id && district.name;
+                    });
 
                     // 🛑 HARD GUARD
                     if (!districts.length) {
@@ -828,9 +880,34 @@ document.addEventListener('DOMContentLoaded', function () {
             loadDistricts(this.value, null);
         });
 
+        const $deliverySelect = $('#delivery_days_select');
+        if ($deliverySelect.length) {
+            const initialDelivery = $deliverySelect.val();
+            if (initialDelivery) {
+                $('input[name="delivery_days"][value="' + initialDelivery + '"]').prop('checked', true);
+            }
+
+            $deliverySelect.on('change', function() {
+                const value = $(this).val();
+                if (value) {
+                    $('input[name="delivery_days"][value="' + value + '"]').prop('checked', true);
+                }
+            });
+        }
+
+        $('input[name="delivery_days"]').on('change', function() {
+            if ($deliverySelect.length) {
+                $deliverySelect.val(this.value);
+            }
+        });
+
 
         function showErrors(errors) {
+            let errorList = [];
             $.each(errors, function(field, messages) {
+                if (Array.isArray(messages) && messages.length) {
+                    errorList.push(messages[0]);
+                }
                 if (field === 'bussiness_categories_id') {
                     $('#businessCategoryError').text(messages[0]);
                     return;
@@ -845,68 +922,80 @@ document.addEventListener('DOMContentLoaded', function () {
                     input.after('<div class="invalid-feedback">' + messages[0] + '</div>');
                 }
             });
+
+            if (errorList.length) {
+                const $box = $('#formErrorBox');
+                const $list = $box.find('ul');
+                $list.empty();
+                errorList.forEach(function(message) {
+                    $list.append('<li>' + message + '</li>');
+                });
+                $box.removeClass('d-none');
+            }
         }
         let termsModal = null;
-        if (!IS_EDIT) {
+        if (!IS_EDIT && !IS_PUBLIC) {
             const termsModalEl = document.getElementById('termsModal');
             termsModal = new bootstrap.Modal(termsModalEl);
         }
 
-        $('#ajaxSubmitBtn').on('click', function() {
-            clearErrors();
-            let formData = new FormData($('#shopForm')[0]);
-            $.ajax({
-                url: $('#shopForm').attr('action'),
-                method: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(res) {
-                    console.log(res);
-                },
-                success: function(res) {
-                    console.log(res);
-                    if (res.message) { // SHOW TOAST
-                        Toast.fire({
-                            icon: 'success',
-                            title: res.message
-                        });
+        if (!IS_PUBLIC) {
+            $('#ajaxSubmitBtn').on('click', function() {
+                clearErrors();
+                let formData = new FormData($('#shopForm')[0]);
+                $.ajax({
+                    url: $('#shopForm').attr('action'),
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(res) {
+                        console.log(res);
+                    },
+                    success: function(res) {
+                        console.log(res);
+                        if (res.message) { // SHOW TOAST
+                            Toast.fire({
+                                icon: 'success',
+                                title: res.message
+                            });
+                        }
+                        if (IS_EDIT && res.status === 'success') { //EDIT MODE → direct success
+                            setTimeout(() => {
+                                window.location.href = res.redirect;
+                            }, 1200);
+                            return;
+                        }
+                        if (!IS_EDIT && res.status ===
+                            'terms_required') { //CREATE MODE → show terms modal
+                            termsModal.show();
+                            return;
+                        }
+                        if (res.status === 'success') { //FINAL CREATE SUCCESS
+                            setTimeout(() => {
+                                window.location.href = res.redirect;
+                            }, 1200);
+                        }
+                    },
+                    error: function(xhr) {
+                        if (xhr.status === 422) {
+                            showErrors(xhr.responseJSON.errors);
+                        }
                     }
-                    if (IS_EDIT && res.status === 'success') { //EDIT MODE → direct success
-                        setTimeout(() => {
-                            window.location.href = res.redirect;
-                        }, 1200);
-                        return;
-                    }
-                    if (!IS_EDIT && res.status ===
-                        'terms_required') { //CREATE MODE → show terms modal
-                        termsModal.show();
-                        return;
-                    }
-                    if (res.status === 'success') { //FINAL CREATE SUCCESS
-                        setTimeout(() => {
-                            window.location.href = res.redirect;
-                        }, 1200);
-                    }
-                },
-                error: function(xhr) {
-                    if (xhr.status === 422) {
-                        showErrors(xhr.responseJSON.errors);
-                    }
-                }
+                });
             });
-        });
 
-        $('#agreeAndSubmit').on('click', function() {
-            if (!$('#agreeTerms').is(':checked')) {
-                $('#termsError').removeClass('d-none');
-                return;
-            }
-            $('#termsError').addClass('d-none');
-            $('#terms_condition_status').val(1);
-            termsModal.hide();
-            $('#ajaxSubmitBtn').trigger('click');
-        });
+            $('#agreeAndSubmit').on('click', function() {
+                if (!$('#agreeTerms').is(':checked')) {
+                    $('#termsError').removeClass('d-none');
+                    return;
+                }
+                $('#termsError').addClass('d-none');
+                $('#terms_condition_status').val(1);
+                termsModal.hide();
+                $('#ajaxSubmitBtn').trigger('click');
+            });
+        }
     });
 </script>
 @endpush
