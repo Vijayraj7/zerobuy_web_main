@@ -6,6 +6,7 @@ use App\Http\Controllers\API\Seller\DeliverySettingController;
 use App\Http\Controllers\API\Seller\BannerController;
 use App\Http\Controllers\API\Seller\AdvertisementController;
 use App\Http\Controllers\API\Seller\DashboardController;
+use App\Http\Controllers\API\Seller\FlashSaleController;
 use App\Http\Controllers\API\Seller\LoginController;
 use App\Http\Controllers\API\Seller\NotificationController;
 use App\Http\Controllers\API\Seller\OrderController;
@@ -71,6 +72,15 @@ Route::prefix('/seller')->group(function () {
         // advertisement route
         Route::controller(AdvertisementController::class)->group(function () {
             Route::get('/advertisements', 'index');
+        });
+
+        // flash sale routes
+        Route::controller(FlashSaleController::class)->group(function () {
+            Route::get('/flash-sales', 'index');
+            Route::get('/flash-sale/{flashSale}/details', 'show');
+            Route::post('/flash-sale/{flashSale}/product-store', 'productStore');
+            Route::delete('/flash-sale/{flashSale}/product/{product}', 'productRemove');
+            Route::put('/flash-sale/{flashSale}/product/{product}', 'update');
         });
 
         // advertisement route
