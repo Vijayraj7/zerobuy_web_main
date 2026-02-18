@@ -54,6 +54,7 @@ class ShopDetailsResource extends JsonResource
             'phone' => $this->phone_number,
             'whatsapp' => $this->whatsapp_number,
             'min_amount' => $this->min_order_amount,
+            'min_order_amount' => (float) ($this->min_order_amount ?? 0),
             'store_since' => $this->store_since,
             'return_policy' => $this->return_policy,
             'address' => $this->address,

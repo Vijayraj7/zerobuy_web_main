@@ -28,8 +28,8 @@ class Advertisement extends Model
     ];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
+        'start_date' => 'datetime',
+        'end_date' => 'datetime',
     ];
 
     public function product()
@@ -59,29 +59,29 @@ class Advertisement extends Model
 
     public function scopeByStatusName($query, $statusName)
     {
-        $today = Carbon::today();
+        $now = Carbon::now();
 
-        return $query->where(function ($q) use ($today, $statusName) {
+        return $query->where(function ($q) use ($now, $statusName) {
             if ($statusName === 'scheduled') {
-                $q->where('start_date', '>', $today);
+                $q->where('start_date', '>', $now);
             } elseif ($statusName === 'completed') {
-                $q->where('end_date', '<', $today);
+                $q->where('end_date', '<', $now);
             } elseif ($statusName === 'active') {
-                $q->where('start_date', '<=', $today)
-                    ->where('end_date', '>=', $today);
+                $q->where('start_date', '<=', $now)
+                    ->where('end_date', '>=', $now);
             }
         });
     }
 
     public function getStatusName()
     {
-        $today = Carbon::today();
+        $now = Carbon::now();
 
-        if ($this->start_date && $this->start_date->gt($today)) {
+        if ($this->start_date && $this->start_date->gt($now)) {
             return 'scheduled';
         }
 
-        if ($this->end_date && $this->end_date->lt($today)) {
+        if ($this->end_date && $this->end_date->lt($now)) {
             return 'completed';
         }
 

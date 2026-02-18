@@ -34,14 +34,14 @@ class AdvertisementRepository extends Repository
 
         $shop = generaleSetting('shop');
         $wallet = Wallet::where('user_id', $shop->user_id)->first();
-        $today = Carbon::today();
+        $now = Carbon::now();
 
         // SINGLE ACTIVE RULE
         if ($request->ads_type === 'store') {
             $exists = Advertisement::where('shop_id', $shop->id)
                 ->where('ads_type', 'store')
                 ->where('status', 'active')
-                ->whereDate('end_date', '>=', $today)
+                ->where('end_date', '>=', $now)
                 ->exists();
 
             if ($exists) {
@@ -54,7 +54,7 @@ class AdvertisementRepository extends Repository
                 ->where('ads_type', 'product')
                 ->where('product_id', $request->product_id)
                 ->where('status', 'active')
-                ->whereDate('end_date', '>=', $today)
+                ->where('end_date', '>=', $now)
                 ->exists();
 
             if ($exists) {
@@ -63,8 +63,11 @@ class AdvertisementRepository extends Repository
         }
 
         $dailyBudget = AdvertisementSetting::first()->daily_budget;
-        $days = Carbon::parse($request->start_date)
-            ->diffInDays(Carbon::parse($request->end_date)) + 1;
+        $startDateInput = Carbon::parse($request->start_date)->startOfDay();
+        $endDateInput = Carbon::parse($request->end_date)->startOfDay();
+        $days = $startDateInput->diffInDays($endDateInput) + 1;
+        $startDateTime = $startDateInput->isToday() ? Carbon::now() : $startDateInput;
+        $endDateTime = Carbon::parse($request->end_date)->endOfDay();
 
         $total = $days * $dailyBudget;
 
@@ -72,7 +75,7 @@ class AdvertisementRepository extends Repository
             return response()->json(['message' => 'Insufficient wallet balance'], 400);
         }
 
-        DB::transaction(function () use ($request, $shop, $wallet, $dailyBudget, $total) {
+        DB::transaction(function () use ($request, $shop, $wallet, $dailyBudget, $total, $startDateTime, $endDateTime) {
 
             Advertisement::create([
                 'shop_id' => $shop->id,
@@ -80,8 +83,8 @@ class AdvertisementRepository extends Repository
                 'product_id' => $request->ads_type == 'product'
                     ? $request->product_id
                     : null,
-                'start_date' => $request->start_date,
-                'end_date' => $request->end_date,
+                'start_date' => $startDateTime,
+                'end_date' => $endDateTime,
                 'daily_budget' => $dailyBudget,
                 'total_budget' => $total,
                 'status' => 'active'

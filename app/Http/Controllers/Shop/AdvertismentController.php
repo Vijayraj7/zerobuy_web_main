@@ -24,7 +24,7 @@ class AdvertismentController extends Controller
     {
         // AUTO EXPIRE ADS
         Advertisement::where('status', 'active')
-            ->whereDate('end_date', '<', Carbon::today())
+            ->where('end_date', '<', Carbon::now())
             ->update(['status' => 'completed']);
 
         $shop = generaleSetting('shop');
@@ -33,7 +33,7 @@ class AdvertismentController extends Controller
 
         // AUTO EXPIRE ADS
         Advertisement::where('status', 'active')
-            ->whereDate('end_date', '<', Carbon::today())
+            ->where('end_date', '<', Carbon::now())
             ->update(['status' => 'completed']);
 
         if ($request->ajax()) {
@@ -59,18 +59,13 @@ class AdvertismentController extends Controller
                 ->addColumn('product_name', fn($r) => $r->product?->name ?? 'N/A')
                 ->editColumn('daily_budget', fn($r) => '₹' . $r->daily_budget)
                 ->editColumn('total_budget', fn($r) => '₹' . $r->total_budget)
-                // ->addColumn('status',fn($r)=>
-                //     $r->status=='active'
-                //         ? '<span class="badge bg-success">Active</span>'
-                //         : '<span class="badge bg-secondary">Completed</span>'
-                // )
                 ->addColumn('status', function ($r) {
-                    $today = Carbon::today();
+                    $now = Carbon::now();
                     $start = Carbon::parse($r->start_date);
                     $end = Carbon::parse($r->end_date);
                     // UPCOMING
-                    if ($start->gt($today)) {
-                        $days = $today->diffInDays($start);
+                    if ($start->gt($now)) {
+                        $days = $now->diffInDays($start);
 
                         if ($days == 1) {
                             return '<span class="badge bg-info">Starts Tomorrow</span>';
@@ -79,7 +74,7 @@ class AdvertismentController extends Controller
                         return '<span class="badge bg-info">Starts in ' . $days . ' days</span>';
                     }
                     // ACTIVE
-                    if ($today->between($start, $end)) {
+                    if ($now->between($start, $end)) {
                         return '<span class="badge bg-success">Active</span>';
                     }
                     // COMPLETED
@@ -104,14 +99,14 @@ class AdvertismentController extends Controller
 
         $shop = generaleSetting('shop');
         $wallet = AdWallet::where('user_id', $shop->user_id)->first();
-        $today = Carbon::today();
+        $now = Carbon::now();
 
         // SINGLE ACTIVE RULE
         if ($request->ads_type === 'store') {
             $exists = Advertisement::where('shop_id', $shop->id)
                 ->where('ads_type', 'store')
                 ->where('status', 'active')
-                ->whereDate('end_date', '>=', $today)
+                ->where('end_date', '>=', $now)
                 ->exists();
 
             if ($exists) {
@@ -124,7 +119,7 @@ class AdvertismentController extends Controller
                 ->where('ads_type', 'product')
                 ->where('product_id', $request->product_id)
                 ->where('status', 'active')
-                ->whereDate('end_date', '>=', $today)
+                ->where('end_date', '>=', $now)
                 ->exists();
 
             if ($exists) {
@@ -133,8 +128,11 @@ class AdvertismentController extends Controller
         }
 
         $dailyBudget = AdvertisementSetting::first()->daily_budget;
-        $days = Carbon::parse($request->start_date)
-            ->diffInDays(Carbon::parse($request->end_date)) + 1;
+        $startDateInput = Carbon::parse($request->start_date)->startOfDay();
+        $endDateInput = Carbon::parse($request->end_date)->startOfDay();
+        $days = $startDateInput->diffInDays($endDateInput) + 1;
+        $startDateTime = $startDateInput->isToday() ? Carbon::now() : $startDateInput;
+        $endDateTime = Carbon::parse($request->end_date)->endOfDay();
 
         $total = $days * $dailyBudget;
 
@@ -142,16 +140,15 @@ class AdvertismentController extends Controller
             return $this->json('Insufficient wallet balance', [], 400);
         }
 
-        DB::transaction(function () use ($request, $shop, $wallet, $dailyBudget, $total) {
-
-            $ad_new = Advertisement::create([
+        DB::transaction(function () use ($request, $shop, $wallet, $dailyBudget, $total, $startDateTime, $endDateTime) {
+            $adNew = Advertisement::create([
                 'shop_id' => $shop->id,
                 'ads_type' => $request->ads_type,
                 'product_id' => $request->ads_type == 'product'
                     ? $request->product_id
                     : null,
-                'start_date' => $request->start_date,
-                'end_date' => $request->end_date,
+                'start_date' => $startDateTime,
+                'end_date' => $endDateTime,
                 'daily_budget' => $dailyBudget,
                 'total_budget' => $total,
                 'status' => 'active'
@@ -164,7 +161,7 @@ class AdvertismentController extends Controller
                 'amount' => $total,
                 'type' => 'debit',
                 'purpose' => 'Ads Run',
-                'transaction_id' => $ad_new->id,
+                'transaction_id' => $adNew->id,
                 'note' => 'Advertisement'
             ]);
         });
