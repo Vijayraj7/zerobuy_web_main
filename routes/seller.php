@@ -7,6 +7,7 @@ use App\Http\Controllers\API\Seller\BannerController;
 use App\Http\Controllers\API\Seller\AdvertisementController;
 use App\Http\Controllers\API\Seller\DashboardController;
 use App\Http\Controllers\API\Seller\FlashSaleController;
+use App\Http\Controllers\API\Seller\CouponController;
 use App\Http\Controllers\API\Seller\LoginController;
 use App\Http\Controllers\API\Seller\NotificationController;
 use App\Http\Controllers\API\Seller\OrderController;
@@ -81,6 +82,15 @@ Route::prefix('/seller')->group(function () {
             Route::post('/flash-sale/{flashSale}/product-store', 'productStore');
             Route::delete('/flash-sale/{flashSale}/product/{product}', 'productRemove');
             Route::put('/flash-sale/{flashSale}/product/{product}', 'update');
+        });
+
+        // coupon routes
+        Route::controller(CouponController::class)->group(function () {
+            Route::get('/coupons', 'index');
+            Route::post('/coupons', 'store');
+            Route::put('/coupons/{coupon}', 'update');
+            Route::delete('/coupons/{coupon}', 'destroy');
+            Route::post('/coupons/{coupon}/toggle', 'toggleStatus');
         });
 
         // advertisement route
