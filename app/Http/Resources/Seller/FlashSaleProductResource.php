@@ -24,6 +24,7 @@ class FlashSaleProductResource extends JsonResource
             'is_active' => (bool) $this->is_active,
             'flash_sale_price' => (float) ($this->pivot?->price ?? 0),
             'flash_sale_quantity' => (int) ($this->pivot?->quantity ?? 0),
+            'sold_quantity' => (int) ($this->pivot?->sale_quantity ?? 0),
         ];
     }
 }
