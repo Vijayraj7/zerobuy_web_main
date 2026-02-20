@@ -98,6 +98,7 @@ class ProductDetailsResource extends JsonResource
             'total_sold' => (string) number_format($totalSold, 0, '.', ','),
             'quantity' => (int) ($quantity ?? $this->quantity),
             'min_order_quantity' => (int) ($this->min_order_quantity ?? 1),
+            'condition_status' => $this->condition_status,
             'is_favorite' => (bool) $favorite,
             'thumbnails' => $this->thumbnails(),
             'videourl' => $this->videourl(),

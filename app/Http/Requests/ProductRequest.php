@@ -47,10 +47,10 @@ class ProductRequest extends FormRequest
             'child_categories.*' => 'exists:child_categories,id',
 
             'quantity'           => 'required|integer|min:1',
-            'min_order_quantity' => 'nullable|integer|min:1',
-            'return_period'      => 'nullable|integer',
+            'min_order_quantity' => 'required|integer|min:1',
+            'return_period'      => 'required|integer',
             'mrp'                => 'required|numeric|min:0',
-            'selling_price'      => 'nullable|numeric|min:0',
+            'selling_price'      => 'required|numeric|min:0|lt:mrp',
             'tax_percentage'     => 'nullable|numeric|min:0',
 
             'item_details'         => 'nullable|array',
@@ -134,12 +134,21 @@ class ProductRequest extends FormRequest
             'quantity.integer'         => __('The quantity must be an integer.'),
             'quantity.min'             => __('The quantity must be at least 1.'),
 
+            'min_order_quantity.required' => __('The min order quantity field is required.'),
+            'min_order_quantity.integer'  => __('The min order quantity must be an integer.'),
+            'min_order_quantity.min'      => __('The min order quantity must be at least 1.'),
+
+            'return_period.required'   => __('The return period field is required.'),
+            'return_period.integer'    => __('The return period must be an integer.'),
+
             'mrp.required'             => __('The price field is required.'),
             'mrp.numeric'              => __('The price must be a number.'),
             'mrp.min'                  => __('The price must be at least 0.'),
 
+            'selling_price.required'   => __('The selling price field is required.'),
             'selling_price.numeric'    => __('The selling price must be a number.'),
             'selling_price.min'        => __('The selling price must be at least 0.'),
+            'selling_price.lt'         => __('The selling price must be less than MRP.'),
 
             'thumbnail.required'       => __('The thumbnail field is required.'),
             'thumbnail.image'          => __('The thumbnail must be an image.'),

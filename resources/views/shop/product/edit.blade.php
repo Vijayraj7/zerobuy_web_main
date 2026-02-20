@@ -8,12 +8,18 @@
         }
     @endphp
     @if ($errors->any())
-        <div class="alert alert-danger">
+        <div class="alert alert-danger" id="productFormErrorBox">
+            <strong>{{ __('Please fix the following errors:') }}</strong>
             <ul class="mb-0">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
             </ul>
+        </div>
+    @else
+        <div class="alert alert-danger d-none" id="productFormErrorBox">
+            <strong>{{ __('Please fix the following errors:') }}</strong>
+            <ul class="mb-0"></ul>
         </div>
     @endif
 @section('header-title', $isEdit ? 'Edit Product' : __('Add New Product'))
@@ -52,8 +58,8 @@
     </div>
 </div>
 
-<form action="{{ $isEdit ? route('shop.product.update', $product->id) : route('shop.product.store') }}" method="POST"
-    enctype="multipart/form-data">
+<form id="productForm" action="{{ $isEdit ? route('shop.product.update', $product->id) : route('shop.product.store') }}" method="POST"
+    enctype="multipart/form-data" novalidate>
     @csrf
     @if ($isEdit)
         @method('PUT')
@@ -150,7 +156,7 @@
                             <div class="col-md-6">
                                 <label class="form-label">MOQ <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" name="min_order_quantity"
-                                    placeholder="Enter Minimum Order Quantity" min="1"
+                                    placeholder="Enter Minimum Order Quantity" min="1" required
                                     value="{{ old('min_order_quantity', $isEdit ? $product->min_order_quantity : 0) }}">
                                 @error('min_order_quantity')
                                     <p class="text text-danger m-0">{{ $message }}</p>
@@ -594,6 +600,7 @@
 <script>
     // Remove +,-,e, and letters from number inputs
     document.addEventListener('input', function(e) {
+        if (!(e.target instanceof Element)) return;
         if (e.target.matches('input[type="number"]')) {
             // Remove everything that's not a digit
             e.target.value = e.target.value.replace(/[^0-9]/g, '');
@@ -1856,6 +1863,7 @@
     }
 
     document.addEventListener('blur', function(e) {
+        if (!(e.target instanceof Element)) return;
         if (!e.target.matches('.bulk-item-row input[name*="[name]"]')) return;
 
         const input = e.target;
@@ -2108,5 +2116,415 @@
         syncAllExclusiveRules();
         updateBulkDeleteButtons();
     });
+</script>
+
+<script>
+    (function() {
+        const form = document.getElementById('productForm');
+        if (!form) return;
+
+        const isEditMode = @json($isEdit);
+
+        function textVal(name) {
+            const el = form.querySelector(`[name="${name}"]`);
+            return (el?.value || '').toString().trim();
+        }
+
+        function firstInput(name) {
+            return form.querySelector(`[name="${name}"]`) || form.querySelector(`[name="${name}[]"]`);
+        }
+
+        function resolveFieldElement(field) {
+            if (!field) return null;
+
+            if (field === 'condition_status') {
+                return form.querySelector('input[name="condition_status"]');
+            }
+
+            if (field === 'description') {
+                return form.querySelector('textarea[name="description"]');
+            }
+
+            if (field === 'sub_categories' || field.startsWith('sub_categories.')) {
+                return form.querySelector('select[name="sub_categories[]"]');
+            }
+
+            if (field === 'child_categories' || field.startsWith('child_categories.')) {
+                return form.querySelector('select[name="child_categories[]"]');
+            }
+
+            if (field === 'meta_keywords' || field.startsWith('meta_keywords.')) {
+                return form.querySelector('select[name="meta_keywords[]"]');
+            }
+
+            if (field === 'additional_images' || field.startsWith('additional_images.')) {
+                return form.querySelector('input[name="additional_images[]"]');
+            }
+
+            let m = field.match(/^item_details\.(\d+)\.(name|value)$/);
+            if (m) return form.querySelector(`[name="item_details[${m[1]}][${m[2]}]"]`);
+
+            m = field.match(/^variants\.(\d+)\.(price|quantity|color_id|size_id)$/);
+            if (m) return form.querySelector(`[name^="variants["][name$="][${m[2]}]"]`);
+
+            m = field.match(/^bulk\.(\d+)\.(min_qty|max_qty|price)$/);
+            if (m) return form.querySelector(`[name^="bulk["][name$="][${m[2]}]"]`);
+
+            m = field.match(/^bulk_items\.(\d+)\.(name|quantity|moq|mrp|selling_price)$/);
+            if (m) return form.querySelector(`[name^="bulk_items["][name$="][${m[2]}]"]`);
+
+            return firstInput(field);
+        }
+
+        function addError(errors, field, message) {
+            if (!errors[field]) errors[field] = [];
+            if (!errors[field].includes(message)) errors[field].push(message);
+        }
+
+        function clearClientErrors() {
+            form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            form.querySelectorAll('.client-error').forEach(el => el.remove());
+
+            const box = document.getElementById('productFormErrorBox');
+            if (box) {
+                box.classList.add('d-none');
+                const ul = box.querySelector('ul');
+                if (ul) ul.innerHTML = '';
+            }
+        }
+
+        function addFieldError(name, message) {
+            const input = resolveFieldElement(name);
+            if (!input) return;
+
+            input.classList.add('is-invalid');
+
+            let anchor = input;
+
+            if (name === 'description') {
+                const noteEditor = document.querySelector('#description')?.nextElementSibling;
+                if (noteEditor && noteEditor.classList.contains('note-editor')) {
+                    anchor = noteEditor;
+                }
+            }
+
+            if (name === 'condition_status') {
+                anchor = input.closest('.mb-3') || input.parentElement;
+            }
+
+            if (name === 'thumbnail') {
+                anchor = document.getElementById('preview') || input;
+            }
+
+            if (name === 'additional_images') {
+                anchor = document.getElementById('additionalContainer') || input;
+            }
+
+            if (input.classList.contains('select2-hidden-accessible') && input.nextElementSibling) {
+                anchor = input.nextElementSibling;
+            }
+
+            if (name.startsWith('variants.') || name.startsWith('bulk.') || name.startsWith('bulk_items.') || name.startsWith(
+                    'item_details.')) {
+                anchor = input.closest('.col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-6, .col-lg-5, .col-lg-7, .mb-2, .mb-3') || input;
+            }
+
+            const existing = anchor.parentElement?.querySelector(`.client-error[data-field="${name}"]`);
+            if (!existing) {
+                anchor.insertAdjacentHTML('afterend', `<p class="text text-danger m-0 client-error" data-field="${name}">${message}</p>`);
+            }
+        }
+
+        function showErrors(errors) {
+            const messages = [];
+            Object.keys(errors).forEach(field => {
+                const fieldMessages = Array.isArray(errors[field]) ? errors[field] : [errors[field]];
+                fieldMessages.forEach(msg => {
+                    if (!messages.includes(msg)) {
+                        messages.push(msg);
+                    }
+                });
+
+                if (fieldMessages.length) {
+                    addFieldError(field, fieldMessages[0]);
+                }
+            });
+
+            const box = document.getElementById('productFormErrorBox');
+            if (box && messages.length) {
+                const ul = box.querySelector('ul');
+                if (ul) {
+                    ul.innerHTML = '';
+                    messages.forEach(msg => {
+                        ul.insertAdjacentHTML('beforeend', `<li>${msg}</li>`);
+                    });
+                }
+                box.classList.remove('d-none');
+            }
+        }
+
+        function stepForField(field) {
+            if (['condition_status', 'name', 'main_category', 'sub_categories', 'child_categories', 'quantity', 'min_order_quantity',
+                    'return_period', 'description', 'video_type', 'video_link', 'item_details'
+                ].includes(field) || field.startsWith('item_details')) return 1;
+
+            if (['mrp', 'selling_price', 'tax_percentage', 'bulk'].includes(field) || field.startsWith('bulk')) return 2;
+            if (field.startsWith('variants')) return 3;
+            if (['thumbnail', 'additional_images'].includes(field)) return 4;
+            if (['meta_title', 'meta_description', 'meta_keywords'].includes(field) || field.startsWith('meta_keywords')) return 5;
+            if (field.startsWith('bulk_items')) return 6;
+            return 1;
+        }
+
+        function activateStep(step) {
+            document.querySelectorAll('.step-content').forEach(el => el.style.display = 'none');
+            const target = document.querySelector('.step-' + step);
+            if (target) target.style.display = 'block';
+
+            document.querySelectorAll('#productTabs .nav-link').forEach(tab => tab.classList.remove('active'));
+            const activeTab = document.querySelector(`#productTabs .nav-link[data-step="${step}"]`);
+            if (activeTab) activeTab.classList.add('active');
+        }
+
+        function validateYouTubeUrl(url) {
+            if (!url) return true;
+            const youtubePattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//i;
+            if (!youtubePattern.test(url)) return 'The video link must be a valid YouTube URL.';
+            if (/youtube\.com\/shorts\//i.test(url)) return 'YouTube Shorts links are not allowed. Please use a normal YouTube video link.';
+            if (!/(watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{6,})/.test(url)) return 'Please enter a valid YouTube video link.';
+            return true;
+        }
+
+        function validateProductForm() {
+            const errors = {};
+
+            const condition = form.querySelector('input[name="condition_status"]:checked')?.value || '';
+            if (!condition) addError(errors, 'condition_status', 'The condition status field is required.');
+
+            const name = textVal('name');
+            if (!name) addError(errors, 'name', 'The name field is required.');
+            if (name.length > 191) addError(errors, 'name', 'The name may not be greater than 191 characters.');
+
+            const desc = ($('#description').summernote('isEmpty') ? '' : $('#description').summernote('code').replace(/<[^>]*>/g, '').trim());
+            if (!desc) addError(errors, 'description', 'The description field is required.');
+
+            if (!textVal('main_category')) addError(errors, 'main_category', 'The category field is required.');
+
+            const subVals = $('select[name="sub_categories[]"]').val() || [];
+            if (!subVals.length) addError(errors, 'sub_categories', 'The sub categories field is required.');
+
+            const childSelect = document.getElementById('child-category');
+            const childVals = $('select[name="child_categories[]"]').val() || [];
+            if (childSelect && !childSelect.disabled && childSelect.required && !childVals.length) {
+                addError(errors, 'child_categories', 'Child category is required for the selected sub category.');
+            }
+
+            const quantity = textVal('quantity');
+            if (!quantity) addError(errors, 'quantity', 'The quantity field is required.');
+            if (quantity && (!Number.isInteger(Number(quantity)) || Number(quantity) < 1)) {
+                addError(errors, 'quantity', 'The quantity must be at least 1.');
+            }
+
+            const moq = textVal('min_order_quantity');
+            if (!moq) {
+                addError(errors, 'min_order_quantity', 'The min order quantity field is required.');
+            }
+            if (moq && (!Number.isInteger(Number(moq)) || Number(moq) < 1)) {
+                addError(errors, 'min_order_quantity', 'The min order quantity must be at least 1.');
+            }
+
+            const returnPeriod = textVal('return_period');
+            if (returnPeriod === '') {
+                addError(errors, 'return_period', 'The return period field is required.');
+            }
+            if (returnPeriod !== '' && (!Number.isInteger(Number(returnPeriod)))) {
+                addError(errors, 'return_period', 'The return period must be an integer.');
+            }
+
+            const mrp = textVal('mrp');
+            if (mrp === '') addError(errors, 'mrp', 'The price field is required.');
+            if (mrp !== '' && (isNaN(Number(mrp)) || Number(mrp) < 0)) addError(errors, 'mrp', 'The price must be at least 0.');
+
+            const selling = textVal('selling_price');
+            if (selling === '') {
+                addError(errors, 'selling_price', 'The selling price field is required.');
+            }
+            if (selling !== '' && (isNaN(Number(selling)) || Number(selling) < 0)) {
+                addError(errors, 'selling_price', 'The selling price must be at least 0.');
+            }
+            if (
+                mrp !== '' &&
+                selling !== '' &&
+                !isNaN(Number(mrp)) &&
+                !isNaN(Number(selling)) &&
+                Number(selling) >= Number(mrp)
+            ) {
+                addError(errors, 'selling_price', 'The selling price must be less than MRP.');
+            }
+
+            const tax = textVal('tax_percentage');
+            if (tax !== '' && (isNaN(Number(tax)) || Number(tax) < 0)) {
+                addError(errors, 'tax_percentage', 'The tax percentage must be at least 0.');
+            }
+
+            form.querySelectorAll('input[name^="item_details["][name$="][name]"]').forEach((input, i) => {
+                const v = (input.value || '').trim();
+                if (v.length > 191) addError(errors, `item_details.${i}.name`, 'Item detail name may not be greater than 191 characters.');
+            });
+            form.querySelectorAll('input[name^="item_details["][name$="][value]"]').forEach((input, i) => {
+                const v = (input.value || '').trim();
+                if (v.length > 191) addError(errors, `item_details.${i}.value`, 'Item detail value may not be greater than 191 characters.');
+            });
+
+            const videoType = textVal('video_type');
+            if (videoType && !['youtube', 'external'].includes(videoType)) {
+                addError(errors, 'video_type', 'The selected video type is invalid.');
+            }
+
+            const videoLink = textVal('video_link');
+            if (videoLink) {
+                const yt = validateYouTubeUrl(videoLink);
+                if (yt !== true) addError(errors, 'video_link', yt);
+            }
+
+            const thumb = form.querySelector('input[name="thumbnail"]');
+            const thumbFile = thumb?.files?.[0];
+            const allowed = ['image/png', 'image/jpg', 'image/jpeg', 'image/webp'];
+            const maxBytes = 2048 * 1024;
+
+            if (!isEditMode && !thumbFile) {
+                addError(errors, 'thumbnail', 'The thumbnail field is required.');
+            }
+            if (thumbFile) {
+                if (!allowed.includes((thumbFile.type || '').toLowerCase())) {
+                    addError(errors, 'thumbnail', 'The thumbnail must be a file of type: png, jpg, jpeg, webp.');
+                }
+                if (thumbFile.size > maxBytes) {
+                    addError(errors, 'thumbnail', 'The thumbnail may not be greater than 2048 kilobytes.');
+                }
+            }
+
+            const additional = form.querySelector('input[name="additional_images[]"]');
+            const files = additional?.files ? Array.from(additional.files) : [];
+            files.forEach(() => {});
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (!allowed.includes((file.type || '').toLowerCase())) {
+                    addError(errors, 'additional_images', 'Additional images must be png, jpg, jpeg or webp.');
+                    break;
+                }
+                if (file.size > maxBytes) {
+                    addError(errors, 'additional_images', 'Each additional image must be less than or equal to 2048 kilobytes.');
+                    break;
+                }
+            }
+
+            const metaTitle = textVal('meta_title');
+            if (metaTitle.length > 191) addError(errors, 'meta_title', 'The meta title may not be greater than 191 characters.');
+
+            const metaDesc = textVal('meta_description');
+            if (metaDesc.length > 200) addError(errors, 'meta_description', 'The meta description may not be greater than 200 characters.');
+
+            $('select[name="meta_keywords[]"] option:selected').each(function(i) {
+                const key = ($(this).val() || '').toString().trim();
+                if (key.length > 50) addError(errors, `meta_keywords.${i}`, 'Meta keyword may not be greater than 50 characters.');
+            });
+
+            form.querySelectorAll('input[name^="variants["][name$="][price]"]').forEach((input, i) => {
+                const v = (input.value || '').toString().trim();
+                if (v !== '' && (isNaN(Number(v)) || Number(v) < 0)) {
+                    addError(errors, `variants.${i}.price`, 'Variant price must be at least 0.');
+                }
+            });
+
+            form.querySelectorAll('input[name^="variants["][name$="][quantity]"]').forEach((input, i) => {
+                const v = (input.value || '').toString().trim();
+                if (v !== '' && (!Number.isInteger(Number(v)) || Number(v) < 0)) {
+                    addError(errors, `variants.${i}.quantity`, 'Variant quantity must be at least 0.');
+                }
+            });
+
+            form.querySelectorAll('input[name^="bulk["][name$="][min_qty]"]').forEach((input, i) => {
+                const v = (input.value || '').toString().trim();
+                if (v === '' || !Number.isInteger(Number(v)) || Number(v) < 1) {
+                    addError(errors, `bulk.${i}.min_qty`, 'Bulk min qty must be at least 1.');
+                }
+            });
+
+            form.querySelectorAll('input[name^="bulk["][name$="][max_qty]"]').forEach((input, i) => {
+                const v = (input.value || '').toString().trim();
+                if (v === '' || !Number.isInteger(Number(v)) || Number(v) < 1) {
+                    addError(errors, `bulk.${i}.max_qty`, 'Bulk max qty must be at least 1.');
+                }
+            });
+
+            form.querySelectorAll('input[name^="bulk["][name$="][price]"]').forEach((input, i) => {
+                const v = (input.value || '').toString().trim();
+                if (v === '' || isNaN(Number(v)) || Number(v) < 0) {
+                    addError(errors, `bulk.${i}.price`, 'Bulk price must be at least 0.');
+                }
+            });
+
+            form.querySelectorAll('input[name^="bulk_items["][name$="][name]"]').forEach((input, i) => {
+                const v = (input.value || '').trim();
+                if (v.length > 191) addError(errors, `bulk_items.${i}.name`, 'Bulk item name may not be greater than 191 characters.');
+            });
+
+            form.querySelectorAll('input[name^="bulk_items["][name$="][quantity]"]').forEach((input, i) => {
+                const v = (input.value || '').trim();
+                if (v !== '' && (!Number.isInteger(Number(v)) || Number(v) < 0)) {
+                    addError(errors, `bulk_items.${i}.quantity`, 'Bulk item quantity must be at least 0.');
+                }
+            });
+
+            form.querySelectorAll('input[name^="bulk_items["][name$="][moq]"]').forEach((input, i) => {
+                const v = (input.value || '').trim();
+                if (v !== '' && (!Number.isInteger(Number(v)) || Number(v) < 0)) {
+                    addError(errors, `bulk_items.${i}.moq`, 'Bulk item MOQ must be at least 0.');
+                }
+            });
+
+            form.querySelectorAll('input[name^="bulk_items["][name$="][mrp]"]').forEach((input, i) => {
+                const v = (input.value || '').trim();
+                if (v !== '' && (isNaN(Number(v)) || Number(v) < 0)) {
+                    addError(errors, `bulk_items.${i}.mrp`, 'Bulk item MRP must be at least 0.');
+                }
+            });
+
+            form.querySelectorAll('input[name^="bulk_items["][name$="][selling_price]"]').forEach((input, i) => {
+                const v = (input.value || '').trim();
+                if (v !== '' && (isNaN(Number(v)) || Number(v) < 0)) {
+                    addError(errors, `bulk_items.${i}.selling_price`, 'Bulk item selling price must be at least 0.');
+                }
+            });
+
+            return errors;
+        }
+
+        form.addEventListener('submit', function(e) {
+            clearClientErrors();
+            const errors = validateProductForm();
+            const fields = Object.keys(errors);
+            if (!fields.length) return;
+
+            e.preventDefault();
+            showErrors(errors);
+
+            const firstField = fields[0];
+            activateStep(stepForField(firstField.split('.')[0]));
+
+            const target = resolveFieldElement(firstField) || resolveFieldElement(firstField.split('.')[0]);
+            if (target) target.focus();
+
+            const box = document.getElementById('productFormErrorBox');
+            if (box) {
+                box.classList.remove('d-none');
+                window.scrollTo({
+                    top: box.getBoundingClientRect().top + window.pageYOffset - 100,
+                    behavior: 'smooth'
+                });
+            }
+        });
+    })();
 </script>
 @endpush

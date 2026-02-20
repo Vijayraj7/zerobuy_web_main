@@ -157,26 +157,6 @@
                                             required="true" />
                                     </div>
                                     <div class="col-md-6 mt-3">
-                                        @php
-                                            $deliveryOptionsStep1 = [
-                                                '2 to 7 days' => 'Delivery in 2 to 7 Days',
-                                                '4 to 10 days' => 'Delivery in 4 to 10 Days',
-                                                '5 to 12 days' => 'Delivery in 5 to 12 Days',
-                                                '7 to 14 days' => 'Delivery in 7 to 14 Days',
-                                            ];
-                                            $deliverySelected = old('delivery_days', $shop->estimated_delivery_time ?? '');
-                                        @endphp
-                                        <label for="delivery_days_select" class="form-label">{{ __('Delivery Days') }}</label>
-                                        <select id="delivery_days_select" class="form-control">
-                                            <option value="">-- {{ __('Select Delivery Days') }} --</option>
-                                            @foreach ($deliveryOptionsStep1 as $key => $label)
-                                                <option value="{{ $key }}" {{ $deliverySelected == $key ? 'selected' : '' }}>
-                                                    {{ $label }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6 mt-3">
                                         <label for="">{{ __('Return Policy') }} <span
                                                 class="text-danger">*</span></label>
                                         <textarea name="return_policy" class="form-control" id="return_policy" rows="2"
@@ -401,6 +381,7 @@
                                     </tr>
                                 </tbody>
                             </table>
+                            <p class="text-danger mt-1 mb-0" id="amountRangeInlineError"></p>
 
                             <div class="mt-3">
                                 <h6>Added Amount Ranges</h6>
@@ -508,6 +489,8 @@
                     </div>
                 </div>
 
+                <p class="text-danger mt-2" id="deliveryChargeError"></p>
+
                 <div class="mt-4">
                     <button type="button" class="btn btn-secondary prev-btn" data-prev="3">« Previous</button>
                 </div>
@@ -611,6 +594,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var DISTRICTS_URL_TEMPLATE = "{{ route('shop.get-districts', ['stateId' => 'STATE_ID']) }}";
     $(document).ready(function() {
 
+        function setAmountRangeError(message = '') {
+            $('#amountRangeInlineError').text(message || '');
+        }
+
         function uid() {
             return Date.now() + Math.random().toString(36).slice(2);
         }
@@ -622,6 +609,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             /* ADD AMOUNT RANGE */
             if (e.target.id === 'addAmountRow') {
+                setAmountRangeError('');
 
                 const minInput = document.getElementById('amt-min');
                 const maxInput = document.getElementById('amt-max');
@@ -633,26 +621,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 /* VALIDATIONS */
                 if (!min || !max || !charge) {
-                    showFlash('Fill Min, Max and Charge');
+                    setAmountRangeError('Fill Min, Max and Charge');
                     return;
                 }
 
                 if (min >= max) {
-                    showFlash('Min amount must be less than Max amount');
+                    setAmountRangeError('Min amount must be less than Max amount');
                     return;
                 }
 
                 /* 🔒 FIRST MIN MUST BE 1 */
                 const existingCards = document.querySelectorAll('.amount-card');
                 if (existingCards.length === 0 && min !== 1) {
-                    showFlash('First minimum amount must be 1');
+                    setAmountRangeError('First minimum amount must be 1');
                     minInput.focus();
                     return;
                 }
 
                 const key = `${min}-${max}`;
                 if (addedAmountRanges.includes(key)) {
-                    showFlash('This amount range already exists');
+                    setAmountRangeError('This amount range already exists');
                     return;
                 }
 
@@ -666,7 +654,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         (max >= cMin && max <= cMax) ||
                         (min <= cMin && max >= cMax)
                     ) {
-                        showFlash(`Range overlaps with ${cMin} - ${cMax}`);
+                        setAmountRangeError(`Range overlaps with ${cMin} - ${cMax}`);
                         return;
                     }
                 }
@@ -710,6 +698,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 maxInput.value = '';
                 chargeInput.value = '';
                 minInput.focus();
+                setAmountRangeError('');
             }
 
             /* DELETE AMOUNT RANGE */
@@ -811,10 +800,235 @@ document.addEventListener('DOMContentLoaded', function () {
         function clearErrors() {
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
+            $('#amountRangeInlineError').text('');
             $('#businessCategoryError').text('');
             $('#deliveryStateError').text('');
+            $('#deliveryChargeError').text('');
+            $('#termsError').addClass('d-none');
             $('#formErrorBox').addClass('d-none');
             $('#formErrorBox ul').empty();
+        }
+
+        function addError(errors, field, message) {
+            if (!errors[field]) {
+                errors[field] = [];
+            }
+            if (!errors[field].includes(message)) {
+                errors[field].push(message);
+            }
+        }
+
+        function validateImageFile(fieldName, requiredOnCreate, errors) {
+            const input = document.querySelector(`[name="${fieldName}"]`);
+            if (!input) return;
+
+            const file = input.files && input.files[0] ? input.files[0] : null;
+            const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            const maxBytes = 2048 * 1024;
+
+            if (!IS_EDIT && requiredOnCreate && !file) {
+                addError(errors, fieldName, `The ${fieldName.replace('_', ' ')} field is required.`);
+                return;
+            }
+
+            if (!file) return;
+
+            if (!allowed.includes((file.type || '').toLowerCase())) {
+                addError(errors, fieldName, `The ${fieldName.replace('_', ' ')} must be a file of type: jpg, png, jpeg, gif.`);
+            }
+
+            if (file.size > maxBytes) {
+                addError(errors, fieldName, `The ${fieldName.replace('_', ' ')} must not be greater than 2 MB.`);
+            }
+        }
+
+        function activateStep(step) {
+            $('.step-content').hide();
+            $('.step-' + step).show();
+            $('#productTabs .nav-link').removeClass('active');
+            $('#productTabs .nav-link[data-step="' + step + '"]').addClass('active');
+        }
+
+        function stepForField(field) {
+            const stepMap = {
+                shop_name: 1,
+                store_type: 1,
+                first_name: 1,
+                phone: 1,
+                whatsapp_number: 1,
+                address: 1,
+                state_id: 1,
+                district_id: 1,
+                pincode: 1,
+                min_order_amount: 1,
+                gst_number: 1,
+                store_since: 1,
+                return_policy: 1,
+                description: 1,
+                profile_photo: 1,
+                shop_logo: 1,
+                shop_banner: 1,
+                bussiness_categories_id: 2,
+                delivery_days: 3,
+                delivery_state_ids: 3,
+                email: 5,
+                password: 5,
+                password_confirmation: 5,
+            };
+
+            if (field.startsWith('bussiness_categories_id')) return 2;
+            if (field.startsWith('delivery_state_ids')) return 3;
+
+            if (field.startsWith('amount_rules') || field.startsWith('state_charges') || field === 'delivery_mode') {
+                return 4;
+            }
+
+            if (field in stepMap) return stepMap[field];
+
+            return 1;
+        }
+
+        function validateShopFormClient() {
+            const errors = {};
+            const today = new Date().toISOString().split('T')[0];
+
+            const textVal = (name) => ($(`[name="${name}"]`).val() || '').toString().trim();
+            const selectedRadioVal = (name) => ($(`input[name="${name}"]:checked`).val() || '').toString().trim();
+            const checkedCount = (selector) => $(selector + ':checked').length;
+
+            const firstName = textVal('first_name');
+            if (!firstName) addError(errors, 'first_name', 'The first name field is required.');
+            if (firstName.length > 255) addError(errors, 'first_name', 'The first name may not be greater than 255 characters.');
+
+            const phone = textVal('phone');
+            if (!phone) {
+                addError(errors, 'phone', 'The phone field is required.');
+            } else {
+                if (phone.length < 10) addError(errors, 'phone', 'The phone must be at least 10 characters.');
+                if (phone.length > 15) addError(errors, 'phone', 'The phone may not be greater than 15 characters.');
+            }
+
+            const shopName = textVal('shop_name');
+            if (!shopName) addError(errors, 'shop_name', 'The shop name field is required.');
+            if (shopName.length > 100) addError(errors, 'shop_name', 'The shop name may not be greater than 100 characters.');
+
+            const storeType = textVal('store_type');
+            if (!storeType) addError(errors, 'store_type', 'The store type field is required.');
+
+            const whatsapp = textVal('whatsapp_number');
+            if (!whatsapp) {
+                addError(errors, 'whatsapp_number', 'The whatsapp number field is required.');
+            } else {
+                if (whatsapp.length < 10) addError(errors, 'whatsapp_number', 'The whatsapp number must be at least 10 characters.');
+                if (whatsapp.length > 15) addError(errors, 'whatsapp_number', 'The whatsapp number may not be greater than 15 characters.');
+            }
+
+            const address = textVal('address');
+            if (!address) addError(errors, 'address', 'The address field is required.');
+            if (address.length > 150) addError(errors, 'address', 'The address may not be greater than 150 characters.');
+
+            if (!textVal('state_id')) addError(errors, 'state_id', 'The state field is required.');
+            if (!textVal('district_id')) addError(errors, 'district_id', 'The district field is required.');
+
+            const pincode = textVal('pincode');
+            if (!pincode) addError(errors, 'pincode', 'The pincode field is required.');
+            if (pincode.length > 10) addError(errors, 'pincode', 'The pincode may not be greater than 10 characters.');
+
+            if (!textVal('min_order_amount')) addError(errors, 'min_order_amount', 'The min order amount field is required.');
+
+            const returnPolicy = textVal('return_policy');
+            if (!returnPolicy) addError(errors, 'return_policy', 'The return policy field is required.');
+            if (returnPolicy.length > 300) addError(errors, 'return_policy', 'The return policy may not be greater than 300 characters.');
+
+            const description = textVal('description');
+            if (description.length > 200) addError(errors, 'description', 'The description may not be greater than 200 characters.');
+
+            const storeSince = textVal('store_since');
+            if (!storeSince) {
+                addError(errors, 'store_since', 'The store since field is required.');
+            } else if (storeSince > today) {
+                addError(errors, 'store_since', 'Store since date cannot be in the future.');
+            }
+
+            validateImageFile('profile_photo', true, errors);
+            validateImageFile('shop_logo', true, errors);
+            validateImageFile('shop_banner', true, errors);
+
+            if (!selectedRadioVal('delivery_days')) addError(errors, 'delivery_days', 'The delivery days field is required.');
+
+            if (checkedCount('input[name="bussiness_categories_id[]"]') < 1) {
+                addError(errors, 'bussiness_categories_id', 'Please select at least one business category.');
+            }
+
+            if (checkedCount('input[name="delivery_state_ids[]"]') < 1) {
+                addError(errors, 'delivery_state_ids', 'Please select at least one delivery state.');
+            }
+
+            const deliveryMode = selectedRadioVal('delivery_mode');
+            if (deliveryMode === 'amount_based') {
+                const amountRuleCount = $('input[name^="amount_rules["][name$="[min_amount]"]').length;
+                if (amountRuleCount < 1) {
+                    addError(errors, 'amount_rules', 'Please add at least one amount range for amount based delivery charges.');
+                }
+            }
+
+            if (deliveryMode === 'state_wise') {
+                const $stateRows = $('#state_wise_box .state-charge-item');
+                if (!$stateRows.length) {
+                    addError(errors, 'state_charges', 'Please add state charges for selected states.');
+                } else {
+                    let missingCharge = false;
+                    $stateRows.each(function() {
+                        const charge = ($(this).find('.state-charge-input').val() || '').toString().trim();
+                        if (charge === '') {
+                            missingCharge = true;
+                            $(this).find('.state-charge-input').addClass('is-invalid');
+                        }
+                    });
+
+                    if (missingCharge) {
+                        addError(errors, 'state_charges', 'Please enter delivery charges for all selected states.');
+                    }
+                }
+            }
+
+            const email = textVal('email');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!IS_EDIT) {
+                if (!email) {
+                    addError(errors, 'email', 'The email field is required.');
+                } else if (!emailRegex.test(email)) {
+                    addError(errors, 'email', 'The email must be a valid email address.');
+                }
+            } else if (email && !emailRegex.test(email)) {
+                addError(errors, 'email', 'The email must be a valid email address.');
+            }
+
+            const password = textVal('password');
+            const passwordConfirmation = textVal('password_confirmation');
+
+            if (!IS_EDIT) {
+                if (!password) addError(errors, 'password', 'The password field is required.');
+                if (password && password.length < 6) addError(errors, 'password', 'The password must be at least 6 characters.');
+
+                if (!passwordConfirmation) {
+                    addError(errors, 'password_confirmation', 'The password confirmation field is required.');
+                } else if (passwordConfirmation.length < 6) {
+                    addError(errors, 'password_confirmation', 'The password confirmation must be at least 6 characters.');
+                }
+            } else {
+                if (password && password.length < 6) addError(errors, 'password', 'The password must be at least 6 characters.');
+                if (passwordConfirmation && passwordConfirmation.length < 6) {
+                    addError(errors, 'password_confirmation', 'The password confirmation must be at least 6 characters.');
+                }
+            }
+
+            if ((password || passwordConfirmation) && password !== passwordConfirmation) {
+                addError(errors, 'password', 'The password and confirmation password do not match.');
+            }
+
+            return errors;
         }
 
         const initialStateId = $('#state_id').val();
@@ -880,43 +1094,32 @@ document.addEventListener('DOMContentLoaded', function () {
             loadDistricts(this.value, null);
         });
 
-        const $deliverySelect = $('#delivery_days_select');
-        if ($deliverySelect.length) {
-            const initialDelivery = $deliverySelect.val();
-            if (initialDelivery) {
-                $('input[name="delivery_days"][value="' + initialDelivery + '"]').prop('checked', true);
-            }
-
-            $deliverySelect.on('change', function() {
-                const value = $(this).val();
-                if (value) {
-                    $('input[name="delivery_days"][value="' + value + '"]').prop('checked', true);
-                }
-            });
-        }
-
-        $('input[name="delivery_days"]').on('change', function() {
-            if ($deliverySelect.length) {
-                $deliverySelect.val(this.value);
-            }
-        });
-
-
         function showErrors(errors) {
             let errorList = [];
             $.each(errors, function(field, messages) {
                 if (Array.isArray(messages) && messages.length) {
                     errorList.push(messages[0]);
                 }
-                if (field === 'bussiness_categories_id') {
+                if (field === 'bussiness_categories_id' || field.startsWith('bussiness_categories_id.')) {
                     $('#businessCategoryError').text(messages[0]);
                     return;
                 }
-                if (field === 'delivery_state_ids') { 
+                if (field === 'delivery_state_ids' || field.startsWith('delivery_state_ids.')) {
                     $('#deliveryStateError').text(messages[0]);
-                    return; 
+                    return;
+                }
+                if (field === 'amount_rules' || field.startsWith('amount_rules.') || field === 'state_charges' || field
+                    .startsWith('state_charges.') || field === 'delivery_mode') {
+                    $('#deliveryChargeError').text(messages[0]);
+                    return;
                 }
                 let input = $('[name="' + field + '"]');
+                if (!input.length && field.includes('.')) {
+                    input = $('[name="' + field.replace(/\.(\d+)\./g, '[$1][').replace(/\.(\d+)/g, '[$1]').replace(/\./g, '[') + ']"]');
+                }
+                if (!input.length) {
+                    input = $('[name="' + field + '[]"]');
+                }
                 input.addClass('is-invalid');
                 if (input.next('.invalid-feedback').length === 0) {
                     input.after('<div class="invalid-feedback">' + messages[0] + '</div>');
@@ -942,6 +1145,21 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!IS_PUBLIC) {
             $('#ajaxSubmitBtn').on('click', function() {
                 clearErrors();
+                const clientErrors = validateShopFormClient();
+                if (Object.keys(clientErrors).length) {
+                    showErrors(clientErrors);
+                    const firstErrorField = Object.keys(clientErrors)[0];
+                    activateStep(stepForField(firstErrorField));
+                    const firstField = $('[name="' + firstErrorField + '"], [name="' + firstErrorField + '[]"]:first');
+                    if (firstField.length) {
+                        firstField.trigger('focus');
+                    }
+                    $('html, body').animate({
+                        scrollTop: $('#formErrorBox').offset().top - 100
+                    }, 300);
+                    return;
+                }
+
                 let formData = new FormData($('#shopForm')[0]);
                 $.ajax({
                     url: $('#shopForm').attr('action'),
@@ -949,9 +1167,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     data: formData,
                     processData: false,
                     contentType: false,
-                    success: function(res) {
-                        console.log(res);
-                    },
                     success: function(res) {
                         console.log(res);
                         if (res.message) { // SHOW TOAST
@@ -994,6 +1209,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 $('#terms_condition_status').val(1);
                 termsModal.hide();
                 $('#ajaxSubmitBtn').trigger('click');
+            });
+        }
+
+        if (IS_PUBLIC) {
+            $('#shopForm').on('submit', function(e) {
+                clearErrors();
+                const clientErrors = validateShopFormClient();
+                if (Object.keys(clientErrors).length) {
+                    e.preventDefault();
+                    showErrors(clientErrors);
+                    const firstErrorField = Object.keys(clientErrors)[0];
+                    activateStep(stepForField(firstErrorField));
+                    const firstField = $('[name="' + firstErrorField + '"], [name="' + firstErrorField + '[]"]:first');
+                    if (firstField.length) {
+                        firstField.trigger('focus');
+                    }
+                    $('html, body').animate({
+                        scrollTop: $('#formErrorBox').offset().top - 100
+                    }, 300);
+                }
             });
         }
     });

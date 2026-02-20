@@ -16,7 +16,7 @@ class ProductResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $this->load(['reviews', 'orders', 'sizes', 'colors', 'unit', 'brand', 'shop', 'flashSales']);
+        $this->load(['reviews', 'orders', 'sizes', 'colors', 'unit', 'brand', 'shop', 'flashSales', 'categories.businessCategory']);
 
         $lang = request()->header('accept-language') ?? 'en';
 
@@ -56,6 +56,12 @@ class ProductResource extends JsonResource
         $brandTranslation = $this->brand?->translations()?->where('lang', $lang)->first();
         $brandName = $brandTranslation?->name ?? $this->brand?->name;
 
+        // Get business_category_id from the first category's businessCategory
+        $businessCategoryId = null;
+        if ($this->categories && $this->categories->count() > 0) {
+            $businessCategoryId = $this->categories->first()->businessCategory?->id;
+        }
+
         return [
             'id' => $this->id,
             'name' => $name,
@@ -80,8 +86,10 @@ class ProductResource extends JsonResource
             'colors' => ColorResource::collection($this->colors),
             'unit' => $this->unit ? UnitResource::make($this->unit) : null,
             'brand' => $brandName,
+            'condition_status' => $this->condition_status,
             'is_ad' => $this->advertisements()->active()->exists(),
             'shop' => ProductShopResource::make($this->shop),
+            'business_category_id' => $businessCategoryId,
         ];
     }
 }

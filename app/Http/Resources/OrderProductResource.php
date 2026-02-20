@@ -82,7 +82,7 @@ class OrderProductResource extends JsonResource
                 $dprice = (float) number_format($bulk->selling_price, 2, '.', '');
             }
         } else {
-            $dprice = (float) number_format($this->discount_price, 2, '.', '');
+            $dprice = (float) number_format($this->pivot->price, 2, '.', '');
         }
 
 

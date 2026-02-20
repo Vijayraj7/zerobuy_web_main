@@ -58,7 +58,7 @@ class OrderRepository extends Repository
 
             $shop = Shop::find($shopId);
 
-            $getCartAmounts = self::getCartWiseAmounts($shop, collect($cartProducts), $request->coupon_code);
+            $getCartAmounts = self::getCartWiseAmounts($shop, collect($cartProducts), $request->coupon_code, $request->address_id);
 
             $order = self::createNewOrder($request, $shop, $paymentMethod, $getCartAmounts);
 
@@ -383,7 +383,8 @@ class OrderRepository extends Repository
         }
 
         $address = Address::find(request()->address_id ?? $addressId);
-        $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, request()->state_id);
+        $stateId = request()->state_id ?? $address?->state_id;
+        $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, $stateId);
         if ($deliveryCharge === null) {
             $isDeliverable = false;
             $deliveryCharge = 0.00;

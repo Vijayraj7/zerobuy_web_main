@@ -48,6 +48,7 @@ class ShopResource extends JsonResource
             'rating' => (float) number_format($this->averageRating, 1, '.', ''),
             'shop_status' => (string) $shopStatus,
             'total_reviews' => (string) Number::abbreviate($this->reviews->count(), maxPrecision: 2),
+            'return_policy' => $this->return_policy,
         ];
     }
 }
