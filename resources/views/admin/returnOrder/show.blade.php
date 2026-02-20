@@ -264,9 +264,37 @@
                 <h5 class="fz-18 border-bottom p-3 m-0">{{ __('Bank Information') }}</h5>
 
                 <div class="border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 p-3">
+                    <div class="text-color">{{ __('Bank Name') }}</div>
+                    <div class="d-flex align-items-center gap-1">
+                        <span>{{ $returnOrder->bank_name ?? '-' }}</span>
+                    </div>
+                </div>
+
+                <div class="border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 p-3">
+                    <div class="text-color">{{ __('Account Holder Name') }}</div>
+                    <div class="d-flex align-items-center gap-1">
+                        <span>{{ $returnOrder->bank_account_holder_name ?? '-' }}</span>
+                    </div>
+                </div>
+
+                <div class="border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 p-3">
                     <div class="text-color">{{ __('Account No') }}</div>
                     <div class="d-flex align-items-center gap-1">
-                        <span>{{ $returnOrder->bank_account_number }}</span>
+                        <span>{{ $returnOrder->bank_account_number ?? '-' }}</span>
+                    </div>
+                </div>
+
+                <div class="border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 p-3">
+                    <div class="text-color">{{ __('IFSC') }}</div>
+                    <div class="d-flex align-items-center gap-1">
+                        <span>{{ $returnOrder->ifsc ?? '-' }}</span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 p-3">
+                    <div class="text-color">{{ __('UPI ID') }}</div>
+                    <div class="d-flex align-items-center gap-1">
+                        <span>{{ $returnOrder->upi_id ?? '-' }}</span>
                     </div>
                 </div>
 

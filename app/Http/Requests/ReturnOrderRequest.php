@@ -26,8 +26,11 @@ class ReturnOrderRequest extends FormRequest
             'reason' => 'required|string',
             'product_ids' => 'required|array',
             'product_ids.*' => 'required|exists:products,id',
-            'bank_name' => 'nullable|string|max:200',
+            'bank_name' => 'required|string|max:200',
+            'bank_account_holder_name' => 'required|string|max:200',
             'bank_account_number' => 'required|string',
+            'ifsc' => 'nullable|string|max:50',
+            'upi_id' => 'nullable|string|max:100',
             'return_address' => 'required|string',
         ];
     }

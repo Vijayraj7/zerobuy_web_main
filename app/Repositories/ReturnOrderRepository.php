@@ -9,6 +9,7 @@ use App\Enums\ReturnOderStatus;
 use Abedin\Maker\Repositories\Repository;
 use App\Services\NotificationServices;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class ReturnOrderRepository extends Repository
@@ -34,9 +35,12 @@ class ReturnOrderRepository extends Repository
             'reason' => $request->reason,
             'bank_account_number' => $request->bank_account_number,
             'bank_name' => $request->bank_name,
+            'bank_account_holder_name' => $request->bank_account_holder_name,
+            'ifsc' => $request->ifsc,
+            'upi_id' => $request->upi_id,
             'return_address' => $request->return_address,
             'shop_id' => $order->shop_id,
-            'customer_id' => auth()->user()->customer->id,
+            'customer_id' => Auth::user()?->customer?->id,
             'status' => ReturnOderStatus::PENDING->value
         ]);
         foreach ($request->products as $oproduct) {
