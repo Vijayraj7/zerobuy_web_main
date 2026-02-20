@@ -18,6 +18,7 @@ use App\Models\DeliverySetting;
 use App\Models\Product;
 use App\Models\ProductBulkItem;
 use App\Models\ProductVariant;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Number;
 
@@ -183,7 +184,7 @@ class CartRepository extends Repository
 
             $shop = $products[0]?->shop;
 
-            $lastOnline = $shop->last_online >= now() ? true : false;
+            $lastOnline = (bool) ($shop?->isOnline() ?? false);
 
             $isDeliverable = true;
             $deliveryCharge = 0.00;
@@ -258,7 +259,7 @@ class CartRepository extends Repository
 
         $isBuyNow = $request->is_buy_now ?? false;
 
-        $customer = auth()->user()->customer;
+        $customer = Auth::user()->customer;
 
         $cart = $customer->carts()
             ?->where('is_buy_now', $isBuyNow)

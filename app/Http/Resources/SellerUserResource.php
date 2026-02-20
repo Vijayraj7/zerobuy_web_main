@@ -17,28 +17,13 @@ class SellerUserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $currentTime = Carbon::now();
-
         $shop = generaleSetting('shop', $this);
-
-        // Parse opening and closing times using Carbon
-        $openingTime = Carbon::parse($shop->opening_time)->format('H:i');
-        $closingTime = Carbon::parse($shop->closing_time)->format('H:i');
-
-        $shopStatus = 'Offline';
-
-        // Check if the current time is between opening and closing times
-        if ($currentTime->between($openingTime, $closingTime)) {
-            $shopStatus = 'Online';
-        }
+        $openingTime = $shop->opening_time ? Carbon::parse($shop->opening_time)->format('H:i') : null;
+        $closingTime = $shop->closing_time ? Carbon::parse($shop->closing_time)->format('H:i') : null;
+        $shopStatus = $shop?->isOnline() ? 'Online' : 'Offline';
 
         $offDay = $shop->off_day ?? [];
-
-        if (! empty($offDay)) {
-            $offDay = is_array($offDay) ? $offDay : json_decode($offDay);
-            $day = strtolower($currentTime->format('D'));
-            in_array($day, $offDay) ? $shopStatus = 'Offline' : false;
-        }
+        $offDay = ! empty($offDay) ? (is_array($offDay) ? $offDay : json_decode($offDay)) : [];
 
         return [
             'id' => $this->id,
@@ -81,6 +66,7 @@ class SellerUserResource extends JsonResource
                 'estimated_delivery_time' => $shop->estimated_delivery_time,
                 'min_order_amount' => (float) $shop->min_order_amount ?? 0,
                 'shop_status' => $shopStatus,
+                'last_online' => $shop->last_online,
                 'total_products' => (int) $shop->products->count(),
                 'total_categories' => (int) $shop->categories->count(),
                 'rating' => (float) number_format($shop->averageRating, 1, '.', ''),

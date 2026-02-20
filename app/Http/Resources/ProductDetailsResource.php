@@ -74,7 +74,7 @@ class ProductDetailsResource extends JsonResource
         $brandName = $brandTranslation?->name ?? $this->brand?->name;
         $shop = $this->shop;
 
-        $lastOnline = $this->last_online >= now() ? true : false;
+        $lastOnline = (bool) ($shop?->isOnline() ?? false);
 
         $carts = null;
         if ($user && $user->customer) {

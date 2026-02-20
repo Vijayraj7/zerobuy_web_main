@@ -27,8 +27,8 @@ class ChatResource extends JsonResource
             'message' => $this->message ?? null,
             'is_seen' => $this->is_seen ?? null,
             'created_at' => $this->created_at ?? null,
-            "shop_active_status" => $this->shop->last_online >= now() ? true : false,
-            "user_active_status" => $this->user->last_online >= now() ? true : false,
+            "shop_active_status" => (bool) ($this->shop?->isOnline() ?? false),
+            "user_active_status" => (bool) ($this->user?->isOnline() ?? false),
         ];
     }
 }

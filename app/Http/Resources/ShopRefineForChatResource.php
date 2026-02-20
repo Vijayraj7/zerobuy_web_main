@@ -14,7 +14,7 @@ class ShopRefineForChatResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $lastOnline = $this->last_online >= now() ? true : false;
+        $lastOnline = (bool) $this->isOnline();
 
         return [
             'id' => $this->id,

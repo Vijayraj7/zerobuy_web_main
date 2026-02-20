@@ -12,6 +12,7 @@ use App\Models\Page;
 use App\Models\State;
 use App\Models\User;
 use App\Repositories\ShopRepository;
+use App\Services\ShopPresenceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -49,6 +50,7 @@ class LoginController extends Controller
 
             // login the user
             Auth::login($user);
+            ShopPresenceService::markOnline($user);
 
             $shop = generaleSetting('shop', $user);
 
@@ -135,10 +137,12 @@ class LoginController extends Controller
      */
     public function logout(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
+
+        ShopPresenceService::markOffline($user);
 
         // logout
-        auth()->logout();
+        Auth::logout();
 
         // invalidate session
         $request->session()->invalidate();

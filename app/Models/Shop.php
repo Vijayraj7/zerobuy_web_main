@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\SubscriptionStatus;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,6 +18,10 @@ class Shop extends Model
     use HasFactory;
 
     protected $guarded = ['id'];
+
+    protected $casts = [
+        'last_online' => 'datetime',
+    ];
 
     /**
      * Get the shop user.
@@ -218,6 +223,16 @@ class Shop extends Model
             })
             ->latest();
     }
+
+    public function isOnline(int $minutes = 5): bool
+    {
+        if (! $this->last_online) {
+            return false;
+        }
+
+        return Carbon::parse($this->last_online)->gt(now()->subMinutes($minutes));
+    }
+
     /**
      * Calculates the average rating of the reviews.
      *

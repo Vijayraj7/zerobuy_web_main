@@ -19,7 +19,7 @@ class UserResource extends JsonResource
             $accountVerified = true;
         }
 
-        $lastOnline = $this->last_online >= now() ? true : false;
+        $lastOnline = (bool) $this->isOnline();
 
         return [
             'id' => $this->id,

@@ -18,8 +18,10 @@ use App\Repositories\NotificationRepository;
 use App\Repositories\ShopRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\VerificationCodeRepository;
+use App\Services\ShopPresenceService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class LoginController extends Controller
@@ -53,6 +55,8 @@ class LoginController extends Controller
             if ($request->device_key) {
                 DeviceKeyRepository::storeByRequest($user, $request);
             }
+
+            ShopPresenceService::markOnline($user);
 
             return $this->json('Log In Successful', [
                 'user' => SellerUserResource::make($user),
@@ -128,7 +132,7 @@ class LoginController extends Controller
     public function changePassword(ChangePasswordRequest $request)
     {
         /** @var \App\Models\User $user */
-        $user = auth()->user();
+        $user = Auth::user();
         $currentPassword = $request->current_password;
         if (Hash::check($currentPassword, $user->password)) {
 
@@ -156,15 +160,19 @@ class LoginController extends Controller
      */
     public function logout(Request $request)
     {
-        /** @var \User $user */
-        $user = auth()->user();
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
 
         if ($request->device_key) {
             DeviceKeyRepository::deleteByKey($request->device_key, $user);
         }
 
         if ($user) {
-            $user->currentAccessToken()->delete();
+            ShopPresenceService::markOffline($user);
+            $tokenId = $user->currentAccessToken()?->id;
+            if ($tokenId) {
+                $user->tokens()->where('id', $tokenId)->delete();
+            }
 
             return $this->json('Logged out successfully!');
         }
@@ -244,5 +252,33 @@ class LoginController extends Controller
     public function checkEmailPhone(CheckEmailPhoneRequest $request)
     {
         return $this->json(__('Email and phone number are available'));
+    }
+
+    public function updateOnlineStatus(Request $request)
+    {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+
+        if (! $user || ! $user->shop) {
+            return $this->json('Shop not found', [], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $isOnline = $request->boolean('is_online', true);
+
+        if ($isOnline) {
+            ShopPresenceService::touch($user);
+
+            return $this->json('Shop status updated', [
+                'is_online' => true,
+                'last_online' => $user->shop->fresh()?->last_online,
+            ]);
+        }
+
+        ShopPresenceService::markOffline($user);
+
+        return $this->json('Shop status updated', [
+            'is_online' => false,
+            'last_online' => null,
+        ]);
     }
 }

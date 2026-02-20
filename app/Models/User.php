@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -48,6 +49,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'last_online' => 'datetime',
         'password' => 'hashed',
     ];
 
@@ -178,7 +180,7 @@ class User extends Authenticatable
     //  this is for checking if user is online
     public function isOnline($minutes = 10)
     {
-        return $this->last_online && $this->last_online->gt(now()->subMinutes($minutes));
+        return $this->last_online && Carbon::parse($this->last_online)->gt(now()->subMinutes($minutes));
     }
 
     public function orders()

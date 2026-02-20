@@ -15,7 +15,7 @@ class ProductShopResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $lastOnline = $this->last_online >= now() ? true : false;
+        $lastOnline = (bool) $this->isOnline();
         
         // Check if is_followed attribute exists (set via withExists), otherwise default to false
         $isFollowed = $this->is_followed ?? false;

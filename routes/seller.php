@@ -193,6 +193,7 @@ Route::prefix('/seller')->group(function () {
 
 
         // logout
+        Route::post('/online-status', [LoginController::class, 'updateOnlineStatus']);
         Route::get('/logout', [LoginController::class, 'logout']);
         Route::delete('/delete-account', [LoginController::class, 'deleteAccountSeller']);
     });

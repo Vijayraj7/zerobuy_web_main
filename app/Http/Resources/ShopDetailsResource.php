@@ -3,7 +3,6 @@
 namespace App\Http\Resources;
 
 use App\Models\ShopFollower;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Auth;
@@ -17,20 +16,7 @@ class ShopDetailsResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $currentTime = Carbon::now();
-
-        $openingTime = $this->opening_time;
-        $closingTime = $this->closing_time;
-
-        // Parse opening and closing times using Carbon
-        $openingTime = Carbon::parse($openingTime)->format('H:i');
-        $closingTime = Carbon::parse($closingTime)->format('H:i');
-
-        $shopStatus = 'Offline';
-        // Check if the current time is between opening and closing times
-        if ($currentTime->between($openingTime, $closingTime)) {
-            $shopStatus = 'Online';
-        }
+        $shopStatus = $this->isOnline() ? 'Online' : 'Offline';
         
         // Check if user is logged in and is a customer
         $isFollowed = false;
