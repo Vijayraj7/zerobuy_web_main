@@ -72,6 +72,8 @@ class SellerUserResource extends JsonResource
                 'rating' => (float) number_format($shop->averageRating, 1, '.', ''),
                 'total_reviews' => (int) $shop->reviews->count(),
                 'description' => $shop->description,
+                'is_verified' => $shop->is_verified == 1 ? true : false,
+                'is_branded' => $shop->is_branded == 1 ? true : false,
             ],
             'banners' => BannerResource::collection($shop->banners),
         ];
