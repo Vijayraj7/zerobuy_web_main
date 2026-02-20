@@ -58,6 +58,7 @@ class ShopFollowerController extends Controller
         } else if ($request->type === 'following') {
             $shops = $customer
                 ->followedShops()
+                ->isActive()
                 ->with(['products', 'categories', 'reviews', 'banners'])
                 ->withExists([
                     'followers as is_followed' => function ($q) use ($customer) {
