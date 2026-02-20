@@ -14,8 +14,10 @@ use App\Repositories\CustomerRepository;
 use App\Repositories\DeviceKeyRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\WalletRepository;
+use App\Services\UserPresenceService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
@@ -71,6 +73,8 @@ class AuthController extends Controller
                 DeviceKeyRepository::storeByRequest($user, $request);
             }
 
+            UserPresenceService::markOnline($user);
+
             return $this->json('Login successfully', [
                 'user' => new UserResource($user),
                 'access' => UserRepository::getAccessToken($user),
@@ -105,16 +109,49 @@ class AuthController extends Controller
      */
     public function logout()
     {
-        /** @var \User $user */
-        $user = auth()->user();
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
 
         if ($user) {
-            $user->currentAccessToken()->delete();
+            UserPresenceService::markOffline($user);
+
+            $tokenId = $user->currentAccessToken()?->id;
+            if ($tokenId) {
+                $user->tokens()->where('id', $tokenId)->delete();
+            }
 
             return $this->json('Logged out successfully!');
         }
 
         return $this->json('User not found!', [], Response::HTTP_NOT_FOUND);
+    }
+
+    public function updateOnlineStatus(Request $request)
+    {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+
+        if (! $user) {
+            return $this->json('User not found!', [], Response::HTTP_NOT_FOUND);
+        }
+
+        $isOnline = $request->boolean('is_online', true);
+
+        if ($isOnline) {
+            UserPresenceService::touch($user);
+
+            return $this->json('User status updated', [
+                'is_online' => true,
+                'last_online' => $user->fresh()?->last_online,
+            ]);
+        }
+
+        UserPresenceService::markOffline($user);
+
+        return $this->json('User status updated', [
+            'is_online' => false,
+            'last_online' => null,
+        ]);
     }
 
     public function callback(Request $request) {}

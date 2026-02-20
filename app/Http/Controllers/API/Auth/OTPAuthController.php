@@ -14,6 +14,7 @@ use App\Repositories\DeviceKeyRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\VerificationCodeRepository;
 use App\Services\SmsGatewayService;
+use App\Services\UserPresenceService;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 
@@ -134,17 +135,20 @@ class OTPAuthController extends Controller
                 'verification_token' => $verificationCode->token,
             ]);
         } else {
+            /** @var \App\Models\User $existingUser */
+            $existingUser = $user;
+
             // Existing user - ensure user is a customer before allowing login
             // (same rule as AuthController::login)
-            if (! $user?->customer) {
+            if (! $existingUser?->customer) {
                 return $this->json('Login as customer only!', [], Response::HTTP_BAD_REQUEST);
             }
 
-            if (! $user->is_active) {
+            if (! $existingUser->is_active) {
                 return $this->json('Sorry, your account is not active', [], 422);
             }
 
-            if ($user->customer->status !== CustomerStatus::ACTIVE->value) {
+            if ($existingUser->customer->status !== CustomerStatus::ACTIVE->value) {
                 return $this->json('Sorry, your account is banned', [], 422);
             }
 
@@ -155,22 +159,24 @@ class OTPAuthController extends Controller
             $type = $verifyManage?->register_otp_type ?? 'phone';
 
             // Mark the user as verified
-            if (!$user->phone_verified_at) {
-                $user->update(['phone_verified_at' => now()]);
+            if (! $existingUser->phone_verified_at) {
+                $existingUser->update(['phone_verified_at' => now()]);
             }
 
             // Store device key if provided
             if ($request->device_key) {
-                DeviceKeyRepository::storeByRequest($user, $request);
+                DeviceKeyRepository::storeByRequest($existingUser, $request);
             }
 
             // Delete the verification code after successful login
             $verificationCode->delete();
 
+            UserPresenceService::markOnline($existingUser);
+
             return $this->json('Login successfully', [
                 'is_new_user' => false,
-                'user' => new UserResource($user),
-                'access' => UserRepository::getAccessToken($user),
+                'user' => new UserResource($existingUser),
+                'access' => UserRepository::getAccessToken($existingUser),
             ]);
         }
     }
@@ -219,6 +225,7 @@ class OTPAuthController extends Controller
         }
 
         // Create the user
+        /** @var \App\Models\User $user */
         $user = UserRepository::create([
             'name' => $request->name,
             'phone' => $request->phone,
@@ -244,6 +251,8 @@ class OTPAuthController extends Controller
 
         // Delete the verification code
         $verificationCode->delete();
+
+        UserPresenceService::markOnline($user);
 
         return $this->json('Registration successfully complete', [
             'user' => new UserResource($user),

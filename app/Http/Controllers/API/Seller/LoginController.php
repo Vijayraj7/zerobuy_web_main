@@ -19,6 +19,7 @@ use App\Repositories\ShopRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\VerificationCodeRepository;
 use App\Services\ShopPresenceService;
+use App\Services\UserPresenceService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -57,6 +58,7 @@ class LoginController extends Controller
             }
 
             ShopPresenceService::markOnline($user);
+            UserPresenceService::markOnline($user);
 
             return $this->json('Log In Successful', [
                 'user' => SellerUserResource::make($user),
@@ -169,6 +171,7 @@ class LoginController extends Controller
 
         if ($user) {
             ShopPresenceService::markOffline($user);
+            UserPresenceService::markOffline($user);
             $tokenId = $user->currentAccessToken()?->id;
             if ($tokenId) {
                 $user->tokens()->where('id', $tokenId)->delete();
@@ -267,6 +270,7 @@ class LoginController extends Controller
 
         if ($isOnline) {
             ShopPresenceService::touch($user);
+            UserPresenceService::touch($user);
 
             return $this->json('Shop status updated', [
                 'is_online' => true,
@@ -275,6 +279,7 @@ class LoginController extends Controller
         }
 
         ShopPresenceService::markOffline($user);
+        UserPresenceService::markOffline($user);
 
         return $this->json('Shop status updated', [
             'is_online' => false,

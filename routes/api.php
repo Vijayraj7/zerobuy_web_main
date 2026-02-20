@@ -194,6 +194,7 @@ Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
 
     // user route
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/online-status', [AuthController::class, 'updateOnlineStatus']);
     Route::controller(UserController::class)->group(function () {
         Route::get('/profile', 'index');
         Route::post('/update-profile', 'update')->middleware('demoMode');

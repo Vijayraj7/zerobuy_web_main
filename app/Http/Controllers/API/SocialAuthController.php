@@ -8,6 +8,7 @@ use App\Http\Resources\UserResource;
 use App\Enums\CustomerStatus;
 use App\Models\SocialAuth;
 use App\Repositories\UserRepository;
+use App\Services\UserPresenceService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -29,6 +30,8 @@ class SocialAuthController extends Controller
         if ($user->customer->status !== CustomerStatus::ACTIVE->value) {
             return $this->json('Sorry, your account is banned', [], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
+
+        UserPresenceService::markOnline($user);
 
         return $this->json('Login successfully', [
             'user' => new UserResource($user),
@@ -111,6 +114,8 @@ class SocialAuthController extends Controller
             return $this->json('Sorry, your account is banned', [], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
+        UserPresenceService::markOnline($user);
+
         return $this->json('Login successfully', [
             'user' => new UserResource($user),
             'access' => UserRepository::getAccessToken($user),
@@ -144,6 +149,8 @@ class SocialAuthController extends Controller
         if ($user->customer->status !== CustomerStatus::ACTIVE->value) {
             return $this->json('Sorry, your account is banned', [], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
+
+        UserPresenceService::markOnline($user);
 
         return $this->json('Login successfully', [
             'user' => new UserResource($user),
