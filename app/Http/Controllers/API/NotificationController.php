@@ -22,18 +22,18 @@ class NotificationController extends Controller
                 ->get()
                 ->map(function ($notification) {
                     return [
-                        'id' => $notification->id,
+                        'id' => (int)$notification->id,
                         'title' => $notification->title ?? '',
                         'content' => $notification->content ?? '',
                         'url' => $notification->url,
                         'icon' => $notification->icon,
                         'type' => $notification->type ?? '',
-                        'shop_id' => $notification->shop_id,
-                        'user_id' => $notification->user_id,
+                        'shop_id' => $notification->shop_id !== null ? (int)$notification->shop_id : null,
+                        'user_id' => (int)$notification->user_id,
                         'is_read' => $notification->is_read ? 1 : 0,
-                        'created_at' => optional($notification->created_at)->toIso8601String(),
-                        'updated_at' => optional($notification->updated_at)->toIso8601String(),
-                        'withdraw_id' => $notification->withdraw_id,
+                        'created_at' => $notification->created_at->format('d M, Y h:i A'),
+                        'updated_at' => $notification->updated_at->format('d M, Y h:i A'),
+                        'withdraw_id' => $notification->withdraw_id !== null ? (int)$notification->withdraw_id : null,
                     ];
                 });
 
@@ -54,7 +54,7 @@ class NotificationController extends Controller
     {
         try {
             $user = Auth::user();
-            
+
             $notification = Notification::where('id', $id)
                 ->where('user_id', $user->id)
                 ->firstOrFail();
@@ -81,7 +81,7 @@ class NotificationController extends Controller
     {
         try {
             $user = Auth::user();
-            
+
             Notification::where('user_id', $user->id)
                 ->where('is_read', false)
                 ->update(['is_read' => true]);
@@ -106,7 +106,7 @@ class NotificationController extends Controller
     {
         try {
             $user = Auth::user();
-            
+
             Notification::where('user_id', $user->id)->delete();
 
             return response()->json([
