@@ -20,8 +20,8 @@ class NotificationResource extends JsonResource
             'shop_id' => (int)$this->shop_id,
             'user_id' => (int)$this->user_id,
             'is_read' => (bool) $this->is_read,
-            'created_at' => optional($this->created_at)->toIso8601String(),
-            'updated_at' => optional($this->updated_at)->toIso8601String(),
+            'created_at' => optional($this->created_at)->format('Y-m-d H:i:s'),
+            'updated_at' => optional($this->updated_at)->format('Y-m-d H:i:s'),
             'withdraw_id' => (int)$this->withdraw_id,
 
         ];
