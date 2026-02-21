@@ -29,10 +29,10 @@ class NotificationController extends Controller
                         'icon' => $notification->icon,
                         'type' => $notification->type ?? '',
                         'shop_id' => $notification->shop_id !== null ? (int)$notification->shop_id : null,
-                        'user_id' => (int)$notification->user_id,
+                        'user_id' => $notification->user_id,
                         'is_read' => $notification->is_read ? 1 : 0,
-                        'created_at' => $notification->created_at->format('d M, Y h:i A'),
-                        'updated_at' => $notification->updated_at->format('d M, Y h:i A'),
+                        'created_at' => $notification->created_at->format('Y-m-d H:i:s'),
+                        'updated_at' => $notification->updated_at->format('Y-m-d H:i:s'),
                         'withdraw_id' => $notification->withdraw_id !== null ? (int)$notification->withdraw_id : null,
                     ];
                 });
