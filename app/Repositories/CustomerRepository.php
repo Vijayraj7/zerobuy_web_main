@@ -23,10 +23,22 @@ class CustomerRepository extends Repository
      *
      * @param  User  $user  The user object
      */
-    public static function storeByRequest(User $user): Customer
+    public static function storeByRequest(User $user, ?int $businessCategoryId = null): Customer
     {
         return self::create([
             'user_id' => $user->id,
+            'selected_business_category_id' => $businessCategoryId,
+        ]);
+    }
+
+    public static function updateSelectedBusinessCategory(User $user, ?int $businessCategoryId): void
+    {
+        if (! $user->customer) {
+            return;
+        }
+
+        $user->customer()->update([
+            'selected_business_category_id' => $businessCategoryId,
         ]);
     }
 }

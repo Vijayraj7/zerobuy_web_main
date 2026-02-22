@@ -938,7 +938,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const returnPolicy = textVal('return_policy');
             if (!returnPolicy) addError(errors, 'return_policy', 'The return policy field is required.');
-            if (returnPolicy.length > 300) addError(errors, 'return_policy', 'The return policy may not be greater than 300 characters.');
+            if (returnPolicy.length > 1000) addError(errors, 'return_policy', 'The return policy may not be greater than 1000 characters.');
 
             const description = textVal('description');
             if (description.length > 200) addError(errors, 'description', 'The description may not be greater than 200 characters.');

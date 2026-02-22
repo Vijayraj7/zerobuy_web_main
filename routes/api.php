@@ -200,6 +200,7 @@ Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
         Route::post('/update-profile', 'update')->middleware('demoMode');
         Route::post('/update-single', 'updateSingle')->middleware('demoMode');
         Route::post('/change-password', 'changePassword')->middleware('demoMode');
+        Route::post('/customer/business-category', 'updateSelectedBusinessCategory');
     });
 
     // recently view route

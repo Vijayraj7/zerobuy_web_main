@@ -30,6 +30,14 @@ class AuthController extends Controller
      */
     public function register(CustomerRegistrationRequest $request)
     {
+        $businessCategoryId = null;
+        if ($request->filled('business_category_id')) {
+            $request->validate([
+                'business_category_id' => ['integer', 'exists:business_categories,id'],
+            ]);
+            $businessCategoryId = $request->integer('business_category_id');
+        }
+
         // Create a new user
         $user = UserRepository::registerNewUser($request);
 
@@ -38,7 +46,7 @@ class AuthController extends Controller
         }
 
         // Create a new customer
-        CustomerRepository::storeByRequest($user);
+        CustomerRepository::storeByRequest($user, $businessCategoryId);
 
         // create wallet
         WalletRepository::storeByRequest($user);
@@ -58,6 +66,14 @@ class AuthController extends Controller
      */
     public function login(LoginRequest $request)
     {
+        $businessCategoryId = null;
+        if ($request->filled('business_category_id')) {
+            $request->validate([
+                'business_category_id' => ['integer', 'exists:business_categories,id'],
+            ]);
+            $businessCategoryId = $request->integer('business_category_id');
+        }
+
         // Authenticate the user
         $user = $this->authenticate($request);
         if ($user?->customer) {
@@ -71,6 +87,11 @@ class AuthController extends Controller
 
             if ($request->device_key) {
                 DeviceKeyRepository::storeByRequest($user, $request);
+            }
+
+            if (! is_null($businessCategoryId)) {
+                CustomerRepository::updateSelectedBusinessCategory($user, $businessCategoryId);
+                $user->refresh();
             }
 
             UserPresenceService::markOnline($user);

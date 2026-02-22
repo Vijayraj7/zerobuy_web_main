@@ -21,10 +21,17 @@ class ShopFollowerController extends Controller
     {
         $customer = auth()->user()->customer;
         $perPage = $request->per_page ?? 20;
+        $businessCategoryId = $request->integer('business_category_id');
+        $applyBusinessCategoryFilter = ! is_null($businessCategoryId) && $request->type !== 'following';
 
         if ($request->type === 'all') {
             $shops = ShopRepository::query()
                 ->isActive()
+                ->when($applyBusinessCategoryFilter, function ($query) use ($businessCategoryId) {
+                    return $query->whereHas('businessCategories', function ($categoryQuery) use ($businessCategoryId) {
+                        $categoryQuery->where('business_categories.id', $businessCategoryId);
+                    });
+                })
                 // ->where('is_branded', true)
                 ->withCount('orders')
                 ->withAvg('reviews as average_rating', 'rating')
@@ -37,6 +44,11 @@ class ShopFollowerController extends Controller
             $shops = ShopRepository::query()
                 ->isActive()
                 ->where('is_branded', true)
+                ->when($applyBusinessCategoryFilter, function ($query) use ($businessCategoryId) {
+                    return $query->whereHas('businessCategories', function ($categoryQuery) use ($businessCategoryId) {
+                        $categoryQuery->where('business_categories.id', $businessCategoryId);
+                    });
+                })
                 ->withCount('orders')
                 ->withAvg('reviews as average_rating', 'rating')
                 ->withExists([
@@ -48,6 +60,11 @@ class ShopFollowerController extends Controller
             $shops = ShopRepository::query()
                 ->isActive()
                 ->where('is_verified', true)
+                ->when($applyBusinessCategoryFilter, function ($query) use ($businessCategoryId) {
+                    return $query->whereHas('businessCategories', function ($categoryQuery) use ($businessCategoryId) {
+                        $categoryQuery->where('business_categories.id', $businessCategoryId);
+                    });
+                })
                 ->withCount('orders')
                 ->withAvg('reviews as average_rating', 'rating')
                 ->withExists([

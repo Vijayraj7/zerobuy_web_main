@@ -86,7 +86,7 @@ class OrderController extends Controller
     {
         // $order = Order::whereId($orderId)->firstOrFail(); 
 
-        $order = Order::whereId($orderId)->firstOrFail()->load('address.stateData', 'address.districtData');
+        $order = Order::whereId($orderId)->firstOrFail()->load('address.stateData', 'address.districtData', 'shop.deliverySetting');
 
 
         $orderStatus = OrderStatus::cases();
@@ -95,7 +95,10 @@ class OrderController extends Controller
             $query->where('is_active', true);
         })->get();
 
-        return view('shop.order.show', compact('order', 'orderStatus', 'riders'));
+        $deliverySetting = $order->shop->deliverySetting;
+        $isManualDelivery = $deliverySetting && $deliverySetting->delivery_mode === 'manual';
+
+        return view('shop.order.show', compact('order', 'orderStatus', 'riders', 'isManualDelivery'));
     }
 
     /**
@@ -156,6 +159,43 @@ class OrderController extends Controller
         }
 
         return back()->with('success', __('Order status updated successfully.'));
+    }
+
+    /**
+     * Update track URL and delivery charge for manual delivery.
+     */
+    public function updateTrackingAndCharge(Order $order, Request $request)
+    {
+        $request->validate([
+            'track_url' => 'nullable|url|max:500',
+            'delivery_charge' => 'nullable|numeric|min:0',
+        ]);
+
+        $updateData = [];
+
+        if ($request->filled('track_url')) {
+            $updateData['track_url'] = $request->track_url;
+        }
+
+        // Only allow updating delivery_charge if manual delivery or current delivery_charge == 0
+        $deliverySetting = $order->shop->deliverySetting;
+        $isManualDelivery = $deliverySetting && $deliverySetting->delivery_mode === 'manual';
+        if ($request->filled('delivery_charge')) {
+            if ($isManualDelivery || $order->delivery_charge == 0) {
+                $oldDeliveryCharge = $order->delivery_charge;
+                $newDeliveryCharge = $request->delivery_charge;
+                $updateData['delivery_charge'] = $newDeliveryCharge;
+                // Recalculate payable amount
+                $updateData['payable_amount'] = $order->payable_amount - $oldDeliveryCharge + $newDeliveryCharge;
+            }
+        }
+
+        if (!empty($updateData)) {
+            $order->update($updateData);
+            return back()->with('success', __('Order tracking and charges updated successfully.'));
+        }
+
+        return back()->with('info', __('No changes made.'));
     }
 
     /**

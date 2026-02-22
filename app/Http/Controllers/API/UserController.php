@@ -7,6 +7,7 @@ use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\UserAuthRequest;
 use App\Http\Requests\UserRequest;
 use App\Http\Resources\UserResource;
+use App\Repositories\CustomerRepository;
 use App\Repositories\UserRepository;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
@@ -83,5 +84,29 @@ class UserController extends Controller
         ]);
 
         return $this->json('Password changed successfully');
+    }
+
+    public function updateSelectedBusinessCategory(Request $request)
+    {
+        $request->validate([
+            'business_category_id' => ['required', 'integer', 'exists:business_categories,id'],
+        ]);
+
+        /** @var \App\Models\User|null $user */
+        $user = auth()->user();
+        if (! $user || ! $user->customer) {
+            return $this->json('Customer not found', [], 404);
+        }
+
+        CustomerRepository::updateSelectedBusinessCategory(
+            $user,
+            $request->integer('business_category_id')
+        );
+
+        $user->refresh();
+
+        return $this->json('Selected business category updated successfully', [
+            'user' => UserResource::make($user),
+        ]);
     }
 }

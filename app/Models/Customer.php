@@ -30,6 +30,11 @@ class Customer extends Model
         return $this->belongsTo(User::class, 'user_id')->withTrashed();
     }
 
+    public function selectedBusinessCategory(): BelongsTo
+    {
+        return $this->belongsTo(BusinessCategory::class, 'selected_business_category_id');
+    }
+
     /**
      * Get all of the favorites products for the Customer.
      */

@@ -10,9 +10,11 @@ use App\Http\Requests\OTPRequest;
 use App\Http\Requests\OTPVerifyRequest;
 use App\Http\Resources\UserResource;
 use App\Models\VerifyManage;
+use App\Repositories\CustomerRepository;
 use App\Repositories\DeviceKeyRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\VerificationCodeRepository;
+use App\Repositories\WalletRepository;
 use App\Services\SmsGatewayService;
 use App\Services\UserPresenceService;
 use Illuminate\Http\Response;
@@ -168,6 +170,17 @@ class OTPAuthController extends Controller
                 DeviceKeyRepository::storeByRequest($existingUser, $request);
             }
 
+            if ($request->filled('business_category_id')) {
+                $request->validate([
+                    'business_category_id' => ['integer', 'exists:business_categories,id'],
+                ]);
+                CustomerRepository::updateSelectedBusinessCategory(
+                    $existingUser,
+                    $request->integer('business_category_id')
+                );
+                $existingUser->refresh();
+            }
+
             // Delete the verification code after successful login
             $verificationCode->delete();
 
@@ -196,6 +209,7 @@ class OTPAuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'nullable|min:6|confirmed',
+            'business_category_id' => 'nullable|integer|exists:business_categories,id',
         ]);
 
         // Verify the token
@@ -241,10 +255,10 @@ class OTPAuthController extends Controller
         }
 
         // Create customer profile
-        \App\Repositories\CustomerRepository::storeByRequest($user);
+        CustomerRepository::storeByRequest($user, $request->integer('business_category_id'));
 
         // Create wallet
-        \App\Repositories\WalletRepository::storeByRequest($user);
+        WalletRepository::storeByRequest($user);
 
         // Assign customer role
         $user->assignRole(Roles::CUSTOMER->value);

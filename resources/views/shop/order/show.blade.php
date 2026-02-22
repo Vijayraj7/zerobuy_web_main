@@ -203,6 +203,42 @@
                     </div>
                 </div>
 
+                <div class="p-3 border-bottom">
+                    <h6 class="fz-14 mb-3">{{ __('Update Tracking & Delivery Charge') }}</h6>
+                    <form action="{{ route('shop.order.update-tracking', $order->id) }}" method="POST">
+                        @csrf
+                        <div class="mb-3">
+                            <label for="track_url" class="form-label small">{{ __('Track URL') }}</label>
+                            <input type="url" class="form-control form-control-sm" id="track_url" name="track_url" 
+                                value="{{ old('track_url', $order->track_url) }}" 
+                                placeholder="https://tracking.example.com/12345">
+                            @error('track_url')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+                                @if ($isManualDelivery || $order->delivery_charge == 0)
+                                    <div class="mb-3">
+                                        <label for="delivery_charge" class="form-label small">{{ __('Delivery Charge') }}</label>
+                                        <input type="number" step="0.01" min="0" class="form-control form-control-sm" 
+                                            id="delivery_charge" name="delivery_charge" 
+                                            value="{{ old('delivery_charge', $order->delivery_charge) }}"
+                                            placeholder="0.00">
+                                        @error('delivery_charge')
+                                            <small class="text-danger">{{ $message }}</small>
+                                        @enderror
+                                    </div>
+                                @elseif ($order->delivery_charge > 0)
+                                    <div class="mb-3">
+                                        <label class="form-label small">{{ __('Delivery Charge') }}</label>
+                                        <div class="form-control form-control-sm bg-light">{{ $order->delivery_charge }}</div>
+                                    </div>
+                                @endif
+                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                            {{ __('Update') }}
+                        </button>
+                    </form>
+                </div>
+
                 <!-- <div class="border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 p-3">
                     <div class="text-color">{{ __('Payment Status') }}</div>
                     <div class="d-flex align-items-center gap-1">

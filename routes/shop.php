@@ -87,6 +87,7 @@ Route::name('shop.')->group(function () {
             Route::get('/api/orders', 'apiIndex')->name('order.api.index');
             Route::get('/orders/{order}/show', 'show')->name('order.show');
             Route::get('/orders/{order}/status-change', 'statusChange')->name('order.status.change');
+            Route::post('/orders/{order}/update-tracking', 'updateTrackingAndCharge')->name('order.update-tracking');
             Route::get('/orders/{order}/payment-status-toggle', 'paymentStatusToggle')->name('order.payment.status.toggle');
         });
 
