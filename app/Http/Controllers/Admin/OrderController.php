@@ -48,6 +48,8 @@ class OrderController extends Controller
                     return 'STD0' . $order->shop_id;
                 })
 
+
+                ->addColumn('shop_code', fn ($order) => $order->shop?->shop_code)
                 ->addColumn('store_name', fn ($order) => $order->shop?->name)
 
                 ->addColumn('customer_name', fn ($order) =>

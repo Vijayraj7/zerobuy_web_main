@@ -32,8 +32,8 @@
                     <tr>
                         <th>#</th>
                         <th>Create Date</th>
-                        <th>Order ID</th>
-                        <th>Store ID</th>
+                        <th>Order Code</th>
+                        <th>Store Code</th>
                         <th>Store Name</th>
                         <th>Customer</th>
                         <th>Mobile</th>
@@ -68,8 +68,8 @@ $(function () {
         columns: [
             { data: 'DT_RowIndex', orderable:false, searchable:false },
             { data: 'created_date', name: 'created_at' },
-            { data: 'order_id', name: 'order_code' },
-            { data: 'store_id', name: 'shop_id' },
+            { data: 'order_code', name: 'order_code' },
+            { data: 'shop_code', name: 'shop.shop_code' },
             { data: 'store_name', name: 'shop.name' },
             { data: 'customer_name', name: 'customer.user.name' },
             { data: 'mobile', name: 'customer.phone' },

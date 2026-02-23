@@ -86,6 +86,9 @@ class CustomerController extends Controller
                 return '<i class="fa fa-phone"></i> '.$row->phone.
                     '<br><i class="fa fa-envelope"></i> '.$row->email;
             })
+            ->addColumn('orders_count', function ($row) {
+                return $row->orders_count ?? 0;
+            })
             ->addColumn('status', function ($row) {
                 if(optional($row->customer)->status == 'active'){
                     return '<span class="badge bg-success">Active</span>';
@@ -109,11 +112,11 @@ class CustomerController extends Controller
                         <i class="fa '.$toggleIcon.'"></i>
                     </button> 
 
-                    <button class="btn btn-outline-danger circleIcon" onclick="confirmDelete('.$id.')" data-bs-title="Delete">
+                   <!-- <button class="btn btn-outline-danger circleIcon" onclick="confirmDelete('.$id.')" data-bs-title="Delete">
                         <i class="fa fa-trash"></i>
-                    </button>
+                    </button> -->
 
-                    <button onclick="openResetPasswordModal('.$id.', `'.$row->fullName.'`)"
+                    <button onclick="openResetPasswordModal('.$id.', `'.$row->fullName.'`)
                         class="btn btn-outline-info circleIcon" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Reset Password">
                         <i class="fa fa-key"></i>
                     </button>

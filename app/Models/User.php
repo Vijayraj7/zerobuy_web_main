@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -183,8 +184,15 @@ class User extends Authenticatable
         return $this->last_online && Carbon::parse($this->last_online)->gt(now()->subMinutes($minutes));
     }
 
-    public function orders()
+    public function orders(): HasManyThrough
     {
-        return $this->hasMany(Order::class, 'customer_id');
+        return $this->hasManyThrough(
+            Order::class,
+            Customer::class,
+            'user_id',      // Foreign key on customers table...
+            'customer_id',  // Foreign key on orders table...
+            'id',           // Local key on users table...
+            'id'            // Local key on customers table...
+        );
     }
 }
