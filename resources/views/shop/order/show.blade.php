@@ -29,6 +29,10 @@
                                 <label class="label">{{ __('Order Id') }}:</label>
                                 <span class="value">#{{ $order->prefix . $order->order_code }}</span>
                             </div>
+                            <div class="order-item">
+                                <label class="label">{{ __('Shop Name') }}:</label>
+                                <span class="value">{{ $order->shop?->name }}</span>
+                            </div>
                             <!-- <div class="order-item">
                                 <label class="label">{{ __('Payment Status') }}:</label>
                                 <span class="value">{{ $order->payment_status }}</span>
