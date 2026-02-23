@@ -116,7 +116,7 @@ class CustomerController extends Controller
                         <i class="fa fa-trash"></i>
                     </button> -->
 
-                    <button onclick="openResetPasswordModal('.$id.', `'.$row->fullName.'`)
+                    <button onclick="openResetPasswordModal('.$id.', `'.$row->fullName.'`)"
                         class="btn btn-outline-info circleIcon" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Reset Password">
                         <i class="fa fa-key"></i>
                     </button>
