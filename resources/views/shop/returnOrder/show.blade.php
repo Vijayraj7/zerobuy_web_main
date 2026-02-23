@@ -15,7 +15,7 @@
                         <div class="flex-grow-1">
                             <div class="order-item">
                                 <label class="label">{{ __('Order Id') }}:</label>
-                                <span class="value">#{{ $returnOrder->order->prefix . $returnOrder->order->order_code }}</span>
+                                <span class="value">#{{ $returnOrder->order->order_code }}</span>
                             </div>
                             <div class="order-item">
                                 <label class="label">{{ __('Order Status') }}:</label>
@@ -36,7 +36,7 @@
                         <div class="flex-grow-1">
                             <div class="order-item">
                                 <label class="label">{{ __('Return Id') }}:</label>
-                                <span class="value">#RTN0{{ $returnOrder->id }}</span>
+                                <span class="value">{{ '#' . ($returnOrder->return_code ?? 'RTN0' . $returnOrder->id) }}</span>
                             </div>
                             <div class="order-item">
                                 <label class="label">{{ __('Return Status') }}:</label>
@@ -147,7 +147,6 @@
                     <span class="fw-medium text-danger">{{ $returnOrder->reason }}</span>
                 </div>
             </div>
-
             <!--##### Customer Info #####-->
             <div class="mt-3 card">
                 <h5 class="fz-16 border-bottom px-3 py-12 m-0">{{ __('Customer Info') }}</h5>
@@ -161,6 +160,25 @@
                     <span class="fw-medium">{{ $returnOrder->customer?->user?->phone }}</span>
                 </div>
             </div>
+            
+            @if($returnOrder->returnProductImages->count())
+                <div class="card mt-3">
+                    <h5 class="fz-16 border-bottom px-3 py-12 m-0">
+                        {{ __('Return Images') }}
+                    </h5>
+
+                    <div class="p-3">
+                        <div class="d-flex flex-wrap gap-3">
+                            @foreach ($returnOrder->returnProductImages as $image)
+                                <div class="border rounded p-1">
+                                    <img src="{{ $image->image_url }}" alt="Return Image" width="120" height="120" style="object-fit: cover; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#returnImagePreview" onclick="showReturnImage('{{ $image->image_url }}')">
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             @if ($returnOrder->status == 'Cancelled')
                 <!--##### Cancelled Info #####-->
                 <div class="mt-3 card">
@@ -328,23 +346,6 @@
             </div>
         </div>
 
-        @if($returnOrder->returnProductImages->count())
-            <div class="card mt-4">
-                <h5 class="fz-16 border-bottom px-3 py-12 m-0">
-                    {{ __('Return Images') }}
-                </h5>
-
-                <div class="p-3">
-                    <div class="d-flex flex-wrap gap-3">
-                        @foreach ($returnOrder->returnProductImages as $image)
-                            <div class="border rounded p-1">
-                                <img src="{{ $image->image_url }}" alt="Return Image" width="120" height="120" style="object-fit: cover; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#returnImagePreview" onclick="showReturnImage('{{ $image->image_url }}')">
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        @endif
     </div>
 
     <div class="modal fade" id="returnImagePreview" tabindex="-1">

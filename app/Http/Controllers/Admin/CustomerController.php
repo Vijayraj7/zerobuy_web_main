@@ -15,6 +15,7 @@ use App\Models\Shop;
 use App\Models\ReturnOrder;
 use Illuminate\Http\Request;
 use App\Repositories\CustomerRepository;
+use App\Models\State;
 use App\Repositories\UserRepository;
 use App\Repositories\WalletRepository;
 use App\Repositories\AddressRepository;
@@ -130,7 +131,8 @@ class CustomerController extends Controller
 
     public function create()
     {
-        return view('admin.customer.create');
+        $states = State::orderBy('name')->pluck('name', 'id');
+        return view('admin.customer.create', compact('states'));
     }
 
     public function show(User $user)

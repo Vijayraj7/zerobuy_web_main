@@ -79,9 +79,9 @@
                 <li class="nav-item"><a class="nav-link" data-step="3" href="#" id="variantProductTab">Product
                         Variants</a></li>
                 <li class="nav-item"><a class="nav-link" data-step="4" href="#">Images</a></li>
-                <li class="nav-item"><a class="nav-link" data-step="5" href="#">SEO Information</a></li>
                 <li class="nav-item"><a class="nav-link" data-step="6" href="#" id="bulkProductTab"> Bulk
                         Products</a></li>
+                <li class="nav-item"><a class="nav-link" data-step="5" href="#">SEO Information</a></li>
             </ul>
 
             <!-- STEP 1 -->
@@ -277,7 +277,7 @@
                             <tr>
                                 <th>Min Qty</th>
                                 <th>Max Qty</th>
-                                <th>Price</th>
+                                <th>Selling Price</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -287,7 +287,7 @@
                                         type="number" min="1"></td>
                                 <td><input id="bulk-max" class="form-control" placeholder="Max Qty" type="number"
                                         min="1"></td>
-                                <td><input id="bulk-price" class="form-control" placeholder="Price" type="number"
+                                <td><input id="bulk-price" class="form-control" placeholder="Selling Price" type="number"
                                         min="1"></td>
                                 <td><button type="button" class="btn btn-primary" id="add-bulk">Add</button></td>
                             </tr>
@@ -325,7 +325,7 @@
                                     <tr>
                                         <th>Color (optional)</th>
                                         <th>Size (optional)</th>
-                                        <th>Price <span class="text-danger">*</span></th>
+                                        <th>Selling Price <span class="text-danger">*</span></th>
                                         <th>Quantity <span class="text-danger">*</span></th>
                                         <th>Action</th>
                                     </tr>
@@ -359,7 +359,7 @@
                                             </select>
                                         </td>
                                         <td>
-                                            <input id="variant-price" class="form-control" placeholder="Price"
+                                            <input id="variant-price" class="form-control" placeholder="Selling Price"
                                                 type="number" min="1">
                                         </td>
                                         <td>
@@ -557,7 +557,7 @@
                             <th>Qty</th>
                             <th>MOQ</th>
                             <th>MRP</th>
-                            <th>Selling</th>
+                            <th>Selling Price</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -945,7 +945,7 @@
                             
 
                 <div class="col-md-3">
-                    <label class="small fw-bold">Price</label>
+                    <label class="small fw-bold">Selling Price</label>
                     <input type="number"
                         class="form-control form-control-sm"
                         name="variants[${variantId}][price]"
@@ -1185,7 +1185,7 @@
                 </div>
 
                 <div class="col-md-4">
-                    <strong>Price</strong> ${price}
+                    <strong>Selling Price</strong> ${price}
                     <input type="hidden" name="bulk[${bulkId}][price]" value="${price}">
                 </div>
 
@@ -1600,6 +1600,12 @@
             return;
         }
 
+        // Ensure selling price is numeric and less than MRP
+        if (isNaN(Number(mrp)) || isNaN(Number(price)) || Number(price) >= Number(mrp)) {
+            showFlash('Bulk item selling price must be less than MRP');
+            return;
+        }
+
         if (addedBulkItems.includes(name.toLowerCase())) {
             showFlash('Bulk item name must be unique');
             return;
@@ -2009,7 +2015,7 @@
                             </div>
 
                             <div class="col-md-3">
-                                <label class="small fw-bold">Price</label>
+                                <label class="small fw-bold">Selling Price</label>
                                 <input type="number"
                                     class="form-control form-control-sm"
                                     name="variants[${id}][price]"
@@ -2092,7 +2098,7 @@
                         </div>
 
                 <div class="col-md-4">
-                    <strong>Price</strong> ${price.price}
+                    <strong>Selling Price</strong> ${price.price}
                     <input type="hidden" name="bulk[${bulkId}][price]" value="${price.price}">
                 </div>
 

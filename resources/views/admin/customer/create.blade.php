@@ -3,7 +3,7 @@
 @section('content')
 <!-- some changes aaded by ancy -->
     <div class="container-fluid my-md-0 my-4">
-        <form action="{{ route('admin.customer.store') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('admin.customer.store') }}" method="POST" enctype="multipart/form-data" novalidate>
             @csrf
             <div class="row h-100vh">
                 <div class="col-12 m-auto">
@@ -72,7 +72,7 @@
                                     </div>
                                     <div class="mt-2">
                                         <x-file name="profile_photo" label="User profile (Ratio 1:1)"
-                                            preview="previewProfile" />
+                                            preview="previewProfile" :required="true" />
                                     </div>
                                 </div>
 
@@ -86,7 +86,12 @@
                                     </div>
 
                                     <div class="mt-3 col-md-2">
-                                        <x-input label="State" name="state" placeholder="Enter State" required="true" />
+                                        <x-select label="State" name="state" required="true">
+                                            <option value="">{{ __('Select State') }}</option>
+                                            @foreach($states as $id => $sname)
+                                                <option value="{{ $id }}" {{ old('state') == $id ? 'selected' : '' }}>{{ $sname }}</option>
+                                            @endforeach
+                                        </x-select>
                                     </div>
                                 </div>
                                 <div class="row">

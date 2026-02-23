@@ -39,19 +39,51 @@ class ReturnOrderController extends Controller
 
         if ($request->ajax()) {
             return datatables()->eloquent($query)
-                ->addIndexColumn() 
-                ->editColumn('created_at', fn($row) => $row->created_at->format('d-m-Y')) 
-                ->addColumn('return_id', fn($row) => 'RTN0' . $row->id)
+                ->addIndexColumn()
+                ->editColumn('created_at', fn($row) => $row->created_at->format('d-m-Y | h:i A'))
+                ->addColumn('return_id', function ($row) {
+                    return $row->return_code ? $row->return_code : 'RTN0' . $row->id;
+                })
                 ->filterColumn('return_id', function ($query, $keyword) {
-                    $keyword = str_replace('RTN0', '', $keyword);
-                    $query->where('id', 'LIKE', "%$keyword%");
-                })  
-                ->addColumn('order_date', fn($row) => optional($row->order)->created_at?->format('d-m-Y') ?? '-') 
-                ->addColumn('shop_id', fn($row) => 'STR0' . $row->shop_id)
+                    $query->where(function ($q) use ($keyword) {
+                        $q->where('return_code', 'LIKE', "%{$keyword}%");
+                        $num = preg_replace('/\D/', '', $keyword);
+                        if ($num) {
+                            $q->orWhere('id', 'LIKE', "%{$num}%");
+                        }
+                    });
+                })
+                ->addColumn('order_id', function ($row) {
+                    return optional($row->order)->order_code ? optional($row->order)->order_code : (optional($row->order)->id ? 'ORD0' . optional($row->order)->id : '-');
+                })
+                ->addColumn('thumbnail', function ($row) {
+                    $first = optional($row->returnProduct->first());
+                    // try product->thumbnail then fallback to returnProduct->thumbnail
+                    $thumb = optional($first->product)->thumbnail ?? ($first?->thumbnail ?? null);
+                    if (! $thumb) return '';
+                    return '<img src="'.$thumb.'" width="50" class="rounded">';
+                })
+                ->filterColumn('order_id', function ($query, $keyword) {
+                    $query->whereHas('order', function ($q) use ($keyword) {
+                        $q->where('order_code', 'LIKE', "%{$keyword}%");
+                        $num = preg_replace('/\D/', '', $keyword);
+                        if ($num) {
+                            $q->orWhere('id', 'LIKE', "%{$num}%");
+                        }
+                    });
+                })
+                ->addColumn('shop_id', function ($row) {
+                    return optional($row->shop)->shop_code ? optional($row->shop)->shop_code : 'STR0' . $row->shop_id;
+                })
                 ->filterColumn('shop_id', function ($query, $keyword) {
-                    $keyword = str_replace('STR0', '', $keyword);
-                    $query->where('shop_id', 'LIKE', "%$keyword%");
-                }) 
+                    $query->whereHas('shop', function ($q) use ($keyword) {
+                        $q->where('shop_code', 'LIKE', "%{$keyword}%");
+                        $num = preg_replace('/\D/', '', $keyword);
+                        if ($num) {
+                            $q->orWhere('id', 'LIKE', "%{$num}%");
+                        }
+                    });
+                })
                 ->addColumn('shop_name', fn($row) => $row->shop?->name ?? '-')
                 ->filterColumn('shop_name', function ($query, $keyword) {
                     $query->whereHas('shop', function ($q) use ($keyword) {
@@ -70,13 +102,13 @@ class ReturnOrderController extends Controller
                         ->orderBy('users.name', $order)
                         ->select('return_orders.*');
                 })
+                ->orderColumn('order_id', function ($query, $order) {
+                    $query->join('orders', 'return_orders.order_id', '=', 'orders.id')
+                        ->orderBy('orders.id', $order)
+                        ->select('return_orders.*');
+                })
                 ->addColumn('customer_phone', fn($row) => $row->customer?->user?->phone ?? '-') 
                 ->addColumn('quantity', fn($row) => $row->returnProduct->sum('quantity')) 
-                // ->addColumn('amount', fn($row) => number_format($row->returnProduct->sum(fn($p) => $p->price * $p->quantity), 2)) 
-                // ->editColumn('amount', fn($row) => number_format($row->amount, 2)) 
-                ->addColumn('amount', fn($row) =>
-                    number_format(optional($row->returnProduct->first())->price ?? 0, 2)
-                )
                 ->addColumn('total', fn($row) =>
                     number_format($row->amount ?? 0, 2)
                 )
@@ -92,7 +124,7 @@ class ReturnOrderController extends Controller
                 ->addColumn('actions', function ($row) { 
                     return '<a href="'.route('admin.returnOrder.show',$row->id).'" class="btn btn-primary btn-sm"><i class="fa fa-eye"></i></a>'; 
                 })
-                ->rawColumns(['status_badge', 'actions'])
+                ->rawColumns(['status_badge', 'actions', 'thumbnail'])
                 ->toJson();
         }
 
@@ -104,7 +136,7 @@ class ReturnOrderController extends Controller
         $returnOrder->load('order.address.stateData', 'order.address.districtData', 'returnProduct.product', 'returnProductImages');
 
         $returnStatus = ReturnOderStatus::cases();
-        return view('admin.returnOrder.show', compact('returnOrder', 'returnStatus'));
+        return view('shop.returnOrder.show', compact('returnOrder', 'returnStatus'));
     }
 
     public function statusChange(ReturnOrder $returnOrder, Request $request)

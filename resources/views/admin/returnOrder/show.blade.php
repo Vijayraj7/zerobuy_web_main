@@ -89,8 +89,8 @@
                                             <td>{{ $returnOrder?->shop?->name }}</td>
                                         @endif -->
                                         <td>{{ $product->quantity ?? 0 }}</td>
-                                        <td>{{ $product->size ?? '-' }}</td>
-                                        <td>{{ $product->color ?? '-' }}</td>
+                                        <td>{{ $product->orderProduct?->orderVariant?->size_name ?? '-' }}</td>
+                                        <td>{{ $product->orderProduct?->orderVariant?->color_name ?? '-' }}</td>
                                         <td>{{ showCurrency($product->price) }}</td>
                                         <td>{{ $returnOrder->order?->payment_method ?? '-' }}</td>
                                         <td class="text-end">

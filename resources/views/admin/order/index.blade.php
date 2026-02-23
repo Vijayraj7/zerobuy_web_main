@@ -31,9 +31,10 @@
                 <thead>
                     <tr>
                         <th>#</th>
+                        <th>{{ __('Thumb') }}</th>
                         <th>Create Date</th>
-                        <th>Order Code</th>
-                        <th>Store Code</th>
+                        <th>Order ID</th>
+                        <th>Store ID</th>
                         <th>Store Name</th>
                         <th>Customer</th>
                         <th>Mobile</th>
@@ -65,8 +66,9 @@ $(function () {
                 //d.status = $('.nav-tabs .active').data('status');
             }
         },
-        columns: [
+            columns: [
             { data: 'DT_RowIndex', orderable:false, searchable:false },
+            { data: 'thumbnail', orderable:false, searchable:false },
             { data: 'created_date', name: 'created_at' },
             { data: 'order_code', name: 'order_code' },
             { data: 'shop_code', name: 'shop.shop_code' },

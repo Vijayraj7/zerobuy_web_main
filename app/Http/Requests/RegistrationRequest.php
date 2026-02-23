@@ -42,6 +42,7 @@ class RegistrationRequest extends FormRequest
 
         $phoneValidate = [$phoneRequired, 'unique:users,phone', 'min_digits:'.$min, 'max_digits:'.$max];
         $countryRequired = $this->routeIs('admin.customer.store') ? 'nullable' : 'required';
+        $profileRequired = $this->routeIs('admin.customer.store') ? 'required' : 'nullable';
 
         return [
             'name' => 'required|string|max:200',
@@ -50,12 +51,12 @@ class RegistrationRequest extends FormRequest
             'password' => 'required|string|min:6',
             'country' => [$countryRequired, 'string', 'max:100'],
             'gender' => ['nullable', 'string'],
-            'profile_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,svg', 'max:2048'],
+            'profile_photo' => [$profileRequired, 'image', 'mimes:jpg,jpeg,png,svg', 'max:2048'],
 
             // New Address Validation //added by ancy
             'address_line' => 'required|string|max:255',
             'address_line2' => 'nullable|string|max:255',
-            'state' => 'required|string|max:255',
+            'state' => ['required', 'exists:states,id'],
             'area' => 'required|string|max:255',
             'post_code' => 'required|string|max:20',
             'address_type' => 'required|in:home,shop,other',
@@ -85,6 +86,7 @@ class RegistrationRequest extends FormRequest
             // ---------- ADDRESS VALIDATION ---------- //Added by ancy
             'address_line.required' => __('The address line field is required.'),
             'state.required' => __('The state field is required.'),
+            'state.exists' => __('The selected state is invalid.'),
             'area.required' => __('The area field is required.'),
             'post_code.required' => __('The post code field is required.'),
             'address_type.required' => __('The address type field is required.'),

@@ -674,6 +674,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     return;
                 }
 
+                // Prevent duplicate charge values across ranges
+                const existingChargeValues = Array.from(document.querySelectorAll('.amount-card input[name*="[charge]"]'))
+                    .map(el => parseFloat(el.value || 0));
+                if (existingChargeValues.includes(charge)) {
+                    setAmountRangeError('This charge amount is already used in another range');
+                    return;
+                }
+
                 /* CHECK OVERLAP */
                 for (const card of document.querySelectorAll('.amount-card')) {
                     const cMin = parseFloat(card.querySelector('[name*="[min_amount]"]').value);
@@ -973,7 +981,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const returnPolicy = textVal('return_policy');
             if (!returnPolicy) addError(errors, 'return_policy', 'The return policy field is required.');
-            if (returnPolicy.length > 1000) addError(errors, 'return_policy', 'The return policy may not be greater than 1000 characters.');
+            if (returnPolicy.length > 1250) addError(errors, 'return_policy', 'The return policy may not be greater than 1250 characters.');
 
             const description = textVal('description');
             if (description.length > 200) addError(errors, 'description', 'The description may not be greater than 200 characters.');

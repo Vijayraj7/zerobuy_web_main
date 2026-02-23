@@ -42,19 +42,26 @@
 
 
             <div class="table-responsive mt-3"> 
+                <style>
+                    /* Color the Reason column text red (now 12th column) */
+                    #reurnOrderTable th:nth-child(12),
+                    #reurnOrderTable td:nth-child(12) {
+                        color: #e74c3c !important;
+                    }
+                </style>
                 <table id="reurnOrderTable" class="table table-bordered mt-3 datatableCustomCSS">
                     <thead>
                         <tr>
                             <th>#</th> 
                             <th>{{ __('Return Date') }}</th>
                             <th>{{ __('Return ID') }}</th>
-                            <th>{{ __('Order Date') }}</th> 
+                            <th>{{ __('Thumbnail') }}</th>
+                            <th>{{ __('Order ID') }}</th> 
                             <th>{{ __('Store ID') }}</th>
                             <th>{{ __('Store Name') }}</th>
                             <th>{{ __('Customer Name') }}</th>
                             <th>{{ __('Mobile No') }}</th>
                             <th>{{ __('Quantity') }}</th>
-                            <th>{{ __('Amount') }}</th>
                             <th>{{ __('Total Amount') }}</th>
                             <th>{{ __('Reason') }}</th>
                             <th>{{ __('Status') }}</th>
@@ -95,13 +102,13 @@
                 { data: 'DT_RowIndex', orderable: false, searchable: false },
                 { data: 'created_at', name: 'created_at' },          
                 { data: 'return_id', name: 'return_id' }, 
-                { data: 'order_date', name: 'order_date' }, 
+                { data: 'thumbnail', orderable: false, searchable: false },
+                { data: 'order_id', name: 'order_id' }, 
                 { data: 'shop_id', name: 'shop_id' }, 
                 { data: 'shop_name', name: 'shop_name' }, 
                 { data: 'customer_name', name: 'customer_name' },
                 { data: 'customer_phone', name: 'customer_phone' },
                 { data: 'quantity', orderable: false },
-                { data: 'amount', orderable: false },
                 { data: 'total', name: 'total' }, 
                 { data: 'reason', name: 'reason' },
                 { data: 'status_badge', orderable: false, searchable: false },
