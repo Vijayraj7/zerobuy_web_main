@@ -25,7 +25,7 @@
 </script>
 
 <form id="shopForm" action="{{ $formAction }}"
-    method="POST" enctype="multipart/form-data">@csrf
+    method="POST" enctype="multipart/form-data" novalidate>@csrf
     @if ($errors->any())
         <div class="alert alert-danger" id="formErrorBox">
             <strong>{{ __('Please fix the following errors:') }}</strong>
@@ -370,7 +370,9 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td><input id="amt-min" class="form-control" type="number"></td>
+                                        <td>
+                                            <div id="amt-min-display" class="form-control-plaintext" aria-hidden="true">1</div>
+                                        </td>
                                         <td><input id="amt-max" class="form-control" type="number"></td>
                                         <td><input id="amt-charge" class="form-control" type="number"></td>
                                         <td>
@@ -605,17 +607,46 @@ document.addEventListener('DOMContentLoaded', function () {
         let addedAmountRanges = [];
         let amountIndex = {{ count($amountRules) }};
 
+        // Populate existing ranges (server-rendered) into addedAmountRanges
+        document.querySelectorAll('.amount-card').forEach(function(card) {
+            const cMinEl = card.querySelector('[name*="[min_amount]"]');
+            const cMaxEl = card.querySelector('[name*="[max_amount]"]');
+            if (cMinEl && cMaxEl) {
+                const cMin = cMinEl.value;
+                const cMax = cMaxEl.value;
+                if (cMin && cMax) addedAmountRanges.push(`${cMin}-${cMax}`);
+            }
+        });
+
+        function computeNextMin() {
+            const cards = document.querySelectorAll('.amount-card');
+            if (!cards || cards.length === 0) return 1;
+            // get last card's max_amount
+            const lastCard = cards[cards.length - 1];
+            const maxEl = lastCard.querySelector('[name*="[max_amount]"]');
+            const lastMax = maxEl ? parseFloat(maxEl.value || 0) : 0;
+            return lastMax ? (lastMax + 1) : 1;
+        }
+
+        function updateAmtMinField() {
+            const disp = document.getElementById('amt-min-display');
+            if (!disp) return;
+            disp.innerText = computeNextMin();
+        }
+
+        // initialize min field on load
+        updateAmtMinField();
+
         document.addEventListener('click', function(e) {
 
             /* ADD AMOUNT RANGE */
             if (e.target.id === 'addAmountRow') {
                 setAmountRangeError('');
 
-                const minInput = document.getElementById('amt-min');
                 const maxInput = document.getElementById('amt-max');
                 const chargeInput = document.getElementById('amt-charge');
 
-                const min = parseFloat(minInput.value);
+                const min = computeNextMin();
                 const max = parseFloat(maxInput.value);
                 const charge = parseFloat(chargeInput.value);
 
@@ -634,7 +665,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 const existingCards = document.querySelectorAll('.amount-card');
                 if (existingCards.length === 0 && min !== 1) {
                     setAmountRangeError('First minimum amount must be 1');
-                    minInput.focus();
                     return;
                 }
 
@@ -692,12 +722,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (emptyMsg) emptyMsg.style.display = 'none';
                 amountIndex++;
                 container.appendChild(card);
+                // after adding, update next min and clear inputs
+                updateAmtMinField();
 
                 /* CLEAR INPUTS */
-                minInput.value = '';
                 maxInput.value = '';
                 chargeInput.value = '';
-                minInput.focus();
+                maxInput.focus();
                 setAmountRangeError('');
             }
 
@@ -715,8 +746,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 card.remove();
 
                 if (!document.querySelector('.amount-card')) {
-                    document.getElementById('no-amount-msg').style.display = 'block';
+                    const noMsg = document.getElementById('no-amount-msg');
+                    if (noMsg) noMsg.style.display = 'block';
                 }
+
+                // after deletion, update min field to next required min
+                updateAmtMinField();
             }
         });
 
