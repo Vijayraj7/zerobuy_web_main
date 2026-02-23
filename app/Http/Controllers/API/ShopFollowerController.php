@@ -23,6 +23,24 @@ class ShopFollowerController extends Controller
         $perPage = $request->per_page ?? 20;
         $businessCategoryId = $request->integer('business_category_id');
         $applyBusinessCategoryFilter = ! is_null($businessCategoryId) && $request->type !== 'following';
+        // parse optional filters
+        $stateIdsParam = $request->input('state_ids');
+        $stateIds = [];
+        if (! is_null($stateIdsParam) && $stateIdsParam !== '') {
+            if (is_array($stateIdsParam)) {
+                $stateIds = array_map('intval', $stateIdsParam);
+            } else {
+                $stateIds = array_filter(array_map('trim', explode(',', $stateIdsParam)));
+                $stateIds = array_map('intval', $stateIds);
+            }
+        }
+
+        $minRating = $request->input('min_rating');
+        if (! is_null($minRating) && $minRating !== '') {
+            $minRating = (float) $minRating;
+        } else {
+            $minRating = null;
+        }
 
         if ($request->type === 'all') {
             $shops = ShopRepository::query()
@@ -35,6 +53,12 @@ class ShopFollowerController extends Controller
                 // ->where('is_branded', true)
                 ->withCount('orders')
                 ->withAvg('reviews as average_rating', 'rating')
+                ->when(! empty($stateIds), function ($q) use ($stateIds) {
+                    return $q->whereIn('state_id', $stateIds);
+                })
+                ->when(! is_null($minRating), function ($q) use ($minRating) {
+                    return $q->whereRaw('(select avg(rating) from reviews where reviews.shop_id = shops.id) >= ?', [$minRating]);
+                })
                 ->withExists([
                     'followers as is_followed' => fn($q) =>
                     $q->where('customer_id', $customer->id)
@@ -48,6 +72,12 @@ class ShopFollowerController extends Controller
                     return $query->whereHas('businessCategories', function ($categoryQuery) use ($businessCategoryId) {
                         $categoryQuery->where('business_categories.id', $businessCategoryId);
                     });
+                })
+                ->when(! empty($stateIds), function ($q) use ($stateIds) {
+                    return $q->whereIn('state_id', $stateIds);
+                })
+                ->when(! is_null($minRating), function ($q) use ($minRating) {
+                    return $q->whereRaw('(select avg(rating) from reviews where reviews.shop_id = shops.id) >= ?', [$minRating]);
                 })
                 ->withCount('orders')
                 ->withAvg('reviews as average_rating', 'rating')
@@ -65,6 +95,12 @@ class ShopFollowerController extends Controller
                         $categoryQuery->where('business_categories.id', $businessCategoryId);
                     });
                 })
+                ->when(! empty($stateIds), function ($q) use ($stateIds) {
+                    return $q->whereIn('state_id', $stateIds);
+                })
+                ->when(! is_null($minRating), function ($q) use ($minRating) {
+                    return $q->whereRaw('(select avg(rating) from reviews where reviews.shop_id = shops.id) >= ?', [$minRating]);
+                })
                 ->withCount('orders')
                 ->withAvg('reviews as average_rating', 'rating')
                 ->withExists([
@@ -76,6 +112,12 @@ class ShopFollowerController extends Controller
             $shops = $customer
                 ->followedShops()
                 ->isActive()
+                ->when(! empty($stateIds), function ($q) use ($stateIds) {
+                    return $q->whereIn('state_id', $stateIds);
+                })
+                ->when(! is_null($minRating), function ($q) use ($minRating) {
+                    return $q->whereRaw('(select avg(rating) from reviews where reviews.shop_id = shops.id) >= ?', [$minRating]);
+                })
                 ->with(['products', 'categories', 'reviews', 'banners'])
                 ->withExists([
                     'followers as is_followed' => function ($q) use ($customer) {
