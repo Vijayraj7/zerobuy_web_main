@@ -50,7 +50,8 @@ class ProductRequest extends FormRequest
             'min_order_quantity' => 'required|integer|min:1',
             'return_period'      => 'required|integer',
             'mrp'                => 'required|numeric|min:0',
-            'selling_price'      => 'nullable|numeric|min:0|lt:mrp',
+            'selling_price'      => 'nullable|numeric|min:0|lt:mrp|required_without:discount_price',
+            'discount_price'     => 'nullable|numeric|min:0|lt:mrp|required_without:selling_price',
             'tax_percentage'     => 'nullable|numeric|min:0',
 
             'item_details'         => 'nullable|array',
@@ -145,10 +146,15 @@ class ProductRequest extends FormRequest
             'mrp.numeric'              => __('The price must be a number.'),
             'mrp.min'                  => __('The price must be at least 0.'),
 
-            'selling_price.required'   => __('The selling price field is required.'),
             'selling_price.numeric'    => __('The selling price must be a number.'),
             'selling_price.min'        => __('The selling price must be at least 0.'),
             'selling_price.lt'         => __('The selling price must be less than MRP.'),
+            'selling_price.required_without' => __('Either selling price or discount price is required.'),
+
+            'discount_price.numeric'    => __('The discount price must be a number.'),
+            'discount_price.min'        => __('The discount price must be at least 0.'),
+            'discount_price.lt'         => __('The discount price must be less than MRP.'),
+            'discount_price.required_without' => __('Either discount price or selling price is required.'),
 
             'thumbnail.required'       => __('The thumbnail field is required.'),
             'thumbnail.image'          => __('The thumbnail must be an image.'),
@@ -194,6 +200,12 @@ class ProductRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        if ($this->input('discount_price') === null && $this->input('selling_price') !== null) {
+            $this->merge([
+                'discount_price' => $this->input('selling_price'),
+            ]);
+        }
+
         if ($this->input('sub_category') != null) {
             $this->merge([
                 'sub_categories' => $this->normalizeArray($this->input('sub_category')),
