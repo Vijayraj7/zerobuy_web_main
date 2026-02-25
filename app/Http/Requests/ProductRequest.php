@@ -50,7 +50,7 @@ class ProductRequest extends FormRequest
             'min_order_quantity' => 'required|integer|min:1',
             'return_period'      => 'required|integer',
             'mrp'                => 'required|numeric|min:0',
-            // 'selling_price'      => 'required|numeric|min:0|lt:mrp',
+            'selling_price'      => 'nullable|numeric|min:0|lt:mrp',
             'tax_percentage'     => 'nullable|numeric|min:0',
 
             'item_details'         => 'nullable|array',
