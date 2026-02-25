@@ -45,6 +45,7 @@ class ShopDetailsResource extends JsonResource
             'return_policy' => $this->return_policy,
             'address' => $this->address,
             'pincode' => $this->pincode,
+            'gst_number' => $this->gst_number,
             'district' => $this->districts ? $this->districts->name : null,
             'district_id' => $this->districts ? (int)$this->districts->id : null,
             'is_followed' => (bool) $isFollowed,

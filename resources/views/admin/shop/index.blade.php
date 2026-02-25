@@ -238,7 +238,7 @@
              columns: [
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
                 { data: 'created_at', name: 'created_at' },
-                { data: 'shop_id_display', name: 'shop_id_display' },
+                { data: 'shop_code', name: 'shop_code' },
                 { data: 'name', name: 'name' },
                 { data: 'logo', name: 'logo', orderable: false, searchable: false },
                 { data: 'phone', name: 'phone' },

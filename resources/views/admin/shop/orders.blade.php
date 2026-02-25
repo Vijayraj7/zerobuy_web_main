@@ -92,7 +92,7 @@
             columns: [
                 { data: 'DT_RowIndex', orderable: false, searchable: false },
                 { data: 'created_at', name: 'created_at' },
-                { data: 'order_id_display', name: 'order_id_display' }, 
+                { data: 'order_code', name: 'order_code' }, 
                 { data: 'customer_name', name: 'address.name' },
                 { data: 'customer_phone', name: 'address.phone' },
                 { data: 'total_quantity', orderable: true, searchable: false },

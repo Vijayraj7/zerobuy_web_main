@@ -20,7 +20,7 @@
             <tr>
                 <td class="text-center">{{ ++$key }}</td>
                 <td>{{ $product->created_at?->format('d-m-Y | h:i A') ?? '-' }}</td>
-                <td>{{ $product->formatted_id ?? ('PRD0' . $product->id) }}</td>
+                <td>#{{ $product->product_code }}</td>
                 <td>{{ Str::limit($product->name, 50, '...') }}</td>
                 <td>
                     <img src="{{ $product->thumbnail }}" width="40" height="40" class="rounded" loading="lazy">

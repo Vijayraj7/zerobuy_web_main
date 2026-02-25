@@ -598,16 +598,21 @@ class ShopController extends Controller
             return datatables()->eloquent($query)
                 ->addIndexColumn() 
                 ->editColumn('created_at', fn($row) => $row->created_at->format('d-m-Y')) 
-                ->addColumn('return_id', fn($row) => '<a href="'.route('shop.returnOrder.show', $row->id).'" class="text-primary fw-bold">RTN0' . $row->id . '</a>')
-                ->filterColumn('return_id', function ($query, $keyword) {
+                ->addColumn('return_code', fn($row) => '<a href="'.route('shop.returnOrder.show', $row->id).'" class="text-primary fw-bold">' . ($row->return_code ? $row->return_code : 'RTN0' . $row->id) . '</a>')
+                ->filterColumn('return_code', function ($query, $keyword) {
                     $keyword = str_replace('RTN0', '', $keyword);
-                    $query->where('id', 'LIKE', "%$keyword%");
+                    $query->where(function ($q) use ($keyword) {
+                        $q->where('return_code', 'LIKE', "%$keyword%")
+                          ->orWhere('id', 'LIKE', "%$keyword%");
+                    });
                 })  
                 ->addColumn('order_date', fn($row) => optional($row->order)->created_at?->format('d-m-Y') ?? '-') 
-                ->addColumn('order_id', fn($row) => 'ORD0' . $row->order_id)
-                ->filterColumn('order_id', function ($query, $keyword) {
+                ->addColumn('order_code', fn($row) => $row->order?->order_code ?? 'ORD0' . $row->order_id)
+                ->filterColumn('order_code', function ($query, $keyword) {
                     $keyword = str_replace('ORD0', '', $keyword);
-                    $query->where('order_id', 'LIKE', "%$keyword%");
+                    $query->whereHas('order', function ($q) use ($keyword) {
+                        $q->where('order_code', 'LIKE', "%$keyword%");
+                    })->orWhere('order_id', 'LIKE', "%$keyword%");
                 }) 
                 ->addColumn('customer_name', fn($row) => $row->customer?->user?->name ?? '-')
                 ->filterColumn('customer_name', function ($query, $keyword) {
@@ -639,7 +644,7 @@ class ShopController extends Controller
                     return '<a href="'.route('shop.returnOrder.show',$row->id).'" class="btn btn-primary btn-sm"><i class="fa fa-eye"></i></a>
                     <a href="'.$downloadUrl.'" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" data-bs-title="Download Invoice">  <i class="fa fa-download"></i> </a>';
                 })
-                ->rawColumns(['return_id', 'status_badge', 'actions'])
+                ->rawColumns(['return_code', 'status_badge', 'actions'])
                 ->toJson();
         }
 

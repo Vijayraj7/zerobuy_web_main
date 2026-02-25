@@ -48,8 +48,8 @@
                         <tr>
                             <th>#</th> 
                             <th>{{ __('Return Date') }}</th>
-                            <th>{{ __('Return ID') }}</th>
-                            <th>{{ __('Order ID') }}</th>
+                            <th>{{ __('Return Code') }}</th>
+                            <th>{{ __('Order Code') }}</th>
                             <th>{{ __('Order Date') }}</th> 
                             <th>{{ __('Customer Name') }}</th>
                             <th>{{ __('Mobile No') }}</th>
@@ -94,8 +94,8 @@
             columns: [
                 { data: 'DT_RowIndex', orderable: false, searchable: false },
                 { data: 'created_at', name: 'created_at' },          
-                { data: 'return_id', name: 'return_id' }, 
-                { data: 'order_id', name: 'order_id' }, 
+                { data: 'return_code', name: 'return_code' }, 
+                { data: 'order_code', name: 'order_code' }, 
                 { data: 'order_date', name: 'order_date' }, 
                 { data: 'customer_name', name: 'customer_name' },
                 { data: 'customer_phone', name: 'customer_phone' },

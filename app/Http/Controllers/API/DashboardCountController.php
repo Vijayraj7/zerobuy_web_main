@@ -49,6 +49,7 @@ class DashboardCountController extends Controller
                 'notification_unread_count' => 0,
                 'pending_orders_count' => 0,
                 'cart_items_count' => 0,
+                'favorites_count' => 0,
             ]);
         }
 
@@ -75,12 +76,21 @@ class DashboardCountController extends Controller
         $cartItemsCount = (int) $customer->carts()
             ->sum('quantity');
 
+        // Fetch count of favorites (wishlist) for the customer
+        $favoritesCount = 0;
+        if (method_exists($customer, 'favorites')) {
+            $favoritesCount = (int) $customer->favorites()->count();
+        } elseif (method_exists($customer, 'wishlists')) {
+            $favoritesCount = (int) $customer->wishlists()->count();
+        }
+
         return $this->json('Dashboard counts', [
             'status_shops_count' => $statusShopsCount,
             'status_items_count' => $statusItemsCount,
             'notification_unread_count' => $notificationUnreadCount,
             'pending_orders_count' => $pendingOrdersCount,
             'cart_items_count' => $cartItemsCount,
+            'favorites_count' => $favoritesCount,
         ]);
     }
 }
