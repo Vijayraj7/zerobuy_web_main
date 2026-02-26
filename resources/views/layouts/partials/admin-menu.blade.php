@@ -620,7 +620,7 @@
     <li>
         <a class="menu {{ request()->routeIs('admin.productStatus.*') ? 'active' : '' }}" data-bs-toggle="collapse" href="#StatusMenu">
             <span>
-                <img class="menu-icon" src="{{ asset('assets/icons-admin/clock.svg') }}" alt="icon" loading="lazy" />
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/box-check.svg') }}" alt="icon" loading="lazy" />
                 {{ __('Status') }}
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">

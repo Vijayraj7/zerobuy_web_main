@@ -4,8 +4,8 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\ProductStatus;
-use App\Models\Shop;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class StatusController extends Controller
 {
@@ -14,7 +14,11 @@ class StatusController extends Controller
      */
     public function index(Request $request)
     {
-        $customer = auth()->user()->customer;
+        $customer = $request->user()?->customer;
+
+        if (! $customer) {
+            return $this->json('Customer not found', [], 404);
+        }
 
         // Get IDs of followed shops
         $followedShopIds = $customer->followedShops()->pluck('shops.id');
@@ -82,11 +86,25 @@ class StatusController extends Controller
      */
     public function incrementView(Request $request, $statusId)
     {
+        $customer = $request->user()?->customer;
+        if (! $customer) {
+            return $this->json('Customer not found', [], 404);
+        }
+
         $productStatus = ProductStatus::findOrFail($statusId);
-        $productStatus->increment('views');
+
+        $cacheKey = 'status_viewed_customer_' . $customer->id . '_status_' . $productStatus->id;
+        $isFirstView = ! Cache::has($cacheKey);
+
+        if ($isFirstView) {
+            Cache::forever($cacheKey, true);
+            $productStatus->increment('views');
+            $productStatus->refresh();
+        }
 
         return $this->json('View count updated', [
             'views' => $productStatus->views,
+            'is_first_view' => $isFirstView,
         ]);
     }
 }

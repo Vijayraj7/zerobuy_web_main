@@ -27,12 +27,12 @@
             <tbody>
                 @foreach($statuses as $status)
                 <tr>
-                    <td><img src="{{ $status->product->thumbnail }}" width="40" class="rounded"> {{ $status->product->name }} </td>
+                    <td><img src="{{ $status->product->thumbnail }}" width="40" class="rounded"> {{ \Illuminate\Support\Str::limit($status->product->name, 40) }} </td>
                     <td>
                         <img src="{{ $status->shop?->logo ?? asset('default/default.jpg') }}" width="40" height="40" class="rounded" alt="shop">
                     </td>
                     <td>STR0{{ $status->shop?->shop_code ?? $status->shop?->id ?? '-' }}</td>
-                    <td>{{ $status->shop?->name ?? '-' }}</td>
+                    <td>{{ $status->shop?->name ? \Illuminate\Support\Str::limit($status->shop->name, 40) : '-' }}</td>
                     <td>{{ optional($status->started_at)->format('d-m-Y | h:i A') }}</td>
                     <td>{{ optional($status->expired_at)->format('d-m-Y | h:i A') }}</td>
                     <td>{{ $status->message }}</td>
