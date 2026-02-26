@@ -427,11 +427,20 @@ class SubscriptionController extends Controller
 
         $saleLimit = $subscription->sale_limit;
         $remainingSales = $subscription->sale_limit;
+        $extraDays = 0;
 
         if ($currentSubscription) {
-            if ($saleLimit && $currentSubscription->remaining_sales) {
-                $saleLimit = $saleLimit + $currentSubscription->remaining_sales;
-                $remainingSales = $saleLimit;
+            // Carry over remaining sales
+            if ($currentSubscription->remaining_sales) {
+                if ($saleLimit !== null) {
+                    $saleLimit = $saleLimit + $currentSubscription->remaining_sales;
+                }
+                $remainingSales = ($remainingSales ?? 0) + $currentSubscription->remaining_sales;
+            }
+
+            // Carry over remaining days from current subscription
+            if ($currentSubscription->ends_at && $currentSubscription->ends_at->gt(now())) {
+                $extraDays = (int) now()->diffInDays($currentSubscription->ends_at);
             }
 
             $currentSubscription->update([
@@ -439,10 +448,13 @@ class SubscriptionController extends Controller
             ]);
         }
 
+        // Calculate total duration: new plan days + remaining days from old plan
+        $totalDays = $subscription->duration ? (int) $subscription->duration + $extraDays : null;
+
         // Activate the new subscription
         $subscription->update([
             'starts_at' => now(),
-            'ends_at' => $subscription->duration ? now()->addDays((int) $subscription->duration) : null,
+            'ends_at' => $totalDays ? now()->addDays($totalDays) : null,
             'sale_limit' => $saleLimit,
             'remaining_sales' => $remainingSales,
             'status' => SubscriptionStatus::ACTIVE,
@@ -486,11 +498,20 @@ class SubscriptionController extends Controller
 
         $saleLimit = $subscription->sale_limit;
         $remainingSales = $subscription->sale_limit;
+        $extraDays = 0;
 
         if ($currentSubscription) {
-            if ($saleLimit && $currentSubscription->remaining_sales) {
-                $saleLimit = $saleLimit + $currentSubscription->remaining_sales;
-                $remainingSales = $saleLimit + $currentSubscription->remaining_sales;
+            // Carry over remaining sales
+            if ($currentSubscription->remaining_sales) {
+                if ($saleLimit !== null) {
+                    $saleLimit = $saleLimit + $currentSubscription->remaining_sales;
+                }
+                $remainingSales = ($remainingSales ?? 0) + $currentSubscription->remaining_sales;
+            }
+
+            // Carry over remaining days from current subscription
+            if ($currentSubscription->ends_at && $currentSubscription->ends_at->gt(now())) {
+                $extraDays = (int) now()->diffInDays($currentSubscription->ends_at);
             }
 
             $currentSubscription->update([
@@ -498,9 +519,12 @@ class SubscriptionController extends Controller
             ]);
         }
 
+        // Calculate total duration: new plan days + remaining days from old plan
+        $totalDays = $subscription->duration ? (int) $subscription->duration + $extraDays : null;
+
         $subscription->update([
             'starts_at' => now(),
-            'ends_at' => $subscription->duration ? now()->addDays((int) $subscription->duration) : null,
+            'ends_at' => $totalDays ? now()->addDays($totalDays) : null,
             'sale_limit' => $saleLimit,
             'remaining_sales' => $remainingSales,
             'status' => SubscriptionStatus::ACTIVE,
