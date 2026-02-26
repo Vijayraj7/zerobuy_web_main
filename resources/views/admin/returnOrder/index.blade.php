@@ -44,7 +44,6 @@
             <div class="table-responsive mt-3"> 
                 <style>
                     /* Color the Reason column text red (now 12th column) */
-                    #reurnOrderTable th:nth-child(12),
                     #reurnOrderTable td:nth-child(12) {
                         color: #e74c3c !important;
                     }
