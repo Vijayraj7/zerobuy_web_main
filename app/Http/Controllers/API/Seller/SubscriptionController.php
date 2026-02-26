@@ -532,6 +532,7 @@ class SubscriptionController extends Controller
         ]);
 
         return $this->json('Subscription created', [
+            'message' => 'Subscription created successfully',
             'subscription' => $result,
         ]);
     }
