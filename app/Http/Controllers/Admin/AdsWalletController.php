@@ -35,14 +35,18 @@ class AdsWalletController extends Controller
             return DataTables::eloquent($wallets)
                 ->addIndexColumn()
 
-                ->addColumn('create_date', function ($w) {
-                    return optional($w->created_at)->format('d-m-Y | h:i A') ?? '—';
-                })
-
                 ->addColumn(
                     'store_id',
                     fn($w) =>
-                    $w->shop ? 'STR0' . $w->shop->id : '—'
+                    $w->shop ? $w->shop->shop_code : '—'
+                )
+
+                ->addColumn(
+                    'shop_thumbnail',
+                    fn($w) =>
+                    $w->shop?->logo
+                        ? '<img src="' . asset($w->shop->logo) . '" width="40" height="40" style="object-fit:cover;border-radius:6px;">'
+                        : '—'
                 )
 
                 ->addColumn(
@@ -98,7 +102,7 @@ class AdsWalletController extends Controller
                     </button>
                 ')
 
-                ->rawColumns(['status', 'actions'])
+                ->rawColumns(['shop_thumbnail', 'status', 'actions'])
                 ->make(true);
         }
 

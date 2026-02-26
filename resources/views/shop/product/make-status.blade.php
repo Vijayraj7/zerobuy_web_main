@@ -17,8 +17,9 @@
                 <tr>
                     <th>Product</th>
                     <th>Start</th>
-                    <th>Expire</th>
+                    <th>End</th>
                     <th>Message</th>
+                    <th>Total Views</th>
                     <th>Status</th>
                     <th>Action</th>
                 </tr>
@@ -35,6 +36,7 @@
                     <td>{{ optional($status->expired_at)->format('d-m-Y | h:i A') }}</td>
 
                     <td>{{ $status->message }}</td>
+                    <td>{{ $status->views ?? 0 }}</td>
 
                     <td>
                         @if($status->is_active)
@@ -100,7 +102,7 @@
 
                                 </td>
                                 <td>
-                                    {{ $product->formatted_id }} - {{ $product->name }}
+                                    {{ $product->product_code }} - {{ $product->name }}
                                 </td>
                             </tr>
                             @endforeach

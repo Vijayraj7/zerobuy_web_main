@@ -42,8 +42,8 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Create Date</th>
                             <th>Store ID</th>
+                            <th>Shop Thumbnail</th>
                             <th>Store Name</th>
                             <th>State</th>
                             <th>Total Products</th>
@@ -120,8 +120,8 @@ $(function () {
         },
         columns: [
             { data: 'DT_RowIndex', orderable:false, searchable:false },
-            { data: 'create_date', orderable:true },
             { data: 'store_id', orderable:false },
+            { data: 'shop_thumbnail', orderable:false, searchable:false },
             { data: 'store_name', orderable:false },
             { data: 'state', orderable:false },
             { data: 'total_products', orderable:false },

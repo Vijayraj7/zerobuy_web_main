@@ -3,6 +3,17 @@
 @section('header-title', __('Advertisements'))
 
 @section('content')
+@php
+    $isAdminView = request()->routeIs('admin.*');
+    $adsIndexRoute = $isAdminView
+        ? route('admin.advertisement.shop.ads', ['shop_id' => $shop->id])
+        : route('shop.advertisement.index');
+    $productsRoute = $isAdminView ? route('admin.advertisement.products') : route('shop.advertisement.products');
+    $storeRoute = $isAdminView ? route('admin.advertisement.store') : route('shop.advertisement.store');
+    $transactionsRoute = $isAdminView ? route('admin.advertisement.transactions') : route('shop.advertisement.transactions');
+    $walletCreateRoute = route('shop.advertisement.wallet.create-order');
+    $walletVerifyRoute = route('shop.advertisement.wallet.verify-payment');
+@endphp
 
 <div class="app-page-title">
     <div class="page-title-wrapper d-flex justify-content-between align-items-center">
@@ -15,13 +26,17 @@
                 <i class="fas fa-wallet"></i>
                 ₹{{ number_format($wallet?->balance ?? 0, 2) }}
             </a>
+            @if (!$isAdminView)
             <button class="btn py-2 btn-success" data-bs-toggle="modal" data-bs-target="#addMoneyModal">
                 <i class="fa fa-money">&#xf0d6;</i> {{__('Add Money')}}
             </button> 
-            <a href="{{ route('shop.advertisement.transactions') }}" class="btn btn-warning">
+            @endif
+            @if (!$isAdminView)
+            <a href="{{ $transactionsRoute }}" class="btn btn-warning">
                 <i class="fa fa-exchange"></i> {{ __('Transaction History') }}
             </a>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#advertisementModal"> {{ __('Run Ads') }} </button>
+            @endif
         </div>
     </div>
 </div>
@@ -29,7 +44,7 @@
 <div class="container-fluid mt-3">
     <div class="card">
         <div class="card-body">
-            <h4 class="m-0 mt-4">{{ __('My Advertisements') }}</h4> 
+            <h4 class="m-0 mt-4">{{ $isAdminView ? __('Shop Advertisements') : __('My Advertisements') }}</h4> 
             <div class="d-flex flex-wrap align-items-center gap-3 mt-3 px-2">
                 <!-- Date Filters -->
                 <div class="d-flex align-items-center gap-2">
@@ -56,8 +71,8 @@
                         <th>End Date</th>
                         <th>Ads Type</th>
                         <th>Image</th>
-                        <th>Product ID</th>
-                        <th>Product Name</th>
+                        <th>Product/Store ID</th>
+                        <th>Product/Store Name</th>
                         <th>Daily Budget</th>
                         <th>Total Budget</th>
                         <th>Total Views</th>
@@ -73,6 +88,7 @@
     </div>
 </div>
 
+@if (!$isAdminView)
 <!-- ADD MONEY MODAL -->
 <div class="modal fade" id="addMoneyModal">
     <div class="modal-dialog">
@@ -148,7 +164,7 @@
                         <table class="table table-bordered datatableCustomCSS">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th>Code</th>
                                     <th>Name</th>
                                     <th>Image</th>
                                     <th>Select</th>
@@ -167,6 +183,7 @@
         </form>
     </div>
 </div>
+@endif
 @endsection
 
 @push('scripts')
@@ -178,15 +195,30 @@ $(function () {
     let table = $('#advertisementTable').DataTable({
         processing: true,
         serverSide: true,
-        ajax: "{{ route('shop.advertisement.index') }}",
+        ajax: "{{ $adsIndexRoute }}",
         columns: [
             { data: 'DT_RowIndex', orderable:false },
             { data: 'start_date' },
             { data: 'end_date' },
             { data: 'ads_type' },
             { data: 'product_image', orderable:false },
-            { data: 'product_id' },
-            { data: 'product_name' },
+            {
+                data: 'product_code',
+                render: function (data, type, row) {
+                    if (data) return data;
+                    if (row.ads_type === 'store') return `{{ $shop->shop_code ?? $shop->id ?? '' }}`;
+                    if (row.product_id) return `PRD0${row.product_id}`;
+                    return 'N/A';
+                }
+            },
+            {
+                data: 'product_name',
+                render: function (data) {
+                    const name = (data || 'N/A').toString();
+                    if (name.length <= 40) return name;
+                    return `<span title="${name.replace(/"/g, '&quot;')}">${name.substring(0, 40)}...</span>`;
+                }
+            },
             { data: 'daily_budget' },
             { data: 'total_budget' },
             { data: 'total_views' },
@@ -225,13 +257,15 @@ $(function () {
 
     // LOAD PRODUCTS
     function loadProducts(q = ''){
-        $.get("{{ route('shop.advertisement.products') }}",{q},function(res){
+        $.get("{{ $productsRoute }}",{q},function(res){
             let html='';
             res.forEach(p=>{
+                const productName = (p.name || '').toString();
+                const shortName = productName.length > 40 ? `${productName.substring(0, 40)}...` : productName;
                 html+=`
                 <tr>
-                    <td>${p.id}</td>
-                    <td>${p.name}</td>
+                    <td>${p.product_code ?? ('PRD0' + p.id)}</td>
+                    <td><span title="${productName.replace(/"/g, '&quot;')}">${shortName}</span></td>
                     <td><img src="${p.image}" width="40"></td>
                     <td>
                         <input type="radio" name="product"
@@ -269,7 +303,7 @@ $(function () {
         $('#submitBtn').prop('disabled',true);
         $('#formError').addClass('d-none');
 
-        $.post("{{ route('shop.advertisement.store') }}",
+        $.post("{{ $storeRoute }}",
             $(this).serialize()
         )
         .done(res=>{
@@ -300,7 +334,7 @@ $(function () {
         $('#addMoneyError').addClass('d-none');
 
         // Create Razorpay Order
-        $.post("{{ route('shop.advertisement.wallet.create-order') }}", {
+        $.post("{{ $walletCreateRoute }}", {
             _token: "{{ csrf_token() }}",
             amount: amount
         })
@@ -328,7 +362,7 @@ $(function () {
                     }
                     
                     // Verify Payment
-                    $.post("{{ route('shop.advertisement.wallet.verify-payment') }}", {
+                    $.post("{{ $walletVerifyRoute }}", {
                         _token: "{{ csrf_token() }}",
                         razorpay_payment_id: response.razorpay_payment_id,
                         razorpay_order_id: response.razorpay_order_id,

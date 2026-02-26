@@ -37,26 +37,30 @@ class AdvertismentController extends Controller
             ->update(['status' => 'completed']);
 
         if ($request->ajax()) {
-            $ads = Advertisement::with('product')
-                ->where('shop_id', $shop->id);
+            $ads = Advertisement::with(['product', 'shop'])
+                ->where('shop_id', $shop->id)
+                ->latest('id');
 
             return DataTables::of($ads)
                 ->addIndexColumn()
-                ->editColumn('start_date', fn($r) => $r->start_date->format('d-m-Y'))
-                ->editColumn('end_date', fn($r) => $r->end_date->format('d-m-Y'))
+                ->editColumn('start_date', fn($r) => $r->start_date?->format('d-m-Y | h:i A'))
+                ->editColumn('end_date', fn($r) => $r->end_date?->format('d-m-Y | h:i A'))
+                ->editColumn('ads_type', fn($r) => ucfirst((string) $r->ads_type))
                 ->addColumn(
                     'product_image',
                     fn($r) =>
-                    $r->product
-                        ? '<img src="' . asset($r->product->thumbnail) . '" width="40">'
-                        : 'N/A'
+                    ($r->ads_type === 'store')
+                        ? '<img src="' . ($r->shop?->logo ?? $shop->logo ?? asset('default/default.jpg')) . '" width="40">'
+                        : ($r->product
+                            ? '<img src="' . asset($r->product->thumbnail) . '" width="40">'
+                            : 'N/A')
                 )
-                ->addColumn(
-                    'product_id',
-                    fn($r) =>
-                    $r->product_id ? 'PRD0' . $r->product_id : 'N/A'
-                )
-                ->addColumn('product_name', fn($r) => $r->product?->name ?? 'N/A')
+                ->addColumn('product_code', fn($r) => $r->ads_type === 'store'
+                    ? ($shop->shop_code ?? $shop->id)
+                    : ($r->product?->product_code ?? ($r->product_id ? ('PRD0' . $r->product_id) : 'N/A')))
+                ->addColumn('product_name', fn($r) => $r->ads_type === 'store'
+                    ? ($r->shop?->name ?? $shop->name ?? 'N/A')
+                    : ($r->product?->name ?? 'N/A'))
                 ->editColumn('daily_budget', fn($r) => '₹' . $r->daily_budget)
                 ->editColumn('total_budget', fn($r) => '₹' . $r->total_budget)
                 ->addColumn('status', function ($r) {
@@ -85,7 +89,7 @@ class AdvertismentController extends Controller
                 ->make(true);
         }
 
-        return view('shop.advertisement.index', compact('wallet', 'setting'));
+        return view('shop.advertisement.index', compact('wallet', 'setting', 'shop'));
     }
 
     public function store(Request $request)
@@ -180,9 +184,11 @@ class AdvertismentController extends Controller
                 $q->where('name', 'like', "%{$request->q}%")
                     ->orWhere('id', 'like', "%{$request->q}%")
             )
+            ->latest('id')
             ->get()
             ->map(fn($p) => [
                 'id' => $p->id,
+                'product_code' => $p->product_code ?? ('PRD0' . $p->id),
                 'name' => $p->name,
                 'image' => asset($p->thumbnail),
             ]);

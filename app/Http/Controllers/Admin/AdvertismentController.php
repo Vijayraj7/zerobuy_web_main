@@ -227,24 +227,27 @@ class AdvertismentController extends Controller
         // dd($ads);
         if ($request->ajax()) {
             $today = Carbon::today();
-            $ads = Advertisement::query()
-                ->with(['shop.products', 'shop.orders', 'shop.subscriptions', 'shop.adwallet',])
-                ->where('status', 'active');
-            // ->where('ads_type', 'store');
-            // ->whereDate('start_date', '<=', $today)
-            // ->whereDate('end_date', '>=', $today);
+            $filteredAds = Advertisement::query()->where('status', 'active');
 
             if ($request->filled('start_date')) {
-                $ads->whereDate('advertisements.created_at', '>=', $request->start_date);
+                $filteredAds->whereDate('advertisements.created_at', '>=', $request->start_date);
             }
 
             if ($request->filled('end_date')) {
-                $ads->whereDate('advertisements.created_at', '<=', $request->end_date);
+                $filteredAds->whereDate('advertisements.created_at', '<=', $request->end_date);
             }
 
             if ($request->filled('status_filter') && in_array($request->status_filter, ['active', 'scheduled', 'completed'])) {
-                $ads->byStatusName($request->status_filter);
+                $filteredAds->byStatusName($request->status_filter);
             }
+
+            $latestAdIdsPerShop = (clone $filteredAds)
+                ->selectRaw('MAX(advertisements.id) as id')
+                ->groupBy('shop_id');
+
+            $ads = Advertisement::query()
+                ->with(['shop.products', 'shop.orders', 'shop.subscriptions', 'shop.adwallet',])
+                ->whereIn('advertisements.id', $latestAdIdsPerShop);
 
             return DataTables::eloquent($ads)
                 ->addIndexColumn()
@@ -255,9 +258,9 @@ class AdvertismentController extends Controller
                     $r->created_at->format('d-m-Y | h:i A')
                 )
                 ->addColumn(
-                    'store_id',
+                    'store_code',
                     fn($r) =>
-                    'STR0' . $r->shop_id
+                    'STR0' . ($r->shop->shop_code ?? $r->shop_id)
                 )
                 ->addColumn(
                     'store_name',
@@ -293,7 +296,7 @@ class AdvertismentController extends Controller
                 ->addColumn(
                     'wallet_amount',
                     fn($r) =>
-                    '₹ ' . ($r->shop->wallet->balance ?? 0)
+                    '₹ ' . ($r->shop->adWallet->balance ?? 0)
                 )
                 ->addColumn(
                     'status',
@@ -318,9 +321,11 @@ class AdvertismentController extends Controller
                 )
 
                 /* ---------- SEARCHING ---------- */
-                ->filterColumn('store_id', function ($q, $k) {
+                ->filterColumn('store_code', function ($q, $k) {
                     $k = str_replace('STR0', '', $k);
-                    $q->where('advertisements.shop_id', 'like', "%{$k}%");
+                    $q->whereHas('shop', function ($s) use ($k) {
+                        $s->where('shop_code', 'like', "%{$k}%");
+                    });
                 })
 
                 ->filterColumn(
@@ -343,9 +348,11 @@ class AdvertismentController extends Controller
                 )
                 /* ---------- SORTING ---------- */
                 ->orderColumn(
-                    'store_id',
+                    'store_code',
                     fn($q, $k) =>
-                    $q->orderBy('advertisements.shop_id', $k)
+                    $q->join('shops', 'shops.id', '=', 'advertisements.shop_id')
+                        ->orderBy('shops.shop_code', $k)
+                        ->select('advertisements.*')
                 )
                 ->orderColumn(
                     'store_name',
@@ -374,7 +381,9 @@ class AdvertismentController extends Controller
 
         if ($request->ajax()) {
 
-            $ads = Advertisement::with('product')->where('shop_id', $shop_id);
+            $ads = Advertisement::with(['product', 'shop'])
+                ->where('shop_id', $shop_id)
+                ->latest('id');
 
             if ($request->filled('start_date')) {
                 $ads->whereDate('start_date', '>=', $request->start_date);
@@ -390,63 +399,40 @@ class AdvertismentController extends Controller
                 ->editColumn(
                     'start_date',
                     fn($r) =>
-                    Carbon::parse($r->start_date)->format('d-m-Y')
+                    Carbon::parse($r->start_date)->format('d-m-Y | h:i A')
                 )
 
                 ->editColumn(
                     'end_date',
                     fn($r) =>
-                    Carbon::parse($r->end_date)->format('d-m-Y')
+                    Carbon::parse($r->end_date)->format('d-m-Y | h:i A')
                 )
-
-                ->addColumn(
-                    'ads_id',
-                    fn($r) =>
-                    'ADS0' . $r->id
-                )
-                ->filterColumn('ads_id', function ($q, $k) {
-                    $k = str_replace('ADS0', '', $k);
-                    $q->where('id', 'like', "%{$k}%");
-                })
-                ->orderColumn(
-                    'ads_id',
-                    fn($q, $o) =>
-                    $q->orderBy('id', $o)
-                )
+                ->editColumn('ads_type', fn($r) => ucfirst((string) $r->ads_type))
                 ->addColumn(
                     'product_image',
                     fn($r) =>
-                    $r->product
-                        ? '<img src="' . asset($r->product->thumbnail) . '" width="40">'
-                        : 'N/A'
+                    ($r->ads_type === 'store')
+                        ? '<img src="' . ($r->shop?->logo ?? $shop->logo ?? asset('default/default.jpg')) . '" width="40">'
+                        : ($r->product
+                            ? '<img src="' . asset($r->product->thumbnail) . '" width="40">'
+                            : 'N/A')
                 )
                 ->addColumn(
-                    'product_id',
+                    'product_code',
                     fn($r) =>
-                    $r->product_id ? 'PRD0' . $r->product_id : 'N/A'
+                    $r->ads_type === 'store'
+                        ? ($shop->shop_code ?? $shop->id)
+                        : ($r->product?->product_code ?? ($r->product_id ? ('PRD0' . $r->product_id) : 'N/A'))
                 )
-                ->filterColumn('product_id', function ($q, $k) {
-                    $k = str_replace('PRD0', '', $k);
-                    $q->where('product_id', 'like', "%{$k}%");
-                })
                 ->addColumn(
                     'product_name',
                     fn($r) =>
-                    $r->product?->name ?? 'N/A'
+                    $r->ads_type === 'store'
+                        ? ($r->shop?->name ?? $shop->name ?? 'N/A')
+                        : ($r->product?->name ?? 'N/A')
                 )
-                ->filterColumn('product_name', function ($q, $k) {
-                    $q->whereHas(
-                        'product',
-                        fn($p) =>
-                        $p->where('name', 'like', "%{$k}%")
-                    );
-                })
-                ->orderColumn(
-                    'product_name',
-                    fn($q, $o) =>
-                    $q->join('products', 'products.id', '=', 'advertisements.product_id')
-                        ->orderBy('products.name', $o)
-                )
+
+                ->addColumn('total_views', fn($r) => (int) ($r->total_views ?? 0))
 
                 ->editColumn(
                     'daily_budget',
@@ -478,30 +464,11 @@ class AdvertismentController extends Controller
 
                     return '<span class="badge bg-secondary">Completed</span>';
                 })
-                ->addColumn('actions', function ($r) {
-                    if ($r->status === 'completed') {
-                        return '
-                            <button class="btn btn-sm btn-secondary" disabled title="Completed ads cannot be deleted">
-                                <i class="fa fa-lock"></i>
-                            </button>
-                        ';
-                    }
-
-                    return '
-                        <button
-                            class="btn btn-sm btn-danger delete-ad"
-                            data-id="' . $r->id . '">
-                            <i class="fa fa-trash"></i>
-                        </button>
-                    ';
-                })
-
-
-                ->rawColumns(['product_image', 'status', 'actions'])
+                ->rawColumns(['product_image', 'status'])
                 ->make(true);
         }
 
-        return view('admin.advertisement.shop-ads-view', compact('wallet', 'setting', 'shop'));
+        return view('shop.advertisement.index', compact('wallet', 'setting', 'shop'));
     }
 
     public function destroy($id)

@@ -55,8 +55,7 @@
                     <thead>
                     <tr>
                         <th>#</th>
-                        <th>Create Date</th>
-                        <th>Store ID</th>
+                        <th>Store Code</th>
                         <th>Store Name</th>
                         <th>State</th>
                         <th>Total Products</th>
@@ -100,8 +99,7 @@
             },
             columns: [
                 { data: 'DT_RowIndex', orderable: false, searchable: false },
-                { data: 'create_date', name: 'created_at' },
-                { data: 'store_id', name: 'store_id' },
+                { data: 'store_code', name: 'store_code' },
                 { data: 'store_name', name: 'store_name' },
                 { data: 'state', name: 'state' },
                 { data: 'total_products', searchable: false },
