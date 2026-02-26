@@ -103,8 +103,14 @@
         </div>
         <div class="col-lg-4 mt-3">
             @php
-                $deliveryStateNames = $shop->states()
-                    ->whereIn('id', $shop->deliverySetting?->selected_state_ids ?? [])
+                $selectedDeliveryStateIds = collect($shop->deliverySetting?->selected_state_ids ?? [])
+                    ->map(fn ($id) => (int) $id)
+                    ->filter()
+                    ->values()
+                    ->all();
+
+                $deliveryStateNames = \App\Models\State::query()
+                    ->whereIn('id', $selectedDeliveryStateIds)
                     ->pluck('name')
                     ->toArray();
             @endphp
