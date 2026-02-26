@@ -33,18 +33,27 @@ class CertificateController extends Controller
                 ->addColumn('create_date', fn($row) =>
                     $row->created_at->format('d M Y')
                 ) 
+
+                ->addColumn('shop_thumbnail', function ($row) {
+                    $src = $row->shop?->logo ?? asset('default/default.jpg');
+                    return '<img src="' . $src . '" alt="shop" width="40" height="40" class="rounded" loading="lazy">';
+                })
                 
-                ->addColumn('store_id', function ($row) {
-                    return 'STR0' . $row->shop_id;
+                ->addColumn('store_code', function ($row) {
+                    return 'STR0' . ($row->shop?->shop_code ?? $row->shop_id);
                 })
 
-                ->filterColumn('store_id', function ($query, $keyword) {
+                ->filterColumn('store_code', function ($query, $keyword) {
                     $keyword = str_replace('STR0', '', $keyword);
-                    $query->where('certificates.shop_id', 'LIKE', "%{$keyword}%");
+                    $query->whereHas('shop', function ($q) use ($keyword) {
+                        $q->where('shop_code', 'LIKE', "%{$keyword}%");
+                    });
                 })
 
-                ->orderColumn('store_id', function ($query, $order) {
-                    $query->orderBy('certificates.shop_id', $order);
+                ->orderColumn('store_code', function ($query, $order) {
+                    $query->leftJoin('shops', 'shops.id', '=', 'certificates.shop_id')
+                        ->orderBy('shops.shop_code', $order)
+                        ->select('certificates.*');
                 })
 
                 ->addColumn('store_name', fn($row) => $row->shop->name)
@@ -96,7 +105,7 @@ class CertificateController extends Controller
                         </button>';
                 })
 
-                ->rawColumns(['certificate_image', 'status', 'store_id', 'actions'])
+                ->rawColumns(['shop_thumbnail', 'certificate_image', 'status', 'store_code', 'actions'])
                 ->make(true);
         }
 

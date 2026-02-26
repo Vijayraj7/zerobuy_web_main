@@ -50,6 +50,7 @@
                         <tr> 
                             <th>#</th>
                             <th>{{ __('Create Date') }}</th>
+                            <th>{{ __('Thumbnail') }}</th>
                             <th>{{ __('Store ID') }}</th> 
                             <th>{{ __('Store Name') }}</th>  
                             <th>{{ __('State') }}</th>
@@ -141,7 +142,8 @@
                 columns: [
                     { data: 'DT_RowIndex', orderable: false, searchable: false },
                     { data: 'create_date', name: 'start_date', orderable: false, searchable: false },
-                    { data: 'store_id', name: 'store_id' },                 
+                    { data: 'shop_thumbnail', orderable: false, searchable: false },
+                    { data: 'store_code', name: 'store_code' },                 
                     { data: 'store_name', name: 'store_name' }, 
                     { data: 'state', name: 'state' }, 
                     { data: 'total_products', name: 'total_products' },
