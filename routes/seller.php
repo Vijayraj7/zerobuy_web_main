@@ -23,6 +23,11 @@ use App\Http\Controllers\API\Seller\StatusController as SellerStatusController;
 use App\Http\Controllers\API\Seller\AnalyticsController as SellerAnalyticsController;
 
 // ==========Route for seller==========
+
+// Subscription Razorpay Webhook (no auth required)
+Route::post('/seller/subscription/webhook/razorpay', [SubscriptionController::class, 'webhookHandler'])
+    ->name('seller.subscription.webhook.razorpay');
+
 Route::prefix('/seller')->group(function () {
 
     // auth route
@@ -150,6 +155,9 @@ Route::prefix('/seller')->group(function () {
             Route::get('/subscription', 'index');
             Route::get('/subscription/purchase', 'purchase');
             Route::post('/subscription/purchase', 'purchase');
+            Route::post('/subscription/create-order', 'createOrder');
+            Route::post('/subscription/verify-payment', 'verifyPayment');
+            Route::get('/subscription/process-pending/{orderId}', 'processPendingPayment');
         });
 
 
