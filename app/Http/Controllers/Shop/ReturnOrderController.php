@@ -51,7 +51,7 @@ class ReturnOrderController extends Controller
                 'thumbnail' => $thumbnail,
                 'return_date' => $order->created_at?->format('d M Y, h:i A') ?? '-',
                 'order_id' => ($order->order?->prefix ?? '') . ($order->order?->order_code ?? ''),
-                'return_id' => 'RTN0' . $order->id,
+                'return_code' => $order->return_code ?: ('RTN0' . $order->id),
                 'order_date' => $order->order?->created_at?->format('d M Y, h:i A') ?? '-',
                 'customer_name' => $order->customer?->user?->name ?? '-',
                 'mobile_no' => $order->customer?->user?->phone ?? '-',

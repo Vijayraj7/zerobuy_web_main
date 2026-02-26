@@ -79,7 +79,7 @@
                     }
                 },
                 { data: 'order_id' },
-                { data: 'return_id' },
+                { data: 'return_code' },
                 {
                     data: 'order_date',
                     render: function (data) {
