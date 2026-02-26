@@ -179,9 +179,7 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
-        $shop = generaleSetting('shop');
-        $rootShop = generaleSetting('shop');
-        $rshop = generaleSetting('rootShop');
+        $rootShop = $product->shop;
 
         // get brands, colors, units, sizes and categories
         $brands = $rootShop?->brands()->isActive()->get();

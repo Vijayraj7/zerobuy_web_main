@@ -95,7 +95,15 @@
                 { data: 'quantity' },
                 { data: 'amount' },
                 { data: 'total_amount' },
-                { data: 'reason' },
+                {
+                    data: 'reason',
+                    render: function (data, type, row) {
+                        if (type === 'display' && data) {
+                            return `<span class="text-danger">${data}</span>`;
+                        }
+                        return data ?? '';
+                    }
+                },
                 {
                     data: 'status',
                     render: function (data, type, row) {

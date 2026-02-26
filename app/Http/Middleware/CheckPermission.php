@@ -24,7 +24,11 @@ class CheckPermission
             return $next($request);
         }
 
-        if ($request->is('shop/*', 'shop') && $user->hasRole('shop')) {
+        if ($request->is('shop/*', 'shop') && $request->session()->has('admin_impersonator_id')) {
+            return $next($request);
+        }
+
+        if ($request->is('shop/*', 'shop') && ($user->hasRole('shop') || $user?->shop || $user?->myShop)) {
             return $next($request);
         }
 
@@ -75,6 +79,10 @@ class CheckPermission
         $allPermissions = array_diff($allPermissions, $userNonPermissions);
 
         $requestName = $request->route()->getName();
+
+        if ($requestName === 'admin.shop.loginAs') {
+            $requestName = 'admin.shop.show';
+        }
 
         if (! in_array($requestName, $allPermissions)) {
             if (str_ends_with($requestName, '.store')) {

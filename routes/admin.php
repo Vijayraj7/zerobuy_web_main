@@ -174,6 +174,7 @@ Route::name('admin.')->group(function () {
             Route::get('/vendors/{shop}/return', 'returnOrders')->name('shop.return'); 
             Route::get('/vendors/{shop}/address', 'address')->name('shop.address');
             Route::get('/vendors/{shop}/followers', 'followers')->name('shop.followers');
+            Route::post('/vendors/{shop}/login-as', 'loginAs')->name('shop.loginAs');
             
             Route::get('/vendors/{shop}/status-toggle', 'statusToggle')->name('shop.status.toggle');
             Route::get('/vendors/{shop}/branded-toggle', 'brandedToggle')->name('shop.branded.toggle');

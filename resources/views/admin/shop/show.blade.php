@@ -81,6 +81,16 @@
                                                 <i class="fa fa-eye"></i>
                                                 </a>  
                                             @endhasPermission
+
+                                            @hasPermission('admin.shop.show')
+                                                <form action="{{ route('admin.shop.show', $shop->id) }}/login-as" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-outline-success btn-sm" data-bs-toggle-tooltip="tooltip" data-bs-placement="top" data-bs-title="Login as Shop">
+                                                        <i class="fa fa-sign-in-alt"></i>
+                                                        Login as Shop
+                                                    </button>
+                                                </form>
+                                            @endhasPermission
                                         </div>
                                     </div>
                                 </div> 

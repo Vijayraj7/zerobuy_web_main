@@ -25,6 +25,7 @@ use App\Models\ProductVariant;
 use App\Models\ShopFollower;
 use Carbon\Carbon;
 use DataTables;
+use Illuminate\Support\Facades\Auth;
 
 class ShopController extends Controller
 { 
@@ -350,6 +351,38 @@ class ShopController extends Controller
 
         return view('admin.shop.show', compact('totalSales', 'shop', 'orderOverview', 'subscription', 'daysLeft', 'totalDays', 'chartData', 'deliverySetting'));
     }  
+
+    public function loginAs(Shop $shop, Request $request)
+    {
+        $adminUser = $request->user();
+
+        if (! $adminUser || (! $adminUser->hasRole('root') && ! $adminUser->can('admin.shop.show'))) {
+            abort(403);
+        }
+
+        $shopUser = $shop->user;
+
+        if (! $shopUser) {
+            return back()->with('error', 'Shop account user not found.');
+        }
+
+        if (! $shopUser->is_active) {
+            return back()->with('error', 'Shop account is inactive.');
+        }
+
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        Auth::loginUsingId($shopUser->id);
+        $request->session()->regenerate();
+
+        $request->session()->put('admin_impersonator_id', $adminUser->id);
+        $request->session()->put('admin_impersonated_shop_id', $shop->id);
+        $request->session()->put('admin_impersonated_at', now()->toDateTimeString());
+
+        return to_route('shop.dashboard.index')->withSuccess('Logged in to seller account successfully.');
+    }
 
     public function edit(Shop $shop)
     { 
