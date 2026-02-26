@@ -110,8 +110,8 @@
                                 </div>
 
                                 <div class="mt-2">
-                                    <span class="fw-medium">{{ __('Shop ID') }} : <b>STR0{{ $shop->id }}</b></span> | 
-                                    <span class="fw-medium">{{ __('GST No.') }} : <b>{{ $shop->gst_number ?? 'No' }}</b></span>
+                                    <span class="fw-medium">{{ __('Shop ID') }} : <b>STR0{{ $shop->shop_code }}</b></span> | 
+                                    <span class="fw-medium">{{ __('GST Number') }} : <b>{{ $shop->gst_number ?? 'Not Available' }}</b></span>
                                     <span></span>
                                 </div> 
 
@@ -352,17 +352,17 @@
 
                                             <h6 class="fw-bold mb-0">Sales & Order Summary</h6>
 
-                                            <div class="d-flex gap-1">
-                                                <span class="btn btn-primary btn-sm">Sales</span>
-                                                <span class="btn btn-success btn-sm">Order</span>
-                                                <span class="btn btn-danger btn-sm">Return</span>
+                                            <div class="d-flex gap-1" id="seriesFilterButtons">
+                                                <button type="button" class="btn btn-primary btn-sm active" data-series="sales">Sales</button>
+                                                <button type="button" class="btn btn-success btn-sm active" data-series="orders">Order</button>
+                                                <button type="button" class="btn btn-danger btn-sm active" data-series="returns">Return</button>
                                             </div>
 
-                                            <div class="btn-group p-3">
-                                                <button class="btn btn-outline-secondary btn-sm">Today</button>
-                                                <button class="btn btn-outline-secondary btn-sm">Week</button>
-                                                <button class="btn btn-outline-secondary btn-sm">Month</button>
-                                                <button class="btn btn-success btn-sm">Year</button>
+                                            <div class="btn-group p-3" id="rangeFilterButtons">
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" data-range="today">Today</button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" data-range="week">Week</button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" data-range="month">Month</button>
+                                                <button type="button" class="btn btn-success btn-sm active" data-range="year">Year</button>
                                             </div>
                                         </div>
                                     </div> 
@@ -529,20 +529,93 @@
     </script>   -->
 
     <script>
-        new ApexCharts(document.querySelector("#salesOrderChart"), {
-            series: [
-                { name: 'Sales',  data: @json($chartData['sales']) },
-                { name: 'Order',  data: @json($chartData['orders']) },
-                { name: 'Return', data: @json($chartData['returns']) }
-            ],
+        const chartDataByRange = @json($chartData);
+        let currentRange = 'year';
+        const visibleSeries = {
+            sales: true,
+            orders: true,
+            returns: true,
+        };
+
+        const chartSeriesMap = {
+            sales: { name: 'Sales', color: '#1E88E5' },
+            orders: { name: 'Order', color: '#43A047' },
+            returns: { name: 'Return', color: '#E53935' },
+        };
+
+        function buildSeries(range) {
+            const rangeData = chartDataByRange[range] ?? chartDataByRange.year;
+            return Object.keys(chartSeriesMap)
+                .filter(key => visibleSeries[key])
+                .map(key => ({
+                    name: chartSeriesMap[key].name,
+                    data: rangeData[key] ?? [],
+                }));
+        }
+
+        function buildColors() {
+            return Object.keys(chartSeriesMap)
+                .filter(key => visibleSeries[key])
+                .map(key => chartSeriesMap[key].color);
+        }
+
+        const salesOrderChart = new ApexCharts(document.querySelector("#salesOrderChart"), {
+            series: buildSeries(currentRange),
             chart: { type: 'bar', height: 350, toolbar: { show: false }},
             plotOptions: { bar: { borderRadius: 6, columnWidth: '45%' }},
-            colors: ['#1E88E5', '#43A047', '#E53935'],
+            colors: buildColors(),
             xaxis: {
-                categories: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+                categories: (chartDataByRange[currentRange]?.labels ?? chartDataByRange.year.labels)
             },
             dataLabels: { enabled: false }
-        }).render();
+        });
+
+        salesOrderChart.render();
+
+        function refreshChart() {
+            const rangeData = chartDataByRange[currentRange] ?? chartDataByRange.year;
+            const nextSeries = buildSeries(currentRange);
+
+            salesOrderChart.updateOptions({
+                xaxis: { categories: rangeData.labels ?? [] },
+                colors: buildColors(),
+            }, false, true);
+
+            salesOrderChart.updateSeries(nextSeries, true);
+        }
+
+        document.querySelectorAll('#rangeFilterButtons [data-range]').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('#rangeFilterButtons [data-range]').forEach(btn => {
+                    btn.classList.remove('btn-success', 'active');
+                    btn.classList.add('btn-outline-secondary');
+                });
+
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('btn-success', 'active');
+
+                currentRange = this.dataset.range;
+                refreshChart();
+            });
+        });
+
+        document.querySelectorAll('#seriesFilterButtons [data-series]').forEach(button => {
+            button.addEventListener('click', function() {
+                const key = this.dataset.series;
+                visibleSeries[key] = !visibleSeries[key];
+
+                this.classList.toggle('active', visibleSeries[key]);
+                this.style.opacity = visibleSeries[key] ? '1' : '0.45';
+
+                if (!visibleSeries.sales && !visibleSeries.orders && !visibleSeries.returns) {
+                    visibleSeries[key] = true;
+                    this.classList.add('active');
+                    this.style.opacity = '1';
+                }
+
+                refreshChart();
+            });
+        });
     </script>
 
 

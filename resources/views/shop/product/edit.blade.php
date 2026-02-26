@@ -102,7 +102,7 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <x-input label="Product Name" name="name"
+                            <x-input label="Product Name" name="name" id="product_name"
                                 value="{{ old('name', $isEdit ? $product->name : '') }}" required />
                         </div>
                         <div class="row g-2">
@@ -181,11 +181,17 @@
 
                     <div class="col-lg-5">
                         <div class="mb-3">
-                            <label for="description" class="form-label">Product Description <span
+                            <label for="" class="form-label">Product Description <span
                                     class="text-danger">*</span></label>
-                            <textarea name="description" id="description">
-{{ old('description', $isEdit ? $product->description : '') }}
-</textarea>
+                            @hasPermission('shop.product.generate.AI.data')
+                                <button class="btn btn-sm btn-primary rounded mb-1" id="generateAi" type="button">🧠
+                                    Generate Via Ai</button>
+                            @endhasPermission
+                            <div id="editor" style="max-height: 750px; overflow-y: auto">
+                                {!! old('description', $isEdit ? $product->description : '') !!}
+                            </div>
+                            <input type="hidden" id="description" name="description"
+                                value="{{ old('description', $isEdit ? $product->description : '') }}">
                             @error('description')
                                 <p class="text text-danger m-0">{{ $message }}</p>
                             @enderror
@@ -607,9 +613,119 @@
         }
     });
 
-    // Summernote
-    $(document).ready(function() {
-        $('#description').summernote();
+    correctULTagFromQuill = (str) => {
+        if (str) {
+            let re = /(<ol><li data-list="bullet">)(.*?)(<\/ol>)/;
+            let strArr = str.split(re);
+
+            while (
+                strArr.findIndex((ele) => ele === '<ol><li data-list="bullet">') !== -1
+            ) {
+                let index = strArr.findIndex(
+                    (ele) => ele === '<ol><li data-list="bullet">'
+                );
+                if (index) {
+                    strArr[index] = '<ul><li data-list="bullet">';
+                    let endTagIndex = strArr.findIndex((ele) => ele === "</ol>");
+                    strArr[endTagIndex] = "</ul>";
+                }
+            }
+            return strArr.join("");
+        }
+        return str;
+    };
+
+    const quill = new Quill('#editor', {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                [{
+                    'header': [1, 2, 3, 4, 5, 6, false]
+                }],
+                [{
+                    'font': []
+                }],
+                ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+                [{
+                    'list': 'ordered'
+                }, {
+                    'list': 'bullet'
+                }],
+                [{
+                    'align': []
+                }],
+                [{
+                    'script': 'sub'
+                }, {
+                    'script': 'super'
+                }],
+                [{
+                    'indent': '-1'
+                }, {
+                    'indent': '+1'
+                }],
+                [{
+                    'direction': 'rtl'
+                }],
+                [{
+                    'color': []
+                }, {
+                    'background': []
+                }],
+                ['link', 'image', 'video', 'formula']
+            ]
+        }
+    });
+
+    quill.on('text-change', function(delta, oldDelta, source) {
+        document.getElementById('description').value = correctULTagFromQuill(quill.root.innerHTML);
+    });
+
+    $(document).on('click', '#generateAi', function() {
+        var name = $('#product_name').val();
+        var short_description = '';
+        $('#description').val("Generating description... Please wait ⏳");
+        quill.clipboard.dangerouslyPasteHTML("<p><em>Generating description... Please wait ⏳</em></p>");
+        $.ajax({
+            url: "{{ route('shop.product.generate.AI.data') }}",
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                name: name,
+                short_description: short_description
+            },
+            success: function(response) {
+                $('#description').val("");
+                quill.setText("");
+
+                let lastResponse = "";
+                let fullText = response;
+                let index = 0;
+
+                function typeStep() {
+                    if (index >= fullText.length) return;
+                    lastResponse += fullText[index++];
+                    $('#description').val(lastResponse);
+                    quill.clipboard.dangerouslyPasteHTML(lastResponse);
+                    quill.setSelection(quill.getLength(), 0);
+                    setTimeout(typeStep, 10);
+                }
+
+                typeStep();
+            },
+            error: function(error) {
+                if (error.responseJSON && error.responseJSON.errors) {
+                    let firstError = Object.values(error.responseJSON.errors)[0][0];
+                    toastr.error(firstError);
+                } else if (error.responseJSON && error.responseJSON.message) {
+                    toastr.error(error.responseJSON.message);
+                } else {
+                    toastr.error("Something went wrong");
+                }
+                $('#description').val("");
+                quill.setText("");
+            }
+        })
     });
 
     // Tag
@@ -2148,7 +2264,7 @@
             }
 
             if (field === 'description') {
-                return form.querySelector('textarea[name="description"]');
+                return form.querySelector('input[name="description"]');
             }
 
             if (field === 'sub_categories' || field.startsWith('sub_categories.')) {
@@ -2208,9 +2324,9 @@
             let anchor = input;
 
             if (name === 'description') {
-                const noteEditor = document.querySelector('#description')?.nextElementSibling;
-                if (noteEditor && noteEditor.classList.contains('note-editor')) {
-                    anchor = noteEditor;
+                const quillEditor = document.getElementById('editor');
+                if (quillEditor) {
+                    anchor = quillEditor;
                 }
             }
 
@@ -2311,7 +2427,8 @@
             if (!name) addError(errors, 'name', 'The name field is required.');
             if (name.length > 191) addError(errors, 'name', 'The name may not be greater than 191 characters.');
 
-            const desc = ($('#description').summernote('isEmpty') ? '' : $('#description').summernote('code').replace(/<[^>]*>/g, '').trim());
+            const descHtml = textVal('description');
+            const desc = $('<div>').html(descHtml).text().replace(/\u00a0/g, ' ').trim();
             if (!desc) addError(errors, 'description', 'The description field is required.');
 
             if (!textVal('main_category')) addError(errors, 'main_category', 'The category field is required.');

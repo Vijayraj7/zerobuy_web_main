@@ -356,9 +356,11 @@ class ProductController extends Controller
                 generaleSetting()->product_description
             );
 
-            $question .= "Format the description with proper HTML tags (<p>, <h2>, <ul>, <li>) for CKEditor. Do not include extra phrases like 'The product is','```html', 'Sure', or 'Here is'. Just output the final formatted description.";
+            $question .= " Write a concise e-commerce style description like Flipkart/Amazon: highlight key benefits and important specs in customer-friendly language. Keep the final description within 500 characters maximum. Avoid filler words and introductions. Return only the final content.";
 
             $response = $chat->send($question);
+
+            $response = $this->formatAiProductDescription($response, 500);
 
             return response()->json($response);
         } catch (\Exception $e) {
@@ -366,5 +368,25 @@ class ProductController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    private function formatAiProductDescription(?string $content, int $maxLength = 500): string
+    {
+        $text = trim((string) $content);
+        $text = strip_tags($text);
+        $text = preg_replace('/\s+/', ' ', $text);
+        $text = trim((string) $text);
+
+        if ($text === '') {
+            return '';
+        }
+
+        if (mb_strlen($text) > $maxLength) {
+            $short = mb_substr($text, 0, $maxLength - 3);
+            $short = preg_replace('/\s+\S*$/u', '', $short) ?: $short;
+            $text = rtrim($short) . '...';
+        }
+
+        return '<p>' . e($text) . '</p>';
     }
 }

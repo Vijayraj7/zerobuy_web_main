@@ -839,10 +839,10 @@
                         {{ __('Mail Config') }}
                     </a>
                 @endhasPermission
-                <!-- @hasPermission('admin.aiPrompt.configure')
+                @hasPermission('admin.aiPrompt.configure')
                     <a href="{{ route('admin.aiPrompt.configure') }}"
                         class="subMenu {{ request()->routeIs('admin.aiPrompt.configure') ? 'active' : '' }}">
-                        {{ __('OpenAI Config') }}
+                        {{ __('AI Config') }}
                     </a>
                 @endhasPermission
 

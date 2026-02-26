@@ -19,6 +19,17 @@ class ProfileController extends Controller
     public function index()
     {
         $shop = generaleSetting('shop');
+        $shop->load([
+            'user',
+            'reviews',
+            'products',
+            'orders',
+            'businessCategories',
+            'states',
+            'districts',
+            'deliverySetting.amountRules',
+            'deliverySetting.stateCharges.state',
+        ]);
 
         return view('shop.profile.index', compact('shop'));
     }

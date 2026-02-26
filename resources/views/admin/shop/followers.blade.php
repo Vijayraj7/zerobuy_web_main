@@ -13,6 +13,7 @@
                         <tr>
                             <th class="text-center">SL</th>
                             <th>Follow Date</th>
+                            <th>Profile</th>
                             <th>Customer ID</th>
                             <th>Customer Name</th>
                         </tr>
@@ -30,6 +31,11 @@
                                 </td>
 
                                 <td>
+                                    <img src="{{ $follower->customer->user->thumbnail ?? asset('default/profile.jpg') }}"
+                                        alt="customer-profile" width="40" height="40" class="rounded-circle">
+                                </td>
+
+                                <td>
                                     CUST0{{ $follower->customer->id ?? 'N/A' }}
                                 </td>
 
@@ -40,7 +46,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="text-center text-muted">
+                                <td colspan="5" class="text-center text-muted">
                                     No followers found
                                 </td>
                             </tr>

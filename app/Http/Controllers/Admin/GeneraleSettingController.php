@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use Exception;
 use App\Models\Currency;
+use App\Models\GeneraleSetting;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AiPromptRequest;
@@ -80,13 +81,37 @@ class GeneraleSettingController extends Controller
     public function aiPromptConfigureUpdate(Request $request)
     {
         $request->validate([
-            'api_key' => 'required',
-            'organization' => 'required',
+            'provider' => 'required|in:openai,gemini',
+            'api_key' => 'required_if:provider,openai|nullable|string',
+            'organization' => 'nullable|string',
+            'gemini_api_key' => 'required_if:provider,gemini|nullable|string',
+            'gemini_model' => 'nullable|string',
         ]);
 
         try {
-            $this->setEnv('OPENAI_API_KEY', $request->api_key);
-            $this->setEnv('OPENAI_ORGANIZATION', $request->organization);
+            $this->setEnv('AI_PROVIDER', $request->provider);
+
+            if ($request->filled('api_key')) {
+                $this->setEnv('OPENAI_API_KEY', $request->api_key);
+            }
+
+            if ($request->has('organization')) {
+                $this->setEnv('OPENAI_ORGANIZATION', $request->organization ?? '');
+            }
+
+            if ($request->filled('gemini_api_key')) {
+                $this->setEnv('GEMINI_API_KEY', $request->gemini_api_key);
+            }
+
+            if ($request->filled('gemini_model')) {
+                $this->setEnv('GEMINI_MODEL', $request->gemini_model);
+            }
+
+            $generaleSetting = GeneraleSetting::first();
+            GeneraleSetting::query()->updateOrCreate(
+                ['id' => $generaleSetting?->id ?? null],
+                ['ai_provider' => $request->provider]
+            );
 
             Artisan::call('config:clear');
             Artisan::call('cache:clear');

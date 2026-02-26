@@ -177,7 +177,7 @@
             columns: [
                 { data: 'DT_RowIndex', orderable: false, searchable: false },
                 { data: 'created_at', name: 'created_at' },
-                { data: 'product_id', name: 'product_id' },                 
+                { data: 'product_code', name: 'product_code' },                 
                 { data: 'name', name: 'name' }, 
                 { data: 'product_image', orderable: false },
                 { data: 'quantity', name: 'quantity' },

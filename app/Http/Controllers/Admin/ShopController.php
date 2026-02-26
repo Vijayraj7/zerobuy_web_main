@@ -252,32 +252,96 @@ class ShopController extends Controller
             $totalDays = $subscription->starts_at->diffInDays($subscription->ends_at);
         }
 
-        /* ---------------- SALES & ORDER CHART (YEAR) ---------------- */
-        $salesData = $shop->orders()
-            ->whereYear('created_at', now()->year)
-            ->selectRaw('MONTH(created_at) month, SUM(payable_amount) total')
-            ->groupBy('month')
-            ->pluck('total', 'month');
+        /* ---------------- SALES & ORDER CHART (TODAY/WEEK/MONTH/YEAR) ---------------- */
+        $buildPeriodChartData = function (array $labels, callable $salesResolver, callable $ordersResolver, callable $returnsResolver) {
+            return [
+                'labels' => $labels,
+                'sales' => collect($labels)->map($salesResolver)->values()->all(),
+                'orders' => collect($labels)->map($ordersResolver)->values()->all(),
+                'returns' => collect($labels)->map($returnsResolver)->values()->all(),
+            ];
+        };
 
-        $orderData = $shop->orders()
-            ->whereYear('created_at', now()->year)
-            ->selectRaw('MONTH(created_at) month, COUNT(*) total')
-            ->groupBy('month')
-            ->pluck('total', 'month');
+        $todayDate = Carbon::today();
+        $todayHours = collect(range(0, 23));
+        $todayLabels = $todayHours->map(fn ($hour) => str_pad((string) $hour, 2, '0', STR_PAD_LEFT) . ':00')->all();
 
-        $returnData = $shop->returnOrders()
-            ->whereYear('created_at', now()->year)
-            ->selectRaw('MONTH(created_at) month, COUNT(*) total')
-            ->groupBy('month')
-            ->pluck('total', 'month');
+        $weekStart = Carbon::now()->startOfWeek();
+        $weekDays = collect(range(0, 6))->map(fn ($day) => $weekStart->copy()->addDays($day));
+        $weekLabels = $weekDays->map(fn ($date) => $date->format('D'))->all();
 
-        // Fill missing months
-        $months = collect(range(1, 12));
+        $monthStart = Carbon::now()->startOfMonth();
+        $monthDays = collect(range(1, Carbon::now()->daysInMonth));
+        $monthLabels = $monthDays->map(fn ($day) => (string) $day)->all();
+
+        $yearMonths = collect(range(1, 12));
+        $yearLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
         $chartData = [
-            'sales'  => $months->map(fn($m) => (int) ($salesData[$m] ?? 0)),
-            'orders' => $months->map(fn($m) => (int) ($orderData[$m] ?? 0)),
-            'returns' => $months->map(fn($m) => (int) ($returnData[$m] ?? 0)),
+            'today' => $buildPeriodChartData(
+                $todayLabels,
+                fn ($label, $index) => (float) $shop->orders()
+                    ->where('order_status', OrderStatus::DELIVERED->value)
+                    ->whereDate('created_at', $todayDate)
+                    ->whereRaw('HOUR(created_at) = ?', [$todayHours[$index]])
+                    ->sum('payable_amount'),
+                fn ($label, $index) => (int) $shop->orders()
+                    ->whereDate('created_at', $todayDate)
+                    ->whereRaw('HOUR(created_at) = ?', [$todayHours[$index]])
+                    ->count(),
+                fn ($label, $index) => (int) $shop->returnOrders()
+                    ->whereDate('created_at', $todayDate)
+                    ->whereRaw('HOUR(created_at) = ?', [$todayHours[$index]])
+                    ->count(),
+            ),
+            'week' => $buildPeriodChartData(
+                $weekLabels,
+                fn ($label, $index) => (float) $shop->orders()
+                    ->where('order_status', OrderStatus::DELIVERED->value)
+                    ->whereDate('created_at', $weekDays[$index])
+                    ->sum('payable_amount'),
+                fn ($label, $index) => (int) $shop->orders()
+                    ->whereDate('created_at', $weekDays[$index])
+                    ->count(),
+                fn ($label, $index) => (int) $shop->returnOrders()
+                    ->whereDate('created_at', $weekDays[$index])
+                    ->count(),
+            ),
+            'month' => $buildPeriodChartData(
+                $monthLabels,
+                fn ($label, $index) => (float) $shop->orders()
+                    ->where('order_status', OrderStatus::DELIVERED->value)
+                    ->whereMonth('created_at', now()->month)
+                    ->whereYear('created_at', now()->year)
+                    ->whereDay('created_at', $monthDays[$index])
+                    ->sum('payable_amount'),
+                fn ($label, $index) => (int) $shop->orders()
+                    ->whereMonth('created_at', now()->month)
+                    ->whereYear('created_at', now()->year)
+                    ->whereDay('created_at', $monthDays[$index])
+                    ->count(),
+                fn ($label, $index) => (int) $shop->returnOrders()
+                    ->whereMonth('created_at', now()->month)
+                    ->whereYear('created_at', now()->year)
+                    ->whereDay('created_at', $monthDays[$index])
+                    ->count(),
+            ),
+            'year' => $buildPeriodChartData(
+                $yearLabels,
+                fn ($label, $index) => (float) $shop->orders()
+                    ->where('order_status', OrderStatus::DELIVERED->value)
+                    ->whereYear('created_at', now()->year)
+                    ->whereMonth('created_at', $yearMonths[$index])
+                    ->sum('payable_amount'),
+                fn ($label, $index) => (int) $shop->orders()
+                    ->whereYear('created_at', now()->year)
+                    ->whereMonth('created_at', $yearMonths[$index])
+                    ->count(),
+                fn ($label, $index) => (int) $shop->returnOrders()
+                    ->whereYear('created_at', now()->year)
+                    ->whereMonth('created_at', $yearMonths[$index])
+                    ->count(),
+            ),
         ];
 
         $deliverySetting = DeliverySetting::where('shop_id', $shop->id)->first();

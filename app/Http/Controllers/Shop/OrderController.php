@@ -166,6 +166,10 @@ class OrderController extends Controller
      */
     public function updateTrackingAndCharge(Order $order, Request $request)
     {
+        if (in_array($order->order_status->value, [OrderStatus::DELIVERED->value, OrderStatus::CANCELLED->value])) {
+            return back()->with('error', __('Tracking URL and delivery charge cannot be updated for delivered or cancelled orders.'));
+        }
+
         $request->validate([
             'track_url' => 'nullable|url|max:500',
             'delivery_charge' => 'nullable|numeric|min:0',

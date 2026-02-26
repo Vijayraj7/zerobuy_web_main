@@ -48,8 +48,8 @@
                         <tr>
                             <th>#</th> 
                             <th>{{ __('Return Date') }}</th>
-                            <th>{{ __('Return Code') }}</th>
-                            <th>{{ __('Order Code') }}</th>
+                            <th>{{ __('Return ID') }}</th>
+                            <th>{{ __('Order ID') }}</th>
                             <th>{{ __('Order Date') }}</th> 
                             <th>{{ __('Customer Name') }}</th>
                             <th>{{ __('Mobile No') }}</th>
@@ -102,7 +102,16 @@
 
                 { data: 'quantity', orderable: false },
                 { data: 'amount', orderable: false },
-                { data: 'reason', name: 'reason' },
+                {
+                    data: 'reason',
+                    name: 'reason',
+                    render: function(data, type, row) {
+                        if (type === 'display' && data) {
+                            return `<span class="text-danger">${data}</span>`;
+                        }
+                        return data ?? '';
+                    }
+                },
                 { data: 'amount', name: 'amount' }, 
                 { data: 'status_badge', orderable: false, searchable: false },
                 { data: 'actions', orderable: false, searchable: false },
