@@ -137,6 +137,7 @@ class SubscriptionController extends Controller
             ]);
 
             return response()->json([
+                'message' => 'Razorpay order created successfully',
                 'status' => true,
                 'order' => [
                     'id' => $order->id,
