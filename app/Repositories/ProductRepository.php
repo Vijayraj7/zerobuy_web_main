@@ -312,6 +312,16 @@ class ProductRepository extends Repository
         //     }
         // }
 
+        if ($product->code == null || $product->code == '') {
+            do {
+                $productCode = strtoupper(Str::random(10));
+            } while (Product::query()->where('product_code', $productCode)->exists());
+            self::update($product, [
+                'product_code' => $productCode,
+            ]);
+        }
+
+
         self::update($product, [
             'name' => $request->name,
             'description' => $description,
@@ -1038,6 +1048,14 @@ class ProductRepository extends Repository
                 $product->media_id = $thumbnail->id;
             }
 
+            if ($product->code == null || $product->code == '') {
+                do {
+                    $productCode = strtoupper(Str::random(10));
+                } while (Product::query()->where('product_code', $productCode)->exists());
+                $product->update([
+                    'product_code' => $productCode,
+                ]);
+            }
             /** -----------------------------
              * 2. Update Product
              * ----------------------------- */
