@@ -32,6 +32,9 @@ Route::post('/seller/subscription/webhook/razorpay', [SubscriptionController::cl
 Route::match(['get', 'post'], '/seller/shiprocket/webhook', [ShiprocketWebhookController::class, 'handle'])
     ->name('seller.shiprocket.webhook');
 
+Route::match(['get', 'post'], '/seller/tracking/webhook', [ShiprocketWebhookController::class, 'handle'])
+    ->name('seller.tracking.webhook');
+
 Route::prefix('/seller')->group(function () {
 
     // auth route

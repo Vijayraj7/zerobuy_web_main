@@ -59,6 +59,7 @@ Route::controller(SocialAuthController::class)->group(function () {
 });
 
 Route::match(['get', 'post'], '/shiprocket/webhook', [ShiprocketWebhookController::class, 'handle'])->name('shiprocket.webhook');
+Route::match(['get', 'post'], '/tracking/webhook', [ShiprocketWebhookController::class, 'handle'])->name('tracking.webhook');
 
 // country route
 Route::controller(CountryController::class)->group(function () {
