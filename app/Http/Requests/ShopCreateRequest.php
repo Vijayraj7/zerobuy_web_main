@@ -83,6 +83,10 @@ class ShopCreateRequest extends FormRequest
             'delivery_days' => ['required', 'string'],
             'delivery_state_ids' => ['required', 'array', 'min:1'],
             'delivery_state_ids.*' => ['required', 'integer', 'exists:states,id'],
+            'delivery_mode' => ['required', 'in:amount_based,state_wise,manual,provider_api'],
+            'delivery_provider' => ['nullable', 'required_if:delivery_mode,provider_api', 'in:shiprocket'],
+            'provider_api_key' => ['nullable', 'required_if:delivery_mode,provider_api', 'string', 'max:255'],
+            'provider_api_secret' => ['nullable', 'required_if:delivery_mode,provider_api', 'string', 'max:255'],
         ];
     }
 
@@ -126,6 +130,13 @@ class ShopCreateRequest extends FormRequest
             'delivery_state_ids.array' => __('Invalid delivery state selection.'),
             'delivery_state_ids.min' => __('Please select at least one delivery state.'),
             'delivery_state_ids.*.exists' => __('Selected delivery state is invalid.'),
+
+            'delivery_mode.required' => __('Please select a delivery charge method.'),
+            'delivery_mode.in' => __('Selected delivery charge method is invalid.'),
+            'delivery_provider.required_if' => __('Please select a delivery API provider.'),
+            'delivery_provider.in' => __('Selected delivery API provider is invalid.'),
+            'provider_api_key.required_if' => __('The provider API key field is required for API delivery mode.'),
+            'provider_api_secret.required_if' => __('The provider API secret field is required for API delivery mode.'),
         ];
     }
 }

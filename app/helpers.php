@@ -1,11 +1,9 @@
 <?php
 
 use App\Models\Currency;
-use App\Models\DeliveryAmountRule;
 use App\Models\DeliveryCharge;
-use App\Models\DeliverySetting;
-use App\Models\DeliveryStateCharge;
 use App\Models\GeneraleSetting;
+use App\Services\Delivery\DeliveryChargeCalculator;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -132,44 +130,7 @@ if (! function_exists('getShopDeliveryCharge')) {
 
     function getShopDeliveryCharge($totalAmount, $shop, $state_id)
     {
-        $deliveryChargere = 0.00;
-        $setting = DeliverySetting::where('shop_id', $shop?->id)->first();
-
-        if ($setting) {
-            $type = $setting->delivery_mode;
-
-            if ($type == 'state_wise') {
-                if ($state_id != null) {
-                    $stateDelivery = DeliveryStateCharge::where('delivery_setting_id', $setting->id)->where('state_id', $state_id)->first();
-                    if ($stateDelivery) {
-                        $deliveryChargere = $stateDelivery->charge;
-                    } else {
-                        $deliveryChargere = null;
-                    }
-                }
-            } else if ($type == 'manual') {
-                $deliveryChargere = 0.00;
-            } else if ($type == 'amount_based') {
-                if (
-                    $setting->amountRules->count() > 0
-                ) {
-                    $amountCharge = $setting->amountRules->where('min_amount', '<=', $totalAmount)
-                        ->where('max_amount', '>=', $totalAmount)
-                        ->first();
-                    if ($amountCharge) {
-                        $deliveryChargere = $amountCharge->charge;
-                    } else {
-                        $deliveryChargere = $setting->amountRules->sortByDesc('max_amount')->first()->charge;
-                    }
-                }
-            }
-        }
-
-        // Check if state_id is in selected_state_ids
-        if (!in_array($state_id, $setting->selected_state_ids)) {
-            return null;
-        }
-        return $deliveryChargere;
+        return app(DeliveryChargeCalculator::class)->calculate((float) $totalAmount, $shop, $state_id);
     }
 }
 

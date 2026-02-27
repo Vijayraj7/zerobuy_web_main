@@ -40,4 +40,13 @@ return [
         'model' => env('GEMINI_MODEL', 'gemini-1.5-flash'),
     ],
 
+    'shiprocket' => [
+        'base_url' => env('SHIPROCKET_BASE_URL', 'https://apiv2.shiprocket.in/v1/external'),
+        'pickup_location' => env('SHIPROCKET_PICKUP_LOCATION', 'Primary'),
+        'default_length' => env('SHIPROCKET_DEFAULT_LENGTH', 10),
+        'default_breadth' => env('SHIPROCKET_DEFAULT_BREADTH', 10),
+        'default_height' => env('SHIPROCKET_DEFAULT_HEIGHT', 10),
+        'default_weight' => env('SHIPROCKET_DEFAULT_WEIGHT', 0.5),
+    ],
+
 ];

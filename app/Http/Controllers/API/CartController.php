@@ -281,4 +281,34 @@ class CartController extends Controller
             'info' => $result['info'],
         ], 200);
     }
+
+    public function destroyBySeller(CartRequest $request)
+    {
+        $isBuyNow = $request->is_buy_now ?? false;
+
+        $request->validate([
+            'shop_id' => 'required|integer',
+        ]);
+
+        $customer = auth()->user()->customer;
+
+        $deletedRows = $customer->carts()
+            ->where('shop_id', $request->shop_id)
+            ->where('is_buy_now', $isBuyNow)
+            ->delete();
+
+        if ($deletedRows < 1) {
+            return $this->json('Sorry seller cart not found', [], 422);
+        }
+
+        $carts = $customer->carts()->where('is_buy_now', $isBuyNow)->get();
+        $groupCart = $carts->groupBy('shop_id');
+        $result = CartRepository::ShopWiseCartProducts($groupCart);
+
+        return $this->json('seller cart removed', [
+            'total' => $carts->count(),
+            'cart_items' => $result['shop_wise_products'],
+            'info' => $result['info'],
+        ], 200);
+    }
 }

@@ -349,6 +349,13 @@
                                     Manual
                                 </label>
 
+                                <input type="radio" class="btn-check" id="delivery_provider_api" name="delivery_mode"
+                                    value="provider_api"
+                                    {{ old('delivery_mode', $shop->deliverySetting->delivery_mode ?? '') === 'provider_api' ? 'checked' : '' }}>
+                                <label class="btn btn-outline-primary" for="delivery_provider_api">
+                                    API Provider
+                                </label>
+
                             </div>
                         </div>
 
@@ -488,6 +495,31 @@
                                 </label>
                             </div>
                         </div>
+
+                        <div id="provider_api_box" class="delivery-box d-none">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="fw-bold mb-1 d-block">Delivery API Provider</label>
+                                    <select name="delivery_provider" class="form-control">
+                                        <option value="">-- Select Provider --</option>
+                                        <option value="shiprocket"
+                                            {{ old('delivery_provider', $shop->deliverySetting->delivery_provider ?? '') === 'shiprocket' ? 'selected' : '' }}>
+                                            Shiprocket
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="fw-bold mb-1 d-block">Provider API Key</label>
+                                    <input type="text" class="form-control" name="provider_api_key"
+                                        placeholder="Enter provider API key" autocomplete="off">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="fw-bold mb-1 d-block">Provider API Secret</label>
+                                    <input type="password" class="form-control" name="provider_api_secret"
+                                        placeholder="Enter provider API secret" autocomplete="new-password">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -593,6 +625,8 @@ document.addEventListener('DOMContentLoaded', function () {
 <script>
     const IS_EDIT = @json($isEdit);
     const IS_PUBLIC = @json($isPublicRegistration);
+    const HAS_PROVIDER_API_KEY = @json(!empty($shop->deliverySetting?->provider_api_key));
+    const HAS_PROVIDER_API_SECRET = @json(!empty($shop->deliverySetting?->provider_api_secret));
     var DISTRICTS_URL_TEMPLATE = "{{ route('shop.get-districts', ['stateId' => 'STATE_ID']) }}";
     $(document).ready(function() {
 
@@ -917,6 +951,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 email: 5,
                 password: 5,
                 password_confirmation: 5,
+                delivery_provider: 4,
+                provider_api_key: 4,
+                provider_api_secret: 4,
             };
 
             if (field.startsWith('bussiness_categories_id')) return 2;
@@ -1032,6 +1069,24 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (missingCharge) {
                         addError(errors, 'state_charges', 'Please enter delivery charges for all selected states.');
                     }
+                }
+            }
+
+            if (deliveryMode === 'provider_api') {
+                const deliveryProvider = textVal('delivery_provider');
+                const providerApiKey = textVal('provider_api_key');
+                const providerApiSecret = textVal('provider_api_secret');
+
+                if (!deliveryProvider) {
+                    addError(errors, 'delivery_provider', 'Please select a delivery API provider.');
+                }
+
+                if (!providerApiKey && !HAS_PROVIDER_API_KEY) {
+                    addError(errors, 'provider_api_key', 'The provider API key field is required for API delivery mode.');
+                }
+
+                if (!providerApiSecret && !HAS_PROVIDER_API_SECRET) {
+                    addError(errors, 'provider_api_secret', 'The provider API secret field is required for API delivery mode.');
                 }
             }
 
@@ -1152,7 +1207,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     return;
                 }
                 if (field === 'amount_rules' || field.startsWith('amount_rules.') || field === 'state_charges' || field
-                    .startsWith('state_charges.') || field === 'delivery_mode') {
+                    .startsWith('state_charges.') || field === 'delivery_mode' || field === 'delivery_provider' || field === 'provider_api_key' || field === 'provider_api_secret') {
                     $('#deliveryChargeError').text(messages[0]);
                     return;
                 }

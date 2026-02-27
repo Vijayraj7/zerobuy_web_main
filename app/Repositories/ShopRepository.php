@@ -89,10 +89,27 @@ class ShopRepository extends Repository
 
             DB::transaction(function () use ($request, $shop) {
 
+                $existingSetting = DeliverySetting::where('shop_id', $shop->id)->first();
+                $providerApiKey = null;
+                $providerApiSecret = null;
+
+                if ($request->delivery_mode === 'provider_api') {
+                    $providerApiKey = $request->filled('provider_api_key')
+                        ? $request->provider_api_key
+                        : ($existingSetting?->provider_api_key);
+
+                    $providerApiSecret = $request->filled('provider_api_secret')
+                        ? $request->provider_api_secret
+                        : ($existingSetting?->provider_api_secret);
+                }
+
                 $setting = DeliverySetting::updateOrCreate(
                     ['shop_id' => $shop->id],
                     [
                         'delivery_mode' => $request->delivery_mode,
+                        'delivery_provider' => $request->delivery_mode === 'provider_api' ? $request->delivery_provider : null,
+                        'provider_api_key' => $providerApiKey,
+                        'provider_api_secret' => $providerApiSecret,
                         'update_when_shipped' => $request->update_when_shipped ?? false,
                     ]
                 );
@@ -189,10 +206,27 @@ class ShopRepository extends Repository
 
             DB::transaction(function () use ($request, $shop) {
 
+                $existingSetting = DeliverySetting::where('shop_id', $shop->id)->first();
+                $providerApiKey = null;
+                $providerApiSecret = null;
+
+                if ($request->delivery_mode === 'provider_api') {
+                    $providerApiKey = $request->filled('provider_api_key')
+                        ? $request->provider_api_key
+                        : ($existingSetting?->provider_api_key);
+
+                    $providerApiSecret = $request->filled('provider_api_secret')
+                        ? $request->provider_api_secret
+                        : ($existingSetting?->provider_api_secret);
+                }
+
                 $setting = DeliverySetting::updateOrCreate(
                     ['shop_id' => $shop->id],
                     [
                         'delivery_mode' => $request->delivery_mode,
+                        'delivery_provider' => $request->delivery_mode === 'provider_api' ? $request->delivery_provider : null,
+                        'provider_api_key' => $providerApiKey,
+                        'provider_api_secret' => $providerApiSecret,
                         'update_when_shipped' => $request->update_when_shipped ?? false,
                     ]
                 );

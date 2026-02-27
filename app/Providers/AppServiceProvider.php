@@ -9,6 +9,11 @@ use App\Models\Order;
 use App\Models\User;
 use App\Repositories\LanguageRepository;
 use App\Repositories\ThemeColorRepository;
+use App\Services\Delivery\DeliveryChargeCalculator;
+use App\Services\Delivery\DeliveryPostcodeResolver;
+use App\Services\Delivery\ShiprocketOrderSyncService;
+use App\Services\Delivery\Providers\DeliveryProviderManager;
+use App\Services\Delivery\Providers\ShiprocketDeliveryProvider;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
@@ -22,7 +27,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(DeliveryPostcodeResolver::class);
+        $this->app->singleton(ShiprocketDeliveryProvider::class);
+
+        $this->app->singleton(DeliveryProviderManager::class, function ($app) {
+            return new DeliveryProviderManager([
+                $app->make(ShiprocketDeliveryProvider::class),
+            ]);
+        });
+
+        $this->app->singleton(DeliveryChargeCalculator::class);
+        $this->app->singleton(ShiprocketOrderSyncService::class);
     }
 
     /**

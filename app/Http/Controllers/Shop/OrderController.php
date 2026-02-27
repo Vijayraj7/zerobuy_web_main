@@ -12,6 +12,7 @@ use App\Repositories\NotificationRepository;
 use App\Repositories\OrderRepository;
 use App\Repositories\TransactionRepository;
 use App\Repositories\WalletRepository;
+use App\Services\Delivery\ShiprocketOrderSyncService;
 use App\Services\NotificationServices;
 use Carbon\Carbon;
 use Endroid\QrCode\QrCode as EndroidQrCode;
@@ -20,6 +21,7 @@ use Illuminate\Http\Request;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;
 use Mpdf\Mpdf;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -109,6 +111,35 @@ class OrderController extends Controller
         $request->validate(['status' => 'required']);
 
         $order->update(['order_status' => $request->status]);
+
+        if ($request->status === OrderStatus::CONFIRM->value && empty($order->shiprocket_order_id)) {
+            try {
+                app(ShiprocketOrderSyncService::class)->sync($order);
+            } catch (\Throwable $e) {
+                Log::warning('Shiprocket sync failed on seller order accept (shop panel)', [
+                    'order_id' => $order->id,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        // if ($request->status === OrderStatus::SHIPPED->value && empty($order->shiprocket_awb_code)) {
+        //     try {
+        //         $service = app(ShiprocketOrderSyncService::class);
+
+        //         if (empty($order->shiprocket_order_id)) {
+        //             $service->sync($order);
+        //             $order->refresh();
+        //         }
+
+        //         $service->requestPickup($order);
+        //     } catch (\Throwable $e) {
+        //         Log::warning('Shiprocket pickup request failed on seller order shipped (shop panel)', [
+        //             'order_id' => $order->id,
+        //             'message' => $e->getMessage(),
+        //         ]);
+        //     }
+        // }
 
         OrderStatusTimeline::updateOrCreate(
             [

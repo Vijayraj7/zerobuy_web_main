@@ -275,6 +275,7 @@ Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
         Route::post('/cart/increment', 'increment');
         Route::post('/cart/decrement', 'decrement');
         Route::post('/cart/delete', 'destroy');
+        Route::post('/cart/delete-seller', 'destroyBySeller');
         Route::post('/cart/checkout', 'checkout');
     });
 

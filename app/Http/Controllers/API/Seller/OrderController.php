@@ -11,9 +11,11 @@ use App\Models\Order;
 use App\Models\OrderStatusTimeline;
 use App\Repositories\NotificationRepository;
 use App\Repositories\OrderRepository;
+use App\Services\Delivery\ShiprocketOrderSyncService;
 use App\Services\NotificationServices;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -212,6 +214,35 @@ class OrderController extends Controller
         $order->update([
             'order_status' => $orderStatus,
         ]);
+
+        if ($orderStatus === OrderStatus::CONFIRM->value && empty($order->shiprocket_order_id)) {
+            try {
+                app(ShiprocketOrderSyncService::class)->sync($order);
+            } catch (\Throwable $e) {
+                Log::warning('Shiprocket sync failed on seller order accept (API)', [
+                    'order_id' => $order->id,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        // if ($orderStatus === OrderStatus::SHIPPED->value && empty($order->shiprocket_awb_code)) {
+        //     try {
+        //         $service = app(ShiprocketOrderSyncService::class);
+
+        //         if (empty($order->shiprocket_order_id)) {
+        //             $service->sync($order);
+        //             $order->refresh();
+        //         }
+
+        //         $service->requestPickup($order);
+        //     } catch (\Throwable $e) {
+        //         Log::warning('Shiprocket pickup request failed on seller order shipped (API)', [
+        //             'order_id' => $order->id,
+        //             'message' => $e->getMessage(),
+        //         ]);
+        //     }
+        // }
 
         OrderStatusTimeline::updateOrCreate(
             [
