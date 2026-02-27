@@ -327,4 +327,105 @@ class ShiprocketOrderSyncService
             return false;
         }
     }
+
+    public function refreshTrackingUrl(Order $order): bool
+    {
+        $order->loadMissing(['shop.deliverySetting']);
+
+        $setting = $order->shop?->deliverySetting;
+
+        if (!$setting || $setting->delivery_mode !== 'provider_api' || $setting->delivery_provider !== 'shiprocket') {
+            return false;
+        }
+
+        $apiUserEmail = trim((string) ($setting->provider_api_key ?? ''));
+        $apiUserPassword = trim((string) ($setting->provider_api_secret ?? ''));
+
+        if (!$apiUserEmail || !$apiUserPassword) {
+            return false;
+        }
+
+        $shipmentId = (string) ($order->shiprocket_shipment_id ?? '');
+        if ($shipmentId === '') {
+            return false;
+        }
+
+        $baseUrl = 'https://apiv2.shiprocket.in/v1/external';
+        $tokenCacheKey = 'shiprocket.token.shop.' . ($order->shop_id ?? 'na') . '.' . md5($apiUserEmail);
+
+        $token = Cache::remember($tokenCacheKey, now()->addMinutes(50), function () use ($baseUrl, $apiUserEmail, $apiUserPassword) {
+            $authResponse = Http::timeout(20)->acceptJson()->post($baseUrl . '/auth/login', [
+                'email' => $apiUserEmail,
+                'password' => $apiUserPassword,
+            ]);
+
+            if (!$authResponse->successful()) {
+                return null;
+            }
+
+            return $authResponse->json('token');
+        });
+
+        if (!$token) {
+            return false;
+        }
+
+        $callTrackingApi = function (string $bearerToken) use ($baseUrl, $shipmentId) {
+            return Http::timeout(25)
+                ->acceptJson()
+                ->withToken($bearerToken)
+                ->get($baseUrl . '/courier/track/shipment/' . $shipmentId);
+        };
+
+        try {
+            $response = $callTrackingApi($token);
+
+            if ($response->status() === 401) {
+                Cache::forget($tokenCacheKey);
+
+                $newToken = Cache::remember($tokenCacheKey, now()->addMinutes(50), function () use ($baseUrl, $apiUserEmail, $apiUserPassword) {
+                    $authResponse = Http::timeout(20)->acceptJson()->post($baseUrl . '/auth/login', [
+                        'email' => $apiUserEmail,
+                        'password' => $apiUserPassword,
+                    ]);
+
+                    if (!$authResponse->successful()) {
+                        return null;
+                    }
+
+                    return $authResponse->json('token');
+                });
+
+                if (!$newToken) {
+                    return false;
+                }
+
+                $response = $callTrackingApi($newToken);
+            }
+
+            if (!$response->successful()) {
+                return false;
+            }
+
+            $trackUrl = $response->json('tracking_data.track_url')
+                ?? $response->json('data.tracking_data.track_url')
+                ?? $response->json('tracking_data.shipment_track.0')
+                ?? $response->json('data.tracking_data.shipment_track.0');
+
+            if ($trackUrl) {
+                $order->update([
+                    'track_url' => (string) $trackUrl,
+                ]);
+                return true;
+            }
+
+            return false;
+        } catch (\Throwable $e) {
+            Log::warning('Shiprocket tracking fetch exception', [
+                'order_id' => $order->id,
+                'message' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
 }

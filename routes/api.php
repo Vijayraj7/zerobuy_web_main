@@ -15,6 +15,7 @@ use App\Http\Controllers\API\MasterController;
 use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\AddressController;
 use App\Http\Controllers\API\CountryController;
+use App\Http\Controllers\API\ShiprocketWebhookController;
 use App\Http\Controllers\API\ProductController;
 use App\Http\Controllers\API\SupportController;
 use App\Http\Controllers\API\CategoryController;
@@ -56,6 +57,8 @@ Route::controller(SocialAuthController::class)->group(function () {
     Route::post('/social-auth', 'login');
     Route::post('/auth/{provider}/token', 'handleTokenExchange');
 });
+
+Route::post('/shiprocket/webhook', [ShiprocketWebhookController::class, 'handle']);
 
 // country route
 Route::controller(CountryController::class)->group(function () {

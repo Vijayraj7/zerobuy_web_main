@@ -114,7 +114,10 @@ class OrderController extends Controller
 
         if ($request->status === OrderStatus::CONFIRM->value && empty($order->shiprocket_order_id)) {
             try {
-                app(ShiprocketOrderSyncService::class)->sync($order);
+                $service = app(ShiprocketOrderSyncService::class);
+                $service->sync($order);
+                $order->refresh();
+                // $service->refreshTrackingUrl($order);
             } catch (\Throwable $e) {
                 Log::warning('Shiprocket sync failed on seller order accept (shop panel)', [
                     'order_id' => $order->id,
@@ -133,6 +136,8 @@ class OrderController extends Controller
         //         }
 
         //         $service->requestPickup($order);
+        //         $order->refresh();
+        //         $service->refreshTrackingUrl($order);
         //     } catch (\Throwable $e) {
         //         Log::warning('Shiprocket pickup request failed on seller order shipped (shop panel)', [
         //             'order_id' => $order->id,

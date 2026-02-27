@@ -17,5 +17,7 @@ class VerifyCsrfToken extends Middleware
         'paytabs/*',
         'shop/advertisements/webhook/*',
         'api/seller/subscription/webhook/*',
+        'api/shiprocket/webhook',
+        'api/shiprocket/webhook/*',
     ];
 }
