@@ -312,7 +312,7 @@ class ProductRepository extends Repository
         //     }
         // }
 
-        if ($product->code == null || $product->code == '') {
+        if ($product->product_code == null || $product->product_code == '') {
             do {
                 $productCode = strtoupper(Str::random(10));
             } while (Product::query()->where('product_code', $productCode)->exists());
@@ -1048,7 +1048,7 @@ class ProductRepository extends Repository
                 $product->media_id = $thumbnail->id;
             }
 
-            if ($product->code == null || $product->code == '') {
+            if ($product->product_code == null || $product->product_code == '') {
                 do {
                     $productCode = strtoupper(Str::random(10));
                 } while (Product::query()->where('product_code', $productCode)->exists());
