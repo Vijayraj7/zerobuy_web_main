@@ -98,11 +98,15 @@ class ProductRepository extends Repository
         //         $details = json_decode($details, true) ?: null;
         //     }
         // }
+        do {
+            $productCode = strtoupper(Str::random(10));
+        } while (Product::query()->where('product_code', $productCode)->exists());
 
         $product = self::create([
             'shop_id' => $shop?->id,
             'name' => $request->name,
             'description' => $description,
+            'product_code' => $productCode,
             'short_description' => $request->short_description,
             'brand_id' => $request->brand,
             'unit_id' => $request->unit,
