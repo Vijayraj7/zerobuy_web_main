@@ -428,4 +428,122 @@ class ShiprocketOrderSyncService
             return false;
         }
     }
+
+    public function refreshAwbAndTrackUrl(Order $order): bool
+    {
+        $order->loadMissing(['shop.deliverySetting']);
+
+        $setting = $order->shop?->deliverySetting;
+
+        if (!$setting || $setting->delivery_mode !== 'provider_api' || $setting->delivery_provider !== 'shiprocket') {
+            return false;
+        }
+
+        $apiUserEmail = trim((string) ($setting->provider_api_key ?? ''));
+        $apiUserPassword = trim((string) ($setting->provider_api_secret ?? ''));
+
+        if (!$apiUserEmail || !$apiUserPassword) {
+            return false;
+        }
+
+        $shipmentId = trim((string) ($order->shiprocket_shipment_id ?? ''));
+        $shiprocketOrderId = trim((string) ($order->shiprocket_order_id ?? ''));
+
+        if ($shipmentId === '' && $shiprocketOrderId === '') {
+            return false;
+        }
+
+        $baseUrl = 'https://apiv2.shiprocket.in/v1/external';
+        $tokenCacheKey = 'shiprocket.token.shop.' . ($order->shop_id ?? 'na') . '.' . md5($apiUserEmail);
+
+        $token = Cache::remember($tokenCacheKey, now()->addMinutes(50), function () use ($baseUrl, $apiUserEmail, $apiUserPassword) {
+            $authResponse = Http::timeout(20)->acceptJson()->post($baseUrl . '/auth/login', [
+                'email' => $apiUserEmail,
+                'password' => $apiUserPassword,
+            ]);
+
+            if (!$authResponse->successful()) {
+                return null;
+            }
+
+            return $authResponse->json('token');
+        });
+
+        if (!$token) {
+            return false;
+        }
+
+        $awbCode = null;
+
+        try {
+            if ($shipmentId !== '') {
+                $trackResponse = Http::timeout(25)
+                    ->acceptJson()
+                    ->withToken($token)
+                    ->get($baseUrl . '/courier/track/shipment/' . $shipmentId);
+
+                if ($trackResponse->status() === 401) {
+                    Cache::forget($tokenCacheKey);
+                    return false;
+                }
+
+                if ($trackResponse->successful()) {
+                    $awbCode = $trackResponse->json('awb_code')
+                        ?? $trackResponse->json('data.awb_code')
+                        ?? $trackResponse->json('tracking_data.awb_code')
+                        ?? $trackResponse->json('data.tracking_data.awb_code')
+                        ?? $trackResponse->json($shipmentId . '.tracking_data.awb_code')
+                        ?? $trackResponse->json('data.' . $shipmentId . '.tracking_data.awb_code')
+                        ?? $trackResponse->json('tracking_data.shipment_track.0.awb_code')
+                        ?? $trackResponse->json('data.tracking_data.shipment_track.0.awb_code')
+                        ?? $trackResponse->json($shipmentId . '.tracking_data.shipment_track.0.awb_code')
+                        ?? $trackResponse->json('data.' . $shipmentId . '.tracking_data.shipment_track.0.awb_code');
+                }
+            }
+
+            if (!$awbCode && $shiprocketOrderId !== '') {
+                $orderResponse = Http::timeout(25)
+                    ->acceptJson()
+                    ->withToken($token)
+                    ->get($baseUrl . '/orders/show/' . $shiprocketOrderId);
+
+                if ($orderResponse->status() === 401) {
+                    Cache::forget($tokenCacheKey);
+                    return false;
+                }
+
+                if ($orderResponse->successful()) {
+                    $awbCode = $orderResponse->json('awb_code')
+                        ?? $orderResponse->json('data.awb_code')
+                        ?? $orderResponse->json('data.shipments.awb')
+                        ?? $orderResponse->json('data.shipments.number')
+                        ?? $orderResponse->json('data.awb_data.awb')
+                        ?? $orderResponse->json('data.shipment_details.awb_code')
+                        ?? $orderResponse->json('data.shipment.awb_code')
+                        ?? $orderResponse->json('data.shipment_data.awb_code')
+                        ?? $orderResponse->json('data.0.awb_code')
+                        ?? $orderResponse->json('data.0.shipment_details.awb_code');
+                }
+            }
+
+            $awbCode = $awbCode ? trim((string) $awbCode) : '';
+
+            if ($awbCode === '') {
+                return false;
+            }
+
+            $order->update([
+                'shiprocket_awb_code' => $awbCode,
+                'track_url' => 'https://shiprocket.co/tracking/' . $awbCode,
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('Shiprocket AWB refresh exception', [
+                'order_id' => $order->id,
+                'message' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
 }

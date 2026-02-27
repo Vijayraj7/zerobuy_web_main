@@ -100,6 +100,22 @@ class OrderController extends Controller
 
         $allOrderLists = $orders->latest('id')->skip($skip)->take($perPage)->get();
 
+        $shiprocketSyncService = app(ShiprocketOrderSyncService::class);
+        foreach ($allOrderLists as $orderItem) {
+            if ((filled($orderItem->shiprocket_order_id) || filled($orderItem->shiprocket_shipment_id)) && blank($orderItem->shiprocket_awb_code)) {
+                try {
+                    if ($shiprocketSyncService->refreshAwbAndTrackUrl($orderItem)) {
+                        $orderItem->refresh();
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('Shiprocket AWB refresh failed on seller order list fetch (API)', [
+                        'order_id' => $orderItem->id,
+                        'message' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
+
         // $pending = $shop->orders()->where(function ($query) {
         //     return $query->where('order_status', OrderStatus::PENDING->value);
         // })->count();
@@ -189,6 +205,20 @@ class OrderController extends Controller
     public function show(OrderIdRequest $request)
     {
         $order = Order::find($request->order_id);
+
+        if ($order && (filled($order->shiprocket_order_id) || filled($order->shiprocket_shipment_id)) && blank($order->shiprocket_awb_code)) {
+            try {
+                $service = app(ShiprocketOrderSyncService::class);
+                if ($service->refreshAwbAndTrackUrl($order)) {
+                    $order->refresh();
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Shiprocket AWB refresh failed on seller order details fetch (API)', [
+                    'order_id' => $order?->id,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
 
         return $this->json('Order details', [
             'order' => SellerOrderResource::make($order),
