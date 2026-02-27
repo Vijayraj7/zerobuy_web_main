@@ -19,5 +19,7 @@ class VerifyCsrfToken extends Middleware
         'api/seller/subscription/webhook/*',
         'api/shiprocket/webhook',
         'api/shiprocket/webhook/*',
+        'api/seller/shiprocket/webhook',
+        'api/seller/shiprocket/webhook/*',
     ];
 }

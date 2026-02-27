@@ -21,12 +21,16 @@ use App\Http\Controllers\Shop\ColorController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\Seller\StatusController as SellerStatusController;
 use App\Http\Controllers\API\Seller\AnalyticsController as SellerAnalyticsController;
+use App\Http\Controllers\API\ShiprocketWebhookController;
 
 // ==========Route for seller==========
 
 // Subscription Razorpay Webhook (no auth required)
 Route::post('/seller/subscription/webhook/razorpay', [SubscriptionController::class, 'webhookHandler'])
     ->name('seller.subscription.webhook.razorpay');
+
+Route::post('/seller/shiprocket/webhook', [ShiprocketWebhookController::class, 'handle'])
+    ->name('seller.shiprocket.webhook');
 
 Route::prefix('/seller')->group(function () {
 

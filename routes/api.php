@@ -58,7 +58,7 @@ Route::controller(SocialAuthController::class)->group(function () {
     Route::post('/auth/{provider}/token', 'handleTokenExchange');
 });
 
-Route::post('/shiprocket/webhook', [ShiprocketWebhookController::class, 'handle']);
+Route::post('/shiprocket/webhook', [ShiprocketWebhookController::class, 'handle'])->name('shiprocket.webhook');
 
 // country route
 Route::controller(CountryController::class)->group(function () {
