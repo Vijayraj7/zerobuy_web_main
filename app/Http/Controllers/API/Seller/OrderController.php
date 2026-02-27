@@ -220,6 +220,20 @@ class OrderController extends Controller
             }
         }
 
+        if ($order && (filled($order->shiprocket_order_id) || filled($order->shiprocket_shipment_id))) {
+            try {
+                $service = app(ShiprocketOrderSyncService::class);
+                if ($service->refreshCurrentStatus($order)) {
+                    $order->refresh();
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Shiprocket status refresh failed on seller order details fetch (API)', [
+                    'order_id' => $order?->id,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
+
         return $this->json('Order details', [
             'order' => SellerOrderResource::make($order),
         ]);

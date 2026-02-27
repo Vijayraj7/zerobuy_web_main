@@ -15,8 +15,10 @@ use App\Models\Product;
 use App\Models\Shop;
 use App\Models\VerifyManage;
 use App\Repositories\OrderRepository;
+use App\Services\Delivery\ShiprocketOrderSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -48,6 +50,22 @@ class OrderController extends Controller
         $orders = $orders->when($perPage && $page, function ($query) use ($perPage, $skip) {
             return $query->skip($skip)->take($perPage);
         })->get();
+
+        $shiprocketSyncService = app(ShiprocketOrderSyncService::class);
+        foreach ($orders as $orderItem) {
+            if ((filled($orderItem->shiprocket_order_id) || filled($orderItem->shiprocket_shipment_id)) && blank($orderItem->shiprocket_awb_code)) {
+                try {
+                    if ($shiprocketSyncService->refreshAwbAndTrackUrl($orderItem)) {
+                        $orderItem->refresh();
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('Shiprocket AWB refresh failed on customer order list fetch (API)', [
+                        'order_id' => $orderItem->id,
+                        'message' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
 
         // status wise orders
         $statusWiseOrders = collect(OrderStatus::cases())->mapWithKeys(function ($status) use ($customer) {
@@ -251,6 +269,34 @@ class OrderController extends Controller
             'products',     // ✅ only this
             'statusTimelines', // Add status timelines
         ])->find($request->order_id);
+
+        if ($order && (filled($order->shiprocket_order_id) || filled($order->shiprocket_shipment_id)) && blank($order->shiprocket_awb_code)) {
+            try {
+                $service = app(ShiprocketOrderSyncService::class);
+                if ($service->refreshAwbAndTrackUrl($order)) {
+                    $order->refresh();
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Shiprocket AWB refresh failed on customer order details fetch (API)', [
+                    'order_id' => $order?->id,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        if ($order && (filled($order->shiprocket_order_id) || filled($order->shiprocket_shipment_id))) {
+            try {
+                $service = app(ShiprocketOrderSyncService::class);
+                if ($service->refreshCurrentStatus($order)) {
+                    $order->refresh();
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Shiprocket status refresh failed on customer order details fetch (API)', [
+                    'order_id' => $order?->id,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
 
         return $this->json('order details', [
             'order' => OrderDetailsResource::make($order),

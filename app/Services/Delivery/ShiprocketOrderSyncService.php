@@ -2,7 +2,9 @@
 
 namespace App\Services\Delivery;
 
+use App\Enums\OrderStatus;
 use App\Models\Order;
+use App\Models\OrderStatusTimeline;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -545,5 +547,163 @@ class ShiprocketOrderSyncService
             ]);
             return false;
         }
+    }
+
+    public function refreshCurrentStatus(Order $order): bool
+    {
+        $order->loadMissing(['shop.deliverySetting']);
+
+        $setting = $order->shop?->deliverySetting;
+
+        if (!$setting || $setting->delivery_mode !== 'provider_api' || $setting->delivery_provider !== 'shiprocket') {
+            return false;
+        }
+
+        $apiUserEmail = trim((string) ($setting->provider_api_key ?? ''));
+        $apiUserPassword = trim((string) ($setting->provider_api_secret ?? ''));
+
+        if (!$apiUserEmail || !$apiUserPassword) {
+            return false;
+        }
+
+        $shipmentId = trim((string) ($order->shiprocket_shipment_id ?? ''));
+        $shiprocketOrderId = trim((string) ($order->shiprocket_order_id ?? ''));
+
+        if ($shipmentId === '' && $shiprocketOrderId === '') {
+            return false;
+        }
+
+        $baseUrl = 'https://apiv2.shiprocket.in/v1/external';
+        $tokenCacheKey = 'shiprocket.token.shop.' . ($order->shop_id ?? 'na') . '.' . md5($apiUserEmail);
+
+        $token = Cache::remember($tokenCacheKey, now()->addMinutes(50), function () use ($baseUrl, $apiUserEmail, $apiUserPassword) {
+            $authResponse = Http::timeout(20)->acceptJson()->post($baseUrl . '/auth/login', [
+                'email' => $apiUserEmail,
+                'password' => $apiUserPassword,
+            ]);
+
+            if (!$authResponse->successful()) {
+                return null;
+            }
+
+            return $authResponse->json('token');
+        });
+
+        if (!$token) {
+            return false;
+        }
+
+        try {
+            $providerStatus = null;
+
+            if ($shiprocketOrderId !== '') {
+                $orderResponse = Http::timeout(25)
+                    ->acceptJson()
+                    ->withToken($token)
+                    ->get($baseUrl . '/orders/show/' . $shiprocketOrderId);
+
+                if ($orderResponse->status() === 401) {
+                    Cache::forget($tokenCacheKey);
+                    return false;
+                }
+
+                if ($orderResponse->successful()) {
+                    $providerStatus = $orderResponse->json('data.current_status')
+                        ?? $orderResponse->json('data.status')
+                        ?? $orderResponse->json('current_status')
+                        ?? $orderResponse->json('status')
+                        ?? $orderResponse->json('data.shipments.status');
+                }
+            }
+
+            if (!$providerStatus && $shipmentId !== '') {
+                $trackResponse = Http::timeout(25)
+                    ->acceptJson()
+                    ->withToken($token)
+                    ->get($baseUrl . '/courier/track/shipment/' . $shipmentId);
+
+                if ($trackResponse->status() === 401) {
+                    Cache::forget($tokenCacheKey);
+                    return false;
+                }
+
+                if ($trackResponse->successful()) {
+                    $providerStatus = $trackResponse->json('current_status')
+                        ?? $trackResponse->json('shipment_status')
+                        ?? $trackResponse->json('tracking_data.current_status')
+                        ?? $trackResponse->json('data.tracking_data.current_status')
+                        ?? $trackResponse->json($shipmentId . '.tracking_data.shipment_track.0.activity')
+                        ?? $trackResponse->json('data.' . $shipmentId . '.tracking_data.shipment_track.0.activity');
+                }
+            }
+
+            $mappedStatus = $this->mapProviderStatusToOrderStatus($providerStatus);
+
+            if (!$mappedStatus) {
+                return false;
+            }
+
+            if (!in_array($mappedStatus->value, [
+                OrderStatus::CANCELLED->value,
+                OrderStatus::SHIPPED->value,
+                OrderStatus::DELIVERED->value,
+            ], true)) {
+                return false;
+            }
+
+            if ($order->order_status?->value !== $mappedStatus->value) {
+                $order->update([
+                    'order_status' => $mappedStatus->value,
+                ]);
+            }
+
+            OrderStatusTimeline::updateOrCreate(
+                [
+                    'order_id' => $order->id,
+                    'status' => $mappedStatus->value,
+                ],
+                [
+                    'changed_at' => now(),
+                ]
+            );
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('Shiprocket status refresh exception', [
+                'order_id' => $order->id,
+                'message' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    private function mapProviderStatusToOrderStatus(?string $status): ?OrderStatus
+    {
+        if (!$status) {
+            return null;
+        }
+
+        $normalized = strtoupper(trim((string) $status));
+        $normalized = str_replace(['-', ' '], '_', $normalized);
+
+        if (str_contains($normalized, 'DELIVERED')) {
+            return OrderStatus::DELIVERED;
+        }
+
+        if (str_contains($normalized, 'CANCEL') || str_contains($normalized, 'RTO') || str_contains($normalized, 'LOST') || str_contains($normalized, 'UNDELIVER') || str_contains($normalized, 'RETURN')) {
+            return OrderStatus::CANCELLED;
+        }
+
+        if (str_contains($normalized, 'SHIPPED')
+            || str_contains($normalized, 'IN_TRANSIT')
+            || str_contains($normalized, 'OUT_FOR_DELIVERY')
+            || str_contains($normalized, 'PICKED')
+            || str_contains($normalized, 'MANIFEST')
+            || str_contains($normalized, 'AWB')
+            || str_contains($normalized, 'DISPATCH')) {
+            return OrderStatus::SHIPPED;
+        }
+
+        return null;
     }
 }
