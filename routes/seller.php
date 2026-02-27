@@ -29,7 +29,7 @@ use App\Http\Controllers\API\ShiprocketWebhookController;
 Route::post('/seller/subscription/webhook/razorpay', [SubscriptionController::class, 'webhookHandler'])
     ->name('seller.subscription.webhook.razorpay');
 
-Route::post('/seller/shiprocket/webhook', [ShiprocketWebhookController::class, 'handle'])
+Route::match(['get', 'post'], '/seller/shiprocket/webhook', [ShiprocketWebhookController::class, 'handle'])
     ->name('seller.shiprocket.webhook');
 
 Route::prefix('/seller')->group(function () {
