@@ -9,6 +9,7 @@
     $shop->setRelation('deliverySetting', $shop->deliverySetting ?? new \App\Models\DeliverySetting());
     $formAction = $formAction ?? ($isEdit ? route('shop.shop.update', $shop->id) : route('shop.shop.store'));
     $pageHeading = $isEdit ? __('Edit Shop') : ($isPublicRegistration ? __('Register as Seller') : __('Add New Shop'));
+    $onlinePaymentConfig = old('online_payment_config', $isEdit ? ($shop->online_payment_config ?? []) : []);
 @endphp
 @section('header-title', $pageHeading)
 @section('content')
@@ -54,8 +55,9 @@
                 <li class="nav-item"><a class="nav-link" data-step="2" href="#">Business Category</a></li>
                 <li class="nav-item"><a class="nav-link" data-step="3" href="#">Shipping Settings</a></li>
                 <li class="nav-item"><a class="nav-link" data-step="4" href="#">Delivery Charges</a></li>
+                <li class="nav-item"><a class="nav-link" data-step="5" href="#">Payment Settings</a></li>
                 @if (!$isEdit)
-                    <li class="nav-item"><a class="nav-link" data-step="5" href="#">Account Information</a></li>
+                    <li class="nav-item"><a class="nav-link" data-step="6" href="#">Account Information</a></li>
                 @endif
             </ul>
 
@@ -167,6 +169,7 @@
                                         <textarea name="description" class="form-control" id="description" rows="2" placeholder="Enter Description">{{ old('description', $isEdit ? $shop->description : '') }}</textarea>
                                         <p class="text text-danger m-0" id="descriptionError"></p>
                                     </div>
+
                                 </div>
                             </div>
                             <div class="col-lg-5">
@@ -307,10 +310,8 @@
                 <div class="mt-5">
                     <button type="button" class="btn btn-secondary prev-btn" data-prev="2">&laquo;
                         Previous</button>
-                    @if (!$isEdit)
-                        <button type="button" class="btn btn-primary next-btn float-end" data-next="4">Next
-                            &raquo;</button>
-                    @endif
+                    <button type="button" class="btn btn-primary next-btn float-end" data-next="4">Next
+                        &raquo;</button>
                 </div>
             </div>
 
@@ -527,12 +528,96 @@
 
                 <div class="mt-4">
                     <button type="button" class="btn btn-secondary prev-btn" data-prev="3">« Previous</button>
+                    <button type="button" class="btn btn-primary next-btn float-end" data-next="5">Next
+                        &raquo;</button>
+                </div>
+            </div>
+
+            <!-- STEP 5 - Payment Settings -->
+            <div class="step-content step-5 mt-3" style="display:none;">
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <div class="d-flex gap-2 border-bottom pb-2">
+                            <i class="fa-solid fa-credit-card"></i>
+                            <h5>{{ __('Payment Settings') }}</h5>
+                        </div>
+
+                        <div class="row mt-2">
+                            <div class="col-md-4 mt-3">
+                                <label class="form-label d-block">{{ __('Enable Cash on Delivery') }}</label>
+                                <input type="hidden" name="cash_on_delivery_enabled" value="0">
+                                <div class="form-check form-switch mt-2">
+                                <div style="display: flex; align-items:center;">
+                                    <input style="margin-top: 0px !important; margin-right: 10px;" class="form-check-input" type="checkbox" role="switch"
+                                        id="cash_on_delivery_enabled" name="cash_on_delivery_enabled" value="1"
+                                        {{ old('cash_on_delivery_enabled', $shop->cash_on_delivery_enabled ?? true) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="cash_on_delivery_enabled">{{ __('Allow cash on delivery for this shop') }}</label>
+                               </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 mt-3">
+                                <label class="form-label d-block">{{ __('Enable Online Payment') }}</label>
+                                <input type="hidden" name="online_payment_enabled" value="0">
+                                <div class="form-check form-switch mt-2">
+                                <div style="display: flex; align-items:center;">
+                                    <input style="margin-top: 0px !important; margin-right: 10px;" class="form-check-input" type="checkbox" role="switch"
+                                        id="online_payment_enabled" name="online_payment_enabled" value="1"
+                                        {{ old('online_payment_enabled', $shop->online_payment_enabled ?? false) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="online_payment_enabled">{{ __('Allow online payment for this shop') }}</label>
+                                </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="row">
+                                    <div class="col-md-4 mt-3">
+                                        <label class="form-label">{{ __('Payment Provider') }}</label>
+                                        <select name="online_payment_provider" class="form-control">
+                                            <option value="">-- Select Provider --</option>
+                                            <option value="razorpay"
+                                                {{ old('online_payment_provider', $shop->online_payment_provider ?? '') === 'razorpay' ? 'selected' : '' }}>
+                                                Razorpay
+                                            </option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-4 mt-3">
+                                        <label class="form-label">{{ __('Razorpay Key ID') }}</label>
+                                        <input type="text" class="form-control" name="razorpay_key_id"
+                                            value="{{ old('razorpay_key_id', data_get($onlinePaymentConfig, 'razorpay.key_id', '')) }}"
+                                            placeholder="Enter Razorpay key ID" autocomplete="off">
+                                    </div>
+
+                                    <div class="col-md-4 mt-3">
+                                        <label class="form-label">{{ __('Razorpay Key Secret') }}</label>
+                                        <input type="password" class="form-control" name="razorpay_key_secret"
+                                            value="{{ old('razorpay_key_secret') }}"
+                                            placeholder="{{ $isEdit ? 'Leave empty to keep existing secret' : 'Enter Razorpay key secret' }}"
+                                            autocomplete="new-password">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 mt-2">
+                                <p class="text-danger mb-0" id="paymentGatewayError"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="button" class="btn btn-secondary prev-btn" data-prev="4">&laquo; Previous</button>
+                    @if (!$isEdit)
+                        <button type="button" class="btn btn-primary next-btn float-end" data-next="6">Next
+                            &raquo;</button>
+                    @endif
                 </div>
             </div>
 
 
-            <!-- STEP 5 - Account Information -->
-            <div class="step-content step-5 mt-3" style="display:none;">
+            <!-- STEP 6 - Account Information -->
+            <div class="step-content step-6 mt-3" style="display:none;">
                 <div class="card mt-4">
                     <div class="card-body">
                         <div class="d-flex gap-2 border-bottom pb-2">
@@ -559,7 +644,7 @@
                     <input type="hidden" name="terms_condition_status" id="terms_condition_status" value="0">
                 @endif
                 <div class="mt-3">
-                    <button type="button" class="btn btn-secondary prev-btn" data-prev="3">&laquo;
+                    <button type="button" class="btn btn-secondary prev-btn" data-prev="5">&laquo;
                         Previous</button>
                 </div>
             </div>
@@ -627,6 +712,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const IS_PUBLIC = @json($isPublicRegistration);
     const HAS_PROVIDER_API_KEY = @json(!empty($shop->deliverySetting?->provider_api_key));
     const HAS_PROVIDER_API_SECRET = @json(!empty($shop->deliverySetting?->provider_api_secret));
+    const HAS_RAZORPAY_KEY_ID = @json(!empty(data_get($shop->online_payment_config, 'razorpay.key_id')));
+    const HAS_RAZORPAY_KEY_SECRET = @json(!empty(data_get($shop->online_payment_config, 'razorpay.key_secret')));
     var DISTRICTS_URL_TEMPLATE = "{{ route('shop.get-districts', ['stateId' => 'STATE_ID']) }}";
     $(document).ready(function() {
 
@@ -881,6 +968,7 @@ document.addEventListener('DOMContentLoaded', function () {
             $('#businessCategoryError').text('');
             $('#deliveryStateError').text('');
             $('#deliveryChargeError').text('');
+            $('#paymentGatewayError').text('');
             $('#termsError').addClass('d-none');
             $('#formErrorBox').addClass('d-none');
             $('#formErrorBox ul').empty();
@@ -942,15 +1030,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 store_since: 1,
                 return_policy: 1,
                 description: 1,
+                cash_on_delivery_enabled: 5,
+                online_payment_enabled: 5,
+                online_payment_provider: 5,
+                razorpay_key_id: 5,
+                razorpay_key_secret: 5,
                 profile_photo: 1,
                 shop_logo: 1,
                 shop_banner: 1,
                 bussiness_categories_id: 2,
                 delivery_days: 3,
                 delivery_state_ids: 3,
-                email: 5,
-                password: 5,
-                password_confirmation: 5,
+                email: 6,
+                password: 6,
+                password_confirmation: 6,
                 delivery_provider: 4,
                 provider_api_key: 4,
                 provider_api_secret: 4,
@@ -1022,6 +1115,37 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const description = textVal('description');
             if (description.length > 200) addError(errors, 'description', 'The description may not be greater than 200 characters.');
+
+            const onlinePaymentEnabled = $('input[name="online_payment_enabled"]:checked').val() === '1';
+            const cashOnDeliveryEnabled = $('input[name="cash_on_delivery_enabled"]:checked').val() === '1';
+            const onlinePaymentProvider = textVal('online_payment_provider');
+
+            if (!onlinePaymentEnabled && !cashOnDeliveryEnabled) {
+                addError(errors, 'cash_on_delivery_enabled', 'Either Cash on Delivery or Online Payment must be enabled.');
+            }
+
+            if (onlinePaymentEnabled) {
+                if (!onlinePaymentProvider) {
+                    addError(errors, 'online_payment_provider', 'Please select an online payment provider.');
+                }
+
+                if (onlinePaymentProvider && !['razorpay'].includes(onlinePaymentProvider)) {
+                    addError(errors, 'online_payment_provider', 'Selected online payment provider is invalid.');
+                }
+            }
+
+            if (onlinePaymentEnabled && onlinePaymentProvider === 'razorpay') {
+                const razorpayKeyId = textVal('razorpay_key_id');
+                const razorpayKeySecret = textVal('razorpay_key_secret');
+
+                if (!razorpayKeyId && !HAS_RAZORPAY_KEY_ID) {
+                    addError(errors, 'razorpay_key_id', 'The Razorpay key ID field is required when Razorpay is selected.');
+                }
+
+                if (!razorpayKeySecret && !HAS_RAZORPAY_KEY_SECRET) {
+                    addError(errors, 'razorpay_key_secret', 'The Razorpay key secret field is required when Razorpay is selected.');
+                }
+            }
 
             const storeSince = textVal('store_since');
             if (!storeSince) {
@@ -1209,6 +1333,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (field === 'amount_rules' || field.startsWith('amount_rules.') || field === 'state_charges' || field
                     .startsWith('state_charges.') || field === 'delivery_mode' || field === 'delivery_provider' || field === 'provider_api_key' || field === 'provider_api_secret') {
                     $('#deliveryChargeError').text(messages[0]);
+                    return;
+                }
+                if (
+                    field === 'cash_on_delivery_enabled' ||
+                    field === 'online_payment_enabled' ||
+                    field === 'online_payment_provider' ||
+                    field === 'razorpay_key_id' ||
+                    field === 'razorpay_key_secret'
+                ) {
+                    $('#paymentGatewayError').text(messages[0]);
                     return;
                 }
                 let input = $('[name="' + field + '"]');

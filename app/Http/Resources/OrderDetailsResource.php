@@ -17,6 +17,21 @@ class OrderDetailsResource extends JsonResource
     public function toArray(Request $request): array
     {
         $paymentMethod = $this->payment_method->value;
+        $latestPayment = $this->payments?->sortByDesc('id')->first();
+        $gatewayPaymentStatus = null;
+
+        if ($latestPayment) {
+            if (! empty($latestPayment->razorpay_refund_id)) {
+                $gatewayPaymentStatus = 'Refunded';
+            } elseif ($latestPayment->is_paid) {
+                $gatewayPaymentStatus = 'Paid';
+            } elseif (! empty($latestPayment->razorpay_payment_id)) {
+                $gatewayPaymentStatus = 'Authorized';
+            } else {
+                $gatewayPaymentStatus = 'Pending';
+            }
+        }
+
         if ($this->payment_status->value == PaymentStatus::PENDING->value && $paymentMethod != PaymentMethod::CASH->value) {
             $paymentMethod = PaymentMethod::ONLINE->value;
         }
@@ -35,11 +50,17 @@ class OrderDetailsResource extends JsonResource
             'id' => $this->id,
             'order_code' => (string) '#' . $this->order_code,
             'order_status' => $this->order_status->value,
+            'cancel_reason' => $this->cancel_reason,
             'created_at' => $this->created_at,
             'placed_at' => $this->created_at->format('d M, Y h:i A'),
             'estimated_delivery_date' => (string) $estimateDelivery,
             'payment_method' => $paymentMethod,
             'payment_status' => $this->payment_status->value,
+            'gateway_payment_method' => $latestPayment?->payment_method,
+            'gateway_payment_status' => $gatewayPaymentStatus,
+            'razorpay_order_id' => $latestPayment?->razorpay_order_id,
+            'razorpay_payment_id' => $latestPayment?->razorpay_payment_id,
+            'razorpay_refund_id' => $latestPayment?->razorpay_refund_id,
             'total_amount' => (float) number_format($this->total_amount, 2, '.', ''),
             'tax_amount' => (float) number_format($this->tax_amount, 2, '.', ''),
             'discount' => (float) number_format($this->discount, 2, '.', ''),

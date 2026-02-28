@@ -13,6 +13,7 @@ use App\Models\DeliveryStateCharge;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ShopRepository extends Repository
 {
@@ -52,6 +53,28 @@ class ShopRepository extends Repository
             $shopCode = strtoupper(Str::random(10));
         } while (Shop::query()->where('shop_code', $shopCode)->exists());
 
+        $onlinePaymentEnabled = $request->boolean('online_payment_enabled');
+        $cashOnDeliveryEnabled = $request->has('cash_on_delivery_enabled')
+            ? $request->boolean('cash_on_delivery_enabled')
+            : true;
+        $onlinePaymentProvider = $request->online_payment_provider ?: null;
+        $onlinePaymentConfig = null;
+
+        if (! $onlinePaymentEnabled && ! $cashOnDeliveryEnabled) {
+            throw ValidationException::withMessages([
+                'cash_on_delivery_enabled' => __('Either Cash on Delivery or Online Payment must be enabled.'),
+            ]);
+        }
+
+        if ($onlinePaymentProvider === 'razorpay') {
+            $onlinePaymentConfig = [
+                'razorpay' => [
+                    'key_id' => $request->razorpay_key_id,
+                    'key_secret' => $request->razorpay_key_secret,
+                ],
+            ];
+        }
+
         // create new shop and return
         $shop = self::create([
             'shop_code' => $shopCode,
@@ -79,6 +102,10 @@ class ShopRepository extends Repository
             'phone_number' => $request->phone,
             'terms_condition_status' => 1,
             'estimated_delivery_time' => $request->delivery_days,
+            'online_payment_enabled' => $onlinePaymentEnabled,
+            'cash_on_delivery_enabled' => $cashOnDeliveryEnabled,
+            'online_payment_provider' => $onlinePaymentProvider,
+            'online_payment_config' => $onlinePaymentConfig,
         ]);
 
         $shop->businessCategories()->sync($request->bussiness_categories_id);
@@ -175,6 +202,38 @@ class ShopRepository extends Repository
         $thumbnail = $request->hasFile('shop_logo') ? self::updateLogo($shop, $request) : $shop->logo;
         $banner = $request->hasFile('shop_banner') ? self::updateBanner($shop, $request) : $shop->banner;
 
+        $onlinePaymentEnabled = $request->boolean('online_payment_enabled');
+        $cashOnDeliveryEnabled = $request->has('cash_on_delivery_enabled')
+            ? $request->boolean('cash_on_delivery_enabled')
+            : (bool) ($shop->cash_on_delivery_enabled ?? true);
+        $onlinePaymentProvider = $request->online_payment_provider ?: ($shop->online_payment_provider ?: null);
+        $onlinePaymentConfig = $shop->online_payment_config;
+
+        if (! $onlinePaymentEnabled && ! $cashOnDeliveryEnabled) {
+            throw ValidationException::withMessages([
+                'cash_on_delivery_enabled' => __('Either Cash on Delivery or Online Payment must be enabled.'),
+            ]);
+        }
+
+        if ($onlinePaymentProvider === 'razorpay') {
+            $existingRazorpay = data_get($onlinePaymentConfig, 'razorpay', []);
+
+            $onlinePaymentConfig = [
+                'razorpay' => [
+                    'key_id' => $request->filled('razorpay_key_id')
+                        ? $request->razorpay_key_id
+                        : ($existingRazorpay['key_id'] ?? null),
+                    'key_secret' => $request->filled('razorpay_key_secret')
+                        ? $request->razorpay_key_secret
+                        : ($existingRazorpay['key_secret'] ?? null),
+                ],
+            ];
+        }
+
+        if (! $onlinePaymentProvider) {
+            $onlinePaymentConfig = $shop->online_payment_config;
+        }
+
         // Update shop
         self::update($shop, [
             'name' => $request->shop_name,
@@ -197,6 +256,10 @@ class ShopRepository extends Repository
             'return_policy' => $request->return_policy,
             'terms_condition_status' => 1,
             'estimated_delivery_time' => $request->delivery_days,
+            'online_payment_enabled' => $onlinePaymentEnabled,
+            'cash_on_delivery_enabled' => $cashOnDeliveryEnabled,
+            'online_payment_provider' => $onlinePaymentProvider,
+            'online_payment_config' => $onlinePaymentConfig,
         ]);
 
         $shop->businessCategories()->sync($request->bussiness_categories_id);

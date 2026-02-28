@@ -39,8 +39,38 @@
                             </div> -->
                             <div class="order-item">
                                 <label class="label">{{ __('Payment Method') }}:</label>
-                                <span class="value">{{ $order->payment_method }}</span>
+                                @php
+                                    $paymentMethodValue = (string) ($order->payment_method?->value ?? $order->payment_method);
+                                    $normalizedPaymentMethod = strtolower(trim($paymentMethodValue));
+                                @endphp
+                                <span class="value">{{ $normalizedPaymentMethod === 'cash payment' ? 'Cash on Delivery' : $paymentMethodValue }}</span>
                             </div>
+                            @php
+                                $latestPayment = $order->payments()->latest('payments.id')->first();
+                                $isOnlinePayment = !in_array($normalizedPaymentMethod, ['cash', 'cash payment'], true);
+                                $isRazorpayPayment = strtolower((string) ($latestPayment?->payment_method ?? '')) === 'razorpay';
+                                $hasRazorpayOrderId = !empty($latestPayment?->razorpay_order_id);
+                                $showGatewayStatus = $isOnlinePayment && $isRazorpayPayment && $hasRazorpayOrderId;
+
+                                $gatewayPaymentStatus = null;
+                                if ($showGatewayStatus) {
+                                    if (!empty($latestPayment->razorpay_refund_id)) {
+                                        $gatewayPaymentStatus = 'Refunded';
+                                    } elseif (!empty($latestPayment->is_paid)) {
+                                        $gatewayPaymentStatus = 'Paid';
+                                    } elseif (!empty($latestPayment->razorpay_payment_id)) {
+                                        $gatewayPaymentStatus = 'Authorized';
+                                    } else {
+                                        $gatewayPaymentStatus = 'Pending';
+                                    }
+                                }
+                            @endphp
+                            @if ($showGatewayStatus)
+                                <div class="order-item">
+                                    <label class="label">{{ __('Payment Current Status') }}:</label>
+                                    <span class="value">{{ __($gatewayPaymentStatus) }}</span>
+                                </div>
+                            @endif
                             <div class="order-item">
                                 <label class="label">{{ __('GST') }}:</label>
                                 <span class="value">{{ $order->gst ?? '_' }}</span>

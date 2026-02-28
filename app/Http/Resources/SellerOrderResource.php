@@ -10,6 +10,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class SellerOrderResource extends JsonResource
 {
+    private const LEGACY_CANCELLED_BY_CUSTOMER = 'Cancelled by Customer';
+
     /**
      * Transform the resource into an array.
      *
@@ -29,6 +31,8 @@ class SellerOrderResource extends JsonResource
             OrderStatus::SHIPPED->value,
             OrderStatus::DELIVERED->value,
             OrderStatus::CANCELLED->value,
+            OrderStatus::CANCELLED_BY_CUSTOMER->value,
+            self::LEGACY_CANCELLED_BY_CUSTOMER,
         ];
 
         $currentStatus = $this->order_status?->value ?? OrderStatus::PENDING->value;
@@ -37,8 +41,18 @@ class SellerOrderResource extends JsonResource
             $maxIndex = 0;
         }
 
-        if ($currentStatus === OrderStatus::CANCELLED->value) {
+        if (
+            $currentStatus === OrderStatus::CANCELLED->value
+            || $currentStatus === OrderStatus::CANCELLED_BY_CUSTOMER->value
+            || $currentStatus === self::LEGACY_CANCELLED_BY_CUSTOMER
+        ) {
             $maxIndex = array_search(OrderStatus::CANCELLED->value, $orderedStatuses, true);
+            if (
+                $currentStatus === OrderStatus::CANCELLED_BY_CUSTOMER->value
+                || $currentStatus === self::LEGACY_CANCELLED_BY_CUSTOMER
+            ) {
+                $maxIndex = array_search(OrderStatus::CANCELLED_BY_CUSTOMER->value, $orderedStatuses, true);
+            }
         }
 
         $timeline = [];

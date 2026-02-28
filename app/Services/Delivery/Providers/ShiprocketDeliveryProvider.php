@@ -70,8 +70,6 @@ class ShiprocketDeliveryProvider implements DeliveryRateProviderInterface
         $cod = 0;
         if (request()->boolean('is_cod')) {
             $cod = 1;
-        } elseif ($rawPaymentMethod === '' && !request()->has('is_cod')) {
-            $cod = 1;
         } elseif (in_array($normalizedPaymentMethod, [
             'cod',
             'cash_on_delivery',
@@ -151,17 +149,49 @@ class ShiprocketDeliveryProvider implements DeliveryRateProviderInterface
                 return null;
             }
 
+            $recommendedCourierCompanyId = $serviceResponse->json('data.recommended_courier_company_id')
+                ?? $serviceResponse->json('recommended_courier_company_id')
+                ?? $serviceResponse->json('data.shiprocket_recommended_courier_id')
+                ?? $serviceResponse->json('shiprocket_recommended_courier_id');
+
+            if ($recommendedCourierCompanyId !== null) {
+                $recommendedFreight = collect($companies)
+                    ->first(function ($company) use ($recommendedCourierCompanyId) {
+                        if (!is_array($company)) {
+                            return false;
+                        }
+
+                        $companyId = $company['courier_company_id'] ?? null;
+                        if ((string) $companyId !== (string) $recommendedCourierCompanyId) {
+                            return false;
+                        }
+
+                        return isset($company['freight_charge']) && is_numeric($company['freight_charge']);
+                    });
+
+                if (is_array($recommendedFreight) && isset($recommendedFreight['freight_charge'])) {
+                    $freightCharge = (float) $recommendedFreight['freight_charge'];
+                    $coverageCharges = (isset($recommendedFreight['coverage_charges']) && is_numeric($recommendedFreight['coverage_charges']))
+                        ? (float) $recommendedFreight['coverage_charges']
+                        : 0.0;
+
+                    return $freightCharge + $coverageCharges;
+                }
+            }
+
             $charges = collect($companies)
                 ->map(function ($company) {
                     if (!is_array($company)) {
                         return null;
                     }
 
-                    $possibleKeys = ['rate', 'freight_charge', 'courier_charge', 'total_charge', 'shipping_charge'];
-                    foreach ($possibleKeys as $key) {
-                        if (isset($company[$key]) && is_numeric($company[$key])) {
-                            return (float) $company[$key];
-                        }
+                    if (isset($company['freight_charge']) && is_numeric($company['freight_charge'])) {
+                        $freightCharge = (float) $company['freight_charge'];
+                        $coverageCharges = (isset($company['coverage_charges']) && is_numeric($company['coverage_charges']))
+                            ? (float) $company['coverage_charges']
+                            : 0.0;
+
+                        return $freightCharge + $coverageCharges;
                     }
 
                     return null;

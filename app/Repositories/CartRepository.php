@@ -13,6 +13,7 @@ use App\Http\Resources\SizeResource;
 use App\Models\Cart;
 use App\Models\CartBulkItem;
 use App\Models\CartVariant;
+use App\Models\Address;
 use App\Models\DeliveryCharge;
 use App\Models\DeliverySetting;
 use App\Models\Product;
@@ -24,6 +25,23 @@ use Illuminate\Support\Number;
 
 class CartRepository extends Repository
 {
+    private static function resolveStateIdFromRequest($request = null): ?int
+    {
+        $stateId = data_get($request, 'state_id', request()->input('state_id'));
+        if ($stateId !== null && $stateId !== '') {
+            return (int) $stateId;
+        }
+
+        $addressId = data_get($request, 'address_id', request()->input('address_id'));
+        if (! $addressId) {
+            return null;
+        }
+
+        $address = Address::query()->find($addressId);
+
+        return $address?->state_id ? (int) $address->state_id : null;
+    }
+
     public static function model()
     {
         return Cart::class;
@@ -183,12 +201,13 @@ class CartRepository extends Repository
             }
 
             $shop = $products[0]?->shop;
+            $stateId = self::resolveStateIdFromRequest($request);
 
             $lastOnline = (bool) ($shop?->isOnline() ?? false);
 
             $isDeliverable = true;
             $deliveryCharge = 0.00;
-            $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, request()->state_id);
+            $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, $stateId);
             if ($deliveryCharge === null) {
                 $isDeliverable = false;
                 $deliveryCharge = 0.00;
@@ -216,8 +235,8 @@ class CartRepository extends Repository
                 'is_deliverable' => $checkout['is_deliverable'],
 
                 'selected_state_ids' => DeliverySetting::where('shop_id', $shop?->id)->first()->selected_state_ids,
-                'state_id' => request()->state_id,
-                'is_dely' => in_array((string)request()->state_id, DeliverySetting::where('shop_id', $shop?->id)->first()->selected_state_ids),
+                'state_id' => $stateId,
+                'is_dely' => in_array((string) $stateId, DeliverySetting::where('shop_id', $shop?->id)->first()->selected_state_ids),
                 'delivery_mode' => DeliverySetting::where('shop_id', $shop?->id)->first()->delivery_mode,
 
                 'totalAmount' => $checkout['total_amount'],
@@ -237,6 +256,9 @@ class CartRepository extends Repository
                 'shop_address' => $shop->districts->name . ', ' . $shop->states->name,
                 'shop_rating' => (float) $shop->averageRating,
                 'shop_online' => $lastOnline,
+                'cash_on_delivery_enabled' => (bool) ($shop->cash_on_delivery_enabled ?? true),
+                'online_payment_enabled' => (bool) ($shop->online_payment_enabled ?? false),
+                'online_payment_provider' => $shop->online_payment_provider,
                 'products' => $productArray,
             ];
         }
@@ -501,9 +523,9 @@ class CartRepository extends Repository
         //     }
         // }
 
-
+        $stateId = self::resolveStateIdFromRequest($request);
         $isDeliverable = true;
-        $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, request()->state_id);
+        $deliveryCharge = getShopDeliveryCharge($totalAmount, $shop, $stateId);
         if ($deliveryCharge === null) {
             $isDeliverable = false;
             $deliveryCharge = 0.00;

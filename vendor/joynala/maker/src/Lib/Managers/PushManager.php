@@ -17,7 +17,7 @@ class PushManager
                 self::storeDate();
                 $response = self::callServer();
 
-                if(array_key_exists('customer_type', $response) && $response['customer_type'] === 'Fake'){
+                if(is_array($response) && array_key_exists('customer_type', $response) && $response['customer_type'] === 'Fake'){
                     if(!config('app.mode')) {
                         self::destroy();
                     }

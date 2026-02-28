@@ -3,6 +3,7 @@
 namespace App\Services\Delivery;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentMethod;
 use App\Models\Order;
 use App\Models\OrderStatusTimeline;
 use Illuminate\Support\Facades\Cache;
@@ -96,7 +97,7 @@ class ShiprocketOrderSyncService
             'shipping_email' => (string) ($customer->email ?? 'no-reply@example.com'),
             'shipping_phone' => (string) ($orderAddress->phone ?? $customer->phone ?? '9999999999'),
             'order_items' => $items,
-            'payment_method' => $order->payment_method?->name === 'CASH' ? 'COD' : 'Prepaid',
+            'payment_method' => $this->resolveShiprocketPaymentMethod($order),
             'shipping_charges' => (float) ($order->delivery_charge ?? 0),
             'giftwrap_charges' => 0,
             'transaction_charges' => 0,
@@ -218,6 +219,11 @@ class ShiprocketOrderSyncService
             ]);
             return false;
         }
+    }
+
+    private function resolveShiprocketPaymentMethod(Order $order): string
+    {
+        return $order->payment_method === PaymentMethod::CASH ? 'COD' : 'Prepaid';
     }
 
     public function requestPickup(Order $order): bool

@@ -112,15 +112,20 @@
                         'delivered' => asset('assets/icons-admin/box-check.svg'),
                         'shipped' => asset('assets/icons-admin/truck.svg'),
                         'cancelled' => asset('assets/icons-admin/shopping-cart-times.svg'),
+                        'userCancelled' => asset('assets/icons-admin/shopping-cart-times.svg'),
                     ];
                 @endphp
                 <div class="d-flex flex-wrap gap-3 orderStatus">
                     @foreach ($orderStatuses as $status)
+                        @php
+                            $statusKey = Str::camel($status->value);
+                            $statusCount = ${$statusKey} ?? 0;
+                        @endphp
                         <a href="{{ route('shop.order.index', str_replace(' ', '_', $status->value)) }}"
-                            class="d-flex status flex-grow-1 {{ Str::camel($status->value) }}">
+                            class="d-flex status flex-grow-1 {{ $statusKey }}">
                             <div class="d-flex align-items-center gap-2 justify-content-between w-100">
                                 <div class="d-flex align-items-center gap-2">
-                                    <img src="{{ $icons[Str::camel($status->value)] }}" alt="icon" loading="lazy" />
+                                    <img src="{{ $icons[$statusKey] ?? $icons['cancelled'] }}" alt="icon" loading="lazy" />
                                     <span>{{ __($status->value) }}</span>
                                 </div>
                                 <div class="icon">
@@ -128,7 +133,7 @@
                                         loading="lazy" />
                                 </div>
                             </div>
-                            <span class="count">{{ ${Str::camel($status->value)} }}</span>
+                            <span class="count">{{ $statusCount }}</span>
                         </a>
                     @endforeach
                 </div>

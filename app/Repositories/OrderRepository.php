@@ -43,14 +43,20 @@ class OrderRepository extends Repository
     /**
      * Store new order from cart
      */
-    public static function storeByRequestFromCart(OrderRequest $request, $paymentMethod, $carts): Payment
+    public static function storeByRequestFromCart($request, $paymentMethod, $carts, ?Payment $payment = null): Payment
     {
         $totalPayableAmount = 0;
 
-        $payment = Payment::create([
-            'amount' => $totalPayableAmount,
-            'payment_method' => $request->payment_method,
-        ]);
+        if (! $payment) {
+            $payment = Payment::create([
+                'amount' => $totalPayableAmount,
+                'payment_method' => $request->payment_method,
+            ]);
+        } else {
+            $payment->update([
+                'payment_method' => $request->payment_method,
+            ]);
+        }
 
         $shopProducts = $carts->groupBy('shop_id');
 
@@ -59,6 +65,10 @@ class OrderRepository extends Repository
             $shop = Shop::find($shopId);
 
             $getCartAmounts = self::getCartWiseAmounts($shop, collect($cartProducts), $request->coupon_code, $request->address_id);
+
+            if (($getCartAmounts['isDeliverable'] ?? true) === false) {
+                throw new \RuntimeException('Delivery charge could not be fetched for the selected address. Please try again.');
+            }
 
             $order = self::createNewOrder($request, $shop, $paymentMethod, $getCartAmounts);
 
@@ -210,33 +220,6 @@ class OrderRepository extends Repository
                 ]);
             }
 
-            $user = auth()->user();
-            $title = 'Order Received';
-            $message =  'Order amount: ₹' . $totalPayableAmount  . ' Order id: ' . $order->prefix . $order->order_code;
-            $deviceKeys = $order->shop->user->devices->pluck('key')->toArray();
-
-            $noty = null;
-            try {
-                $noty =  NotificationServices::sendNotificationToTopic($message, 'topic_seller_' . $order->shop->id, $title);
-            } catch (\Throwable $th) {
-            }
-
-            $notify = (object) [
-                'title' => $title,
-                'content' => $message,
-                'user_id' => $order->shop->user_id,
-                'shop_id' => $order->shop->id,
-                'type' => 'order',
-            ];
-
-            NotificationRepository::storeByRequest($notify);
-
-            if ($user?->email) {
-                try {
-                    OrderMailEvent::dispatch($user->email, $order);
-                } catch (\Throwable $th) {
-                }
-            }
         }
 
         $payment->update([
@@ -293,7 +276,7 @@ class OrderRepository extends Repository
             'total_amount' => $getCartAmounts['totalAmount'],
             'tax_amount' => $getCartAmounts['totalTaxAmount'],
             'coupon_discount' => $getCartAmounts['discount'],
-            'payment_method' => $paymentMethod->value,
+            'payment_method' => self::normalizeOrderPaymentMethod($paymentMethod)->value,
             'order_status' => OrderStatus::PENDING->value,
             'address_id' => $orderaddress_id,
             'instruction' => $request->note,
@@ -423,6 +406,7 @@ class OrderRepository extends Repository
 
         // return array
         return [
+            'isDeliverable' => $isDeliverable,
             'totalAmount' => $totalAmount,
             'totalTaxAmount' => $totalTaxAmount,
             'payableAmount' => $payableAmount,
@@ -458,7 +442,11 @@ class OrderRepository extends Repository
             'total_amount' => $order->total_amount,
             'tax_amount' => $order->tax_amount,
             'coupon_discount' => $order->coupon_discount,
-            'payment_method' => $payment->payment_method ?? $order->payment_method,
+            'payment_method' => self::normalizeOrderPaymentMethod(
+                ($payment && !empty($payment->payment_method))
+                    ? PaymentMethod::tryFrom((string) $payment->payment_method)
+                    : $order->payment_method
+            )->value,
             'order_status' => OrderStatus::PENDING->value,
             'address_id' => $order->address_id,
             'instruction' => $order->instruction,
@@ -493,14 +481,80 @@ class OrderRepository extends Repository
         }
 
         $user = auth()->user();
-        if ($user?->email) {
-            try {
-                OrderMailEvent::dispatch($user->email, $newOrder);
-            } catch (\Throwable $th) {
-            }
-        }
+        self::dispatchOrderNotificationsAfterResponse(
+            order: $newOrder,
+            title: 'Order Received',
+            message: 'Order amount: ₹' . $newOrder->payable_amount . ' Order id: ' . $newOrder->prefix . $newOrder->order_code,
+            customerEmail: $user?->email,
+        );
 
         return $order;
+    }
+
+    private static function dispatchOrderNotificationsAfterResponse(Order $order, string $title, string $message, ?string $customerEmail): void
+    {
+        $orderId = $order->id;
+        $shopId = $order->shop_id;
+        $shopUserId = $order->shop->user_id;
+
+        app()->terminating(function () use ($orderId, $shopId, $shopUserId, $title, $message, $customerEmail) {
+            try {
+                NotificationServices::sendNotificationToTopic($message, 'topic_seller_' . $shopId, $title);
+            } catch (\Throwable $th) {
+                Log::warning('Topic notification failed after order', [
+                    'order_id' => $orderId,
+                    'shop_id' => $shopId,
+                    'message' => $th->getMessage(),
+                ]);
+            }
+
+            try {
+                $notify = (object) [
+                    'title' => $title,
+                    'content' => $message,
+                    'user_id' => $shopUserId,
+                    'shop_id' => $shopId,
+                    'type' => 'order',
+                ];
+
+                NotificationRepository::storeByRequest($notify);
+            } catch (\Throwable $th) {
+                Log::warning('Notification DB store failed after order', [
+                    'order_id' => $orderId,
+                    'shop_id' => $shopId,
+                    'message' => $th->getMessage(),
+                ]);
+            }
+
+            if ($customerEmail) {
+                try {
+                    $mailOrder = Order::find($orderId);
+                    if ($mailOrder) {
+                        OrderMailEvent::dispatch($customerEmail, $mailOrder);
+                    }
+                } catch (\Throwable $th) {
+                    Log::warning('Order mail dispatch failed after order', [
+                        'order_id' => $orderId,
+                        'message' => $th->getMessage(),
+                    ]);
+                }
+            }
+        });
+    }
+
+    private static function normalizeOrderPaymentMethod($paymentMethod): PaymentMethod
+    {
+        if ($paymentMethod instanceof PaymentMethod) {
+            return $paymentMethod === PaymentMethod::CASH
+                ? PaymentMethod::CASH
+                : PaymentMethod::ONLINE;
+        }
+
+        if ($paymentMethod === PaymentMethod::CASH->value || $paymentMethod === PaymentMethod::CASH->name) {
+            return PaymentMethod::CASH;
+        }
+
+        return PaymentMethod::ONLINE;
     }
 
     /**

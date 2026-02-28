@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Shop;
 
+use App\Enums\PaymentMethod;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Driver;
 use App\Models\Order;
 use App\Models\OrderStatusTimeline;
+use App\Models\Payment;
+use App\Models\Shop;
 use App\Repositories\NotificationRepository;
 use App\Repositories\OrderRepository;
 use App\Repositories\TransactionRepository;
@@ -18,6 +21,7 @@ use Carbon\Carbon;
 use Endroid\QrCode\QrCode as EndroidQrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;
 use Mpdf\Mpdf;
@@ -110,9 +114,29 @@ class OrderController extends Controller
     {
         $request->validate(['status' => 'required']);
 
+        if ($request->status == OrderStatus::CANCELLED->value) {
+            $payment = $order->payments()->latest('payments.id')->first();
+
+            $isOnlineOrder = $order->payment_method !== PaymentMethod::CASH;
+            $isPaid = (bool) ($payment?->is_paid ?? false);
+            $hasRazorpayOrderId = ! empty($payment?->razorpay_order_id);
+            $isPaidOnline = $isOnlineOrder && $isPaid && $hasRazorpayOrderId;
+
+            if ($isPaidOnline) {
+                $refund = $this->refundRazorpayPaymentForOrder($order, $payment);
+                if (! $refund['status']) {
+                    return back()->with('error', __('Unable to cancel order because refund failed. ') . $refund['message']);
+                }
+            }
+        }
+
         $order->update(['order_status' => $request->status]);
 
-        if ($request->status === OrderStatus::CONFIRM->value && empty($order->shiprocket_order_id)) {
+        $shouldSyncShiprocket =
+            $request->status === OrderStatus::CONFIRM->value
+            && empty($order->shiprocket_order_id);
+
+        if ($shouldSyncShiprocket) {
             try {
                 $service = app(ShiprocketOrderSyncService::class);
                 $service->sync($order);
@@ -195,6 +219,138 @@ class OrderController extends Controller
         }
 
         return back()->with('success', __('Order status updated successfully.'));
+    }
+
+    private function getShopRazorpayConfig(Shop $shop): array
+    {
+        if (! $shop->online_payment_enabled) {
+            return [
+                'status' => false,
+                'message' => 'Online payment is not enabled for this shop',
+            ];
+        }
+
+        if (($shop->online_payment_provider ?? '') !== 'razorpay') {
+            return [
+                'status' => false,
+                'message' => 'This shop does not support Razorpay',
+            ];
+        }
+
+        $key = data_get($shop->online_payment_config, 'razorpay.key_id');
+        $secret = data_get($shop->online_payment_config, 'razorpay.key_secret');
+
+        if (! $key || ! $secret) {
+            return [
+                'status' => false,
+                'message' => 'Razorpay keys are missing for this shop',
+            ];
+        }
+
+        return [
+            'status' => true,
+            'key' => $key,
+            'secret' => $secret,
+        ];
+    }
+
+    private function refundRazorpayPaymentForOrder(Order $order, Payment $payment): array
+    {
+        if (! empty($payment->razorpay_refund_id)) {
+            return [
+                'status' => true,
+                'message' => 'Payment already refunded',
+            ];
+        }
+
+        $shop = $order->shop;
+        if (! $shop) {
+            return [
+                'status' => false,
+                'message' => 'Shop not found for refund',
+            ];
+        }
+
+        $config = $this->getShopRazorpayConfig($shop);
+        if (! ($config['status'] ?? false)) {
+            return [
+                'status' => false,
+                'message' => $config['message'] ?? 'Razorpay config not found for refund',
+            ];
+        }
+
+        $razorpayPaymentId = trim((string) ($payment->razorpay_payment_id ?? ''));
+        if ($razorpayPaymentId === '') {
+            return [
+                'status' => false,
+                'message' => 'Razorpay payment id missing for refund',
+            ];
+        }
+
+        $amountInPaise = (int) round(((float) $payment->amount) * 100);
+
+        try {
+            $response = Http::timeout(15)
+                ->acceptJson()
+                ->withBasicAuth($config['key'], $config['secret'])
+                ->post('https://api.razorpay.com/v1/payments/' . $razorpayPaymentId . '/refund', [
+                    'amount' => $amountInPaise,
+                    'notes' => [
+                        'order_id' => (string) $order->id,
+                        'reason' => 'Seller cancellation',
+                    ],
+                ]);
+
+            if (! $response->successful()) {
+                Log::warning('Razorpay refund failed on seller cancel', [
+                    'order_id' => $order->id,
+                    'payment_id' => $payment->id,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return [
+                    'status' => false,
+                    'message' => 'Razorpay refund request failed',
+                ];
+            }
+
+            $refundId = (string) ($response->json('id') ?? '');
+            $refundStatus = (string) ($response->json('status') ?? '');
+            $refundAmount = $response->json('amount');
+
+            if ($refundId === '') {
+                return [
+                    'status' => false,
+                    'message' => 'Invalid Razorpay refund response',
+                ];
+            }
+
+            $payment->update([
+                'razorpay_refund_id' => $refundId,
+                'razorpay_refund_status' => $refundStatus !== '' ? $refundStatus : 'processed',
+                'razorpay_refund_amount' => is_numeric($refundAmount)
+                    ? ((float) $refundAmount / 100)
+                    : (float) $payment->amount,
+                'razorpay_refunded_at' => now(),
+            ]);
+
+            return [
+                'status' => true,
+                'message' => 'Refund initiated successfully',
+            ];
+        } catch (\Throwable $e) {
+            Log::warning('Razorpay refund exception on seller cancel', [
+                'order_id' => $order->id,
+                'payment_id' => $payment->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return [
+                'status' => false,
+                'message' => 'Razorpay refund exception',
+            ];
+        }
     }
 
     /**

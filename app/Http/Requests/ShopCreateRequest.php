@@ -87,6 +87,12 @@ class ShopCreateRequest extends FormRequest
             'delivery_provider' => ['nullable', 'required_if:delivery_mode,provider_api', 'in:shiprocket'],
             'provider_api_key' => ['nullable', 'required_if:delivery_mode,provider_api', 'string', 'max:255'],
             'provider_api_secret' => ['nullable', 'required_if:delivery_mode,provider_api', 'string', 'max:255'],
+
+            'online_payment_enabled' => ['nullable', 'boolean'],
+            'cash_on_delivery_enabled' => ['nullable', 'boolean'],
+            'online_payment_provider' => ['nullable', 'required_if:online_payment_enabled,1', 'in:razorpay'],
+            'razorpay_key_id' => ['nullable', 'required_if:online_payment_provider,razorpay', 'string', 'max:255'],
+            'razorpay_key_secret' => ['nullable', 'required_if:online_payment_provider,razorpay', 'string', 'max:255'],
         ];
     }
 
@@ -137,6 +143,29 @@ class ShopCreateRequest extends FormRequest
             'delivery_provider.in' => __('Selected delivery API provider is invalid.'),
             'provider_api_key.required_if' => __('The provider API key field is required for API delivery mode.'),
             'provider_api_secret.required_if' => __('The provider API secret field is required for API delivery mode.'),
+
+            'online_payment_provider.required_if' => __('Please select an online payment provider.'),
+            'online_payment_provider.in' => __('Selected online payment provider is invalid.'),
+            'cash_on_delivery_enabled.boolean' => __('Cash on Delivery toggle value is invalid.'),
+            'razorpay_key_id.required_if' => __('The Razorpay key ID field is required when Razorpay is selected.'),
+            'razorpay_key_secret.required_if' => __('The Razorpay key secret field is required when Razorpay is selected.'),
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $onlineEnabled = (bool) $this->boolean('online_payment_enabled');
+            $cashEnabled = $this->has('cash_on_delivery_enabled')
+                ? (bool) $this->boolean('cash_on_delivery_enabled')
+                : true;
+
+            if (! $onlineEnabled && ! $cashEnabled) {
+                $validator->errors()->add(
+                    'cash_on_delivery_enabled',
+                    __('Either Cash on Delivery or Online Payment must be enabled.')
+                );
+            }
+        });
     }
 }

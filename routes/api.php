@@ -237,6 +237,7 @@ Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
     Route::controller(OrderController::class)->group(function () {
         Route::get('/orders', 'index');
         Route::post('/place-order', 'store');
+        Route::post('/place-order/verify-razorpay', 'verifyRazorpayPayment');
         Route::get('/order-details', 'show');
         Route::post('/orders/cancel', 'cancel');
         Route::post('/place-order/again', 'reOrder');
