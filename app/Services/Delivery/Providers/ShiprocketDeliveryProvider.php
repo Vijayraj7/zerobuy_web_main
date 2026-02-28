@@ -200,8 +200,9 @@ class ShiprocketDeliveryProvider implements DeliveryRateProviderInterface
                     $coverageCharges = (isset($recommendedFreight['coverage_charges']) && is_numeric($recommendedFreight['coverage_charges']))
                         ? (float) $recommendedFreight['coverage_charges']
                         : 0.0;
-
-                    return $freightCharge + $coverageCharges;
+                    if ($freightCharge >= 0 && $coverageCharges >= 0) {
+                        return $freightCharge + $coverageCharges;
+                    }
                 }
             }
 
@@ -216,6 +217,10 @@ class ShiprocketDeliveryProvider implements DeliveryRateProviderInterface
                         $coverageCharges = (isset($company['coverage_charges']) && is_numeric($company['coverage_charges']))
                             ? (float) $company['coverage_charges']
                             : 0.0;
+
+                        if ($freightCharge < 0 || $coverageCharges < 0) {
+                            return null;
+                        }
 
                         return $freightCharge + $coverageCharges;
                     }
