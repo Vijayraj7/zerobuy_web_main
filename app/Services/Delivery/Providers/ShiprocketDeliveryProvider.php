@@ -6,7 +6,9 @@ use App\Enums\PaymentMethod;
 use App\Models\DeliverySetting;
 use App\Services\Contracts\DeliveryRateProviderInterface;
 use App\Services\Delivery\DeliveryPostcodeResolver;
+use Illuminate\Http\Client\Response as HttpResponse;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -112,6 +114,18 @@ class ShiprocketDeliveryProvider implements DeliveryRateProviderInterface
             };
 
             $serviceResponse = $callServiceability($token);
+            $this->writeLatestServiceabilityResponse(
+                $serviceResponse,
+                [
+                    'shop_id' => $shop?->id,
+                    'pickup_postcode' => $pickupPostcode,
+                    'delivery_postcode' => $deliveryPostcode,
+                    'weight' => $weight,
+                    'cod' => $cod,
+                    'declared_value' => $declaredValue,
+                    'retry' => false,
+                ]
+            );
 
             if ($serviceResponse->status() === 401) {
                 Cache::forget($tokenCacheKey);
@@ -134,6 +148,18 @@ class ShiprocketDeliveryProvider implements DeliveryRateProviderInterface
                 }
 
                 $serviceResponse = $callServiceability($newToken);
+                $this->writeLatestServiceabilityResponse(
+                    $serviceResponse,
+                    [
+                        'shop_id' => $shop?->id,
+                        'pickup_postcode' => $pickupPostcode,
+                        'delivery_postcode' => $deliveryPostcode,
+                        'weight' => $weight,
+                        'cod' => $cod,
+                        'declared_value' => $declaredValue,
+                        'retry' => true,
+                    ]
+                );
             }
 
             if (!$serviceResponse->successful()) {
@@ -211,6 +237,30 @@ class ShiprocketDeliveryProvider implements DeliveryRateProviderInterface
             ]);
 
             return null;
+        }
+    }
+
+    private function writeLatestServiceabilityResponse(HttpResponse $response, array $requestMeta = []): void
+    {
+        try {
+            $filePath = public_path('shiprocket/latest_serviceability_response.json');
+            File::ensureDirectoryExists(dirname($filePath));
+
+            $data = [
+                'captured_at' => now()->toDateTimeString(),
+                'request' => $requestMeta,
+                'response' => [
+                    'status' => $response->status(),
+                    'successful' => $response->successful(),
+                    'body' => $response->json() ?? $response->body(),
+                ],
+            ];
+
+            File::put($filePath, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        } catch (\Throwable $e) {
+            Log::warning('Failed to write latest shiprocket serviceability response json', [
+                'message' => $e->getMessage(),
+            ]);
         }
     }
 }
