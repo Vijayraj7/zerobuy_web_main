@@ -19,6 +19,7 @@ class ProductVariantResource extends JsonResource
             'product_id' => $this->product_id == null ? null : (int) $this->product_id,
             'price' => (float) $this->price,
             'quantity' => (int) $this->quantity,
+            'weight' => (int) ($this->weight ?? 0),
             // 'color' => $this->color,
             // 'size' => $this->size,
             'color' => ColorResource::make($this->color),

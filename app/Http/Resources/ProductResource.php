@@ -70,6 +70,7 @@ class ProductResource extends JsonResource
             'discount_price' => (float) number_format($discountPrice, 2, '.', ''),
             'discount_percentage' => (float) number_format($discountPercentage, 2, '.', ''),
             'rating' => (float) $this->averageRating ?? 0.0,
+            'weight' => (int) ($this->weight ?? 0),
             'bulk_items' => ProductBulkItemResource::collection(
                 $this->bulkItems
             ),
