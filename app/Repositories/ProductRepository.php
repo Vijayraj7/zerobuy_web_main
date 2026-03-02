@@ -118,6 +118,10 @@ class ProductRepository extends Repository
             'media_id' => $thumbnail->id,
             'code' => $request->code,
             'buy_price' => $request->buy_price ?? 0,
+            'weight' => $request->weight ?? 0,
+            'length' => $request->length,
+            'width' => $request->width,
+            'height' => $request->height,
             'is_active' => $isAdmin ? true : $approve,
             'is_new' => true,
             'is_approve' => $isAdmin ? true : $approve,
@@ -195,6 +199,10 @@ class ProductRepository extends Repository
                             'color_id'   => $v['color']['id'] ?? null,
                             'price'    => $v['price'],
                             'quantity' => $v['quantity'],
+                            'weight' => $v['weight'] ?? null,
+                            'length' => $v['length'] ?? null,
+                            'width' => $v['width'] ?? null,
+                            'height' => $v['height'] ?? null,
                         ]
                     );
                 });
@@ -216,6 +224,10 @@ class ProductRepository extends Repository
                             'moq'           => $item['moq'] ?? 1,
                             'mrp'           => $item['mrp'] ?? 0,
                             'selling_price' => $item['selling_price'] ?? 0,
+                            'weight'        => $item['weight'] ?? null,
+                            'length'        => $item['length'] ?? null,
+                            'width'         => $item['width'] ?? null,
+                            'height'        => $item['height'] ?? null,
                         ]
                     );
                 });
@@ -339,6 +351,10 @@ class ProductRepository extends Repository
             'return_period' => $request->return_period ?? 0,
             'condition_status' => $request->condition_status ?? 'New',
             'buy_price' => $request->buy_price ?? 0,
+            'weight' => $request->weight ?? 0,
+            'length' => $request->length,
+            'width' => $request->width,
+            'height' => $request->height,
             'is_active' => $isAdmin ? true : $approve,
             'is_new' => false,
             'is_approve' => $isAdmin ? true : $approve,
@@ -426,6 +442,10 @@ class ProductRepository extends Repository
                             'color_id'   => $v['color']['id'] ?? null,
                             'price'    => $v['price'],
                             'quantity' => $v['quantity'],
+                            'weight' => $v['weight'] ?? null,
+                            'length' => $v['length'] ?? null,
+                            'width' => $v['width'] ?? null,
+                            'height' => $v['height'] ?? null,
                         ]
                     );
                 });
@@ -455,6 +475,10 @@ class ProductRepository extends Repository
                             'moq'           => $item['moq'] ?? 1,
                             'mrp'           => $item['mrp'] ?? 0,
                             'selling_price' => $item['selling_price'] ?? 0,
+                            'weight'        => $item['weight'] ?? null,
+                            'length'        => $item['length'] ?? null,
+                            'width'         => $item['width'] ?? null,
+                            'height'        => $item['height'] ?? null,
                         ]
                     );
                 });
