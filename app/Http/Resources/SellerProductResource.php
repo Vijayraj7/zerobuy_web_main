@@ -21,6 +21,9 @@ class SellerProductResource extends JsonResource
             'price' => (float) $this->price,
             'discount_price' => (float) $this->discount_price,
             'weight' => (int) ($this->weight ?? 0),
+            'length' => $this->length == null ? null : (float) $this->length,
+            'width' => $this->width == null ? null : (float) $this->width,
+            'height' => $this->height == null ? null : (float) $this->height,
             // 'quantity' => (int) $this->quantity,
             'bulk_items' => ProductBulkItemResource::collection(
                 $this->bulkItems
