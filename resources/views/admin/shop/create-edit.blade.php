@@ -507,6 +507,10 @@
                                             {{ old('delivery_provider', $shop->deliverySetting->delivery_provider ?? '') === 'shiprocket' ? 'selected' : '' }}>
                                             Shiprocket
                                         </option>
+                                        <option value="delhivery"
+                                            {{ old('delivery_provider', $shop->deliverySetting->delivery_provider ?? '') === 'delhivery' ? 'selected' : '' }}>
+                                            Delhivery
+                                        </option>
                                     </select>
                                 </div>
                                 <div class="col-md-4 mb-3">
@@ -1200,16 +1204,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 const deliveryProvider = textVal('delivery_provider');
                 const providerApiKey = textVal('provider_api_key');
                 const providerApiSecret = textVal('provider_api_secret');
+                const allowedProviders = ['shiprocket', 'delhivery'];
 
                 if (!deliveryProvider) {
                     addError(errors, 'delivery_provider', 'Please select a delivery API provider.');
+                } else if (!allowedProviders.includes(deliveryProvider)) {
+                    addError(errors, 'delivery_provider', 'Selected delivery API provider is invalid.');
                 }
 
                 if (!providerApiKey && !HAS_PROVIDER_API_KEY) {
                     addError(errors, 'provider_api_key', 'The provider API key field is required for API delivery mode.');
                 }
 
-                if (!providerApiSecret && !HAS_PROVIDER_API_SECRET) {
+                if (deliveryProvider === 'shiprocket' && !providerApiSecret && !HAS_PROVIDER_API_SECRET) {
                     addError(errors, 'provider_api_secret', 'The provider API secret field is required for API delivery mode.');
                 }
             }

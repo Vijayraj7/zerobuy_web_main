@@ -154,7 +154,21 @@ class ReturnOrderController extends Controller
             return back()->with('error', __('Already paid for this order'));
         }
 
+        $previousStatus = (string) $returnOrder->status;
         $returnOrder->update(['status' => $request->status]);
+
+        $isNowRestockEligible = in_array((string) $request->status, [
+            ReturnOderStatus::APPROVED->value,
+            ReturnOderStatus::COMPLETED->value,
+        ], true);
+        $wasAlreadyRestocked = in_array($previousStatus, [
+            ReturnOderStatus::APPROVED->value,
+            ReturnOderStatus::COMPLETED->value,
+        ], true);
+
+        if ($isNowRestockEligible && !$wasAlreadyRestocked) {
+            ReturnOrderRepository::restockReturnedProducts($returnOrder);
+        }
 
         ReturnOrderStatusTimeline::updateOrCreate(
             [

@@ -5,6 +5,8 @@ namespace App\Repositories;
 use App\Models\Order;
 use App\Models\ReturnOrder;
 use App\Models\OrderProduct;
+use App\Models\ProductBulkItem;
+use App\Models\ProductVariant;
 use App\Enums\ReturnOderStatus;
 use Abedin\Maker\Repositories\Repository;
 use App\Services\NotificationServices;
@@ -100,5 +102,95 @@ class ReturnOrderRepository extends Repository
         NotificationRepository::storeByRequest($notify);
 
         return $returnOrder;
+    }
+
+    public static function restockReturnedProducts(ReturnOrder $returnOrder): void
+    {
+        $returnOrder->loadMissing([
+            'returnProduct.orderProduct.product',
+            'returnProduct.orderProduct.orderVariant',
+            'returnProduct.orderProduct.orderBulkItem',
+            'returnProduct.product',
+        ]);
+
+        foreach ($returnOrder->returnProduct as $returnProduct) {
+            $restockQuantity = max(1, (int) ($returnProduct->quantity ?? 1));
+            $orderProduct = $returnProduct->orderProduct;
+            $baseProduct = $orderProduct?->product ?? $returnProduct->product;
+
+            if (!$baseProduct) {
+                continue;
+            }
+
+            if (!empty($orderProduct?->order_variants_id)) {
+                $orderVariant = $orderProduct?->orderVariant;
+
+                $variantQuery = ProductVariant::query()->where('product_id', $baseProduct->id);
+
+                if (!empty($orderVariant?->color_name)) {
+                    $colorName = trim((string) $orderVariant->color_name);
+                    $variantQuery->whereHas('color', function ($query) use ($colorName) {
+                        $query->where('name', $colorName);
+                    });
+                }
+
+                if (!empty($orderVariant?->size_name)) {
+                    $sizeName = trim((string) $orderVariant->size_name);
+                    $variantQuery->whereHas('size', function ($query) use ($sizeName) {
+                        $query->where('name', $sizeName);
+                    });
+                }
+
+                if (is_numeric($orderVariant?->price ?? null)) {
+                    $variantQuery->where('price', (float) $orderVariant->price);
+                }
+
+                $variant = $variantQuery->first();
+                if ($variant) {
+                    $variant->increment('quantity', $restockQuantity);
+                } else {
+                    Log::warning('Return restock skipped: matching product variant not found', [
+                        'return_order_id' => $returnOrder->id,
+                        'order_product_id' => $orderProduct?->id,
+                        'product_id' => $baseProduct->id,
+                    ]);
+                }
+
+                continue;
+            }
+
+            if (!empty($orderProduct?->order_bulk_items_id)) {
+                $orderBulkItem = $orderProduct?->orderBulkItem;
+
+                $bulkItemQuery = ProductBulkItem::query()->where('product_id', $baseProduct->id);
+
+                if (!empty($orderBulkItem?->name)) {
+                    $bulkItemQuery->where('name', trim((string) $orderBulkItem->name));
+                }
+
+                if (is_numeric($orderBulkItem?->selling_price ?? null)) {
+                    $bulkItemQuery->where('selling_price', (float) $orderBulkItem->selling_price);
+                }
+
+                if (is_numeric($orderBulkItem?->mrp ?? null)) {
+                    $bulkItemQuery->where('mrp', (float) $orderBulkItem->mrp);
+                }
+
+                $bulkItem = $bulkItemQuery->first();
+                if ($bulkItem) {
+                    $bulkItem->increment('quantity', $restockQuantity);
+                } else {
+                    Log::warning('Return restock skipped: matching product bulk item not found', [
+                        'return_order_id' => $returnOrder->id,
+                        'order_product_id' => $orderProduct?->id,
+                        'product_id' => $baseProduct->id,
+                    ]);
+                }
+
+                continue;
+            }
+
+            $baseProduct->increment('quantity', $restockQuantity);
+        }
     }
 }

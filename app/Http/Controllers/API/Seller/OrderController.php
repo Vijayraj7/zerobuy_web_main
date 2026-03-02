@@ -14,6 +14,7 @@ use App\Models\Payment;
 use App\Models\Shop;
 use App\Repositories\NotificationRepository;
 use App\Repositories\OrderRepository;
+use App\Services\Delivery\DelhiveryOrderSyncService;
 use App\Services\Delivery\ShiprocketOrderSyncService;
 use App\Services\NotificationServices;
 use Carbon\Carbon;
@@ -283,21 +284,39 @@ class OrderController extends Controller
             'order_status' => $orderStatus,
         ]);
 
-        $shouldSyncShiprocket =
-            $orderStatus === OrderStatus::CONFIRM->value
-            && empty($order->shiprocket_order_id);
+        $orderProvider = strtolower(trim((string) ($order->api_provider ?: $order->shop?->deliverySetting?->delivery_provider ?: '')));
 
-        if ($shouldSyncShiprocket) {
-            try {
-                $service = app(ShiprocketOrderSyncService::class);
-                $service->sync($order);
-                $order->refresh();
-                // $service->refreshTrackingUrl($order);
-            } catch (\Throwable $e) {
-                Log::warning('Shiprocket sync failed on seller order accept (API)', [
-                    'order_id' => $order->id,
-                    'message' => $e->getMessage(),
-                ]);
+        if ($orderStatus === OrderStatus::CONFIRM->value && in_array($orderProvider, ['shiprocket', 'delhivery'], true)) {
+            if ($order->api_provider !== $orderProvider) {
+                $order->update(['api_provider' => $orderProvider]);
+            }
+
+            if ($orderProvider === 'shiprocket' && empty($order->provider_order_id) && empty($order->shiprocket_order_id)) {
+                try {
+                    $service = app(ShiprocketOrderSyncService::class);
+                    $service->sync($order);
+                    $order->refresh();
+                } catch (\Throwable $e) {
+                    Log::warning('Shiprocket sync failed on seller order accept (API)', [
+                        'order_id' => $order->id,
+                        'message' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            if ($orderProvider === 'delhivery') {
+                try {
+                    if (empty($order->provider_order_id)) {
+                        $service = app(DelhiveryOrderSyncService::class);
+                        $service->sync($order);
+                        $order->refresh();
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('Delhivery order create failed on seller order accept (API)', [
+                        'order_id' => $order->id,
+                        'message' => $e->getMessage(),
+                    ]);
+                }
             }
         }
 

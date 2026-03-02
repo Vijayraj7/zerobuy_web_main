@@ -15,5 +15,9 @@ class OrderVariant extends Model
         'size_name',
         'price',
         'quantity',
+        'weight',
+        'length',
+        'width',
+        'height',
     ];
 }

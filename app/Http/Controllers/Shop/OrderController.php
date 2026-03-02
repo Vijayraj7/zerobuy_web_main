@@ -15,6 +15,7 @@ use App\Repositories\NotificationRepository;
 use App\Repositories\OrderRepository;
 use App\Repositories\TransactionRepository;
 use App\Repositories\WalletRepository;
+use App\Services\Delivery\DelhiveryOrderSyncService;
 use App\Services\Delivery\ShiprocketOrderSyncService;
 use App\Services\NotificationServices;
 use Carbon\Carbon;
@@ -104,7 +105,71 @@ class OrderController extends Controller
         $deliverySetting = $order->shop->deliverySetting;
         $isManualDelivery = $deliverySetting && $deliverySetting->delivery_mode === 'manual';
 
-        return view('shop.order.show', compact('order', 'orderStatus', 'riders', 'isManualDelivery'));
+        $retryShipProvider = strtolower(trim((string) ($order->api_provider ?: $deliverySetting?->delivery_provider ?: '')));
+        $isProviderOrderCreated = false;
+
+        $apiProviderStatus = null;
+        $apiProviderStatusLabel = null;
+        $apiProviderStatusClass = 'secondary';
+        $apiProviderFailureReason = session('provider_ship_error');
+
+        $isApiProviderOrder =
+            ($deliverySetting && $deliverySetting->delivery_mode === 'provider_api' && in_array($retryShipProvider, ['shiprocket', 'delhivery'], true))
+            || in_array($retryShipProvider, ['shiprocket', 'delhivery'], true);
+
+        if ($retryShipProvider === 'shiprocket') {
+            $isProviderOrderCreated = !empty($order->provider_order_id) || !empty($order->shiprocket_order_id);
+        } elseif ($retryShipProvider === 'delhivery') {
+            $isProviderOrderCreated = !empty($order->provider_order_id);
+        }
+
+        if (in_array($retryShipProvider, ['shiprocket', 'delhivery'], true)) {
+            $hasProviderOrderId = !empty($order->provider_order_id) || !empty($order->shiprocket_order_id);
+            $hasProviderShipmentId = !empty($order->provider_shipment_id) || !empty($order->shiprocket_shipment_id);
+            $hasProviderAwb = !empty($order->provider_awb_code) || !empty($order->shiprocket_awb_code);
+
+            if ($hasProviderAwb) {
+                $apiProviderStatus = 'awb_generated';
+                $apiProviderStatusLabel = 'AWB Generated';
+                $apiProviderStatusClass = 'success';
+            } elseif ($hasProviderShipmentId) {
+                $apiProviderStatus = 'shipment_created';
+                $apiProviderStatusLabel = 'Shipment Created';
+                $apiProviderStatusClass = 'info';
+            } elseif ($hasProviderOrderId) {
+                $apiProviderStatus = 'order_created';
+                $apiProviderStatusLabel = 'Order Created';
+                $apiProviderStatusClass = 'primary';
+            } else {
+                $apiProviderStatus = 'not_created';
+                $apiProviderStatusLabel = 'Not Created';
+                $apiProviderStatusClass = 'warning';
+            }
+
+        }
+
+        $showRetryShipButton =
+            $order->order_status?->value === OrderStatus::CONFIRM->value
+            && in_array($retryShipProvider, ['shiprocket', 'delhivery'], true)
+            && !$isProviderOrderCreated;
+
+        $showConfirmShipButton =
+            $order->order_status?->value === OrderStatus::PENDING->value
+            && $isApiProviderOrder;
+
+        return view('shop.order.show', compact(
+            'order',
+            'orderStatus',
+            'riders',
+            'isManualDelivery',
+            'showRetryShipButton',
+            'showConfirmShipButton',
+            'retryShipProvider',
+            'apiProviderStatus',
+            'apiProviderStatusLabel',
+            'apiProviderStatusClass',
+            'apiProviderFailureReason'
+        ));
     }
 
     /**
@@ -132,21 +197,48 @@ class OrderController extends Controller
 
         $order->update(['order_status' => $request->status]);
 
-        $shouldSyncShiprocket =
-            $request->status === OrderStatus::CONFIRM->value
-            && empty($order->shiprocket_order_id);
+        $orderProvider = strtolower(trim((string) ($order->api_provider ?: $order->shop?->deliverySetting?->delivery_provider ?: '')));
+        $providerShipError = null;
 
-        if ($shouldSyncShiprocket) {
-            try {
-                $service = app(ShiprocketOrderSyncService::class);
-                $service->sync($order);
-                $order->refresh();
-                // $service->refreshTrackingUrl($order);
-            } catch (\Throwable $e) {
-                Log::warning('Shiprocket sync failed on seller order accept (shop panel)', [
-                    'order_id' => $order->id,
-                    'message' => $e->getMessage(),
-                ]);
+        if ($request->status === OrderStatus::CONFIRM->value && in_array($orderProvider, ['shiprocket', 'delhivery'], true)) {
+            if ($order->api_provider !== $orderProvider) {
+                $order->update(['api_provider' => $orderProvider]);
+            }
+
+            if ($orderProvider === 'shiprocket' && empty($order->provider_order_id) && empty($order->shiprocket_order_id)) {
+                try {
+                    $service = app(ShiprocketOrderSyncService::class);
+                    $synced = $service->sync($order);
+                    if (!$synced) {
+                        $providerShipError = $service->getLastSyncError() ?: 'Shiprocket shipping failed.';
+                    }
+                    $order->refresh();
+                } catch (\Throwable $e) {
+                    Log::warning('Shiprocket sync failed on seller order accept (shop panel)', [
+                        'order_id' => $order->id,
+                        'message' => $e->getMessage(),
+                    ]);
+                    $providerShipError = $e->getMessage();
+                }
+            }
+
+            if ($orderProvider === 'delhivery') {
+                try {
+                    if (empty($order->provider_order_id)) {
+                        $service = app(DelhiveryOrderSyncService::class);
+                        $synced = $service->sync($order);
+                        if (!$synced) {
+                            $providerShipError = $service->getLastSyncError() ?: 'Delhivery shipping failed.';
+                        }
+                        $order->refresh();
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('Delhivery order create failed on seller order accept (shop panel)', [
+                        'order_id' => $order->id,
+                        'message' => $e->getMessage(),
+                    ]);
+                    $providerShipError = $e->getMessage();
+                }
             }
         }
 
@@ -218,7 +310,71 @@ class OrderController extends Controller
         } catch (\Throwable $th) {
         }
 
+        if (!empty($providerShipError)) {
+            return back()
+                ->with('error', 'Order status updated to Confirm, but shipping failed. Reason: ' . $providerShipError)
+                ->with('provider_ship_error', $providerShipError);
+        }
+
         return back()->with('success', __('Order status updated successfully.'));
+    }
+
+    public function retryShip(Order $order)
+    {
+        $order->loadMissing(['shop.deliverySetting']);
+
+        if ($order->order_status?->value !== OrderStatus::CONFIRM->value) {
+            return back()->with('error', __('Retry shipping is allowed only for confirmed orders.'));
+        }
+
+        $orderProvider = strtolower(trim((string) ($order->api_provider ?: $order->shop?->deliverySetting?->delivery_provider ?: '')));
+
+        if (!in_array($orderProvider, ['shiprocket', 'delhivery'], true)) {
+            return back()->with('error', __('No supported API provider found for this order.'));
+        }
+
+        if ($order->api_provider !== $orderProvider) {
+            $order->update(['api_provider' => $orderProvider]);
+        }
+
+        try {
+            $synced = false;
+            $providerFailureReason = null;
+
+            if ($orderProvider === 'shiprocket') {
+                $service = app(ShiprocketOrderSyncService::class);
+                $synced = $service->sync($order);
+                $providerFailureReason = $service->getLastSyncError();
+            }
+
+            if ($orderProvider === 'delhivery') {
+                $service = app(DelhiveryOrderSyncService::class);
+                $synced = $service->sync($order);
+                $providerFailureReason = $service->getLastSyncError();
+            }
+
+            $order->refresh();
+
+            if (!$synced) {
+                $reason = $providerFailureReason ?? null;
+                $message = 'Retry ship failed. Please check provider credentials or shipment data and try again.';
+                if (!empty($reason)) {
+                    $message .= ' Reason: ' . $reason;
+                }
+
+                return back()->with('error', $message)->with('provider_ship_error', $reason);
+            }
+
+            return back()->with('success', __('Order has been shipped successfully via :provider.', ['provider' => ucfirst($orderProvider)]));
+        } catch (\Throwable $e) {
+            Log::warning('Order retry ship failed (shop panel)', [
+                'order_id' => $order->id,
+                'provider' => $orderProvider,
+                'message' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', __('Retry ship failed due to an exception. Please try again.'));
+        }
     }
 
     private function getShopRazorpayConfig(Shop $shop): array

@@ -237,11 +237,51 @@
                     </div>
                 </div>
 
+                @if ($showConfirmShipButton)
+                    @hasPermission(['shop.order.status.change'])
+                        <div class="p-3 border-bottom">
+                            <a href="{{ route('shop.order.status.change', $order->id) }}?status=Confirm" class="btn btn-success btn-sm w-100">
+                                {{ __('Confirm & Ship') }}
+                            </a>
+                        </div>
+                    @endhasPermission
+                @endif
+
+                @if (!empty($retryShipProvider) && in_array($retryShipProvider, ['shiprocket', 'delhivery']))
+                    <div class="p-3 border-bottom">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div class="text-color">{{ __('API Provider') }}</div>
+                            <span class="fw-medium">{{ ucfirst($retryShipProvider) }}</span>
+                        </div>
+                        @if (!empty($apiProviderStatusLabel))
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-2">
+                                <div class="text-color">{{ __('Provider Current Status') }}</div>
+                                <span class="badge bg-{{ $apiProviderStatusClass }}">{{ __($apiProviderStatusLabel) }}</span>
+                            </div>
+                        @endif
+                        @if (!empty($apiProviderFailureReason))
+                            <div class="mt-2">
+                                <small class="text-danger">{{ __('Failure Reason') }}: {{ $apiProviderFailureReason }}</small>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
                 <div class="p-3 border-bottom">
                     <h6 class="fz-14 mb-3">{{ __('Update Tracking & Delivery Charge') }}</h6>
                     @php
                         $isTrackingUpdateLocked = in_array($order->order_status->value, ['Delivered', 'Cancelled']);
                     @endphp
+                    @if ($showRetryShipButton)
+                        @hasPermission(['shop.order.status.change'])
+                            <form action="{{ route('shop.order.retry-ship', $order->id) }}" method="POST" class="mb-3">
+                                @csrf
+                                <button type="submit" class="btn btn-warning btn-sm w-100">
+                                    {{ __('Retry Ship via :provider', ['provider' => ucfirst($retryShipProvider)]) }}
+                                </button>
+                            </form>
+                        @endhasPermission
+                    @endif
                     <form action="{{ route('shop.order.update-tracking', $order->id) }}" method="POST">
                         @csrf
                         <div class="mb-3">

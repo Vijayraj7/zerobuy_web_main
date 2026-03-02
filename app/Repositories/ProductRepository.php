@@ -892,6 +892,10 @@ class ProductRepository extends Repository
                 'return_period'      => $data['return_period'] ?? null,
                 'price'              => $data['mrp'],
                 'discount_price'     => $data['selling_price'] ?? null,
+                'weight'             => $data['weight'] ?? null,
+                'length'             => $data['length'] ?? null,
+                'width'              => $data['width'] ?? null,
+                'height'             => $data['height'] ?? null,
                 'tax_percentage'     => $data['tax_percentage'] ?? null,
                 'media_id'           => $thumbnail->id,
                 'is_active'          => $isAdmin ? true : $approve,
@@ -969,6 +973,10 @@ class ProductRepository extends Repository
                         'color_id'   => $v['color_id'] ?? null,
                         'price'      => $v['price'] ?? 0,
                         'quantity'   => $v['quantity'] ?? 0,
+                        'weight'     => $v['weight'] ?? null,
+                        'length'     => $v['length'] ?? null,
+                        'width'      => $v['width'] ?? null,
+                        'height'     => $v['height'] ?? null,
                     ]);
                 }
             }
@@ -1005,6 +1013,10 @@ class ProductRepository extends Repository
                         'moq'           => $item['moq'] ?? 1,
                         'mrp'           => $item['mrp'] ?? 0,
                         'selling_price' => $item['selling_price'] ?? 0,
+                        'weight'        => $item['weight'] ?? null,
+                        'length'        => $item['length'] ?? null,
+                        'width'         => $item['width'] ?? null,
+                        'height'        => $item['height'] ?? null,
                     ]);
                 }
             }
@@ -1068,6 +1080,10 @@ class ProductRepository extends Repository
                 'return_period'      => $data['return_period'] ?? null,
                 'price'              => $data['mrp'],
                 'discount_price'     => $data['selling_price'] ?? null,
+                'weight'             => $data['weight'] ?? null,
+                'length'             => $data['length'] ?? null,
+                'width'              => $data['width'] ?? null,
+                'height'             => $data['height'] ?? null,
                 'tax_percentage'     => $data['tax_percentage'] ?? null,
                 'meta_title'         => $data['meta_title'] ?? null,
                 'meta_description'   => $data['meta_description'] ?? null,
@@ -1154,6 +1170,10 @@ class ProductRepository extends Repository
                                 'color_id'   => $v['color_id'] ?? null,
                                 'price'      => $v['price'] ?? 0,
                                 'quantity'   => $v['quantity'] ?? 0,
+                                'weight'     => $v['weight'] ?? null,
+                                'length'     => $v['length'] ?? null,
+                                'width'      => $v['width'] ?? null,
+                                'height'     => $v['height'] ?? null,
                             ]
                         );
                     });
@@ -1183,6 +1203,10 @@ class ProductRepository extends Repository
                                 'moq'           => $item['moq'] ?? 1,
                                 'mrp'           => $item['mrp'] ?? 0,
                                 'selling_price' => $item['selling_price'] ?? 0,
+                                'weight'        => $item['weight'] ?? null,
+                                'length'        => $item['length'] ?? null,
+                                'width'         => $item['width'] ?? null,
+                                'height'        => $item['height'] ?? null,
                             ]
                         );
                     });

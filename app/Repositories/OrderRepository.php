@@ -174,6 +174,33 @@ class OrderRepository extends Repository
                 $color = $product->colors()?->where('id', $cart->color)->first();
                 $order_variant_id = null;
                 $order_bulk_item_id = null;
+
+                $resolvedWeight = is_numeric($cart->variant?->weight ?? null)
+                    ? (int) round((float) $cart->variant->weight)
+                    : (is_numeric($cart->bulkItem?->weight ?? null)
+                        ? (int) round((float) $cart->bulkItem->weight)
+                        : (is_numeric($product->weight ?? null)
+                            ? (int) round((float) $product->weight)
+                            : 0));
+
+                $resolvedLength = is_numeric($cart->variant?->length ?? null)
+                    ? (float) $cart->variant->length
+                    : (is_numeric($cart->bulkItem?->length ?? null)
+                        ? (float) $cart->bulkItem->length
+                        : (is_numeric($product->length ?? null) ? (float) $product->length : null));
+
+                $resolvedWidth = is_numeric($cart->variant?->width ?? null)
+                    ? (float) $cart->variant->width
+                    : (is_numeric($cart->bulkItem?->width ?? null)
+                        ? (float) $cart->bulkItem->width
+                        : (is_numeric($product->width ?? null) ? (float) $product->width : null));
+
+                $resolvedHeight = is_numeric($cart->variant?->height ?? null)
+                    ? (float) $cart->variant->height
+                    : (is_numeric($cart->bulkItem?->height ?? null)
+                        ? (float) $cart->bulkItem->height
+                        : (is_numeric($product->height ?? null) ? (float) $product->height : null));
+
                 if ($cart->variant) {
                     $order_variant_id = OrderVariant::create([
                         'color_name' => $cart->variant->color->name,
@@ -181,6 +208,10 @@ class OrderRepository extends Repository
                         'size_name' => $cart->variant->size?->name,
                         'price' => $cart->variant->price,
                         'quantity' => $cart->quantity,
+                        'weight' => is_numeric($cart->variant->weight ?? null) ? (int) round((float) $cart->variant->weight) : 0,
+                        'length' => is_numeric($cart->variant->length ?? null) ? (float) $cart->variant->length : null,
+                        'width' => is_numeric($cart->variant->width ?? null) ? (float) $cart->variant->width : null,
+                        'height' => is_numeric($cart->variant->height ?? null) ? (float) $cart->variant->height : null,
                     ])->id;
                 }
 
@@ -191,6 +222,10 @@ class OrderRepository extends Repository
                         'moq' => $cart->bulkItem->moq,
                         'mrp' => $cart->bulkItem->mrp,
                         'selling_price' => $cart->bulkItem->selling_price,
+                        'weight' => is_numeric($cart->bulkItem->weight ?? null) ? (int) round((float) $cart->bulkItem->weight) : 0,
+                        'length' => is_numeric($cart->bulkItem->length ?? null) ? (float) $cart->bulkItem->length : null,
+                        'width' => is_numeric($cart->bulkItem->width ?? null) ? (float) $cart->bulkItem->width : null,
+                        'height' => is_numeric($cart->bulkItem->height ?? null) ? (float) $cart->bulkItem->height : null,
                     ])->id;
                 }
 
@@ -206,6 +241,10 @@ class OrderRepository extends Repository
                     'unit' => $cart->unit,
                     'price' => $cart->variant?->price ?? $cart->bulkItem?->selling_price ?? $price,
                     'mrp' => $cart->bulkItem?->mrp ?? $product->price,
+                    'weight' => max(0, $resolvedWeight),
+                    'length' => $resolvedLength,
+                    'width' => $resolvedWidth,
+                    'height' => $resolvedHeight,
                 ]);
             }
 
@@ -263,6 +302,12 @@ class OrderRepository extends Repository
             'is_default' => $address->is_default,
         ])->id;
 
+        $deliverySetting = $shop->deliverySetting;
+        $apiProvider = null;
+        if ($deliverySetting && $deliverySetting->delivery_mode === 'provider_api') {
+            $apiProvider = $deliverySetting->delivery_provider ? strtolower((string) $deliverySetting->delivery_provider) : null;
+        }
+
         $order = self::create([
             'shop_id' => $shop->id,
             'order_code' => $orderCode,
@@ -277,6 +322,7 @@ class OrderRepository extends Repository
             'tax_amount' => $getCartAmounts['totalTaxAmount'],
             'coupon_discount' => $getCartAmounts['discount'],
             'payment_method' => self::normalizeOrderPaymentMethod($paymentMethod)->value,
+            'api_provider' => $apiProvider,
             'order_status' => OrderStatus::PENDING->value,
             'address_id' => $orderaddress_id,
             'instruction' => $request->note,
@@ -447,6 +493,7 @@ class OrderRepository extends Repository
                     ? PaymentMethod::tryFrom((string) $payment->payment_method)
                     : $order->payment_method
             )->value,
+            'api_provider' => $order->api_provider,
             'order_status' => OrderStatus::PENDING->value,
             'address_id' => $order->address_id,
             'instruction' => $order->instruction,
@@ -465,6 +512,10 @@ class OrderRepository extends Repository
                 'size' => $product->pivot->size ?? null,
                 'unit' => $product->pivot->unit ?? null,
                 'price' => $product->pivot->price,
+                'weight' => is_numeric($product->pivot->weight ?? null) ? (int) round((float) $product->pivot->weight) : 0,
+                'length' => is_numeric($product->pivot->length ?? null) ? (float) $product->pivot->length : null,
+                'width' => is_numeric($product->pivot->width ?? null) ? (float) $product->pivot->width : null,
+                'height' => is_numeric($product->pivot->height ?? null) ? (float) $product->pivot->height : null,
             ]);
         }
 

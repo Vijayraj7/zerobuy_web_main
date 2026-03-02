@@ -14,6 +14,10 @@ class ProductBulkItem extends Model
         'quantity',
         'moq',
         'mrp',
-        'selling_price'
+        'selling_price',
+        'weight',
+        'length',
+        'width',
+        'height',
     ];
 }

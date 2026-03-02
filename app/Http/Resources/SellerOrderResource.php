@@ -75,6 +75,7 @@ class SellerOrderResource extends JsonResource
         return [
             'id' => $this->id,
             'order_code' => (string) '#' . $this->prefix . '' . $this->order_code,
+            'api_provider' => $this->api_provider,
             'amount' => (float) number_format($this->payable_amount, 2, '.', ''),
             'order_status' => $this->order_status->value,
             'payment_status' => $this->payment_status->value,

@@ -104,8 +104,11 @@ class DeliverySettingController extends Controller
         $validated = $request->validate([
             'delivery_mode' => [
                 'required',
-                Rule::in(['amount_based', 'state_wise', 'manual']),
+                Rule::in(['amount_based', 'state_wise', 'manual', 'provider_api']),
             ],
+            'delivery_provider' => ['nullable', 'required_if:delivery_mode,provider_api', Rule::in(['shiprocket', 'delhivery'])],
+            'provider_api_key' => ['nullable', 'required_if:delivery_mode,provider_api', 'string', 'max:255'],
+            'provider_api_secret' => ['nullable', 'required_if:delivery_provider,shiprocket', 'string', 'max:255'],
             'update_when_shipped' => ['boolean'],
 
             'amount_rules' => ['array'],
@@ -146,6 +149,15 @@ class DeliverySettingController extends Controller
                 ['shop_id' => $shop->id],
                 [
                     'delivery_mode' => $validated['delivery_mode'],
+                    'delivery_provider' => $validated['delivery_mode'] === 'provider_api'
+                        ? ($validated['delivery_provider'] ?? null)
+                        : null,
+                    'provider_api_key' => $validated['delivery_mode'] === 'provider_api'
+                        ? ($validated['provider_api_key'] ?? null)
+                        : null,
+                    'provider_api_secret' => $validated['delivery_mode'] === 'provider_api'
+                        ? ($validated['provider_api_secret'] ?? null)
+                        : null,
                     'update_when_shipped' => $validated['update_when_shipped'] ?? false,
                 ]
             );

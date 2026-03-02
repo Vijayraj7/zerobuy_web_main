@@ -12,13 +12,17 @@ use Illuminate\Support\Facades\Log;
 
 class ShiprocketOrderSyncService
 {
+    private ?string $lastSyncError = null;
+
     public function sync(Order $order): bool
     {
-        $order->loadMissing(['shop.deliverySetting', 'address.stateData', 'address.districtData', 'customer.user', 'products']);
+        $this->lastSyncError = null;
+        $order->loadMissing(['shop.deliverySetting', 'address.stateData', 'address.districtData', 'customer.user', 'products', 'orderProducts.product', 'orderProducts.orderVariant', 'orderProducts.orderBulkItem']);
 
         $setting = $order->shop?->deliverySetting;
 
         if (!$setting || $setting->delivery_mode !== 'provider_api' || $setting->delivery_provider !== 'shiprocket') {
+            $this->lastSyncError = 'Invalid or missing Shiprocket provider setting.';
             return false;
         }
 
@@ -26,6 +30,7 @@ class ShiprocketOrderSyncService
         $apiUserPassword = trim((string) ($setting->provider_api_secret ?? ''));
 
         if (!$apiUserEmail || !$apiUserPassword) {
+            $this->lastSyncError = 'Shiprocket API credentials are missing.';
             return false;
         }
 
@@ -46,6 +51,7 @@ class ShiprocketOrderSyncService
         });
 
         if (!$token) {
+            $this->lastSyncError = 'Unable to get Shiprocket access token.';
             return false;
         }
 
@@ -53,12 +59,21 @@ class ShiprocketOrderSyncService
         $customer = $order->customer?->user;
         $orderDate = optional($order->created_at)->format('Y-m-d H:i') ?? now()->format('Y-m-d H:i');
 
-        $items = $order->products->map(function ($product) {
+        $items = $order->orderProducts->map(function ($orderProduct) {
+            $product = $orderProduct->product;
+            $orderBulkItem = $orderProduct->orderBulkItem;
+            $quantity = max(1, (int) ($orderProduct->quantity ?? 1));
+            $name = (string) ($orderBulkItem?->name ?? $orderProduct->product_name ?? $product?->name ?? ('Item #' . $orderProduct->id));
+            $sku = (string) ($product?->sku ?? ('ITEM-' . ($orderProduct->product_id ?? $orderProduct->id)));
+            if ($orderProduct->id) {
+                $sku .= '-' . $orderProduct->id;
+            }
+
             return [
-                'name' => $product->pivot->product_name ?? $product->name,
-                'sku' => (string) ($product->sku ?? ('SKU-' . $product->id)),
-                'units' => (int) ($product->pivot->quantity ?? 1),
-                'selling_price' => (float) ($product->pivot->price ?? 0),
+                'name' => $name,
+                'sku' => $sku,
+                'units' => $quantity,
+                'selling_price' => (float) ($orderProduct->price ?? 0),
                 'discount' => 0,
                 'tax' => 0,
                 'hsn' => '',
@@ -66,8 +81,14 @@ class ShiprocketOrderSyncService
         })->values()->toArray();
 
         if (empty($items)) {
+            $this->lastSyncError = 'Order items are empty.';
             return false;
         }
+
+        $packageMetrics = $this->resolveOrderPackageMetrics($order);
+        $weightKg = !empty($packageMetrics['weight_grams'])
+            ? round(((float) $packageMetrics['weight_grams']) / 1000, 3)
+            : null;
 
         $payload = [
             'order_id' => $order->prefix . $order->order_code,
@@ -109,6 +130,22 @@ class ShiprocketOrderSyncService
             'weight' => 0.5,
         ];
 
+        if (!empty($packageMetrics['length_cm'])) {
+            $payload['length'] = (float) $packageMetrics['length_cm'];
+        }
+
+        if (!empty($packageMetrics['width_cm'])) {
+            $payload['breadth'] = (float) $packageMetrics['width_cm'];
+        }
+
+        if (!empty($packageMetrics['height_cm'])) {
+            $payload['height'] = (float) $packageMetrics['height_cm'];
+        }
+
+        if (!empty($weightKg) && $weightKg > 0) {
+            $payload['weight'] = $weightKg;
+        }
+
         try {
             $response = Http::timeout(25)
                 ->acceptJson()
@@ -117,6 +154,7 @@ class ShiprocketOrderSyncService
 
             if ($response->status() === 401) {
                 Cache::forget($tokenCacheKey);
+                $this->lastSyncError = 'Shiprocket token is unauthorized or expired.';
                 return false;
             }
 
@@ -126,6 +164,7 @@ class ShiprocketOrderSyncService
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
+                $this->lastSyncError = $this->extractShiprocketApiMessage($response) ?? ('Shiprocket order create failed with status ' . $response->status() . '.');
                 return false;
             }
 
@@ -201,10 +240,15 @@ class ShiprocketOrderSyncService
                     'body' => $response->body(),
                     'pickup_location' => $payload['pickup_location'] ?? null,
                 ]);
+                $this->lastSyncError = $this->extractShiprocketApiMessage($response) ?? 'Shiprocket response missing order id.';
                 return false;
             }
 
             $order->update([
+                'api_provider' => 'shiprocket',
+                'provider_order_id' => $shiprocketOrderId ? (string) $shiprocketOrderId : $order->provider_order_id,
+                'provider_shipment_id' => $shipmentId ? (string) $shipmentId : $order->provider_shipment_id,
+                'provider_awb_code' => $awbCode ? (string) $awbCode : $order->provider_awb_code,
                 'shiprocket_order_id' => $shiprocketOrderId ? (string) $shiprocketOrderId : $order->shiprocket_order_id,
                 'shiprocket_shipment_id' => $shipmentId ? (string) $shipmentId : $order->shiprocket_shipment_id,
                 'shiprocket_awb_code' => $awbCode ? (string) $awbCode : $order->shiprocket_awb_code,
@@ -217,8 +261,14 @@ class ShiprocketOrderSyncService
                 'order_id' => $order->id,
                 'message' => $e->getMessage(),
             ]);
+            $this->lastSyncError = $e->getMessage();
             return false;
         }
+    }
+
+    public function getLastSyncError(): ?string
+    {
+        return $this->lastSyncError;
     }
 
     private function resolveShiprocketPaymentMethod(Order $order): string
@@ -322,6 +372,8 @@ class ShiprocketOrderSyncService
 
             if ($awbCode && empty($order->shiprocket_awb_code)) {
                 $order->update([
+                    'api_provider' => 'shiprocket',
+                    'provider_awb_code' => (string) $awbCode,
                     'shiprocket_awb_code' => (string) $awbCode,
                 ]);
             }
@@ -541,6 +593,8 @@ class ShiprocketOrderSyncService
             }
 
             $order->update([
+                'api_provider' => 'shiprocket',
+                'provider_awb_code' => $awbCode,
                 'shiprocket_awb_code' => $awbCode,
                 'track_url' => 'https://shiprocket.co/tracking/' . $awbCode,
             ]);
@@ -711,5 +765,87 @@ class ShiprocketOrderSyncService
         }
 
         return null;
+    }
+
+    private function extractShiprocketApiMessage($response): ?string
+    {
+        $message = $response->json('message')
+            ?? $response->json('error')
+            ?? $response->json('errors.0')
+            ?? $response->json('data.message')
+            ?? $response->json('data.errors.0');
+
+        if (is_string($message) && trim($message) !== '') {
+            return trim($message);
+        }
+
+        return null;
+    }
+
+    private function resolveOrderPackageMetrics(Order $order): array
+    {
+        $totalWeightGrams = 0.0;
+        $lengthValues = [];
+        $widthValues = [];
+        $heightValues = [];
+
+        foreach ($order->orderProducts as $orderProduct) {
+            $product = $orderProduct->product;
+            $orderVariant = $orderProduct->orderVariant;
+            $orderBulkItem = $orderProduct->orderBulkItem;
+
+            $quantity = max(1, (int) ($orderProduct->quantity ?? 1));
+
+            $weight = is_numeric($orderProduct->weight ?? null)
+                ? (float) $orderProduct->weight
+                : (is_numeric($orderVariant?->weight ?? null)
+                    ? (float) $orderVariant->weight
+                    : (is_numeric($orderBulkItem?->weight ?? null)
+                        ? (float) $orderBulkItem->weight
+                        : (is_numeric($product?->weight ?? null) ? (float) $product->weight : null)));
+            if ($weight !== null && $weight > 0) {
+                $totalWeightGrams += ($weight * $quantity);
+            }
+
+            $length = is_numeric($orderProduct->length ?? null)
+                ? (float) $orderProduct->length
+                : (is_numeric($orderVariant?->length ?? null)
+                    ? (float) $orderVariant->length
+                    : (is_numeric($orderBulkItem?->length ?? null)
+                        ? (float) $orderBulkItem->length
+                        : (is_numeric($product?->length ?? null) ? (float) $product->length : null)));
+            if ($length !== null && $length > 0) {
+                $lengthValues[] = $length;
+            }
+
+            $width = is_numeric($orderProduct->width ?? null)
+                ? (float) $orderProduct->width
+                : (is_numeric($orderVariant?->width ?? null)
+                    ? (float) $orderVariant->width
+                    : (is_numeric($orderBulkItem?->width ?? null)
+                        ? (float) $orderBulkItem->width
+                        : (is_numeric($product?->width ?? null) ? (float) $product->width : null)));
+            if ($width !== null && $width > 0) {
+                $widthValues[] = $width;
+            }
+
+            $height = is_numeric($orderProduct->height ?? null)
+                ? (float) $orderProduct->height
+                : (is_numeric($orderVariant?->height ?? null)
+                    ? (float) $orderVariant->height
+                    : (is_numeric($orderBulkItem?->height ?? null)
+                        ? (float) $orderBulkItem->height
+                        : (is_numeric($product?->height ?? null) ? (float) $product->height : null)));
+            if ($height !== null && $height > 0) {
+                $heightValues[] = $height;
+            }
+        }
+
+        return [
+            'weight_grams' => $totalWeightGrams > 0 ? round($totalWeightGrams, 2) : null,
+            'length_cm' => !empty($lengthValues) ? max($lengthValues) : null,
+            'width_cm' => !empty($widthValues) ? max($widthValues) : null,
+            'height_cm' => !empty($heightValues) ? max($heightValues) : null,
+        ];
     }
 }

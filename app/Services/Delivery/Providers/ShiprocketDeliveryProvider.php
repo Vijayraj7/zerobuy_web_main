@@ -3,10 +3,12 @@
 namespace App\Services\Delivery\Providers;
 
 use App\Enums\PaymentMethod;
+use App\Models\Cart;
 use App\Models\DeliverySetting;
 use App\Services\Contracts\DeliveryRateProviderInterface;
 use App\Services\Delivery\DeliveryPostcodeResolver;
 use Illuminate\Http\Client\Response as HttpResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
@@ -60,10 +62,11 @@ class ShiprocketDeliveryProvider implements DeliveryRateProviderInterface
             return null;
         }
 
-        $weight = (float) request()->input('weight', 0.5);
-        if ($weight <= 0) {
-            $weight = 0.5;
-        }
+        $cartMetrics = $this->resolveCartPackageMetrics($shop);
+        $weight = max(0.001, ((float) ($cartMetrics['weight_grams'] ?? 500)) / 1000);
+        $lengthValue = $cartMetrics['length'];
+        $widthValue = $cartMetrics['width'];
+        $heightValue = $cartMetrics['height'];
 
         $rawPaymentMethod = trim((string) request()->input('payment_method', ''));
         $normalizedPaymentMethod = strtolower($rawPaymentMethod);
@@ -99,18 +102,35 @@ class ShiprocketDeliveryProvider implements DeliveryRateProviderInterface
                 $deliveryPostcode,
                 $weight,
                 $cod,
-                $declaredValue
+                $declaredValue,
+                $lengthValue,
+                $widthValue,
+                $heightValue
             ) {
+                $query = [
+                    'pickup_postcode' => $pickupPostcode,
+                    'delivery_postcode' => $deliveryPostcode,
+                    'weight' => $weight,
+                    'cod' => $cod,
+                    'declared_value' => $declaredValue,
+                ];
+
+                if ($lengthValue !== null) {
+                    $query['length'] = $lengthValue;
+                }
+
+                if ($widthValue !== null) {
+                    $query['breadth'] = $widthValue;
+                }
+
+                if ($heightValue !== null) {
+                    $query['height'] = $heightValue;
+                }
+
                 return Http::timeout(20)
                     ->acceptJson()
                     ->withToken($bearerToken)
-                    ->get($baseUrl . '/courier/serviceability/', [
-                        'pickup_postcode' => $pickupPostcode,
-                        'delivery_postcode' => $deliveryPostcode,
-                        'weight' => $weight,
-                        'cod' => $cod,
-                        'declared_value' => $declaredValue,
-                    ]);
+                    ->get($baseUrl . '/courier/serviceability/', $query);
             };
 
             $serviceResponse = $callServiceability($token);
@@ -121,6 +141,9 @@ class ShiprocketDeliveryProvider implements DeliveryRateProviderInterface
                     'pickup_postcode' => $pickupPostcode,
                     'delivery_postcode' => $deliveryPostcode,
                     'weight' => $weight,
+                    'length' => $lengthValue,
+                    'breadth' => $widthValue,
+                    'height' => $heightValue,
                     'cod' => $cod,
                     'declared_value' => $declaredValue,
                     'retry' => false,
@@ -155,6 +178,9 @@ class ShiprocketDeliveryProvider implements DeliveryRateProviderInterface
                         'pickup_postcode' => $pickupPostcode,
                         'delivery_postcode' => $deliveryPostcode,
                         'weight' => $weight,
+                        'length' => $lengthValue,
+                        'breadth' => $widthValue,
+                        'height' => $heightValue,
                         'cod' => $cod,
                         'declared_value' => $declaredValue,
                         'retry' => true,
@@ -243,6 +269,106 @@ class ShiprocketDeliveryProvider implements DeliveryRateProviderInterface
 
             return null;
         }
+    }
+
+    private function resolveCartPackageMetrics($shop): array
+    {
+        $weightInGrams = 0;
+        $length = null;
+        $width = null;
+        $height = null;
+
+        $customerId = Auth::user()?->customer?->id;
+        if (!$customerId || !$shop?->id) {
+            return [
+                'weight_grams' => 500,
+                'length' => null,
+                'width' => null,
+                'height' => null,
+            ];
+        }
+
+        $isBuyNow = request()->boolean('is_buy_now', false);
+
+        $carts = Cart::query()
+            ->with([
+                'product:id,weight,length,width,height',
+                'variant:id,weight,length,width,height',
+                'bulkItem:id,weight,length,width,height',
+            ])
+            ->where('customer_id', $customerId)
+            ->where('shop_id', $shop->id)
+            ->where('is_buy_now', $isBuyNow)
+            ->get();
+
+        foreach ($carts as $cart) {
+            $quantity = max(1, (int) ($cart->quantity ?? 1));
+
+            $unitWeight = $this->firstPositiveInt([
+                $cart->variant?->weight,
+                $cart->bulkItem?->weight,
+                $cart->product?->weight,
+            ]);
+
+            if ($unitWeight !== null) {
+                $weightInGrams += $unitWeight * $quantity;
+            }
+
+            $itemLength = $this->firstPositiveFloat([
+                $cart->variant?->length,
+                $cart->bulkItem?->length,
+                $cart->product?->length,
+            ]);
+            $itemWidth = $this->firstPositiveFloat([
+                $cart->variant?->width,
+                $cart->bulkItem?->width,
+                $cart->product?->width,
+            ]);
+            $itemHeight = $this->firstPositiveFloat([
+                $cart->variant?->height,
+                $cart->bulkItem?->height,
+                $cart->product?->height,
+            ]);
+
+            if ($itemLength !== null) {
+                $length = $length === null ? $itemLength : max($length, $itemLength);
+            }
+            if ($itemWidth !== null) {
+                $width = $width === null ? $itemWidth : max($width, $itemWidth);
+            }
+            if ($itemHeight !== null) {
+                $height = $height === null ? $itemHeight : max($height, $itemHeight);
+            }
+        }
+
+        return [
+            'weight_grams' => $weightInGrams > 0 ? $weightInGrams : 500,
+            'length' => $length,
+            'width' => $width,
+            'height' => $height,
+        ];
+    }
+
+    private function firstPositiveInt(array $values): ?int
+    {
+        foreach ($values as $value) {
+            if (is_numeric($value) && (float) $value > 0) {
+                return (int) round((float) $value);
+            }
+        }
+
+        return null;
+    }
+
+    private function firstPositiveFloat(array $values): ?float
+    {
+        foreach ($values as $value) {
+            if (is_numeric($value) && (float) $value > 0) {
+                return (float) $value;
+            }
+        }
+
+        return null;
     }
 
     private function writeLatestServiceabilityResponse(HttpResponse $response, array $requestMeta = []): void

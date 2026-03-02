@@ -1,0 +1,71 @@
+{
+    "captured_at": "2026-03-02 11:43:52",
+    "order_id": 105,
+    "order_code": "ORDOU2MX7WDN4",
+    "outcome": "business_fail",
+    "reason": "api_success_false",
+    "endpoint": "https://track.delhivery.com/api/cmu/create.json",
+    "form": {
+        "format": "json",
+        "data": {
+            "pickup_location": {
+                "name": "Default Pickup Location"
+            },
+            "shipments": [
+                {
+                    "order": "ORDOU2MX7WDN4",
+                    "name": "Wredy",
+                    "add": "wayanad, junction",
+                    "pin": "670721",
+                    "city": "Wayanad",
+                    "state": "Kerala",
+                    "country": "India",
+                    "phone": "8907654321",
+                    "payment_mode": "COD",
+                    "total_amount": 147.96,
+                    "cod_amount": 147.96,
+                    "quantity": "1",
+                    "return_name": "Default Pickup Location",
+                    "return_add": "Near SD Honda Kilimanoor",
+                    "return_city": "Idukki",
+                    "return_state": "Kerala",
+                    "return_country": "India",
+                    "return_phone": "9746666666",
+                    "return_pin": "695601"
+                }
+            ]
+        }
+    },
+    "response": {
+        "status": 200,
+        "successful": true,
+        "body": {
+            "cash_pickups_count": 0,
+            "package_count": 1,
+            "prepaid_count": 0,
+            "pickups_count": 0,
+            "replacement_count": 0,
+            "cash_pickups": 0,
+            "cod_amount": 0,
+            "cod_count": 0,
+            "upload_wbn": "UPL11891230556551726918",
+            "packages": [
+                {
+                    "waybill": "",
+                    "refnum": "ORDOU2MX7WDN4",
+                    "client": "4b6b94-DREAMPOOLECOMMERCEPR-do",
+                    "payment": "COD",
+                    "cod_amount": 147.96,
+                    "status": "Fail",
+                    "sort_code": "KAA/KOO",
+                    "serviceable": true,
+                    "remarks": [
+                        "Crashing while saving package due to exception 'Prepaid client manifest charge API failed due to insufficient balance'. Package might have been partially saved."
+                    ]
+                }
+            ],
+            "success": false,
+            "rmk": "An internal Error has occurred, Please get in touch with client.support@delhivery.com"
+        }
+    }
+}

@@ -49,6 +49,7 @@ class OrderDetailsResource extends JsonResource
         return [
             'id' => $this->id,
             'order_code' => (string) '#' . $this->order_code,
+            'api_provider' => $this->api_provider,
             'order_status' => $this->order_status->value,
             'cancel_reason' => $this->cancel_reason,
             'created_at' => $this->created_at,

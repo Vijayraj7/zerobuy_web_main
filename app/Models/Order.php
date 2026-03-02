@@ -31,7 +31,7 @@ class Order extends Model
      */
     public function products(): BelongsToMany
     {
-        return $this->belongsToMany(Product::class, 'order_products')->using(OrderProduct::class)->withPivot('id', 'quantity', 'color', 'unit', 'size', 'price', 'order_variants_id', 'order_bulk_items_id', 'product_name', 'return_days')->withoutGlobalScopes();
+        return $this->belongsToMany(Product::class, 'order_products')->using(OrderProduct::class)->withPivot('id', 'quantity', 'color', 'unit', 'size', 'price', 'weight', 'length', 'width', 'height', 'order_variants_id', 'order_bulk_items_id', 'product_name', 'return_days')->withoutGlobalScopes();
     }
 
     public function orderProducts(): HasMany    //added by ancy

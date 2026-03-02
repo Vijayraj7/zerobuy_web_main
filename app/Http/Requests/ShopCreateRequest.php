@@ -84,9 +84,9 @@ class ShopCreateRequest extends FormRequest
             'delivery_state_ids' => ['required', 'array', 'min:1'],
             'delivery_state_ids.*' => ['required', 'integer', 'exists:states,id'],
             'delivery_mode' => ['required', 'in:amount_based,state_wise,manual,provider_api'],
-            'delivery_provider' => ['nullable', 'required_if:delivery_mode,provider_api', 'in:shiprocket'],
+            'delivery_provider' => ['nullable', 'required_if:delivery_mode,provider_api', 'in:shiprocket,delhivery'],
             'provider_api_key' => ['nullable', 'required_if:delivery_mode,provider_api', 'string', 'max:255'],
-            'provider_api_secret' => ['nullable', 'required_if:delivery_mode,provider_api', 'string', 'max:255'],
+            'provider_api_secret' => ['nullable', 'required_if:delivery_provider,shiprocket', 'string', 'max:255'],
 
             'online_payment_enabled' => ['nullable', 'boolean'],
             'cash_on_delivery_enabled' => ['nullable', 'boolean'],

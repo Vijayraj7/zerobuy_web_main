@@ -49,4 +49,9 @@ return [
         'default_weight' => env('SHIPROCKET_DEFAULT_WEIGHT', 0.5),
     ],
 
+    'delhivery' => [
+        'base_url' => env('DELHIVERY_BASE_URL', 'https://track.delhivery.com'),
+        'pickup_location' => env('DELHIVERY_PICKUP_LOCATION', 'Default Pickup Location'),
+    ],
+
 ];

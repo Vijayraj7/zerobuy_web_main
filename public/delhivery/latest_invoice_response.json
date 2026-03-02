@@ -1,0 +1,69 @@
+{
+    "captured_at": "2026-03-02 13:05:56",
+    "request": {
+        "shop_id": 3,
+        "pickup_postcode": "695601",
+        "delivery_postcode": "670721",
+        "delivery_mode": "S",
+        "shipment_subtype": "DTO",
+        "chargeable_weight_grams": 1200,
+        "length": 10,
+        "breadth": 10,
+        "height": 10
+    },
+    "response": {
+        "status": 200,
+        "successful": true,
+        "body": [
+            {
+                "status": "DTO",
+                "zone": "B",
+                "charge_DL": 0,
+                "charge_RTO": 0,
+                "charge_DTO": 168,
+                "charge_COD": 0,
+                "charge_FS": 16.8,
+                "charge_CNC": 0,
+                "charge_AWB": 0,
+                "charge_ROV": 0,
+                "charge_INS": 0,
+                "charge_FOD": 0,
+                "charge_MPS": 0,
+                "charge_WOD": 0,
+                "gross_amount": 187.37,
+                "total_amount": 221.09,
+                "charge_CCOD": 0,
+                "charge_POD": 0,
+                "charge_COVID": 0,
+                "charge_FSC": 0,
+                "charge_FOV": 0,
+                "charge_pickup": 0,
+                "charged_weight": 1200,
+                "zonal_cl": null,
+                "wt_rule_id": null,
+                "charge_AIR": 0,
+                "charge_LABEL": 0,
+                "charge_DEMUR": 0,
+                "charge_REATTEMPT": 0,
+                "charge_DOCUMENT": 0,
+                "charge_DPH": 2.57,
+                "charge_QC": 0,
+                "charge_CWH": 0,
+                "charge_E2E": 0,
+                "charge_LM": 0,
+                "adhoc_data": [],
+                "charge_PEAK": 0,
+                "tax_data": {
+                    "SGST": 16.86,
+                    "CGST": 16.86,
+                    "IGST": 0,
+                    "service_tax": 0,
+                    "swacch_bharat_tax": 0,
+                    "krishi_kalyan_cess": 0
+                },
+                "divisor": 5000,
+                "wt_sop_type": "dead_lt"
+            }
+        ]
+    }
+}

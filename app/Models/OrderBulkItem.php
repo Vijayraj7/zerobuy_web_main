@@ -15,5 +15,9 @@ class OrderBulkItem extends Model
         'moq',
         'mrp',
         'selling_price',
+        'weight',
+        'length',
+        'width',
+        'height',
     ];
 }

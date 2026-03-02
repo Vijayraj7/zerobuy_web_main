@@ -11,6 +11,7 @@ use Illuminate\Validation\Rules\Enum;
 use App\Http\Resources\ReturnOrderResource;
 use App\Http\Resources\ReturnOrderDetailsResource;
 use App\Repositories\NotificationRepository;
+use App\Repositories\ReturnOrderRepository;
 use App\Services\NotificationServices;
 use Carbon\Carbon;
 
@@ -72,7 +73,21 @@ class ReturnOrderController extends Controller
             return $this->json('error', __('You do not have permission to update this order'));
         }
 
+        $previousStatus = (string) $returnOrder->status;
         $returnOrder->update(['status' => $request->status]);
+
+        $isNowRestockEligible = in_array((string) $request->status, [
+            ReturnOderStatus::APPROVED->value,
+            ReturnOderStatus::COMPLETED->value,
+        ], true);
+        $wasAlreadyRestocked = in_array($previousStatus, [
+            ReturnOderStatus::APPROVED->value,
+            ReturnOderStatus::COMPLETED->value,
+        ], true);
+
+        if ($isNowRestockEligible && !$wasAlreadyRestocked) {
+            ReturnOrderRepository::restockReturnedProducts($returnOrder);
+        }
 
         ReturnOrderStatusTimeline::updateOrCreate(
             [
