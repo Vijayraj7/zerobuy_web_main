@@ -17,6 +17,9 @@ class ProductBulkItemResource extends JsonResource
             'mrp'           => (float) $this->mrp,
             'selling_price' => (float) $this->selling_price,
             'weight'        => (int) ($this->weight ?? 0),
+            'length'        => $this->length == null ? null : (float) $this->length,
+            'width'         => $this->width == null ? null : (float) $this->width,
+            'height'        => $this->height == null ? null : (float) $this->height,
         ];
     }
 }
