@@ -234,6 +234,11 @@ class ShopRepository extends Repository
             $onlinePaymentConfig = $shop->online_payment_config;
         }
 
+        if (! $onlinePaymentEnabled) {
+            $onlinePaymentProvider = null;
+            $onlinePaymentConfig = null;
+        }
+
         // Update shop
         self::update($shop, [
             'name' => $request->shop_name,
@@ -378,6 +383,11 @@ class ShopRepository extends Repository
 
         if (! $onlinePaymentProvider) {
             $onlinePaymentConfig = $shop->online_payment_config;
+        }
+
+        if (! $onlinePaymentEnabled) {
+            $onlinePaymentProvider = null;
+            $onlinePaymentConfig = null;
         }
 
         // update shop

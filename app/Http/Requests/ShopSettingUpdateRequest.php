@@ -23,10 +23,10 @@ class ShopSettingUpdateRequest extends FormRequest
     {
         return [
             'min_order_amount' => 'nullable|numeric|min:0|max_digits:5',
-            'estimated_delivery_time' => 'required|integer|min:1|max:120',
+            'estimated_delivery_time' => 'nullable|integer|min:1|max:120',
             'prefix' => 'nullable|string|min:2|max:2',
-            'opening_time' => 'required',
-            'closing_time' => 'required|after:opening_time',
+            'opening_time' => 'nullable',
+            'closing_time' => 'nullable|after:opening_time',
             'off_day' => 'nullable|array',
             'cash_on_delivery_enabled' => 'nullable|boolean',
             'online_payment_enabled' => 'nullable|boolean',
