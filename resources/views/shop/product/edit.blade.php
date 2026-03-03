@@ -178,7 +178,7 @@
                             @enderror
                         </div>
                         <div class="row mt-3 g-2">
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label class="form-label">Weight (grams) <span class="text-danger">*</span></label>
                                 <input type="number" name="weight" class="form-control" min="1" required
                                     value="{{ old('weight', $isEdit ? $product->weight : '') }}"
@@ -187,29 +187,25 @@
                                     <p class="text text-danger m-0">{{ $message }}</p>
                                 @enderror
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Length (cm)</label>
-                                <input type="number" name="length" class="form-control" min="0" step="0.01"
-                                    value="{{ old('length', $isEdit ? $product->length : '') }}"
-                                    placeholder="Length">
+                            <div class="col-md-8">
+                                <label class="form-label">Dimensions (cm)</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text px-2">L</span>
+                                    <input type="number" name="length" class="form-control" min="0" step="0.01"
+                                        value="{{ old('length', $isEdit ? $product->length : '') }}" placeholder="Length">
+                                    <span class="input-group-text px-2">W</span>
+                                    <input type="number" name="width" class="form-control" min="0" step="0.01"
+                                        value="{{ old('width', $isEdit ? $product->width : '') }}" placeholder="Width">
+                                    <span class="input-group-text px-2">H</span>
+                                    <input type="number" name="height" class="form-control" min="0" step="0.01"
+                                        value="{{ old('height', $isEdit ? $product->height : '') }}" placeholder="Height">
+                                </div>
                                 @error('length')
                                     <p class="text text-danger m-0">{{ $message }}</p>
                                 @enderror
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Width (cm)</label>
-                                <input type="number" name="width" class="form-control" min="0" step="0.01"
-                                    value="{{ old('width', $isEdit ? $product->width : '') }}"
-                                    placeholder="Width">
                                 @error('width')
                                     <p class="text text-danger m-0">{{ $message }}</p>
                                 @enderror
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Height (cm)</label>
-                                <input type="number" name="height" class="form-control" min="0" step="0.01"
-                                    value="{{ old('height', $isEdit ? $product->height : '') }}"
-                                    placeholder="Height">
                                 @error('height')
                                     <p class="text text-danger m-0">{{ $message }}</p>
                                 @enderror
@@ -372,9 +368,7 @@
                                         <th>Selling Price <span class="text-danger">*</span></th>
                                         <th>Quantity <span class="text-danger">*</span></th>
                                         <th>Weight (g) <span class="text-danger">*</span></th>
-                                        <th>Length (cm)</th>
-                                        <th>Width (cm)</th>
-                                        <th>Height (cm)</th>
+                                        <th>Dimensions (cm)</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
@@ -415,20 +409,21 @@
                                                 type="number">
                                         </td>
                                         <td>
-                                            <input id="variant-weight" class="form-control" placeholder="Weight"
+                                            <input id="variant-weight" class="form-control" placeholder="Weight (g)"
                                                 type="number" min="1">
                                         </td>
                                         <td>
-                                            <input id="variant-length" class="form-control" placeholder="Length"
-                                                type="number" min="0" step="0.01">
-                                        </td>
-                                        <td>
-                                            <input id="variant-width" class="form-control" placeholder="Width"
-                                                type="number" min="0" step="0.01">
-                                        </td>
-                                        <td>
-                                            <input id="variant-height" class="form-control" placeholder="Height"
-                                                type="number" min="0" step="0.01">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text px-2">L</span>
+                                                <input id="variant-length" class="form-control" placeholder="Length"
+                                                    type="number" min="0" step="0.01">
+                                                <span class="input-group-text px-2">W</span>
+                                                <input id="variant-width" class="form-control" placeholder="Width"
+                                                    type="number" min="0" step="0.01">
+                                                <span class="input-group-text px-2">H</span>
+                                                <input id="variant-height" class="form-control" placeholder="Height"
+                                                    type="number" min="0" step="0.01">
+                                            </div>
                                         </td>
                                         <td>
                                             <button type="button" class="btn btn-primary" id="add-variant">Add
@@ -623,9 +618,7 @@
                             <th>MRP</th>
                             <th>Selling Price</th>
                             <th>Weight (g)</th>
-                            <th>Length (cm)</th>
-                            <th>Width (cm)</th>
-                            <th>Height (cm)</th>
+                            <th>Dimensions (cm)</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -637,9 +630,16 @@
                             <td><input id="bulkitem-mrp" class="form-control" type="number"></td>
                             <td><input id="bulkitem-price" class="form-control" type="number"></td>
                             <td><input id="bulkitem-weight" class="form-control" type="number" min="1"></td>
-                            <td><input id="bulkitem-length" class="form-control" type="number" min="0" step="0.01"></td>
-                            <td><input id="bulkitem-width" class="form-control" type="number" min="0" step="0.01"></td>
-                            <td><input id="bulkitem-height" class="form-control" type="number" min="0" step="0.01"></td>
+                            <td>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text px-2">L</span>
+                                    <input id="bulkitem-length" class="form-control" type="number" min="0" step="0.01" placeholder="Length">
+                                    <span class="input-group-text px-2">W</span>
+                                    <input id="bulkitem-width" class="form-control" type="number" min="0" step="0.01" placeholder="Width">
+                                    <span class="input-group-text px-2">H</span>
+                                    <input id="bulkitem-height" class="form-control" type="number" min="0" step="0.01" placeholder="Height">
+                                </div>
+                            </td>
                             <td>
                                 <button type="button" class="btn btn-primary" id="add-bulk-item">
                                     Add
@@ -674,8 +674,33 @@
     document.addEventListener('input', function(e) {
         if (!(e.target instanceof Element)) return;
         if (e.target.matches('input[type="number"]')) {
-            // Remove everything that's not a digit
-            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            const stepAttr = (e.target.getAttribute('step') || '').toLowerCase();
+            const nameAttr = (e.target.getAttribute('name') || '').toLowerCase();
+            const idAttr = (e.target.getAttribute('id') || '').toLowerCase();
+
+            const forceInteger = /(quantity|min_order_quantity|return_period|min_qty|max_qty|\[quantity\]|\[moq\])/.test(
+                nameAttr + ' ' + idAttr
+            );
+            const forceDecimal = /(mrp|selling_price|\[price\]|price|length|width|height)/.test(
+                nameAttr + ' ' + idAttr
+            );
+
+            const allowDecimal = !forceInteger && (
+                forceDecimal ||
+                stepAttr === 'any' ||
+                stepAttr.includes('.')
+            );
+
+            if (allowDecimal) {
+                let sanitized = e.target.value.replace(/[^0-9.]/g, '');
+                const parts = sanitized.split('.');
+                if (parts.length > 2) {
+                    sanitized = parts.shift() + '.' + parts.join('');
+                }
+                e.target.value = sanitized;
+            } else {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            }
         }
     });
 
@@ -806,28 +831,54 @@
 
     // Tabs navigation
     $(document).ready(function() {
+        const stepStorageKey = 'shop_product_last_step';
+
+        function showStep(step, persist = true) {
+            const stepValue = String(step || '1');
+            const $targetTab = $('#productTabs .nav-link[data-step="' + stepValue + '"]');
+
+            if (!$targetTab.length || $targetTab.hasClass('disabled')) {
+                return false;
+            }
+
+            $('.step-content').hide();
+            $('.step-' + stepValue).show();
+            $('#productTabs .nav-link').removeClass('active');
+            $targetTab.addClass('active');
+
+            if (persist) {
+                try {
+                    localStorage.setItem(stepStorageKey, stepValue);
+                } catch (e) {}
+            }
+
+            return true;
+        }
+
         $('.next-btn').click(function() { // Next Button
             let nextStep = $(this).data('next');
-            $('.step-content').hide();
-            $('.step-' + nextStep).show();
-            $('#productTabs .nav-link').removeClass('active');
-            $('#productTabs .nav-link[data-step="' + nextStep + '"]').addClass('active');
+            showStep(nextStep);
         });
         $('.prev-btn').click(function() { // Previous Button
             let prevStep = $(this).data('prev');
-            $('.step-content').hide();
-            $('.step-' + prevStep).show();
-            $('#productTabs .nav-link').removeClass('active');
-            $('#productTabs .nav-link[data-step="' + prevStep + '"]').addClass('active');
+            showStep(prevStep);
         });
         $('#productTabs .nav-link').click(function(e) { //Tab Click Navigation
             e.preventDefault();
             let step = $(this).data('step');
-            $('.step-content').hide();
-            $('.step-' + step).show();
-            $('#productTabs .nav-link').removeClass('active');
-            $(this).addClass('active');
+            showStep(step);
         });
+
+        setTimeout(function() {
+            let savedStep = null;
+            try {
+                savedStep = localStorage.getItem(stepStorageKey);
+            } catch (e) {}
+
+            if (!savedStep || !showStep(savedStep, false)) {
+                showStep(1, false);
+            }
+        }, 120);
     });
 
     // Category-Subcategory Select
@@ -1073,6 +1124,7 @@
 
         const colorId = colorSelect.value;
         const colorName = colorSelect.options[colorSelect.selectedIndex]?.text || '';
+        const colorCode = colorSelect.options[colorSelect.selectedIndex]?.dataset?.color || '';
         const sizeId = sizeSelect.value;
         const sizeName = sizeSelect.options[sizeSelect.selectedIndex]?.text || '';
         const price = parseFloat(priceInput.value);
@@ -1120,26 +1172,29 @@
         variantCard.id = `variant-${variantId}`;
 
         variantCard.innerHTML = `
-<div class="card-body py-2">
+<div class="card-body py-1 px-2">
     <div class="row align-items-center">
-        <div class="col-md-10">
-            <div class="row g-2">
+        <div class="col-md-12">
+            <div class="row g-1 align-items-end">
 
-                            <div class="col-md-2">
-                                <label class="small fw-bold">Color</label>
-                                <div>${colorName}</div>
+                            <div class="col-md-2 text-center">
+                                <label class="small fw-bold mb-1">Color</label>
+                                <div class="small d-flex align-items-center justify-content-center gap-1">
+                                    ${colorCode ? `<span style="display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid #ddd;background:${colorCode};"></span>` : ''}
+                                    <span>${colorName}</span>
+                                </div>
                                 <input type="hidden" name="variants[${variantId}][color_id]" value="${colorId}">
                             </div>
                             
-                            <div class="col-md-2">
-                                <label class="small fw-bold">Size</label>
-                                <div>${sizeName}</div>
+                            <div class="col-md-2 text-center">
+                                <label class="small fw-bold mb-1">Size</label>
+                                <div class="small">${sizeName}</div>
                                 <input type="hidden" name="variants[${variantId}][size_id]" value="${sizeId}">
                             </div>
                             
 
                 <div class="col-md-2">
-                    <label class="small fw-bold">Selling Price</label>
+                    <label class="small fw-bold mb-1">Selling Price</label>
                     <input type="number"
                         class="form-control form-control-sm"
                         name="variants[${variantId}][price]"
@@ -1148,8 +1203,8 @@
                         required>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="small fw-bold">Quantity</label>
+                <div class="col-md-1">
+                    <label class="small fw-bold mb-1">Quantity</label>
                     <input type="number"
                         class="form-control form-control-sm"
                         name="variants[${variantId}][quantity]"
@@ -1158,8 +1213,8 @@
                         required>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="small fw-bold">Weight</label>
+                <div class="col-md-1">
+                    <label class="small fw-bold mb-1">Weight (g)</label>
                     <input type="number"
                         class="form-control form-control-sm"
                         name="variants[${variantId}][weight]"
@@ -1168,46 +1223,49 @@
                         required>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="small fw-bold">Length (cm)</label>
-                    <input type="number"
-                        class="form-control form-control-sm"
-                        name="variants[${variantId}][length]"
-                        value="${length}"
-                        min="0"
-                        step="0.01">
+                <div class="col-md-3">
+                    <label class="small fw-bold mb-1">Dimensions (cm)</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text px-2">L</span>
+                        <input type="number"
+                            class="form-control"
+                            name="variants[${variantId}][length]"
+                            value="${length}"
+                            min="0"
+                            step="0.01"
+                            placeholder="Length">
+                        <span class="input-group-text px-2">W</span>
+                        <input type="number"
+                            class="form-control"
+                            name="variants[${variantId}][width]"
+                            value="${width}"
+                            min="0"
+                            step="0.01"
+                            placeholder="Width">
+                        <span class="input-group-text px-2">H</span>
+                        <input type="number"
+                            class="form-control"
+                            name="variants[${variantId}][height]"
+                            value="${height}"
+                            min="0"
+                            step="0.01"
+                            placeholder="Height">
+                    </div>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="small fw-bold">Width (cm)</label>
-                    <input type="number"
-                        class="form-control form-control-sm"
-                        name="variants[${variantId}][width]"
-                        value="${width}"
-                        min="0"
-                        step="0.01">
-                </div>
-
-                <div class="col-md-2">
-                    <label class="small fw-bold">Height (cm)</label>
-                    <input type="number"
-                        class="form-control form-control-sm"
-                        name="variants[${variantId}][height]"
-                        value="${height}"
-                        min="0"
-                        step="0.01">
+                
+                <div class="col-md-1 d-flex flex-column align-items-center justify-content-center">
+                    <label class="small fw-bold mb-1">Delete</label>
+                    <button type="button"
+                        class="btn btn-sm btn-danger delete-item"
+                        data-type="variant"
+                        data-id="${variantId}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    </div>
                 </div>
 
             </div>
-        </div>
-
-        <div class="col-md-2 text-end">
-            <button type="button"
-                class="btn btn-sm btn-danger delete-item"
-                data-type="variant"
-                data-id="${variantId}">
-                <i class="fas fa-trash"></i>
-            </button>
         </div>
     </div>
 </div>
@@ -1880,51 +1938,58 @@
 
 
                 <div class="col-md-2">
+                    <label class="small fw-bold">Item Name</label>
                     <input readonly class="form-control form-control-sm"
                         name="bulk_items[${id}][name]" value="${name}">
                 </div>
 
                 <div class="col-md-1">
+                    <label class="small fw-bold">Qty</label>
                     <input type="number" class="form-control form-control-sm"
                         name="bulk_items[${id}][quantity]" value="${qty}">
                 </div>
 
                 <div class="col-md-1">
+                    <label class="small fw-bold">MOQ</label>
                     <input type="number" class="form-control form-control-sm"
                         name="bulk_items[${id}][moq]" value="${moq}">
                 </div>
 
-                <div class="col-md-2">
+                <div class="col-md-1">
+                    <label class="small fw-bold">MRP</label>
                     <input type="number" class="form-control form-control-sm"
                         name="bulk_items[${id}][mrp]" value="${mrp}">
                 </div>
 
-                <div class="col-md-2">
+                <div class="col-md-1">
+                    <label class="small fw-bold">Selling Price</label>
                     <input type="number" class="form-control form-control-sm"
                         name="bulk_items[${id}][selling_price]" value="${price}">
                 </div>
 
-                <div class="col-md-2">
+                <div class="col-md-1">
+                    <label class="small fw-bold">Weight (g)</label>
                     <input type="number" class="form-control form-control-sm"
                         name="bulk_items[${id}][weight]" value="${weight}" min="1" required>
                 </div>
 
-                <div class="col-md-1">
-                    <input type="number" class="form-control form-control-sm"
-                        name="bulk_items[${id}][length]" value="${length}" min="0" step="0.01">
+                <div class="col-md-4">
+                    <label class="small fw-bold">Dimensions (cm)</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text px-2">L</span>
+                        <input type="number" class="form-control"
+                            name="bulk_items[${id}][length]" value="${length}" min="0" step="0.01" placeholder="Length">
+                        <span class="input-group-text px-2">W</span>
+                        <input type="number" class="form-control"
+                            name="bulk_items[${id}][width]" value="${width}" min="0" step="0.01" placeholder="Width">
+                        <span class="input-group-text px-2">H</span>
+                        <input type="number" class="form-control"
+                            name="bulk_items[${id}][height]" value="${height}" min="0" step="0.01" placeholder="Height">
+                    </div>
                 </div>
 
-                <div class="col-md-1">
-                    <input type="number" class="form-control form-control-sm"
-                        name="bulk_items[${id}][width]" value="${width}" min="0" step="0.01">
-                </div>
-
-                <div class="col-md-1">
-                    <input type="number" class="form-control form-control-sm"
-                        name="bulk_items[${id}][height]" value="${height}" min="0" step="0.01">
-                </div>
-
-                <div class="col-md-1 text-end">
+                <div class="col-md-1 d-flex flex-column align-items-center justify-content-center">
+                    <label class="small fw-bold">Delete</label>
                     <button type="button"
                         class="btn btn-sm btn-danger delete-item"
                         data-type="bulkitem"
@@ -2187,6 +2252,7 @@
                     <input type="hidden" name="bulk_items[${id}][id]" value="${item.id ?? ''}">
 
                     <div class="col-md-2">
+                        <label class="small fw-bold">Item Name</label>
                         <input type="text" readonly
                             class="form-control form-control-sm"
                             name="bulk_items[${id}][name]"
@@ -2194,6 +2260,7 @@
                     </div>
 
                     <div class="col-md-1">
+                        <label class="small fw-bold">Qty</label>
                         <input type="number"
                             class="form-control form-control-sm"
                             name="bulk_items[${id}][quantity]"
@@ -2201,55 +2268,60 @@
                     </div>
 
                     <div class="col-md-1">
+                        <label class="small fw-bold">MOQ</label>
                         <input type="number"
                             class="form-control form-control-sm"
                             name="bulk_items[${id}][moq]"
                             value="${item.moq ?? ''}">
                     </div>
 
-                    <div class="col-md-2">
+                    <div class="col-md-1">
+                        <label class="small fw-bold">MRP</label>
                         <input type="number"
                             class="form-control form-control-sm"
                             name="bulk_items[${id}][mrp]"
                             value="${item.mrp ?? ''}">
                     </div>
 
-                    <div class="col-md-2">
+                    <div class="col-md-1">
+                        <label class="small fw-bold">Selling Price</label>
                         <input type="number"
                             class="form-control form-control-sm"
                             name="bulk_items[${id}][selling_price]"
                             value="${item.selling_price ?? ''}">
                     </div>
 
-                    <div class="col-md-2">
+                    <div class="col-md-1">
+                        <label class="small fw-bold">Weight (g)</label>
                         <input type="number"
                             class="form-control form-control-sm"
                             name="bulk_items[${id}][weight]"
                             value="${item.weight ?? ''}" min="1">
                     </div>
 
-                    <div class="col-md-1">
-                        <input type="number"
-                            class="form-control form-control-sm"
-                            name="bulk_items[${id}][length]"
-                            value="${item.length ?? ''}" min="0" step="0.01">
+                    <div class="col-md-4">
+                        <label class="small fw-bold">Dimensions (cm)</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text px-2">L</span>
+                            <input type="number"
+                                class="form-control"
+                                name="bulk_items[${id}][length]"
+                                value="${item.length ?? ''}" min="0" step="0.01" placeholder="Length">
+                            <span class="input-group-text px-2">W</span>
+                            <input type="number"
+                                class="form-control"
+                                name="bulk_items[${id}][width]"
+                                value="${item.width ?? ''}" min="0" step="0.01" placeholder="Width">
+                            <span class="input-group-text px-2">H</span>
+                            <input type="number"
+                                class="form-control"
+                                name="bulk_items[${id}][height]"
+                                value="${item.height ?? ''}" min="0" step="0.01" placeholder="Height">
+                        </div>
                     </div>
-
-                    <div class="col-md-1">
-                        <input type="number"
-                            class="form-control form-control-sm"
-                            name="bulk_items[${id}][width]"
-                            value="${item.width ?? ''}" min="0" step="0.01">
-                    </div>
-
-                    <div class="col-md-1">
-                        <input type="number"
-                            class="form-control form-control-sm"
-                            name="bulk_items[${id}][height]"
-                            value="${item.height ?? ''}" min="0" step="0.01">
-                    </div>
-
-                    <div class="col-md-1 text-end">
+                    
+                    <div class="col-md-1 d-flex flex-column align-items-center justify-content-center">
+                        <label class="small fw-bold">Delete</label>
                         <button type="button"
                             class="btn btn-sm btn-danger delete-item"
                             data-type="bulkitem"
@@ -2299,26 +2371,29 @@
             card.id = `variant-${id}`;
 
             card.innerHTML = `
-            <div class="card-body py-2">
+            <div class="card-body py-1 px-2">
                 <div class="row align-items-center">
-                    <div class="col-md-10">
-                        <div class="row g-2">
+                    <div class="col-md-12">
+                        <div class="row g-1 align-items-end">
 
-                            <div class="col-md-2">
-                                <label class="small fw-bold">Color</label>
-                                <div>${variant.color?.name ?? 'N/A'}</div>
+                            <div class="col-md-2 text-center">
+                                <label class="small fw-bold mb-1">Color</label>
+                                <div class="small d-flex align-items-center justify-content-center gap-1">
+                                    ${variant.color?.color_code ? `<span style="display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid #ddd;background:${variant.color.color_code};"></span>` : ''}
+                                    <span>${variant.color?.name ?? 'N/A'}</span>
+                                </div>
                                 <input type="hidden" name="variants[${id}][id]" value="${variant.id}">
                                 <input type="hidden" name="variants[${id}][color_id]" value="${colorId}">
                             </div>
 
-                            <div class="col-md-2">
-                                <label class="small fw-bold">Size</label>
-                                <div>${variant.size?.name ?? 'N/A'}</div>
+                            <div class="col-md-2 text-center">
+                                <label class="small fw-bold mb-1">Size</label>
+                                <div class="small">${variant.size?.name ?? 'N/A'}</div>
                                 <input type="hidden" name="variants[${id}][size_id]" value="${sizeId}">
                             </div>
 
                             <div class="col-md-2">
-                                <label class="small fw-bold">Selling Price</label>
+                                <label class="small fw-bold mb-1">Selling Price</label>
                                 <input type="number"
                                     class="form-control form-control-sm"
                                     name="variants[${id}][price]"
@@ -2327,8 +2402,8 @@
                                     required>
                             </div>
 
-                            <div class="col-md-2">
-                                <label class="small fw-bold">Quantity</label>
+                            <div class="col-md-1">
+                                <label class="small fw-bold mb-1">Quantity</label>
                                 <input type="number"
                                     class="form-control form-control-sm"
                                     name="variants[${id}][quantity]"
@@ -2337,8 +2412,8 @@
                                     required>
                             </div>
 
-                            <div class="col-md-2">
-                                <label class="small fw-bold">Weight</label>
+                            <div class="col-md-1">
+                                <label class="small fw-bold mb-1">Weight (g)</label>
                                 <input type="number"
                                     class="form-control form-control-sm"
                                     name="variants[${id}][weight]"
@@ -2347,46 +2422,47 @@
                                     required>
                             </div>
 
-                            <div class="col-md-2">
-                                <label class="small fw-bold">Length (cm)</label>
-                                <input type="number"
-                                    class="form-control form-control-sm"
-                                    name="variants[${id}][length]"
-                                    value="${variant.length ?? ''}"
-                                    min="0"
-                                    step="0.01">
+                            <div class="col-md-3">
+                                <label class="small fw-bold mb-1">Dimensions (cm)</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text px-2">L</span>
+                                    <input type="number"
+                                        class="form-control"
+                                        name="variants[${id}][length]"
+                                        value="${variant.length ?? ''}"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="Length">
+                                    <span class="input-group-text px-2">W</span>
+                                    <input type="number"
+                                        class="form-control"
+                                        name="variants[${id}][width]"
+                                        value="${variant.width ?? ''}"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="Width">
+                                    <span class="input-group-text px-2">H</span>
+                                    <input type="number"
+                                        class="form-control"
+                                        name="variants[${id}][height]"
+                                        value="${variant.height ?? ''}"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="Height">
+                                </div>
                             </div>
 
-                            <div class="col-md-2">
-                                <label class="small fw-bold">Width (cm)</label>
-                                <input type="number"
-                                    class="form-control form-control-sm"
-                                    name="variants[${id}][width]"
-                                    value="${variant.width ?? ''}"
-                                    min="0"
-                                    step="0.01">
+                            <div class="col-md-1 d-flex align-items-center justify-content-center">
+                                <button type="button"
+                                    class="btn btn-sm btn-danger delete-item"
+                                    data-type="variant"
+                                    data-id="${id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </div>
-
-                            <div class="col-md-2">
-                                <label class="small fw-bold">Height (cm)</label>
-                                <input type="number"
-                                    class="form-control form-control-sm"
-                                    name="variants[${id}][height]"
-                                    value="${variant.height ?? ''}"
-                                    min="0"
-                                    step="0.01">
-                            </div>
+                        </div>
 
                         </div>
-                    </div>
-
-                    <div class="col-md-2 text-end">
-                        <button type="button"
-                            class="btn btn-sm btn-danger delete-item"
-                            data-type="variant"
-                            data-id="${id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -2578,6 +2654,16 @@
                 anchor = input.closest('.col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-6, .col-lg-5, .col-lg-7, .mb-2, .mb-3') || input;
             }
 
+            const rowCard = input.closest('.variant-card, .bulkitem-card, .bulk-card');
+            if (rowCard && (name.startsWith('variants.') || name.startsWith('bulk_items.') || name.startsWith('bulk.'))) {
+                const cardBody = rowCard.querySelector('.card-body') || rowCard;
+                const existingCardError = cardBody.querySelector(`.client-error[data-field="${name}"]`);
+                if (!existingCardError) {
+                    cardBody.insertAdjacentHTML('beforeend', `<p class="text text-danger m-0 mt-1 client-error" data-field="${name}">${message}</p>`);
+                }
+                return;
+            }
+
             const existing = anchor.parentElement?.querySelector(`.client-error[data-field="${name}"]`);
             if (!existing) {
                 anchor.insertAdjacentHTML('afterend', `<p class="text text-danger m-0 client-error" data-field="${name}">${message}</p>`);
@@ -2588,8 +2674,9 @@
             const messages = [];
             Object.keys(errors).forEach(field => {
                 const fieldMessages = Array.isArray(errors[field]) ? errors[field] : [errors[field]];
+                const isRowField = /^(variants|bulk_items|bulk)\./.test(field);
                 fieldMessages.forEach(msg => {
-                    if (!messages.includes(msg)) {
+                    if (!isRowField && !messages.includes(msg)) {
                         messages.push(msg);
                     }
                 });
@@ -2884,6 +2971,34 @@
                 }
             });
 
+            // Cross-field checks: every saved bulk item selling price must be less than its MRP
+            form.querySelectorAll('input[name^="bulk_items["][name$="][selling_price]"]').forEach((input, i) => {
+                const sellingValue = (input.value || '').trim();
+                const mrpFieldName = (input.name || '').replace('[selling_price]', '[mrp]');
+                const mrpInput = form.querySelector(`input[name="${mrpFieldName}"]`);
+                const mrpValue = (mrpInput?.value || '').trim();
+
+                if (
+                    sellingValue !== '' &&
+                    mrpValue !== '' &&
+                    !isNaN(Number(sellingValue)) &&
+                    !isNaN(Number(mrpValue)) &&
+                    Number(sellingValue) >= Number(mrpValue)
+                ) {
+                    addError(errors, `bulk_items.${i}.selling_price`, 'Bulk item selling price must be less than MRP.');
+                }
+            });
+
+            // Cross-field checks: each saved bulk slab price must be less than product MRP
+            if (mrp !== '' && !isNaN(Number(mrp))) {
+                form.querySelectorAll('input[name^="bulk["][name$="][price]"]').forEach((input, i) => {
+                    const slabPrice = (input.value || '').trim();
+                    if (slabPrice !== '' && !isNaN(Number(slabPrice)) && Number(slabPrice) >= Number(mrp)) {
+                        addError(errors, `bulk.${i}.price`, 'Bulk price must be less than MRP.');
+                    }
+                });
+            }
+
             ['length', 'width', 'height'].forEach((dimensionField) => {
                 form.querySelectorAll(`input[name^="bulk_items["][name$="][${dimensionField}]"]`).forEach((input, i) => {
                     const v = (input.value || '').trim();
@@ -2906,10 +3021,8 @@
             showErrors(errors);
 
             const firstField = fields[0];
-            activateStep(stepForField(firstField.split('.')[0]));
-
             const target = resolveFieldElement(firstField) || resolveFieldElement(firstField.split('.')[0]);
-            if (target) target.focus();
+            if (target && target.offsetParent !== null) target.focus();
 
             const box = document.getElementById('productFormErrorBox');
             if (box) {
