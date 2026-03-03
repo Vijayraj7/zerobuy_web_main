@@ -431,6 +431,60 @@ class ShopRepository extends Repository
         return $shop;
     }
 
+    public static function updatePaymentSetting($shop, $request): Shop
+    {
+        $onlinePaymentEnabled = $request->has('online_payment_enabled')
+            ? $request->boolean('online_payment_enabled')
+            : (bool) ($shop->online_payment_enabled ?? false);
+        $cashOnDeliveryEnabled = $request->has('cash_on_delivery_enabled')
+            ? $request->boolean('cash_on_delivery_enabled')
+            : (bool) ($shop->cash_on_delivery_enabled ?? true);
+
+        if (! $onlinePaymentEnabled && ! $cashOnDeliveryEnabled) {
+            throw ValidationException::withMessages([
+                'cash_on_delivery_enabled' => __('Either Cash on Delivery or Online Payment must be enabled.'),
+            ]);
+        }
+
+        $onlinePaymentProvider = $request->filled('online_payment_provider')
+            ? $request->online_payment_provider
+            : ($shop->online_payment_provider ?: null);
+        $onlinePaymentConfig = $shop->online_payment_config;
+
+        if ($onlinePaymentProvider === 'razorpay') {
+            $existingRazorpay = data_get($onlinePaymentConfig, 'razorpay', []);
+
+            $onlinePaymentConfig = [
+                'razorpay' => [
+                    'key_id' => $request->filled('razorpay_key_id')
+                        ? $request->razorpay_key_id
+                        : ($existingRazorpay['key_id'] ?? null),
+                    'key_secret' => $request->filled('razorpay_key_secret')
+                        ? $request->razorpay_key_secret
+                        : ($existingRazorpay['key_secret'] ?? null),
+                ],
+            ];
+        }
+
+        if (! $onlinePaymentProvider) {
+            $onlinePaymentConfig = $shop->online_payment_config;
+        }
+
+        if (! $onlinePaymentEnabled) {
+            $onlinePaymentProvider = null;
+            $onlinePaymentConfig = null;
+        }
+
+        self::update($shop, [
+            'online_payment_enabled' => $onlinePaymentEnabled,
+            'cash_on_delivery_enabled' => $cashOnDeliveryEnabled,
+            'online_payment_provider' => $onlinePaymentProvider,
+            'online_payment_config' => $onlinePaymentConfig,
+        ]);
+
+        return $shop;
+    }
+
     /**
      * Update or create a logo for the shop.
      */

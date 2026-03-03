@@ -62,6 +62,7 @@ Route::prefix('/seller')->group(function () {
             Route::post('/user-update', 'updateProfile');
             Route::post('/shop-update', 'shopUpdate');
             Route::post('/shop-setting-update', 'shopSettingUpdate');
+            Route::post('/payment-setting-update', 'paymentSettingUpdate');
         });
 
         // Business Categories

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\Seller;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PaymentSettingUpdateRequest;
 use App\Http\Requests\ShopInfoUpdateRequest;
 use App\Http\Requests\ShopSettingUpdateRequest;
 use App\Http\Requests\ShopUserUpdateRequest;
@@ -77,6 +78,21 @@ class UserController extends Controller
         ShopRepository::updateShopSetting($shop, $request);
 
         return $this->json('shop setting is updated successfully', [
+            'user' => SellerUserResource::make(auth()->user()),
+        ]);
+    }
+
+    /**
+     * update payment setting.
+     */
+    public function paymentSettingUpdate(PaymentSettingUpdateRequest $request)
+    {
+        /** @var App\Models\Shop $shop */
+        $shop = generaleSetting('shop');
+
+        ShopRepository::updatePaymentSetting($shop, $request);
+
+        return $this->json('payment setting is updated successfully', [
             'user' => SellerUserResource::make(auth()->user()),
         ]);
     }
