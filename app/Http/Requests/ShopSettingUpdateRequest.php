@@ -28,6 +28,11 @@ class ShopSettingUpdateRequest extends FormRequest
             'opening_time' => 'required',
             'closing_time' => 'required|after:opening_time',
             'off_day' => 'nullable|array',
+            'cash_on_delivery_enabled' => 'nullable|boolean',
+            'online_payment_enabled' => 'nullable|boolean',
+            'online_payment_provider' => 'nullable|string|in:razorpay',
+            'razorpay_key_id' => 'nullable|string|max:255|required_if:online_payment_provider,razorpay',
+            'razorpay_key_secret' => 'nullable|string|max:255|required_if:online_payment_provider,razorpay',
         ];
     }
 
@@ -54,6 +59,9 @@ class ShopSettingUpdateRequest extends FormRequest
             'closing_time.required' => __('The closing time field is required.'),
             'closing_time.after' => __('The closing time must be after the opening time.'),
             'off_day.array' => __('The off day field must be an array.'),
+            'online_payment_provider.in' => __('The selected online payment provider is invalid.'),
+            'razorpay_key_id.required_if' => __('The Razorpay key id field is required when Razorpay is selected.'),
+            'razorpay_key_secret.required_if' => __('The Razorpay key secret field is required when Razorpay is selected.'),
         ];
     }
 }
