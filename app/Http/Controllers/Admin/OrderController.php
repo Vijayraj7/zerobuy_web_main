@@ -175,7 +175,70 @@ class OrderController extends Controller
         $deliverySetting = $order->shop->deliverySetting;
         $isManualDelivery = $deliverySetting && $deliverySetting->delivery_mode === 'manual';
 
-        return view('shop.order.show', compact('order', 'orderStatus', 'riders', 'isManualDelivery'));
+        $retryShipProvider = strtolower(trim((string) ($order->api_provider ?: $deliverySetting?->delivery_provider ?: '')));
+        $isProviderOrderCreated = false;
+
+        $apiProviderStatus = null;
+        $apiProviderStatusLabel = null;
+        $apiProviderStatusClass = 'secondary';
+        $apiProviderFailureReason = session('provider_ship_error');
+
+        $isApiProviderOrder =
+            ($deliverySetting && $deliverySetting->delivery_mode === 'provider_api' && in_array($retryShipProvider, ['shiprocket', 'delhivery'], true))
+            || in_array($retryShipProvider, ['shiprocket', 'delhivery'], true);
+
+        if ($retryShipProvider === 'shiprocket') {
+            $isProviderOrderCreated = !empty($order->provider_order_id) || !empty($order->shiprocket_order_id);
+        } elseif ($retryShipProvider === 'delhivery') {
+            $isProviderOrderCreated = !empty($order->provider_order_id);
+        }
+
+        if (in_array($retryShipProvider, ['shiprocket', 'delhivery'], true)) {
+            $hasProviderOrderId = !empty($order->provider_order_id) || !empty($order->shiprocket_order_id);
+            $hasProviderShipmentId = !empty($order->provider_shipment_id) || !empty($order->shiprocket_shipment_id);
+            $hasProviderAwb = !empty($order->provider_awb_code) || !empty($order->shiprocket_awb_code);
+
+            if ($hasProviderAwb) {
+                $apiProviderStatus = 'awb_generated';
+                $apiProviderStatusLabel = 'AWB Generated';
+                $apiProviderStatusClass = 'success';
+            } elseif ($hasProviderShipmentId) {
+                $apiProviderStatus = 'shipment_created';
+                $apiProviderStatusLabel = 'Shipment Created';
+                $apiProviderStatusClass = 'info';
+            } elseif ($hasProviderOrderId) {
+                $apiProviderStatus = 'order_created';
+                $apiProviderStatusLabel = 'Order Created';
+                $apiProviderStatusClass = 'primary';
+            } else {
+                $apiProviderStatus = 'not_created';
+                $apiProviderStatusLabel = 'Not Created';
+                $apiProviderStatusClass = 'warning';
+            }
+        }
+
+        $showRetryShipButton =
+            $order->order_status?->value === OrderStatus::CONFIRM->value
+            && in_array($retryShipProvider, ['shiprocket', 'delhivery'], true)
+            && !$isProviderOrderCreated;
+
+        $showConfirmShipButton =
+            $order->order_status?->value === OrderStatus::PENDING->value
+            && $isApiProviderOrder;
+
+        return view('shop.order.show', compact(
+            'order',
+            'orderStatus',
+            'riders',
+            'isManualDelivery',
+            'showRetryShipButton',
+            'showConfirmShipButton',
+            'retryShipProvider',
+            'apiProviderStatus',
+            'apiProviderStatusLabel',
+            'apiProviderStatusClass',
+            'apiProviderFailureReason'
+        ));
     }
 
 
