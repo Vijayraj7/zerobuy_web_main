@@ -60,4 +60,12 @@ class NotificationController extends Controller
 
         return back()->withSuccess(__('Notification deleted successfully'));
     }
+
+    // destroy all notifications
+    public function destroyAll()
+    {
+        NotificationRepository::query()->whereNull('shop_id')->whereNull('user_id')->delete();
+
+        return back()->withSuccess(__('All notifications deleted successfully'));
+    }
 }

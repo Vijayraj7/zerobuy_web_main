@@ -284,7 +284,7 @@
                     @endhasPermission
                     @hasPermission('shop.profile.index')
                         <a href="{{ route('shop.profile.index') }}"
-                            class="subMenu hasCount {{ request()->routeIs('shop.profile.*') ? 'active' : '' }}">
+                            class="subMenu hasCount {{ request()->routeIs('shop.profile.index') ? 'active' : '' }}">
                             {{ __('My Shop') }}
                         </a>
                     @endhasPermission
@@ -295,6 +295,46 @@
     @endhasPermission
 @endif
 <!------------------------------ End Shop Management ------------------------------>
+
+<!------------------------------ Shop Settings ------------------------------>
+@hasPermission('shop.profile.index')
+    <li>
+        <a class="menu {{ request()->routeIs('shop.profile.edit') ? 'active' : '' }}" data-bs-toggle="collapse"
+            href="#adminShopSettingsMenu">
+            <span>
+                <img class="menu-icon" src="{{ asset('assets/icons-admin/settings.svg') }}" alt="icon" loading="lazy" />
+                {{ __('Shop Settings') }}
+            </span>
+            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
+        </a>
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('shop.profile.edit') ? 'show' : '' }}"
+            id="adminShopSettingsMenu">
+            <div class="listBar">
+                <a href="{{ route('shop.profile.edit', ['step' => 1]) }}"
+                    class="subMenu hasCount {{ request()->routeIs('shop.profile.edit') && (int) request('step', 1) === 1 ? 'active' : '' }}">
+                    {{ __('Store Details') }}
+                </a>
+                <a href="{{ route('shop.profile.edit', ['step' => 2]) }}"
+                    class="subMenu hasCount {{ request()->routeIs('shop.profile.edit') && (int) request('step') === 2 ? 'active' : '' }}">
+                    {{ __('Business Category') }}
+                </a>
+                <a href="{{ route('shop.profile.edit', ['step' => 3]) }}"
+                    class="subMenu hasCount {{ request()->routeIs('shop.profile.edit') && (int) request('step') === 3 ? 'active' : '' }}">
+                    {{ __('Shipping Settings') }}
+                </a>
+                <a href="{{ route('shop.profile.edit', ['step' => 4]) }}"
+                    class="subMenu hasCount {{ request()->routeIs('shop.profile.edit') && (int) request('step') === 4 ? 'active' : '' }}">
+                    {{ __('Delivery Charges') }}
+                </a>
+                <a href="{{ route('shop.profile.edit', ['step' => 5]) }}"
+                    class="subMenu hasCount {{ request()->routeIs('shop.profile.edit') && (int) request('step') === 5 ? 'active' : '' }}">
+                    {{ __('Payment Settings') }}
+                </a>
+            </div>
+        </div>
+    </li>
+@endhasPermission
+<!------------------------------ End Shop Settings ------------------------------>
 
 
 <!------------------------------ Shop Product Management ------------------------------>

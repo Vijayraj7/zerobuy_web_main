@@ -7,6 +7,25 @@
         <h4>
             {{ __('Notifications') }}
         </h4>
+        <button type="button" class="btn btn-outline-danger"
+            onclick="document.getElementById('deleteAllAdminNotificationsConfirm').style.display='flex'">
+            <i class="bi bi-trash"></i> {{ __('Delete All') }}
+        </button>
+    </div>
+
+    <form id="deleteAllAdminNotificationsForm" action="{{ route('admin.notification.destroyAll') }}" method="GET" class="d-none"></form>
+
+    <div id="deleteAllAdminNotificationsConfirm"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+        <div style="width:100%;max-width:420px;background:#fff;border-radius:8px;padding:20px;">
+            <h5 style="margin:0 0 10px 0;">Confirm Delete</h5>
+            <p style="margin:0 0 16px 0;">Are you sure you want to delete all notifications?</p>
+            <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-secondary"
+                    onclick="document.getElementById('deleteAllAdminNotificationsConfirm').style.display='none'">Cancel</button>
+                <button type="submit" form="deleteAllAdminNotificationsForm" class="btn btn-danger">Yes, Delete All</button>
+            </div>
+        </div>
     </div>
 
     <div class="mt-4">

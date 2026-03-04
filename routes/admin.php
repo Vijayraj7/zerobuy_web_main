@@ -483,6 +483,7 @@ Route::name('admin.')->group(function () {
             Route::get('/notification/{notification}/read', 'markAsRead')->name('notification.read');
             Route::get('/notification/{notification}/destroy', 'destroy')->name('notification.destroy');
             Route::get('/notification/read-all', 'markAllAsRead')->name('notification.readAll');
+            Route::get('/notification/delete-all', 'destroyAll')->name('notification.destroyAll');
         });
 
         // Pusher Configuration
@@ -593,6 +594,8 @@ Route::name('admin.')->group(function () {
             Route::get('/customer-notifications', 'index')->name('customerNotification.index');
             Route::get('/customer-notification/filter', 'filter')->name('customerNotification.filter');
             Route::post('/customer-notification-send', 'send')->name('customerNotification.send');
+            Route::post('/customer-notification-delete-all', 'deleteAll')->name('customerNotification.deleteAll');
+            Route::get('/customer-notification-delete-all', 'deleteAll')->name('customerNotification.deleteAllGet');
         });
 
         // employee management route

@@ -43,7 +43,7 @@ return [
             'profile' => ['index', 'update', 'change-password'],
             'rider' => ['index', 'create', 'show', 'edit', 'destroy', 'toggle', 'assign.order'],
             'customer' => ['index', 'create', 'show', 'edit', 'destroy', 'toggle', 'reset.password'],
-            'customerNotification' => ['index', 'send'],
+            'customerNotification' => ['index', 'send', 'deleteAll'],
             'language' => ['index', 'create', 'edit', 'destroy', 'export', 'import'],
             'employee' => ['index', 'create', 'edit', 'destroy', 'toggle', 'reset.password', 'permission', 'permission.update'],
             'role' => ['index', 'create', 'edit', 'destroy', 'permission', 'permission.update'],
@@ -132,6 +132,7 @@ return [
         'flashSale' => 'flash sale',
         'order.update' => 'Order base tax update',
         'aiPrompt' => 'OpenAI',
-        'generate.AI.data' => 'generate AI data'
+        'generate.AI.data' => 'generate AI data',
+        'deleteAll' => 'delete all'
     ],
 ];

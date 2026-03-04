@@ -697,6 +697,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const input = document.getElementById('store_since');
+    const pincodeInput = document.querySelector('[name="pincode"]');
 
     if (input) {
         const today = new Date().toISOString().split('T')[0];
@@ -707,6 +708,19 @@ document.addEventListener('DOMContentLoaded', function () {
             if (this.value > today) {
                 this.value = today;
             }
+        });
+    }
+
+    if (pincodeInput) {
+        pincodeInput.setAttribute('inputmode', 'numeric');
+        pincodeInput.setAttribute('maxlength', '6');
+
+        pincodeInput.addEventListener('input', function () {
+            let value = (this.value || '').replace(/\D/g, '');
+            if (value.length > 6) {
+                value = value.slice(0, 6);
+            }
+            this.value = value;
         });
     }
 });
@@ -1018,6 +1032,18 @@ document.addEventListener('DOMContentLoaded', function () {
             $('#productTabs .nav-link[data-step="' + step + '"]').addClass('active');
         }
 
+        function getInitialStepFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const stepParam = parseInt(params.get('step') || '1', 10);
+            const maxStep = IS_EDIT ? 5 : 6;
+
+            if (Number.isNaN(stepParam) || stepParam < 1 || stepParam > maxStep) {
+                return 1;
+            }
+
+            return stepParam;
+        }
+
         function stepForField(field) {
             const stepMap = {
                 shop_name: 1,
@@ -1065,6 +1091,8 @@ document.addEventListener('DOMContentLoaded', function () {
             return 1;
         }
 
+        activateStep(getInitialStepFromUrl());
+
         function validateShopFormClient() {
             const errors = {};
             const today = new Date().toISOString().split('T')[0];
@@ -1108,8 +1136,12 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!textVal('district_id')) addError(errors, 'district_id', 'The district field is required.');
 
             const pincode = textVal('pincode');
-            if (!pincode) addError(errors, 'pincode', 'The pincode field is required.');
-            if (pincode.length > 10) addError(errors, 'pincode', 'The pincode may not be greater than 10 characters.');
+            const indiaPincodeRegex = /^[1-9][0-9]{5}$/;
+            if (!pincode) {
+                addError(errors, 'pincode', 'The pincode field is required.');
+            } else if (!indiaPincodeRegex.test(pincode)) {
+                addError(errors, 'pincode', 'Please enter a valid Indian PIN code (6 digits, cannot start with 0).');
+            }
 
             if (!textVal('min_order_amount')) addError(errors, 'min_order_amount', 'The min order amount field is required.');
 

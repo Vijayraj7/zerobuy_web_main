@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\DeviceKey;
+use App\Models\Notification;
 use App\Repositories\UserRepository;
 use App\Services\NotificationServices;
 use Illuminate\Http\Request;
@@ -58,5 +59,14 @@ class CustomerNotificationController extends Controller
         return $this->json('user list', [
             'users' => UserResource::collection($users),
         ]);
+    }
+
+    public function deleteAll()
+    {
+        $customerIds = UserRepository::query()->role('customer')->pluck('id');
+
+        Notification::whereIn('user_id', $customerIds)->delete();
+
+        return back()->withSuccess('All customer notifications deleted successfully');
     }
 }

@@ -32,9 +32,17 @@
             @csrf
             <div class="card">
                 <div class="card-header bg-custom">
-                    <h4 class="card-title m-0 py-2">
-                        <i class="bi bi-bell"></i> {{ __('Push Notification') }}
-                    </h4>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="card-title m-0 py-2">
+                            <i class="bi bi-bell"></i> {{ __('Push Notification') }}
+                        </h4>
+                        @hasPermission('admin.customerNotification.send')
+                            <button type="button" class="btn btn-danger btn-sm"
+                                onclick="document.getElementById('deleteAllCustomerNotificationsConfirm').style.display='flex'">
+                                Delete All Notifications
+                            </button>
+                        @endhasPermission
+                    </div>
                 </div>
                 <div class="card-body">
 
@@ -123,6 +131,26 @@
                 </div>
             </div>
         </form>
+
+        <form id="deleteAllCustomerNotificationsForm" action="{{ url('admin/customer-notification-delete-all') }}"
+            method="POST" class="d-none">
+            @csrf
+        </form>
+
+        @hasPermission('admin.customerNotification.send')
+            <div id="deleteAllCustomerNotificationsConfirm"
+                style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+                <div style="width:100%;max-width:420px;background:#fff;border-radius:8px;padding:20px;">
+                    <h5 style="margin:0 0 10px 0;">Confirm Delete</h5>
+                    <p style="margin:0 0 16px 0;">Are you sure you want to delete all customer notifications?</p>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-secondary"
+                            onclick="document.getElementById('deleteAllCustomerNotificationsConfirm').style.display='none'">Cancel</button>
+                        <button type="submit" form="deleteAllCustomerNotificationsForm" class="btn btn-danger">Yes, Delete All</button>
+                    </div>
+                </div>
+            </div>
+        @endhasPermission
 
     </div>
 @endsection
