@@ -51,6 +51,10 @@
                         <span id="exportContainer" class="ms-2"></span>
                     </div>
                 </form>
+                <div class="mt-2 mb-1 d-flex justify-content-end align-items-center gap-2">
+                    <span class="fw-semibold">{{ __('Total Customers') }}:</span>
+                    <span id="totalCustomerCount" class="badge text-bg-primary">0</span>
+                </div>
                 <table id="customerTable" class="table table-bordered mt-3 datatableCustomCSS">
                     <thead>
                         <tr>
@@ -189,6 +193,11 @@
         });
         table.on('init.dt', function () {
             $('.dt-buttons').appendTo('#exportContainer');
+        });
+
+        table.on('xhr.dt', function (e, settings, json) {
+            const totalCount = (json && typeof json.recordsTotal !== 'undefined') ? json.recordsTotal : 0;
+            $('#totalCustomerCount').text(totalCount);
         });
     });
 </script>

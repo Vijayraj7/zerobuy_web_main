@@ -58,6 +58,10 @@
                                 @endhasPermission
                                 @hasPermission('admin.subcategory.edit')
                                 <td class="text-center"> 
+                                    <a href="{{ route('admin.product.index', ['approve' => 'true', 'business_category' => $subCategory->business_category_id, 'category' => $subCategory->category_id, 'sub_category' => $subCategory->id]) }}"
+                                        class="btn btn-outline-secondary" title="View Accepted Products">
+                                        <i class="fa fa-eye"></i>
+                                    </a>
                                     <a href="javascript:;" class="btn btn-outline-primary editSubCategoryButton" data-id="{{$subCategory->id}}"><i class="fa fa-edit"></i></a>
                                 </td>
                                 @endhasPermission

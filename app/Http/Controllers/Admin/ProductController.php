@@ -12,13 +12,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 use App\Http\Requests\ProductRequest;
+use App\Models\BusinessCategory;
 use App\Models\Category;
+use App\Models\ChildCategory;
 use App\Repositories\ProductRepository;
 use App\Models\ProductVariant;
 use App\Models\ProductBulkPrice;
 use App\Models\ProductItemDetail;
 use App\Models\ProductVariantMedia;
 use App\Models\Media;
+use App\Models\SubCategory;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
@@ -56,6 +59,10 @@ class ProductController extends Controller
             $status  = $request->status;
             $shop    = $request->shop;
             $approve = $request->approve;
+            $businessCategory = $request->business_category;
+            $category = $request->category;
+            $subCategory = $request->sub_category;
+            $childCategory = $request->child_category;
 
             // $query = Product::with('shop')
             //     ->withCount([
@@ -97,6 +104,32 @@ class ProductController extends Controller
             })
             ->when($shop, function ($q) use ($shop) {
                 $q->where('shop_id', $shop);
+            })
+            ->when($businessCategory, function ($q) use ($businessCategory) {
+                $q->where(function ($relationQuery) use ($businessCategory) {
+                    $relationQuery->whereHas('categories', function ($catQuery) use ($businessCategory) {
+                        $catQuery->where('categories.business_category_id', $businessCategory);
+                    })->orWhereHas('subcategories', function ($subQuery) use ($businessCategory) {
+                        $subQuery->where('sub_categories.business_category_id', $businessCategory);
+                    })->orWhereHas('childCategories', function ($childQuery) use ($businessCategory) {
+                        $childQuery->where('child_categories.business_category_id', $businessCategory);
+                    });
+                });
+            })
+            ->when($category, function ($q) use ($category) {
+                $q->whereHas('categories', function ($catQuery) use ($category) {
+                    $catQuery->where('categories.id', $category);
+                });
+            })
+            ->when($subCategory, function ($q) use ($subCategory) {
+                $q->whereHas('subcategories', function ($subQuery) use ($subCategory) {
+                    $subQuery->where('sub_categories.id', $subCategory);
+                });
+            })
+            ->when($childCategory, function ($q) use ($childCategory) {
+                $q->whereHas('childCategories', function ($childQuery) use ($childCategory) {
+                    $childQuery->where('child_categories.id', $childCategory);
+                });
             });
 
             return DataTables::of($query)
@@ -184,7 +217,18 @@ class ProductController extends Controller
         }
 
         $shops = ShopRepository::query()->isActive()->get();
-        return view('admin.product.index', compact('shops'));
+        $businessCategories = BusinessCategory::query()->active()->orderBy('name')->get();
+        $categories = Category::query()->active()->orderBy('name')->get();
+        $subCategories = SubCategory::query()->isActive()->orderBy('name')->get();
+        $childCategories = ChildCategory::query()->active()->orderBy('name')->get();
+
+        return view('admin.product.index', compact(
+            'shops',
+            'businessCategories',
+            'categories',
+            'subCategories',
+            'childCategories'
+        ));
     }
 
     // public function show(Product $product)

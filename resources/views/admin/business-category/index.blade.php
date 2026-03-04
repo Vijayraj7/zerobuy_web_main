@@ -48,6 +48,10 @@
                             </td>
                             <!-- Action -->
                             <td class="text-center"> 
+                                <a href="{{ route('admin.product.index', ['approve' => 'true', 'business_category' => $category->id]) }}"
+                                    class="btn btn-outline-secondary" title="View Accepted Products">
+                                    <i class="fa fa-eye"></i>
+                                </a>
                                 <a href="javascript:;" class="btn btn-outline-primary editBusinessCategoryButton" data-id="{{$category->id}}"><i class="fa fa-edit"></i></a>
                             </td>
                         </tr>

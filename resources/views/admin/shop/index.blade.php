@@ -174,6 +174,10 @@
                     <!-- Export Buttons -->
                     <div id="exportButtons"></div>
                 </div> 
+                <div class="mt-2 mb-1 d-flex justify-content-end align-items-center gap-2 px-2">
+                    <span class="fw-semibold">{{ __('Total Shops') }}:</span>
+                    <span id="totalShopsCount" class="badge text-bg-primary">0</span>
+                </div>
                 <div class="mt-3 table-responsive">
                     <table id="shopTable" class="table table-bordered mt-3 datatableCustomCSS">
                         <thead>
@@ -219,6 +223,12 @@
 
 <script>
     $(function() {  
+        localStorage.setItem('view', 'list');
+        $('#gridView').removeClass('active');
+        $('#listView').addClass('active');
+        $('#gridItem').addClass('d-none').removeClass('d-flex');
+        $('#listItem').removeClass('d-none').addClass('d-block');
+
         let startDate = "";
         let endDate = "";
         let filter    = "all";
@@ -284,6 +294,11 @@
                 table.buttons().container().appendTo('#exportButtons');
             },
         }); 
+
+        table.on('xhr.dt', function (e, settings, json) {
+            const totalCount = (json && typeof json.recordsTotal !== 'undefined') ? json.recordsTotal : 0;
+            $('#totalShopsCount').text(totalCount);
+        });
  
         // Date filter
         $('#startDate, #endDate').change(function () {

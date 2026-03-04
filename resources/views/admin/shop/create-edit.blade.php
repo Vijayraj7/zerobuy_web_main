@@ -1205,6 +1205,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const deliveryMode = selectedRadioVal('delivery_mode');
+
+            if (deliveryMode === 'manual' && onlinePaymentEnabled) {
+                addError(errors, 'delivery_mode', 'Manual delivery mode cannot be used when online payment is enabled. Please change one of these settings.');
+            }
+
             if (deliveryMode === 'amount_based') {
                 const amountRuleCount = $('input[name^="amount_rules["][name$="[min_amount]"]').length;
                 if (amountRuleCount < 1) {
