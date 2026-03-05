@@ -5,6 +5,7 @@ namespace App\Enums;
 enum PaymentMethod: string
 {
     case CASH = 'Cash Payment';
+    case CASHFREE = 'Cashfree';
     case ONLINE = 'Online Payment';
     case STRIPE = 'Stripe';
     case PAYPAL = 'PayPal';

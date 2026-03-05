@@ -160,6 +160,10 @@ class OrderController extends Controller
 
         $requestedPaymentMethod = strtolower(trim((string) $request->payment_method));
         $isOnlineCheckout = $requestedPaymentMethod !== 'cash';
+        $resolvedOnlineProvider = null;
+        $requestedOnlineProvider = in_array($requestedPaymentMethod, ['razorpay', 'cashfree'], true)
+            ? $requestedPaymentMethod
+            : null;
 
         if ($isOnlineCheckout && $shopProducts->count() > 1) {
             return $this->json('For online payment, please place order from one shop at a time.', [], 422);
@@ -174,6 +178,27 @@ class OrderController extends Controller
 
             if ($requestedPaymentMethod === 'cash' && ! ($shop->cash_on_delivery_enabled ?? true)) {
                 return $this->json('Cash on Delivery is disabled for '.$shop->name, [], 422);
+            }
+
+            if ($isOnlineCheckout) {
+                if (! $shop->online_payment_enabled) {
+                    return $this->json('Online payment is disabled for '.$shop->name, [], 422);
+                }
+
+                $shopProvider = strtolower((string) ($shop->online_payment_provider ?? ''));
+                if (! in_array($shopProvider, ['razorpay', 'cashfree'], true)) {
+                    return $this->json('Online payment provider is not configured for '.$shop->name, [], 422);
+                }
+
+                if ($requestedOnlineProvider !== null && $requestedOnlineProvider !== $shopProvider) {
+                    return $this->json('Selected online payment provider ('.$requestedOnlineProvider.') is not available for '.$shop->name.'. Current provider: '.$shopProvider.'.', [], 422);
+                }
+
+                if ($resolvedOnlineProvider === null) {
+                    $resolvedOnlineProvider = $shopProvider;
+                } elseif ($resolvedOnlineProvider !== $shopProvider) {
+                    return $this->json('For online payment, selected shops must use the same payment provider.', [], 422);
+                }
             }
 
             $getCartAmounts = OrderRepository::getCartWiseAmounts($shop, collect($cartProducts), $request->coupon_code, $request->address_id);
@@ -197,13 +222,9 @@ class OrderController extends Controller
             return $this->json('Sorry, minimum order amount is ' . $min_amount . ' in ' . $shop_name, [], 422);
         }
 
-        $paymentMethod = collect(PaymentMethod::cases())->first(function (PaymentMethod $case) use ($request) {
-            return $case->name === strtoupper((string) $request->payment_method);
-        });
-
-        if (! $paymentMethod) {
-            return $this->json('Invalid payment method selected.', [], 422);
-        }
+        $paymentMethod = $isOnlineCheckout
+            ? ($resolvedOnlineProvider === 'razorpay' ? PaymentMethod::RAZORPAY : PaymentMethod::CASHFREE)
+            : PaymentMethod::CASH;
 
         if ($paymentMethod->name === 'RAZORPAY') {
             $shopId = (int) $shopProducts->keys()->first();
@@ -214,6 +235,18 @@ class OrderController extends Controller
             }
 
             $config = $this->getShopRazorpayConfig($shop);
+            if (! $config['status']) {
+                return $this->json($config['message'], [], 422);
+            }
+        } elseif ($paymentMethod->name === 'CASHFREE') {
+            $shopId = (int) $shopProducts->keys()->first();
+            $shop = Shop::find($shopId);
+
+            if (! $shop) {
+                return $this->json('Shop not found for payment.', [], 422);
+            }
+
+            $config = $this->getShopCashfreeConfig($shop);
             if (! $config['status']) {
                 return $this->json($config['message'], [], 422);
             }
@@ -278,6 +311,51 @@ class OrderController extends Controller
             ]);
         }
 
+        if ($paymentMethod->name === 'CASHFREE') {
+            $shopId = (int) $shopProducts->keys()->first();
+            $shop = Shop::find($shopId);
+
+            if (! $shop) {
+                return $this->json('Shop not found for payment.', [], 422);
+            }
+
+            $payment = Payment::create([
+                'amount' => (float) $totalPayableAmountx,
+                'currency' => 'INR',
+                'payment_method' => 'cashfree',
+                'is_paid' => false,
+                'payment_token' => Str::uuid()->toString(),
+            ]);
+
+            $cashfreeData = $this->createShopCashfreeOrder($payment, $shop, $user);
+
+            if (! ($cashfreeData['status'] ?? false)) {
+                $payment->delete();
+                return $this->json('Cashfree order creation failed', [
+                    'error' => $cashfreeData['message'] ?? 'Unable to create Cashfree order.',
+                ], 422);
+            }
+
+            Cache::put('payment_intent_cashfree:'.$payment->id, [
+                'user_id' => $user->id,
+                'address_id' => (int) $request->address_id,
+                'coupon_code' => $request->coupon_code,
+                'note' => $request->note,
+                'payment_method' => 'cashfree',
+                'shop_ids' => array_map('intval', (array) $request->shop_ids),
+                'is_buy_now' => $isBuyNow,
+                'gst' => $request->gst,
+                'cashfree_order_id' => data_get($cashfreeData, 'data.cashfree_order_id'),
+                'cf_order_id' => data_get($cashfreeData, 'data.cf_order_id'),
+            ], now()->addMinutes(30));
+
+            return $this->json('Order created successfully', [
+                'payment_flow' => 'cashfree',
+                'order_payment_url' => data_get($cashfreeData, 'data.payment_link'),
+                'cashfree' => $cashfreeData['data'],
+            ]);
+        }
+
         // Store the order for non-razorpay payments
         try {
             $payment = OrderRepository::storeByRequestFromCart($request, $paymentMethod, $carts);
@@ -293,7 +371,8 @@ class OrderController extends Controller
         ]);
 
         if ($paymentMethod->name != 'CASH') {
-            $paymentUrl = route('order.payment', ['payment' => $payment, 'gateway' => $request->payment_method]);
+            $gateway = $paymentMethod->name === 'CASHFREE' ? 'cashfree' : strtolower((string) $request->payment_method);
+            $paymentUrl = route('order.payment', ['payment' => $payment, 'gateway' => $gateway]);
         }
 
 
@@ -420,6 +499,178 @@ class OrderController extends Controller
         }
     }
 
+    public function verifyCashfreePayment(Request $request)
+    {
+        $request->validate([
+            'payment_id' => 'required|exists:payments,id',
+        ]);
+
+        $payment = Payment::with(['orders.shop'])->findOrFail($request->payment_id);
+
+        if ($payment->is_paid) {
+            return $this->json('Payment already verified', [
+                'payment_id' => $payment->id,
+            ]);
+        }
+
+        $intent = Cache::get('payment_intent_cashfree:'.$payment->id);
+        if (! is_array($intent)) {
+            return $this->json('Payment session expired. Please place order again.', [], 422);
+        }
+
+        $authUser = auth()->user();
+        if (! $authUser) {
+            return $this->json('Invalid payment session user.', [], 422);
+        }
+
+        $intentUserId = (int) ($intent['user_id'] ?? 0);
+        if ($intentUserId !== (int) $authUser->id) {
+            return $this->json('Invalid payment session user.', [], 422);
+        }
+
+        $shop = $payment->orders->first()?->shop;
+        if (! $shop && ! empty($intent['shop_ids']) && is_array($intent['shop_ids'])) {
+            $shop = Shop::find((int) $intent['shop_ids'][0]);
+        }
+        if (! $shop) {
+            return $this->json('Shop not found for this payment', [], 422);
+        }
+
+        $config = $this->getShopCashfreeConfig($shop);
+        if (! ($config['status'] ?? false)) {
+            return $this->json($config['message'] ?? 'Cashfree is not configured for this shop.', [], 422);
+        }
+
+        $cashfreeOrderId = trim((string) ($intent['cashfree_order_id'] ?? ''));
+        if ($cashfreeOrderId === '') {
+            $cashfreeOrderId = trim((string) ($intent['cf_order_id'] ?? ''));
+        }
+        if ($cashfreeOrderId === '') {
+            $cashfreeOrderId = trim((string) ($payment->payment_token ?? ''));
+        }
+
+        if ($cashfreeOrderId === '') {
+            return $this->json('Cashfree order ID missing for this payment.', [], 422);
+        }
+
+        try {
+            $isSandbox = str_starts_with(strtoupper((string) $config['app_id']), 'TEST');
+            $baseUrl = $isSandbox ? 'https://sandbox.cashfree.com/pg' : 'https://api.cashfree.com/pg';
+
+            $response = Http::timeout(15)
+                ->acceptJson()
+                ->withHeaders([
+                    'x-client-id' => $config['app_id'],
+                    'x-client-secret' => $config['secret_key'],
+                    'x-api-version' => '2023-08-01',
+                    'x-request-id' => (string) Str::uuid(),
+                ])
+                ->get($baseUrl.'/orders/'.$cashfreeOrderId);
+
+            if (! $response->successful()) {
+                Log::warning('Cashfree payment verify HTTP failed', [
+                    'payment_id' => $payment->id,
+                    'cashfree_order_id' => $cashfreeOrderId,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return $this->json('Unable to verify Cashfree payment right now.', [], 422);
+            }
+
+            $body = $response->json();
+            $orderStatus = strtoupper((string) data_get($body, 'order_status', ''));
+            $isPaid = $orderStatus === 'PAID';
+
+            $checkPaymentStatuses = function ($items) {
+                if (! is_array($items)) {
+                    return false;
+                }
+
+                foreach ($items as $item) {
+                    $status = strtoupper((string) data_get($item, 'payment_status', ''));
+                    if (in_array($status, ['SUCCESS', 'PAID', 'CAPTURED', 'CHARGED'], true)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            };
+
+            if (! $isPaid && $checkPaymentStatuses(data_get($body, 'payments', []))) {
+                $isPaid = true;
+            }
+
+            if (! $isPaid && $checkPaymentStatuses(data_get($body, 'payment_details', []))) {
+                $isPaid = true;
+            }
+
+            if (! $isPaid) {
+                return $this->json('Payment not completed yet.', [
+                    'payment_id' => $payment->id,
+                    'cashfree_order_status' => $orderStatus ?: 'PENDING',
+                ], 422);
+            }
+
+            DB::transaction(function () use ($payment, $intent, $authUser) {
+                if ($payment->orders()->count() === 0) {
+                    $shopIds = array_map('intval', (array) ($intent['shop_ids'] ?? []));
+                    $isBuyNow = (bool) ($intent['is_buy_now'] ?? false);
+                    $carts = $authUser->customer?->carts()
+                        ->whereIn('shop_id', $shopIds)
+                        ->where('is_buy_now', $isBuyNow)
+                        ->get();
+
+                    if (! $carts || $carts->isEmpty()) {
+                        throw new \RuntimeException('Cart is empty for this payment session.');
+                    }
+
+                    OrderRepository::storeByRequestFromCart(
+                        tap(request(), function ($req) use ($intent, $shopIds, $isBuyNow, $authUser) {
+                            $req->merge([
+                                'address_id' => (int) ($intent['address_id'] ?? 0),
+                                'coupon_code' => $intent['coupon_code'] ?? null,
+                                'note' => $intent['note'] ?? null,
+                                'payment_method' => 'cashfree',
+                                'shop_ids' => $shopIds,
+                                'is_buy_now' => $isBuyNow,
+                                'gst' => $intent['gst'] ?? null,
+                                'payment_user_id' => $authUser->id,
+                            ]);
+                        }),
+                        PaymentMethod::CASHFREE,
+                        $carts,
+                        $payment,
+                    );
+                }
+
+                $payment->orders()->update([
+                    'payment_status' => PaymentStatus::PAID->value,
+                ]);
+
+                $payment->update([
+                    'is_paid' => true,
+                ]);
+            });
+
+            Cache::forget('payment_intent_cashfree:'.$payment->id);
+
+            return $this->json('Payment verified successfully', [
+                'payment_id' => $payment->id,
+                'is_paid' => true,
+                'cashfree_order_status' => $orderStatus ?: 'PAID',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Cashfree payment verification failed', [
+                'payment_id' => $payment->id,
+                'cashfree_order_id' => $cashfreeOrderId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->json('Payment verification failed: '.$e->getMessage(), [], 422);
+        }
+    }
+
     private function createShopRazorpayOrder(Payment $payment, ?Shop $shop = null): array
     {
         $shop = $shop ?: $payment->orders->first()?->shop;
@@ -456,16 +707,20 @@ class OrderController extends Controller
                 ->post('https://api.razorpay.com/v1/orders', $orderPayload);
 
             if (! $response->successful()) {
+                $errorDescription = (string) data_get($response->json(), 'error.description', '');
                 Log::warning('Razorpay order creation HTTP failed', [
                     'payment_id' => $payment->id,
                     'shop_id' => $shop->id,
                     'status' => $response->status(),
                     'body' => $response->body(),
+                    'error_description' => $errorDescription,
                 ]);
 
                 return [
                     'status' => false,
-                    'message' => 'Unable to create Razorpay order right now. Please try again.',
+                    'message' => $errorDescription !== ''
+                        ? $errorDescription
+                        : 'Unable to create Razorpay order right now. Please try again.',
                 ];
             }
 
@@ -539,6 +794,196 @@ class OrderController extends Controller
             'key' => $key,
             'secret' => $secret,
         ];
+    }
+
+    private function getShopCashfreeConfig(Shop $shop): array
+    {
+        if (! $shop->online_payment_enabled) {
+            return [
+                'status' => false,
+                'message' => 'Online payment is not enabled for this shop',
+            ];
+        }
+
+        if (($shop->online_payment_provider ?? '') !== 'cashfree') {
+            return [
+                'status' => false,
+                'message' => 'This shop does not support Cashfree',
+            ];
+        }
+
+        $appId = trim((string) data_get($shop->online_payment_config, 'cashfree.app_id'));
+        $secretKey = trim((string) data_get($shop->online_payment_config, 'cashfree.secret_key'));
+
+        if (! $appId || ! $secretKey) {
+            return [
+                'status' => false,
+                'message' => 'Cashfree keys are missing for this shop',
+            ];
+        }
+
+        return [
+            'status' => true,
+            'app_id' => $appId,
+            'secret_key' => $secretKey,
+        ];
+    }
+
+    private function createShopCashfreeOrder(Payment $payment, Shop $shop, $user): array
+    {
+        $config = $this->getShopCashfreeConfig($shop);
+        if (! ($config['status'] ?? false)) {
+            return $config;
+        }
+
+        try {
+            $orderAmount = (float) number_format((float) $payment->amount, 2, '.', '');
+            $cashfreeOrderId = 'ZB_CF_'.$payment->id.'_'.time();
+
+            $customerPhone = preg_replace('/\D+/', '', (string) ($user->phone ?? ''));
+            if (! $customerPhone || strlen($customerPhone) < 10) {
+                $customerPhone = '9999999999';
+            }
+
+            $returnUrl = route('order.payment.success', ['payment' => $payment]).'?order_id={order_id}&cf_order_id={cf_order_id}';
+            $notifyUrl = route('payment.success', ['payment' => $payment]);
+
+            $orderMeta = null;
+            if ($this->isCashfreePublicHttpsUrl($returnUrl) && $this->isCashfreePublicHttpsUrl($notifyUrl)) {
+                $orderMeta = [
+                    'return_url' => $returnUrl,
+                    'notify_url' => $notifyUrl,
+                ];
+            }
+
+            $payload = [
+                'order_id' => $cashfreeOrderId,
+                'order_amount' => $orderAmount,
+                'order_currency' => 'INR',
+                'customer_details' => [
+                    'customer_id' => 'CUS_'.$user->id,
+                    'customer_name' => trim((string) ($user->name ?? 'Customer')),
+                    'customer_email' => (string) ($user->email ?? ('customer'.$user->id.'@example.com')),
+                    'customer_phone' => $customerPhone,
+                ],
+            ];
+
+            if ($orderMeta !== null) {
+                $payload['order_meta'] = $orderMeta;
+            }
+
+            $isSandbox = str_starts_with(strtoupper((string) $config['app_id']), 'TEST');
+
+            $baseUrl = $isSandbox
+                ? 'https://sandbox.cashfree.com/pg'
+                : 'https://api.cashfree.com/pg';
+
+            $response = Http::timeout(15)
+                ->acceptJson()
+                ->withHeaders([
+                    'x-client-id' => $config['app_id'],
+                    'x-client-secret' => $config['secret_key'],
+                    'x-api-version' => '2023-08-01',
+                    'x-request-id' => (string) Str::uuid(),
+                ])
+                ->post($baseUrl.'/orders', $payload);
+
+            if (! $response->successful()) {
+                Log::warning('Cashfree order creation HTTP failed', [
+                    'payment_id' => $payment->id,
+                    'shop_id' => $shop->id,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return [
+                    'status' => false,
+                    'message' => 'Unable to create Cashfree order right now. Please try again.',
+                ];
+            }
+
+            $body = $response->json();
+            $paymentSessionId = trim((string) data_get($body, 'payment_session_id', ''));
+            $cfOrderId = (string) (data_get($body, 'cf_order_id') ?? '');
+
+            if (! $paymentSessionId) {
+                return [
+                    'status' => false,
+                    'message' => 'Invalid Cashfree order response',
+                ];
+            }
+
+            $payment->update([
+                'payment_method' => 'cashfree',
+                'payment_token' => (string) data_get($body, 'order_id', $cashfreeOrderId),
+            ]);
+
+            $paymentLink = data_get($body, 'payment_link')
+                ?? data_get($body, 'payments.url')
+                ?? data_get($body, 'order_meta.payment_link');
+            if (! $paymentLink) {
+                $checkoutBaseUrl = $isSandbox
+                    ? 'https://payments-test.cashfree.com/order/#'
+                    : 'https://payments.cashfree.com/order/#';
+                $paymentLink = $checkoutBaseUrl.$paymentSessionId;
+            }
+
+            return [
+                'status' => true,
+                'data' => [
+                    'payment_id' => $payment->id,
+                    'cashfree_order_id' => data_get($body, 'order_id', $cashfreeOrderId),
+                    'cf_order_id' => $cfOrderId,
+                    'payment_session_id' => $paymentSessionId,
+                    'payment_link' => $paymentLink,
+                    'is_sandbox' => $isSandbox,
+                ],
+            ];
+        } catch (\Throwable $e) {
+            Log::error('Cashfree order creation failed', [
+                'payment_id' => $payment->id,
+                'shop_id' => $shop->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'status' => false,
+                'message' => 'Unable to create Cashfree order: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    private function isCashfreePublicHttpsUrl(?string $url): bool
+    {
+        if (! is_string($url) || trim($url) === '') {
+            return false;
+        }
+
+        $parts = parse_url($url);
+        if (! is_array($parts)) {
+            return false;
+        }
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $host = strtolower((string) ($parts['host'] ?? ''));
+
+        if ($scheme !== 'https' || $host === '') {
+            return false;
+        }
+
+        if (in_array($host, ['localhost', '127.0.0.1'], true)) {
+            return false;
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            return filter_var(
+                $host,
+                FILTER_VALIDATE_IP,
+                FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE,
+            ) !== false;
+        }
+
+        return true;
     }
 
     /**

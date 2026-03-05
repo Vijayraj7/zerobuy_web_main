@@ -260,7 +260,7 @@ class ProductController extends Controller
 
             DB::commit();
 
-            return to_route('shop.product.index')
+            return to_route('shop.product.edit', $product->id)
                 ->withSuccess(__('Product updated successfully!'));
         } catch (\Throwable $e) {
             DB::rollBack();

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\BannerRequest;
 use App\Models\Banner;
 use App\Models\BusinessCategory;
+use App\Models\Category;
 use App\Models\SubCategory;
 use App\Models\ChildCategory;
 use App\Models\Product;
@@ -79,6 +80,8 @@ class BannerController extends Controller
             'business_category_id'      => $banner->business_category_id,
             'slider_position'           => $banner->slider_position, 
             'slider_type'               => $banner->slider_type, 
+            'slider_link'               => $banner->slider_link,
+            'slider_link_text'          => $this->resolveSliderLinkText($banner),
             'thumbnail'                 => $banner->thumbnail,
         ]);
     }
@@ -117,11 +120,27 @@ class BannerController extends Controller
         $businessCategoryId = $request->business_category_id;
         $search = $request->search;
 
-        if (!$type || !$businessCategoryId) {
+        if (! $type) {
+            return response()->json([]);
+        }
+
+        if ($type !== 'category' && ! $businessCategoryId) {
             return response()->json([]);
         }
 
         return match ($type) {
+
+            /* ================= MAIN CATEGORY ================= */
+            'category' =>
+                Category::query()
+                    ->when($search, function ($q) use ($search) {
+                        $id = (int) filter_var($search, FILTER_SANITIZE_NUMBER_INT);
+
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('id', $id);
+                    })
+                    ->select('id', 'name')
+                    ->get(),
 
             /* ================= SUB CATEGORY ================= */
             'sub_category' =>
@@ -179,6 +198,24 @@ class BannerController extends Controller
 
             default => [],
         };
-    } 
+    }
+
+    private function resolveSliderLinkText(Banner $banner): string
+    {
+        if (! $banner->slider_type || ! $banner->slider_link) {
+            return (string) $banner->slider_link;
+        }
+
+        $id = $banner->slider_link;
+
+        return match ($banner->slider_type) {
+            'category' => Category::query()->whereKey($id)->value('name') ?? (string) $id,
+            'sub_category' => SubCategory::query()->whereKey($id)->value('name') ?? (string) $id,
+            'child_category' => ChildCategory::query()->whereKey($id)->value('name') ?? (string) $id,
+            'product' => Product::query()->whereKey($id)->value('name') ?? (string) $id,
+            'shop' => Shop::query()->whereKey($id)->value('name') ?? (string) $id,
+            default => (string) $id,
+        };
+    }
 
 }

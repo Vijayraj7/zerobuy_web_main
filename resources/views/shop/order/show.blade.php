@@ -48,27 +48,90 @@
                             @php
                                 $latestPayment = $order->payments()->latest('payments.id')->first();
                                 $isOnlinePayment = !in_array($normalizedPaymentMethod, ['cash', 'cash payment'], true);
-                                $isRazorpayPayment = strtolower((string) ($latestPayment?->payment_method ?? '')) === 'razorpay';
-                                $hasRazorpayOrderId = !empty($latestPayment?->razorpay_order_id);
-                                $showGatewayStatus = $isOnlinePayment && $isRazorpayPayment && $hasRazorpayOrderId;
+
+                                $gatewayProviderKey = strtolower((string) ($latestPayment?->payment_method ?? ''));
+                                if (!in_array($gatewayProviderKey, ['razorpay', 'cashfree'], true)) {
+                                    $shopProvider = strtolower((string) ($order->shop?->online_payment_provider ?? ''));
+                                    if (in_array($shopProvider, ['razorpay', 'cashfree'], true)) {
+                                        $gatewayProviderKey = $shopProvider;
+                                    }
+                                }
+                                if (!in_array($gatewayProviderKey, ['razorpay', 'cashfree'], true)) {
+                                    if (in_array($normalizedPaymentMethod, ['razorpay', 'cashfree'], true)) {
+                                        $gatewayProviderKey = $normalizedPaymentMethod;
+                                    }
+                                }
+
+                                $gatewayProviderLabel = null;
+                                if ($gatewayProviderKey === 'razorpay') {
+                                    $gatewayProviderLabel = 'Razorpay';
+                                } elseif ($gatewayProviderKey === 'cashfree') {
+                                    $gatewayProviderLabel = 'Cashfree';
+                                }
+
+                                $showGatewayDetails = $isOnlinePayment && !empty($gatewayProviderLabel);
 
                                 $gatewayPaymentStatus = null;
-                                if ($showGatewayStatus) {
-                                    if (!empty($latestPayment->razorpay_refund_id)) {
-                                        $gatewayPaymentStatus = 'Refunded';
-                                    } elseif (!empty($latestPayment->is_paid)) {
+                                $providerOrderId = null;
+                                $providerPaymentId = null;
+                                if ($showGatewayDetails) {
+                                    $normalizedOrderPaymentStatus = strtolower((string) ($order->payment_status?->value ?? $order->payment_status));
+
+                                    if ($normalizedOrderPaymentStatus === 'paid') {
                                         $gatewayPaymentStatus = 'Paid';
-                                    } elseif (!empty($latestPayment->razorpay_payment_id)) {
-                                        $gatewayPaymentStatus = 'Authorized';
-                                    } else {
+                                    } elseif (!$latestPayment) {
                                         $gatewayPaymentStatus = 'Pending';
+                                    } elseif ($gatewayProviderKey === 'razorpay') {
+                                        if (!empty($latestPayment->razorpay_refund_id)) {
+                                            $gatewayPaymentStatus = 'Refunded';
+                                        } elseif (!empty($latestPayment->is_paid)) {
+                                            $gatewayPaymentStatus = 'Paid';
+                                        } elseif (!empty($latestPayment->razorpay_payment_id)) {
+                                            $gatewayPaymentStatus = 'Authorized';
+                                        } elseif (!empty($latestPayment->razorpay_order_id)) {
+                                            $gatewayPaymentStatus = 'Created';
+                                        } else {
+                                            $gatewayPaymentStatus = 'Pending';
+                                        }
+                                    } elseif ($gatewayProviderKey === 'cashfree') {
+                                        if (!empty($latestPayment->is_paid)) {
+                                            $gatewayPaymentStatus = 'Paid';
+                                        } elseif (!empty($latestPayment->payment_token)) {
+                                            $gatewayPaymentStatus = 'Created';
+                                        } else {
+                                            $gatewayPaymentStatus = 'Pending';
+                                        }
+                                    }
+
+                                    if ($gatewayProviderKey === 'razorpay') {
+                                        $providerOrderId = $latestPayment?->razorpay_order_id;
+                                        $providerPaymentId = $latestPayment?->razorpay_payment_id;
+                                    } elseif ($gatewayProviderKey === 'cashfree') {
+                                        $providerOrderId = $latestPayment?->payment_token;
+                                        $providerPaymentId = null;
                                     }
                                 }
                             @endphp
-                            @if ($showGatewayStatus)
+                            @if ($showGatewayDetails)
                                 <div class="order-item">
-                                    <label class="label">{{ __('Payment Current Status') }}:</label>
-                                    <span class="value">{{ __($gatewayPaymentStatus) }}</span>
+                                    <label class="label">Payment Provider:</label>
+                                    <span class="value">{{ $gatewayProviderLabel }}</span>
+                                </div>
+                                @if (!empty($providerOrderId))
+                                    <div class="order-item">
+                                        <label class="label">Provider Order ID:</label>
+                                        <span class="value">{{ $providerOrderId }}</span>
+                                    </div>
+                                @endif
+                                @if (!empty($providerPaymentId))
+                                    <div class="order-item">
+                                        <label class="label">Provider Payment ID:</label>
+                                        <span class="value">{{ $providerPaymentId }}</span>
+                                    </div>
+                                @endif
+                                <div class="order-item">
+                                    <label class="label">Payment Current Status:</label>
+                                    <span class="value">{{ $gatewayPaymentStatus }}</span>
                                 </div>
                             @endif
                             <div class="order-item">

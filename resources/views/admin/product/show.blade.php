@@ -93,6 +93,18 @@
                             </td>
                         </tr> -->
                         <tr>
+                            <td class="ps-0 py-1">{{ __('Product Code') }}</td>
+                            <td class="py-1">
+                                : {{ $product->product_code ?? '-' }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="ps-0 py-1">{{ __('Store Code') }}</td>
+                            <td class="py-1">
+                                : {{ $product->shop?->shop_code ?? '-' }}
+                            </td>
+                        </tr>
+                        <tr>
                             <td class="ps-0 py-1">{{ __('Categories') }}</td>
                             <td class="py-1">
                                 : {{ $categories }}

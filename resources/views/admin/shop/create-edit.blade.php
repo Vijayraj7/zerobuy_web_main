@@ -583,21 +583,40 @@
                                                 {{ old('online_payment_provider', $shop->online_payment_provider ?? '') === 'razorpay' ? 'selected' : '' }}>
                                                 Razorpay
                                             </option>
+                                            <option value="cashfree"
+                                                {{ old('online_payment_provider', $shop->online_payment_provider ?? '') === 'cashfree' ? 'selected' : '' }}>
+                                                Cashfree
+                                            </option>
                                         </select>
                                     </div>
 
-                                    <div class="col-md-4 mt-3">
+                                    <div class="col-md-4 mt-3 razorpay-fields">
                                         <label class="form-label">{{ __('Razorpay Key ID') }}</label>
                                         <input type="text" class="form-control" name="razorpay_key_id"
                                             value="{{ old('razorpay_key_id', data_get($onlinePaymentConfig, 'razorpay.key_id', '')) }}"
                                             placeholder="Enter Razorpay key ID" autocomplete="off">
                                     </div>
 
-                                    <div class="col-md-4 mt-3">
+                                    <div class="col-md-4 mt-3 razorpay-fields">
                                         <label class="form-label">{{ __('Razorpay Key Secret') }}</label>
                                         <input type="password" class="form-control" name="razorpay_key_secret"
                                             value="{{ old('razorpay_key_secret') }}"
                                             placeholder="{{ $isEdit ? 'Leave empty to keep existing secret' : 'Enter Razorpay key secret' }}"
+                                            autocomplete="new-password">
+                                    </div>
+
+                                    <div class="col-md-4 mt-3 cashfree-fields">
+                                        <label class="form-label">{{ __('Cashfree App ID') }}</label>
+                                        <input type="text" class="form-control" name="cashfree_app_id"
+                                            value="{{ old('cashfree_app_id', data_get($onlinePaymentConfig, 'cashfree.app_id', '')) }}"
+                                            placeholder="Enter Cashfree app ID" autocomplete="off">
+                                    </div>
+
+                                    <div class="col-md-4 mt-3 cashfree-fields">
+                                        <label class="form-label">{{ __('Cashfree Secret Key') }}</label>
+                                        <input type="password" class="form-control" name="cashfree_secret_key"
+                                            value="{{ old('cashfree_secret_key') }}"
+                                            placeholder="{{ $isEdit ? 'Leave empty to keep existing secret' : 'Enter Cashfree secret key' }}"
                                             autocomplete="new-password">
                                     </div>
                                 </div>
@@ -732,8 +751,31 @@ document.addEventListener('DOMContentLoaded', function () {
     const HAS_PROVIDER_API_SECRET = @json(!empty($shop->deliverySetting?->provider_api_secret));
     const HAS_RAZORPAY_KEY_ID = @json(!empty(data_get($shop->online_payment_config, 'razorpay.key_id')));
     const HAS_RAZORPAY_KEY_SECRET = @json(!empty(data_get($shop->online_payment_config, 'razorpay.key_secret')));
+    const HAS_CASHFREE_APP_ID = @json(!empty(data_get($shop->online_payment_config, 'cashfree.app_id')));
+    const HAS_CASHFREE_SECRET_KEY = @json(!empty(data_get($shop->online_payment_config, 'cashfree.secret_key')));
     var DISTRICTS_URL_TEMPLATE = "{{ route('shop.get-districts', ['stateId' => 'STATE_ID']) }}";
     $(document).ready(function() {
+
+        function toggleOnlinePaymentCredentialFields() {
+            const onlineEnabled = $('input[name="online_payment_enabled"]:checked').val() === '1';
+            const provider = ($('select[name="online_payment_provider"]').val() || '').toString().trim().toLowerCase();
+
+            $('.razorpay-fields').hide();
+            $('.cashfree-fields').hide();
+
+            if (!onlineEnabled) {
+                return;
+            }
+
+            if (provider === 'razorpay') {
+                $('.razorpay-fields').show();
+            } else if (provider === 'cashfree') {
+                $('.cashfree-fields').show();
+            }
+        }
+
+        toggleOnlinePaymentCredentialFields();
+        $(document).on('change', 'select[name="online_payment_provider"], input[name="online_payment_enabled"]', toggleOnlinePaymentCredentialFields);
 
         function setAmountRangeError(message = '') {
             $('#amountRangeInlineError').text(message || '');
@@ -1065,6 +1107,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 online_payment_provider: 5,
                 razorpay_key_id: 5,
                 razorpay_key_secret: 5,
+                cashfree_app_id: 5,
+                cashfree_secret_key: 5,
                 profile_photo: 1,
                 shop_logo: 1,
                 shop_banner: 1,
@@ -1165,7 +1209,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     addError(errors, 'online_payment_provider', 'Please select an online payment provider.');
                 }
 
-                if (onlinePaymentProvider && !['razorpay'].includes(onlinePaymentProvider)) {
+                if (onlinePaymentProvider && !['razorpay', 'cashfree'].includes(onlinePaymentProvider)) {
                     addError(errors, 'online_payment_provider', 'Selected online payment provider is invalid.');
                 }
             }
@@ -1180,6 +1224,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (!razorpayKeySecret && !HAS_RAZORPAY_KEY_SECRET) {
                     addError(errors, 'razorpay_key_secret', 'The Razorpay key secret field is required when Razorpay is selected.');
+                }
+            }
+
+            if (onlinePaymentEnabled && onlinePaymentProvider === 'cashfree') {
+                const cashfreeAppId = textVal('cashfree_app_id');
+                const cashfreeSecretKey = textVal('cashfree_secret_key');
+
+                if (!cashfreeAppId && !HAS_CASHFREE_APP_ID) {
+                    addError(errors, 'cashfree_app_id', 'The Cashfree app ID field is required when Cashfree is selected.');
+                }
+
+                if (!cashfreeSecretKey && !HAS_CASHFREE_SECRET_KEY) {
+                    addError(errors, 'cashfree_secret_key', 'The Cashfree secret key field is required when Cashfree is selected.');
                 }
             }
 
@@ -1384,7 +1441,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     field === 'online_payment_enabled' ||
                     field === 'online_payment_provider' ||
                     field === 'razorpay_key_id' ||
-                    field === 'razorpay_key_secret'
+                    field === 'razorpay_key_secret' ||
+                    field === 'cashfree_app_id' ||
+                    field === 'cashfree_secret_key'
                 ) {
                     $('#paymentGatewayError').text(messages[0]);
                     return;

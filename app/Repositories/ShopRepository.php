@@ -73,6 +73,13 @@ class ShopRepository extends Repository
                     'key_secret' => $request->razorpay_key_secret,
                 ],
             ];
+        } elseif ($onlinePaymentProvider === 'cashfree') {
+            $onlinePaymentConfig = [
+                'cashfree' => [
+                    'app_id' => $request->cashfree_app_id,
+                    'secret_key' => $request->cashfree_secret_key,
+                ],
+            ];
         }
 
         // create new shop and return
@@ -228,6 +235,19 @@ class ShopRepository extends Repository
                         : ($existingRazorpay['key_secret'] ?? null),
                 ],
             ];
+        } elseif ($onlinePaymentProvider === 'cashfree') {
+            $existingCashfree = data_get($onlinePaymentConfig, 'cashfree', []);
+
+            $onlinePaymentConfig = [
+                'cashfree' => [
+                    'app_id' => $request->filled('cashfree_app_id')
+                        ? $request->cashfree_app_id
+                        : ($existingCashfree['app_id'] ?? null),
+                    'secret_key' => $request->filled('cashfree_secret_key')
+                        ? $request->cashfree_secret_key
+                        : ($existingCashfree['secret_key'] ?? null),
+                ],
+            ];
         }
 
         if (! $onlinePaymentProvider) {
@@ -379,6 +399,19 @@ class ShopRepository extends Repository
                         : ($existingRazorpay['key_secret'] ?? null),
                 ],
             ];
+        } elseif ($onlinePaymentProvider === 'cashfree') {
+            $existingCashfree = data_get($onlinePaymentConfig, 'cashfree', []);
+
+            $onlinePaymentConfig = [
+                'cashfree' => [
+                    'app_id' => $request->filled('cashfree_app_id')
+                        ? $request->cashfree_app_id
+                        : ($existingCashfree['app_id'] ?? null),
+                    'secret_key' => $request->filled('cashfree_secret_key')
+                        ? $request->cashfree_secret_key
+                        : ($existingCashfree['secret_key'] ?? null),
+                ],
+            ];
         }
 
         if (! $onlinePaymentProvider) {
@@ -462,6 +495,19 @@ class ShopRepository extends Repository
                     'key_secret' => $request->filled('razorpay_key_secret')
                         ? $request->razorpay_key_secret
                         : ($existingRazorpay['key_secret'] ?? null),
+                ],
+            ];
+        } elseif ($onlinePaymentProvider === 'cashfree') {
+            $existingCashfree = data_get($onlinePaymentConfig, 'cashfree', []);
+
+            $onlinePaymentConfig = [
+                'cashfree' => [
+                    'app_id' => $request->filled('cashfree_app_id')
+                        ? $request->cashfree_app_id
+                        : ($existingCashfree['app_id'] ?? null),
+                    'secret_key' => $request->filled('cashfree_secret_key')
+                        ? $request->cashfree_secret_key
+                        : ($existingCashfree['secret_key'] ?? null),
                 ],
             ];
         }

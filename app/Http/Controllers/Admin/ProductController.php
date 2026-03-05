@@ -137,8 +137,8 @@ class ProductController extends Controller
                 ->addColumn('created_date', fn($row) =>
                     Carbon::parse($row->created_at)->format('d-m-Y | h:i A')
                 ) 
-                ->addColumn('product_code', fn($row) => 'PRD0' . $row->id) 
-                ->addColumn('store_code', fn($row) => 'STD0' . $row->shop_id)
+                ->addColumn('product_code', fn($row) => $row->product_code ?? '-')
+                ->addColumn('store_code', fn($row) => $row->shop?->shop_code ?? '-')
                 ->addColumn('shop', function ($row) {
                     return '<a href="'.route('admin.shop.show', $row->shop_id).'" class="text-decoration-none text-dark">'
                             .$row->shop->name.
@@ -180,12 +180,16 @@ class ProductController extends Controller
                 })
 
                 ->addColumn('action', function ($row) {
+                    $actionKey = $row->product_code ?: $row->id;
+                    $edit = '<a href="'.route('shop.product.edit', $row->id).'" class="circleIcon btn-outline-info"> <img src="'.asset('assets/icons-admin/edit.svg').'"> </a>';
+
                     if (!$row->is_approve) {
-                        $approve = '<a href="'.route('admin.product.approve', $row->id).'" class="btn btn-success btn-sm confirmApprove"> Approved </a>';
-                        $deny = '<button class="btn btn-danger btn-sm" onclick="confirmDeny('.$row->id.')"> Denied </button>';
-                        return '<div class="d-flex gap-2 justify-content-center">' .$approve.$deny. '</div>';
+                        $approve = '<a href="'.route('admin.product.approve', $actionKey).'" class="btn btn-success btn-sm confirmApprove"> Approved </a>';
+                        $deny = '<button class="btn btn-danger btn-sm" onclick="confirmDeny('.json_encode(route('admin.product.destroy', $actionKey)).')"> Denied </button>';
+                        return '<div class="d-flex gap-2 justify-content-center">' .$approve.$deny.$edit. '</div>';
                     }
-                    return '<a href="'.route('admin.product.show', $row->id).'" class="circleIcon btn-outline-primary"> <img src="'.asset('assets/icons-admin/eye.svg').'"> </a>';
+                    $view = '<a href="'.route('admin.product.show', $actionKey).'" class="circleIcon btn-outline-primary"> <img src="'.asset('assets/icons-admin/eye.svg').'"> </a>';
+                    return '<div class="d-flex gap-2 justify-content-center">'.$edit.$view.'</div>';
                 })
 
                 // ->addColumn('action', function ($row) {
@@ -237,9 +241,12 @@ class ProductController extends Controller
     //     return view('admin.product.show', compact('product'));
     // }
 
-    public function show(Product $product)
+    public function show(string $product)
     {
+        $product = $this->resolveProduct($product);
+
         $product->load([
+            'shop',
             'itemDetails',
             'variants.color',
             'variants.size',
@@ -253,8 +260,10 @@ class ProductController extends Controller
     /**
      * Approve the product.
      */
-    public function approve(Product $product)
+    public function approve(string $product)
     {
+        $product = $this->resolveProduct($product);
+
         // update product
         $product->update([
             'is_approve' => true,
@@ -283,8 +292,10 @@ class ProductController extends Controller
         return back()->withSuccess(__('Product approved successfully'));
     }
 
-    public function destroy(Product $product)
+    public function destroy(string $product)
     {
+        $product = $this->resolveProduct($product);
+
         $shopID = $product->shop_id;
         if ($product->media && Storage::exists($product->media->src)) {
             Storage::delete($product->media->src);
@@ -425,6 +436,14 @@ class ProductController extends Controller
             'success' => true,
             'status'  => $product->is_active
         ]);
+    }
+
+    private function resolveProduct(string $identifier): Product
+    {
+        return Product::query()
+            ->where('product_code', $identifier)
+            ->orWhere('id', $identifier)
+            ->firstOrFail();
     }
 
 }

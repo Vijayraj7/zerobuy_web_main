@@ -120,8 +120,8 @@
 
                                 <th>SL</th>
                                 <th>Create Date</th>
-                                <th>Product ID</th>
-                                <th>Store ID</th>
+                                <th>Product Code</th>
+                                <th>Store Code</th>
                                 <th>Store Name</th>
                                 <th>Product Name</th>
                                 <th>Image</th>
@@ -187,7 +187,17 @@
                 { data: 'product_code' },
                 { data: 'store_code' },
                 { data: 'shop', name:'shop.name' },
-                { data: 'name', name:'name' },
+                {
+                    data: 'name',
+                    name:'name',
+                    render: function (data) {
+                        if (!data) {
+                            return '';
+                        }
+
+                        return data.length > 35 ? `${data.substring(0, 35)}...` : data;
+                    }
+                },
                 { data: 'thumbnail', orderable:false, searchable:false },
                 { data: 'quantity' },
                 { data: 'mrp' },
@@ -205,7 +215,7 @@
         });
 
 
-        $(".confirmApprove").on("click", function(e) {
+        $(document).on("click", ".confirmApprove", function(e) {
             e.preventDefault();
             const url = $(this).attr("href");
             Swal.fire({
@@ -223,9 +233,9 @@
             });
         });
 
-        const confirmDeny = (id) => {
+        const confirmDeny = (url) => {
             const form = document.getElementById('deleteForm');
-            form.action = `{{ route('admin.product.destroy', ':id') }}`.replace(':id', id);
+            form.action = url;
             Swal.fire({
                 title: "Are you sure?",
                 text: "You want to delete this product! If you confirm, it will be deleted permanently.",

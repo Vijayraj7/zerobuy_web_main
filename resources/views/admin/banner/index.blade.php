@@ -139,6 +139,7 @@
                         <div class="mb-3">
                             <x-select name="slider_type" label="Slider Type" id="slider_type">
                                 <option value="">--Select Slider Type--</option>
+                                <option value="category">Main Category</option>
                                 <option value="sub_category">Sub Category</option>
                                 <option value="child_category">Child Category</option>
                                 <option value="product">Product</option>
@@ -195,7 +196,7 @@
                 let type = $('#slider_type').val();
                 let businessCategoryId = $('#business_category_id').val();
 
-                if (!type || !businessCategoryId) {
+                if (!type || (type !== 'category' && !businessCategoryId)) {
                     $('#slider_link').empty().trigger('change');
                     return;
                 }
@@ -285,7 +286,7 @@
                         loadSliderLinks();
 
                         let option = new Option(
-                            res.slider_link,
+                            res.slider_link_text ?? res.slider_link,
                             res.slider_link,
                             true,
                             true

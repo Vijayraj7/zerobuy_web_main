@@ -20,6 +20,7 @@ use App\Models\OrderVariant;
 use App\Models\OrderVatTax;
 use App\Models\Payment;
 use App\Models\Shop;
+use App\Models\User;
 use App\Services\NotificationServices;
 use Illuminate\Support\Facades\Log;
 
@@ -45,6 +46,11 @@ class OrderRepository extends Repository
      */
     public static function storeByRequestFromCart($request, $paymentMethod, $carts, ?Payment $payment = null): Payment
     {
+        $resolvedUser = self::resolveOrderUser($request);
+        if (! $resolvedUser || ! $resolvedUser->customer) {
+            throw new \RuntimeException('Unable to resolve customer for this payment session.');
+        }
+
         $totalPayableAmount = 0;
 
         if (! $payment) {
@@ -70,7 +76,7 @@ class OrderRepository extends Repository
                 throw new \RuntimeException('Delivery charge could not be fetched for the selected address. Please try again.');
             }
 
-            $order = self::createNewOrder($request, $shop, $paymentMethod, $getCartAmounts);
+            $order = self::createNewOrder($request, $shop, $paymentMethod, $getCartAmounts, $resolvedUser);
 
             $totalPayableAmount += $getCartAmounts['payableAmount'];
             $payment->orders()->attach($order->id);
@@ -266,14 +272,14 @@ class OrderRepository extends Repository
         ]);
 
         $isBuyNow = $request->is_buy_now ?? false;
-        $customer = auth()->user()->customer;
+        $customer = $resolvedUser->customer;
 
         $customer->carts()->whereIn('shop_id', $request->shop_ids)->where('is_buy_now', $isBuyNow)->delete();
 
         return $payment;
     }
 
-    private static function createNewOrder($request, $shop, $paymentMethod, $getCartAmounts)
+    private static function createNewOrder($request, $shop, $paymentMethod, $getCartAmounts, User $user)
     {
         // Generate unique random order code
         do {
@@ -314,7 +320,7 @@ class OrderRepository extends Repository
             'prefix' => 'ORD',
             // 'prefix' => $shop->prefix ?? 'RC',
             'gst' => $request->gst,
-            'customer_id' => auth()->user()->customer->id,
+            'customer_id' => $user->customer->id,
             'coupon_id' => $getCartAmounts['coupon'],
             'delivery_charge' => $getCartAmounts['deliveryCharge'],
             'payable_amount' => $getCartAmounts['payableAmount'],
@@ -342,6 +348,21 @@ class OrderRepository extends Repository
         }
 
         return $order;
+    }
+
+    private static function resolveOrderUser($request): ?User
+    {
+        $authUser = auth()->user();
+        if ($authUser instanceof User) {
+            return $authUser;
+        }
+
+        $paymentUserId = (int) ($request->payment_user_id ?? 0);
+        if ($paymentUserId > 0) {
+            return User::find($paymentUserId);
+        }
+
+        return null;
     }
 
     public static function getCartWiseAmounts(Shop $shop, $carts, $couponCode = null, $addressId = null): array

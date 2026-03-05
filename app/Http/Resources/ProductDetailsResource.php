@@ -17,7 +17,17 @@ class ProductDetailsResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $this->load(['reviews', 'orders', 'colors', 'sizes', 'unit', 'brand', 'flashSales']);
+        $this->load([
+            'reviews',
+            'orders',
+            'colors',
+            'sizes',
+            'unit',
+            'brand',
+            'flashSales',
+            'variants.color',
+            'variants.size',
+        ]);
 
         $lang = request()->header('accept-language') ?? 'en';
 
@@ -83,6 +93,15 @@ class ProductDetailsResource extends JsonResource
             $carts = CartRepository::ShopWiseCartProducts($groupCart);
         }
 
+        $allVariants = $this->variants->sortBy('id')->values();
+        $minimumOrderQuantity = (int) ($this->min_order_quantity ?? 1);
+        $availableVariants = $allVariants
+            ->where('quantity', '>=', $minimumOrderQuantity)
+            ->values();
+        $variantsForResponse = $availableVariants->isNotEmpty()
+            ? $availableVariants
+            : $allVariants->take(1);
+
 
 
         return [
@@ -115,7 +134,7 @@ class ProductDetailsResource extends JsonResource
             'bulk_prices' => ProductBulkPriceResource::collection(
                 $this->bulkPrices
             ),
-            'variants' => ProductVariantResource::collection($this->variants),
+            'variants' => ProductVariantResource::collection($variantsForResponse),
             'brand' => $brandName,
             'gst' => $this->tax_percentage,
             'return_period' => (int) $this->return_period,

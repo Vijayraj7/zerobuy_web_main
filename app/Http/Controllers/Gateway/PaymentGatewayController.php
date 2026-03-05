@@ -6,7 +6,12 @@ use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\PaymentGateway;
+use App\Models\User;
+use App\Repositories\OrderRepository;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PaymentGatewayController extends Controller
 {
@@ -56,13 +61,77 @@ class PaymentGatewayController extends Controller
      */
     public function success(Request $request, Payment $payment)
     {
-        $payment->orders()->update([
-            'payment_status' => PaymentStatus::PAID->value,
-        ]);
+        if ($payment->is_paid) {
+            return to_route('order.payment.success', $payment);
+        }
 
-        $payment->update([
-            'is_paid' => true,
-        ]);
+        try {
+            DB::transaction(function () use ($payment, $request) {
+                if ($payment->orders()->count() === 0 && strtolower((string) $payment->payment_method) === 'cashfree') {
+                    $intent = Cache::get('payment_intent_cashfree:'.$payment->id);
+
+                    if (! is_array($intent)) {
+                        throw new \RuntimeException('Payment session expired. Please place order again.');
+                    }
+
+                    $user = User::find((int) ($intent['user_id'] ?? 0));
+                    if (! $user || ! $user->customer) {
+                        throw new \RuntimeException('Invalid payment session user.');
+                    }
+
+                    $shopIds = array_map('intval', (array) ($intent['shop_ids'] ?? []));
+                    $isBuyNow = (bool) ($intent['is_buy_now'] ?? false);
+
+                    $carts = $user->customer->carts()
+                        ->whereIn('shop_id', $shopIds)
+                        ->where('is_buy_now', $isBuyNow)
+                        ->get();
+
+                    if ($carts->isEmpty()) {
+                        throw new \RuntimeException('Cart is empty for this payment session.');
+                    }
+
+                    $orderRequest = new Request();
+                    $orderRequest->merge([
+                        'address_id' => (int) ($intent['address_id'] ?? 0),
+                        'coupon_code' => $intent['coupon_code'] ?? null,
+                        'note' => $intent['note'] ?? null,
+                        'payment_method' => $intent['payment_method'] ?? 'cashfree',
+                        'shop_ids' => $shopIds,
+                        'is_buy_now' => $isBuyNow,
+                        'gst' => $intent['gst'] ?? null,
+                        'payment_user_id' => $user->id,
+                    ]);
+
+                    OrderRepository::storeByRequestFromCart(
+                        $orderRequest,
+                        \App\Enums\PaymentMethod::CASHFREE,
+                        $carts,
+                        $payment,
+                    );
+                }
+
+                $payment->orders()->update([
+                    'payment_status' => PaymentStatus::PAID->value,
+                ]);
+
+                $payment->update([
+                    'is_paid' => true,
+                ]);
+            });
+
+            Cache::forget('payment_intent_cashfree:'.$payment->id);
+        } catch (\Throwable $e) {
+            Log::error('Cashfree payment success handling failed', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return to_route('order.payment.cancel', [
+                'payment' => $payment,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return to_route('order.payment.success', $payment);
     }
