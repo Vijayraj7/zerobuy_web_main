@@ -125,9 +125,12 @@
                         </div>
                     </div>
 
+                </div>
+
+                <div class="row gy-3 mt-1">
                     <div class="col-lg-4">
                         <div class="border rounded py-2.5 px-3 d-flex align-items-center justify-content-between">
-                        <span>{{ __('Shop Registration') }}</span>
+                            <span>{{ __('Shop Registration') }}</span>
                             <label class="switch mb-0" data-bs-toggle="tooltip" data-bs-placement="left"
                                 data-bs-title="Enable/Disable">
                                 <a href="{{ route('admin.business-setting.shop.toggle-register') }}" class="confirm">
@@ -137,7 +140,6 @@
                             </label>
                         </div>
                     </div>
-
                 </div>
 
             </div>

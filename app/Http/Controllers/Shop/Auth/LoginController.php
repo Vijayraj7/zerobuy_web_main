@@ -109,6 +109,11 @@ class LoginController extends Controller
 
     public function create()
     {
+        $generalSetting = generaleSetting('setting');
+        if (! ($generalSetting?->shop_register ?? false)) {
+            return to_route('shop.login')->withError(__('Seller registration is currently disabled.'));
+        }
+
         $states = State::orderBy('name')->get();
         $sellerTerms = Page::where('slug', 'seller-terms-of-service')->where('is_active', 1)->first();
         $businessCategories = BusinessCategory::where('status', 1)->get();
@@ -125,6 +130,11 @@ class LoginController extends Controller
 
     public function store(ShopCreateRequest $request)
     {
+        $generalSetting = generaleSetting('setting');
+        if (! ($generalSetting?->shop_register ?? false)) {
+            return to_route('shop.login')->withError(__('Seller registration is currently disabled.'));
+        }
+
         $shop = ShopRepository::storeByRequest($request);
 
         $shop->user()->update(['is_active' => false]);

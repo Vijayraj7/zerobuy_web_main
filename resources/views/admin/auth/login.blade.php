@@ -25,6 +25,18 @@
     <link rel="stylesheet" href="{{ asset('assets/css/font-awesome.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/login.css') }}">
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script type="text/javascript">
+        (function(c, l, a, r, i, t, y) {
+            c[a] = c[a] || function() {
+                (c[a].q = c[a].q || []).push(arguments)
+            };
+            t = l.createElement(r);
+            t.async = 1;
+            t.src = "https://www.clarity.ms/tag/" + i;
+            y = l.getElementsByTagName(r)[0];
+            y.parentNode.insertBefore(t, y);
+        })(window, document, "clarity", "script", "vrh02lfdix");
+    </script>
 </head>
 <style>
     body {
@@ -142,7 +154,7 @@
 
                     <button class="btn loginButton" type="submit">Login</button>
 
-                    @if (!app()->isLocal())
+                    @if (!app()->isLocal() && ($generaleSetting?->shop_register ?? false))
                         <div class="mt-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <a href="{{ route('shop.register') }}"
                                 class="btn btn-sm btn-outline-primary text-decoration-none">Register As Seller</a>
