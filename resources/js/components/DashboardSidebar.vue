@@ -98,6 +98,42 @@
                 <!-- -->
             </router-link>
 
+            <router-link to="/statuses" class="routerLink group">
+                <div class="relative">
+                    <SignalIcon
+                        class="w-5 h-5 md:w-6 md:h-6 hidden group-[&.router-link-active]:block"
+                    />
+                    <SignalIconOutline
+                        class="w-5 h-5 md:w-6 md:h-6 block group-[&.router-link-active]:hidden"
+                    />
+                    <span
+                        v-if="dashboardCounts.status_shops_count > 0"
+                        class="absolute top-0 right-[-5px] -translate-y-1/2 bg-blue-500 text-white rounded-full w-4 h-4 flex justify-center items-center text-[10px]"
+                    >
+                        {{ dashboardCounts.status_shops_count }}
+                    </span>
+                </div>
+                {{ $t("Statuses") }}
+            </router-link>
+
+            <router-link to="/notifications" class="routerLink group">
+                <div class="relative">
+                    <BellIcon
+                        class="w-5 h-5 md:w-6 md:h-6 hidden group-[&.router-link-active]:block"
+                    />
+                    <BellIconOutline
+                        class="w-5 h-5 md:w-6 md:h-6 block group-[&.router-link-active]:hidden"
+                    />
+                    <span
+                        v-if="dashboardCounts.notification_unread_count > 0"
+                        class="absolute top-0 right-[-5px] -translate-y-1/2 bg-red-500 text-white rounded-full w-4 h-4 flex justify-center items-center text-[10px]"
+                    >
+                        {{ dashboardCounts.notification_unread_count }}
+                    </span>
+                </div>
+                {{ $t("Notifications") }}
+            </router-link>
+
             <router-link to="/profile" class="routerLink group">
                 <UserIcon
                     class="w-5 h-5 md:w-6 md:h-6 hidden group-[&.router-link-active]:block"
@@ -181,6 +217,7 @@
 </template>
 
 <script setup>
+import axios from "axios";
 import { useAuth } from "../stores/AuthStore";
 import {
     Squares2X2Icon,
@@ -194,6 +231,8 @@ import {
     KeyIcon,
     ChatBubbleLeftEllipsisIcon,
     ClipboardDocumentListIcon,
+    SignalIcon,
+    BellIcon,
 } from "@heroicons/vue/24/solid";
 import {
     Squares2X2Icon as Squares2X2IconOutline,
@@ -207,16 +246,53 @@ import {
     KeyIcon as KeyIconOutline,
     ClipboardDocumentListIcon as ClipboardDocumentListIconOutline,
     ChatBubbleLeftEllipsisIcon as ChatBubbleLeftEllipsisIconOutline,
+    SignalIcon as SignalIconOutline,
+    BellIcon as BellIconOutline,
 } from "@heroicons/vue/24/outline";
 
 import { useRoute } from "vue-router";
+import { onMounted, ref } from "vue";
 
 import { useChat } from "../stores/ChatStore";
-import ReturnMoney from "../icons/ReturnMoney.vue";
 
 const chatStore = useChat();
 const authStore = useAuth();
 const route = useRoute();
+
+const dashboardCounts = ref({
+    status_shops_count: 0,
+    notification_unread_count: 0,
+});
+
+onMounted(() => {
+    fetchDashboardCounts();
+});
+
+const fetchDashboardCounts = async () => {
+    if (!authStore.token) {
+        return;
+    }
+
+    try {
+        const response = await axios.get("/dashboard-counts", {
+            headers: {
+                Authorization: authStore.token,
+            },
+        });
+
+        dashboardCounts.value = {
+            status_shops_count:
+                response.data.data?.status_shops_count ?? 0,
+            notification_unread_count:
+                response.data.data?.notification_unread_count ?? 0,
+        };
+    } catch (_) {
+        dashboardCounts.value = {
+            status_shops_count: 0,
+            notification_unread_count: 0,
+        };
+    }
+};
 </script>
 
 <style scoped>

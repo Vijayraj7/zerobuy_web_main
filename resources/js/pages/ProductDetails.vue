@@ -143,7 +143,17 @@
 
                         <!-- Short Description -->
                         <div class="mt-2 text-slate-700 text-base font-normal leading-normal">
-                            {{ product.short_description }}
+                            <p :class="isShortDescriptionExpanded ? '' : 'line-clamp-3'">
+                                {{ product.short_description }}
+                            </p>
+                            <button
+                                v-if="hasLongShortDescription"
+                                type="button"
+                                class="text-primary text-sm underline mt-1"
+                                @click="isShortDescriptionExpanded = !isShortDescriptionExpanded"
+                            >
+                                {{ isShortDescriptionExpanded ? $t("Read Less") : $t("Read More") }}
+                            </button>
                         </div>
 
                         <!-- Rating  review, sold and share -->
@@ -242,54 +252,144 @@
                                 class="px-2 py-1 bg-red-500 rounded-2xl text-white text-base font-medium">
                                 {{ discountPercentage }}% {{ $t("OFF") }}
                             </div>
+
+                            <div
+                                v-if="!isInStock"
+                                class="px-2 py-1 bg-slate-500 rounded-2xl text-white text-sm font-medium"
+                            >
+                                {{ $t("Out of stock") }}
+                            </div>
                         </div>
 
                         <!-- Size -->
-                        <div v-if="product.sizes?.length > 0" class="flex items-center gap-3 py-4">
+                        <div v-if="availableSizes.length > 0" class="flex items-center gap-3 py-4">
                             <div class="w-[40px] md:w-[88px] text-slate-600 text-base font-normal leading-normal">
                                 {{ $t("Size") }}
                             </div>
 
                             <div class="flex flex-wrap items-center gap-3">
-                                <div v-for="size in product.sizes" :key="size.id" class="relative">
+                                <div v-for="size in availableSizes" :key="size.id" class="relative">
                                     <input type="radio" name="size" :id="'size-' + size.id" class="peer hidden"
-                                        :value="size.id" v-model="formData.size" />
+                                        :value="size.id" :checked="formData.size == size.id"
+                                        :disabled="!isSizeSelectable(size.id)" @change="onSizeSelect(size.id)" />
                                     <label :for="'size-' + size.id"
-                                        class="min-w-11 w-auto h-9 flex justify-center items-center border-2 border-slate-200 rounded-md cursor-pointer peer-checked:border-primary peer-checked:bg-primary-100 px-2">
+                                        class="min-w-11 w-auto h-9 flex justify-center items-center border-2 border-slate-200 rounded-md cursor-pointer peer-checked:border-primary peer-checked:bg-primary-100 px-2"
+                                        :class="!isSizeSelectable(size.id) ? 'opacity-40 cursor-not-allowed' : ''">
                                         {{ size.name }}
                                     </label>
                                 </div>
-                                <div v-if="!product.sizes" class="text-slate-500 text-base font-normal">
+                                <div v-if="!availableSizes.length" class="text-slate-500 text-base font-normal">
                                     {{ $t("N/A") }}
                                 </div>
                             </div>
                         </div>
 
                         <!-- Color -->
-                        <div v-if="product.colors?.length > 0" class="flex items-center gap-3 py-4">
+                        <div v-if="availableColors.length > 0" class="flex items-center gap-3 py-4">
                             <div class="w-[40px] md:w-[88px] text-slate-600 text-base font-normal leading-normal">
                                 {{ $t("Color") }}
                             </div>
 
                             <div class="flex flex-wrap items-center gap-3">
-                                <div v-for="color in product.colors" :key="color.id" class="relative">
+                                <div v-for="color in availableColors" :key="color.id" class="relative">
                                     <input type="radio" name="color" :id="'color-' + color.id" class="peer hidden"
-                                        :value="color.id" v-model="formData.color" />
+                                        :value="color.id" :checked="formData.color == color.id"
+                                        :disabled="!isColorSelectable(color.id)" @change="onColorSelect(color.id)" />
                                     <label :for="'color-' + color.id"
-                                        class="px-2 py-1 flex justify-center items-center border-2 border-slate-200 rounded-md cursor-pointer peer-checked:border-primary peer-checked:bg-primary-100">
+                                        class="px-2 py-1 flex justify-center items-center border-2 border-slate-200 rounded-md cursor-pointer peer-checked:border-primary peer-checked:bg-primary-100"
+                                        :class="!isColorSelectable(color.id) ? 'opacity-40 cursor-not-allowed' : ''">
                                         {{ color.name }}
                                     </label>
                                 </div>
 
-                                <div v-if="!product.colors" class="text-slate-500 text-base font-normal">
+                                <div v-if="!availableColors.length" class="text-slate-500 text-base font-normal">
                                     {{ $t("N/A") }}
                                 </div>
                             </div>
                         </div>
 
+                        <div v-if="selectedVariant" class="text-sm text-slate-500 -mt-2 mb-3">
+                            {{ $t("Variant Stock") }}: {{ selectedVariant.quantity }}
+                        </div>
+
+                        <!-- Bulk Price Tiers -->
+                        <div v-if="product.bulk_prices?.length > 0 && !hasBulkItems" class="py-4 border-t border-slate-100">
+                            <div class="text-slate-800 text-base font-semibold mb-2">{{ $t("Bulk Pricing") }}</div>
+                            <div class="rounded-lg border border-slate-200 overflow-hidden">
+                                <div
+                                    v-for="tier in product.bulk_prices"
+                                    :key="tier.id"
+                                    class="grid grid-cols-2 gap-2 px-3 py-2 text-sm"
+                                    :class="bulkPriceForDisplay?.id === tier.id ? 'bg-primary-50' : 'bg-white border-t border-slate-100 first:border-t-0'"
+                                >
+                                    <div class="text-slate-600">
+                                        {{ tier.min_qty }} - {{ tier.max_qty }} {{ $t("Qty") }}
+                                    </div>
+                                    <div class="text-right font-semibold text-slate-900">
+                                        {{ masterStore.showCurrency(tier.price) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bulk Items -->
+                        <div v-if="hasBulkItems" class="py-4 border-t border-slate-100">
+                            <div class="text-slate-800 text-base font-semibold mb-2">{{ $t("Select Models") }}</div>
+                            <div class="space-y-2">
+                                <div
+                                    v-for="item in product.bulk_items"
+                                    :key="item.id"
+                                    class="rounded-lg border border-slate-200 p-3"
+                                >
+                                    <div class="flex justify-between items-start gap-3">
+                                        <div>
+                                            <div class="text-slate-900 font-medium">{{ item.name }}</div>
+                                            <div class="text-xs text-slate-500">
+                                                {{ $t("MOQ") }}: {{ item.moq }} | {{ $t("Stock") }}: {{ item.quantity }}
+                                            </div>
+                                            <div class="text-sm mt-1">
+                                                <span class="text-slate-400 line-through mr-2">{{ masterStore.showCurrency(item.mrp) }}</span>
+                                                <span class="text-primary font-semibold">{{ masterStore.showCurrency(item.selling_price) }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="inline-flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                class="bg-slate-100 px-2 py-1 rounded"
+                                                @click="changeBulkItemQty(item, -1)"
+                                            >
+                                                -
+                                            </button>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                :max="item.quantity"
+                                                class="w-16 text-center border border-slate-200 rounded px-1 py-1"
+                                                :value="getBulkItemQty(item.id)"
+                                                @input="setBulkItemQty(item, $event.target.value)"
+                                            />
+                                            <button
+                                                type="button"
+                                                class="bg-slate-100 px-2 py-1 rounded"
+                                                @click="changeBulkItemQty(item, 1)"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="bulkItemsTotalQty > 0" class="mt-3 text-sm text-slate-700">
+                                {{ $t("Selected Qty") }}: <span class="font-semibold">{{ bulkItemsTotalQty }}</span>
+                                <span class="mx-2">|</span>
+                                {{ $t("Total") }}: <span class="font-semibold text-primary">{{ masterStore.showCurrency(bulkItemsTotal) }}</span>
+                            </div>
+                        </div>
+
                         <div class="flex flex-wrap gap-4">
                             <!-- Quantity Increase Or Decrease -->
-                            <div v-if="cartProduct"
+                            <div v-if="cartProduct && !hasBulkItems"
                                 class="p-2 rounded-[10px] border border-slate-100 inline-flex gap-4">
                                 <button class="bg-slate-200 p-2 rounded" @click="decrementQty">
                                     <MinusIcon class="w-6 h-6 text-slate-800" />
@@ -307,20 +407,22 @@
    <!-- <pre>{{ JSON.stringify(product) }}</pre> -->
 
                             <!-- Add to Cart -->
-                            <button v-if="!cartProduct"
-                                class="grow max-w-56 justify-center items-center text-primary flex gap-2 px-6 py-4 rounded-[10px] border border-primary"
+                            <button v-if="!cartProduct || hasBulkItems"
+                                class="grow max-w-56 justify-center items-center text-primary flex gap-2 px-6 py-4 rounded-[10px] border border-primary disabled:opacity-50"
+                                :disabled="!canAddToCart || isLoading"
                                 @click="addToCart">
                                 <div class="w-5 h-5">
                                     <BagIcon />
                                 </div>
                                 <div class="text-base font-medium leading-normal">
-                                    {{ $t("Add to Cart") }}
+                                    {{ hasBulkItems ? $t("Add Selected Models") : $t("Add to Cart") }}
                                 </div>
                             </button>
 
                             <!-- Buy Now -->
                             <button
-                                class="grow text-white bg-primary px-6 py-4 rounded-[10px] border border-primary max-w-[50%]"
+                                class="grow text-white bg-primary px-6 py-4 rounded-[10px] border border-primary max-w-[50%] disabled:opacity-50"
+                                :disabled="!isInStock || isLoading || hasBulkItems"
                                 @click="buyNow">
                                 <span class="text-base font-medium leading-normal">
                                     {{ $t("Buy Now") }}
@@ -345,7 +447,7 @@
                         ? 'text-primary border-primary'
                         : 'text-slate-600 border-transparent'
                         " @click="showReview()">
-                        {{ $t("Reviews") }}
+                        {{ $t("Reviews") }} ({{ totalReviews }})
                     </button>
                 </div>
 
@@ -477,7 +579,7 @@
 </template>
 
 <script setup>
-import { nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
 import { useRoute, useRouter } from "vue-router";
 import { useMaster } from "../stores/MasterStore";
@@ -541,12 +643,23 @@ const popularProducts = ref([]);
 
 const aboutProduct = ref(true);
 const review = ref(false);
+const isShortDescriptionExpanded = ref(false);
 
 const cartProduct = ref(null);
 const isLoading = ref(true);
 
+const hasLongShortDescription = computed(() =>
+    (product.value?.short_description?.length ?? 0) > 140
+);
+
+const isInStock = computed(() => {
+    const quantity = Number(product.value?.quantity ?? 0);
+    return quantity > 0;
+});
+
 onMounted(() => {
     fetchProductDetails();
+    fetchReviews();
     window.scrollTo(0, 0);
     findProductInCart(route.params.id);
 });
@@ -567,9 +680,9 @@ const shareOptions = [
 ];
 // 1275b1
 const share = (network) => {
-    let description = product.value.short_description.replace(/<[^>]*>/g, "");
+    let description = (product.value.short_description || "").replace(/<[^>]*>/g, "");
     let currentURL = window.location.href;
-    let thumbnail = product.value.thumbnails[0];
+    let thumbnail = product.value.thumbnails?.[0];
 
     shareLink({
         network: network,
@@ -605,10 +718,20 @@ const calculateProductPrice = () => {
         mainPrice.value = productPrice.value;
     }
 
-    discountPercentage.value = (((mainPrice.value - productPrice.value) / mainPrice.value) * 100).toFixed(2);
+    if (mainPrice.value <= 0) {
+        discountPercentage.value = 0;
+    } else {
+        discountPercentage.value = Number(
+            (((mainPrice.value - productPrice.value) / mainPrice.value) * 100).toFixed(2)
+        );
+    }
 }
 
 const buyNow = () => {
+    if (!isInStock.value) {
+        return;
+    }
+
     if (authStore.token === null) {
         return (authStore.loginModal = true);
     }
@@ -628,11 +751,14 @@ const buyNow = () => {
 watch(route, async () => {
     await nextTick();
     window.scrollTo(0, 0);
+    currentPage.value = 1;
     fetchProductDetails();
     aboutProduct.value = true;
     review.value = false;
+    isShortDescriptionExpanded.value = false;
     formData.value.product_id = route.params.id;
     findProductInCart(route.params.id);
+    fetchReviews();
 });
 
 watch(() => basketStore.products, () => {
@@ -657,6 +783,10 @@ const findProductInCart = (productId) => {
 };
 
 const addToCart = () => {
+    if (!isInStock.value) {
+        return;
+    }
+
     basketStore.addToCart(formData.value, product.value);
     setTimeout(() => {
         findProductInCart(route.params.id);
@@ -731,18 +861,20 @@ const favoriteAddOrRemove = () => {
 const showReview = () => {
     aboutProduct.value = false;
     review.value = true;
-    fetchReviews();
 };
 
 const flashSale = ref({});
 const fetchProductDetails = async () => {
     isLoading.value = true;
-    axios.get("/product-details", {
-        params: { product_id: route.params.id },
-        headers: {
-            Authorization: authStore.token,
-        },
-    }).then((response) => {
+
+    try {
+        const response = await axios.get("/product-details", {
+            params: { product_id: route.params.id },
+            headers: {
+                Authorization: authStore.token,
+            },
+        });
+
         product.value = response.data.data.product;
         relatedProducts.value = response.data.data.related_products;
         popularProducts.value = response.data.data.popular_products;
@@ -752,23 +884,22 @@ const fetchProductDetails = async () => {
             startCountdown();
         }
 
-        if (product.value.colors.length > 0) {
-            formData.value.color = product.value.colors[0].id;
-        } else {
-            formData.value.color = null;
-        }
-        if (product.value.sizes.length > 0) {
-            formData.value.size = product.value.sizes[0].id;
-        } else {
-            formData.value.size = null;
-        }
+        formData.value.color = product.value.colors?.length
+            ? product.value.colors[0].id
+            : null;
+        formData.value.size = product.value.sizes?.length
+            ? product.value.sizes[0].id
+            : null;
+
         calculateProductPrice();
         findProductInCart(route.params.id);
-
-        setTimeout(() => {
-            isLoading.value = false;
-        }, 100);
-    });
+    } catch (error) {
+        product.value = {};
+        relatedProducts.value = [];
+        popularProducts.value = [];
+    } finally {
+        isLoading.value = false;
+    }
 };
 
 const averageRatings = ref({});
@@ -785,17 +916,23 @@ const onClickHandler = (page) => {
 };
 
 const fetchReviews = async () => {
-    axios.get("/reviews", {
-        params: {
-            product_id: route.params.id,
-            page: currentPage.value,
-            per_page: perPage.value,
-        },
-    }).then((response) => {
+    try {
+        const response = await axios.get("/reviews", {
+            params: {
+                product_id: route.params.id,
+                page: currentPage.value,
+                per_page: perPage.value,
+            },
+        });
+
         totalReviews.value = response.data.data.total;
         reviews.value = response.data.data.reviews;
         averageRatings.value = response.data.data.average_rating_percentage;
-    });
+    } catch (error) {
+        totalReviews.value = 0;
+        reviews.value = [];
+        averageRatings.value = {};
+    }
 };
 
 
@@ -806,6 +943,8 @@ const endSecond = ref("");
 let countdownInterval = null;
 
 const startCountdown = () => {
+    clearInterval(countdownInterval);
+
     const endDate = new Date(flashSale.value?.end_date).getTime();
 
     if (flashSale.value?.end_date) {

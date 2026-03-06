@@ -48,6 +48,8 @@ const Blog = () => import("../pages/Blog.vue");
 const BlogDetails = () => import("../pages/BlogDetails.vue");
 const PolicyPages = () => import("../pages/PolicyPages.vue");
 const Massages = () => import("../pages/Messages.vue");
+const Notifications = () => import("../pages/Notifications.vue");
+const Statuses = () => import("../pages/Statuses.vue");
 
 // 404 page
 const NotFound = () => import("../errors/404.vue");
@@ -380,6 +382,24 @@ const routes = [
         meta: {
             layout: authLayout,
             title: "Massages",
+        },
+    },
+    {
+        path: "/notifications",
+        name: "notifications",
+        component: Notifications,
+        meta: {
+            layout: authLayout,
+            title: "Notifications",
+        },
+    },
+    {
+        path: "/statuses",
+        name: "statuses",
+        component: Statuses,
+        meta: {
+            layout: authLayout,
+            title: "Statuses",
         },
     },
     {

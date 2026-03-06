@@ -70,17 +70,21 @@
     }
 </style>
 
-<body style="background: url({{ asset('assets/images/admin-bg.svg') }})">
+<body style="background: url({{ asset('assets/images/admin-bg-image.png') }}); background-size: cover; background-position: center; background-repeat: no-repeat;">
 
     <section class="login-section">
 
-        <div class="thumbnail position-relative text-primary">
+        {{-- <div class="thumbnail position-relative text-primary">
             <img src="{{ asset('assets/images/login.svg') }}" alt="thumbnail" width="100%" loading="lazy" />
             <div class="logo_right">
                 <img src="{{ $generaleSetting?->favicon ?? asset('assets/favicon.png') }}" alt="logo"
                     loading="lazy" />
                 <span class="site_name">{{ $generaleSetting?->name ?? config('app.name') }}</span>
             </div>
+        </div> --}}
+
+        <div>
+
         </div>
 
         <!-- Login Card -->
