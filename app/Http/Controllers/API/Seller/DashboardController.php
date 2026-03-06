@@ -213,6 +213,7 @@ class DashboardController extends Controller
         }
 
         return $this->json('Seller dashboard summary', [
+            'business_based_on' => (string) ($generalSettings?->business_based_on ?? ''),
             'dashboard' => [
                 'pending_order' => $pendingOrder,
                 'to_pickup_order' => $toPickupOrders,
