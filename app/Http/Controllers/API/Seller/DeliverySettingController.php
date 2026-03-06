@@ -11,6 +11,7 @@ use App\Models\State;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class DeliverySettingController extends Controller
 {
@@ -142,6 +143,12 @@ class DeliverySettingController extends Controller
         ]);
 
         $shop = generaleSetting('shop');
+
+        if (($validated['delivery_mode'] ?? null) === 'manual' && (bool) ($shop->online_payment_enabled ?? false)) {
+            throw ValidationException::withMessages([
+                'delivery_mode' => __('Manual delivery mode cannot be selected when online payment is enabled.'),
+            ]);
+        }
 
         DB::transaction(function () use ($validated, $shop) {
 

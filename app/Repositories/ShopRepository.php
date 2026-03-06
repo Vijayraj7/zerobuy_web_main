@@ -66,6 +66,12 @@ class ShopRepository extends Repository
             ]);
         }
 
+        if ($onlinePaymentEnabled && $request->delivery_mode === 'manual') {
+            throw ValidationException::withMessages([
+                'delivery_mode' => __('Manual delivery mode cannot be selected when online payment is enabled.'),
+            ]);
+        }
+
         if ($onlinePaymentProvider === 'razorpay') {
             $onlinePaymentConfig = [
                 'razorpay' => [
@@ -219,6 +225,12 @@ class ShopRepository extends Repository
         if (! $onlinePaymentEnabled && ! $cashOnDeliveryEnabled) {
             throw ValidationException::withMessages([
                 'cash_on_delivery_enabled' => __('Either Cash on Delivery or Online Payment must be enabled.'),
+            ]);
+        }
+
+        if ($onlinePaymentEnabled && $request->delivery_mode === 'manual') {
+            throw ValidationException::withMessages([
+                'delivery_mode' => __('Manual delivery mode cannot be selected when online payment is enabled.'),
             ]);
         }
 
@@ -466,6 +478,8 @@ class ShopRepository extends Repository
 
     public static function updatePaymentSetting($shop, $request): Shop
     {
+        $deliveryMode = DeliverySetting::where('shop_id', $shop->id)->value('delivery_mode');
+
         $onlinePaymentEnabled = $request->has('online_payment_enabled')
             ? $request->boolean('online_payment_enabled')
             : (bool) ($shop->online_payment_enabled ?? false);
@@ -476,6 +490,12 @@ class ShopRepository extends Repository
         if (! $onlinePaymentEnabled && ! $cashOnDeliveryEnabled) {
             throw ValidationException::withMessages([
                 'cash_on_delivery_enabled' => __('Either Cash on Delivery or Online Payment must be enabled.'),
+            ]);
+        }
+
+        if ($onlinePaymentEnabled && $deliveryMode === 'manual') {
+            throw ValidationException::withMessages([
+                'online_payment_enabled' => __('Online payment cannot be enabled when delivery mode is Manual.'),
             ]);
         }
 

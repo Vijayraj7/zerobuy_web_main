@@ -170,6 +170,14 @@ class ShopCreateRequest extends FormRequest
                     __('Either Cash on Delivery or Online Payment must be enabled.')
                 );
             }
+
+            $deliveryMode = $this->input('delivery_mode');
+            if ($onlineEnabled && $deliveryMode === 'manual') {
+                $validator->errors()->add(
+                    'delivery_mode',
+                    __('Manual delivery mode cannot be selected when online payment is enabled.')
+                );
+            }
         });
     }
 }
