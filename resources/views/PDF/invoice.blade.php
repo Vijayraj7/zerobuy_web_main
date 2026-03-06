@@ -1,6 +1,4 @@
-@php
-    $directory = app()->getLocale() == 'ar' ? 'rtl' : 'ltr';
-@endphp
+@php $directory = app()->getLocale() == 'ar' ? 'rtl' : 'ltr'; @endphp
 <!DOCTYPE html>
 <html lang="en">
 
@@ -43,14 +41,17 @@
         }
 
         .header .logo {
-            width: 90px;
-            height: 90px;
+            width: 100px;
+            height: 100px;
+            border-radius: 500px;
+            overflow: hidden;
         }
 
         .header img {
             width: 100%;
             height: 100%;
             object-fit: contain;
+            border-radius: 500px;
         }
 
         .text-right {
@@ -135,7 +136,7 @@
         }
 
         .invoice-details tr th {
-            color: #5E6470;
+            color: #00846f;
         }
 
         .items-table {
@@ -147,7 +148,7 @@
 
         .items-table tr th {
             padding: 12px;
-            background: #3546AE;
+            background: #00846f;
             color: #fff;
             font-style: normal;
         }
@@ -295,149 +296,143 @@
     <div class="header">
         <div class="row float-left">
             <div class="clearfix">
-                <div class="logo float-left">
-                    <img src="{{ $generaleSetting?->favicon ?? asset('assets/favicon.png') }}" alt="logo" />
-                </div>
+                <div class="logo float-left"> <img
+                        src="{{ $order->shop?->logo ?? ($generaleSetting?->favicon ?? asset('assets/favicon.png')) }}"
+                        alt="logo" /> </div>
                 <div class="pl-3 pt-4 text-left float-left">
-                    <h2 class="site-name">{{ __($generaleSetting?->name ?? config('app.name')) }}</h2>
-                    <p class="pt-1-5">{{ config('app.url') }}</p>
-                    <p class="pt-1-5">{{ $generaleSetting?->email }}</p>
-                    <p class="pt-1-5">{{ $generaleSetting?->mobile }}</p>
+                    <h2 class="site-name">
+                        {{ __($order->shop?->name ?? ($generaleSetting?->name ?? config('app.name'))) }}</h2>
+                    @if (!empty($order->shop?->gst_number))
+                        <p class="pt-1-5">{{ __('GST') }}: {{ $order->shop->gst_number }}</p>
+                    @endif
                 </div>
             </div>
         </div>
-
         <div class="pt-4 {{ $directory == 'rtl' ? '' : 'text-right' }} float-right">
             <p class="fz-14">{{ __('Business Address') }}</p>
-            <p class="fz-14 pt-1-5">{{ __($generaleSetting?->address) }}</p>
+            <p class="fz-14 pt-1-5">{{ __($order->shop?->address ?? $generaleSetting?->address) }}</p> @php
+                $sellerDistrict =
+                    $order->shop?->districts?->name ??
+                    (is_string($order->shop?->district ?? null) ? $order->shop->district : null);
+                $sellerState =
+                    $order->shop?->states?->name ??
+                    (is_string($order->shop?->state ?? null) ? $order->shop->state : null);
+            @endphp
+            @if ($sellerDistrict || $sellerState)
+                <p class="fz-14 pt-1-5"> {{ $sellerDistrict }}@if ($sellerDistrict && $sellerState)
+                        ,
+                    @endif{{ $sellerState }} </p>
+            @endif
         </div>
     </div>
-
-    <div class="contains">
-        @php
-            $address = $order->address;
-            $user = $order->customer?->user;
-        @endphp
-
-        <div class="w-full overflow-hidden">
+    <div class="contains"> @php
+        $address = $order->address;
+        $user = $order->customer?->user;
+        $userMobile = $address?->phone ?? $user?->phone;
+        $orderGst = $order->gst ?? null;
+        $showProductGst = filled($order->shop?->gst_number);
+        $totalProductGst = 0;
+        $orderState = $address?->stateData?->name ?? $address?->state;
+        $orderDistrict = $address?->districtData?->name;
+        $deliveryAddressParts = array_filter(
+            [
+                $address?->address_type ? __($address->address_type) : null,
+                $address?->house_no ? __('House No') . ' ' . $address->house_no : null,
+                $address?->flat_no ? __('Flat No') . ' ' . $address->flat_no : null,
+                $address?->road_no ? __('Road No') . ' ' . $address->road_no : null,
+                $address?->address_line,
+                $address?->address_line2,
+                $address?->area,
+                $orderDistrict,
+                $orderState,
+                $address?->post_code,
+            ],
+            fn($value) => filled($value),
+        );
+    @endphp <div class="w-full overflow-hidden">
             <div class="float-left" style="width: 60%;">
                 <div class="text-gray">{{ __('Bill To') }}:</div>
-                <p class="fw-500 pt-1">{{ $user?->name }}</p>
+                <p class="fw-500 pt-1">{{ $address?->name ?? $user?->name }}</p>
                 <div class="text-gray pt-1">{{ __('Address') }}:</div>
-                <p class="fw-500 pt-1 address">
-                    @if ($address?->address_type)
-                        {{ __($address?->address_type) }}
+                <p class="fw-500 pt-1 address"> {{ implode(', ', $deliveryAddressParts) }} </p>
+                @if (!empty($userMobile))
+                    <div class="text-gray pt-1">{{ __('Mobile') }}: <span class="fw-500"
+                            style="color: #000">{{ $userMobile }}</span></div>
+                    @endif @if (!empty($orderGst))
+                        <div class="text-gray pt-1">{{ __('GST') }}: <span class="fw-500"
+                                style="color: #000">{{ $orderGst }}</span></div>
                     @endif
-                    @if ($address?->address_line)
-                        ,{{ $address->address_line }}
-                    @endif
-                    @if ($address?->address_line2)
-                        ,{{ $address->address_line2 }}
-                    @endif
-                    @if ($address?->area)
-                        ,{{ $address?->area }}
-                    @endif
-                </p>
-
-                <div class="text-gray pt-1">
-                    {{ __('Email') }}:
-                    <span class="fw-500 pt-1" style="color:  #000">{{ $user?->email }}</span>
-                </div>
-                <div class="text-gray pt-1">
-                    {{ __('Phone') }}:
-                    <span class="fw-500 pt-1" style="color:  #000">{{ $user?->phone }}</span>
-                </div>
             </div>
-
             <div class="{{ $directory == 'rtl' ? '' : 'text-right' }}">
                 <p>{{ __('Invoice of') }} ({{ $generaleSetting?->currency ?? '$' }})</p>
                 <h3 class="payAmount">{{ showCurrency($order->payable_amount) }}</h3>
-                <div class="pt-2">
-                    <img class="qrCode" src="{{ $qrCodeImage }}" alt="">
-                </div>
+                <div class="pt-2"> <img class="qrCode" src="{{ $qrCodeImage }}" alt=""> </div>
             </div>
         </div>
-
         <div class="clearfix w-full">
-
             <table class="invoice-details">
                 <tr>
                     <th class="text-left">{{ __('Payment Method') }}</th>
-                    <th class="text-left">
-                        {{ __('Invoice Number') }}
-                    </th>
-                    <th class="text-left">
-                        {{ __('Invoice Date') }}
-                    </th>
-                    <th class="text-right">
-                        {{ __('Order Date') }}
-                    </th>
+                    <th class="text-left"> {{ __('Invoice Number') }} </th>
+                    <th class="text-left"> {{ __('Invoice Date') }} </th>
+                    <th class="text-right"> {{ __('Order Date') }} </th>
                 </tr>
                 <tr>
-                    <td>{{ $order->payment_method->value }}</td>
+                    <td>{{ $order->payment_method->value === 'Cash Payment' ? __('Cash on delivery') : $order->payment_method->value }}</td>
                     <td>#{{ $order->prefix . $order->order_code }}</td>
                     <td>{{ now()->format('d F, Y') }}</td>
                     <td class="text-right">{{ $order->created_at->format('d F, Y') }}</td>
                 </tr>
             </table>
-
             <table class="items-table">
                 <thead>
                     <tr>
-                        <th class="text-left">
-                            {{ __('Item') }}
-                        </th>
-                        <th class="text-left">
-                            {{ __('Item Name') }}
-                        </th>
-                        <th class="text-center">
-                            {{ __('Rate') }}
-                        </th>
-                        <th class="text-center">
-                            {{ __('Quantity') }}
-                        </th>
-                        <th class="text-center">
-                            {{ __('Size') }}
-                        </th>
-                        <th class="text-center">
-                            {{ __('Color') }}
-                        </th>
-                        <th class="text-right">
-                            {{ __('Price') }}
-                        </th>
+                        <th class="text-left"> {{ __('Item') }} </th>
+                        <th class="text-left"> {{ __('Item Name') }} </th>
+                        <th class="text-center"> {{ __('Rate') }} </th>
+                        <th class="text-center"> {{ __('Quantity') }} </th>
+                        <th class="text-center"> {{ __('Size') }} </th>
+                        <th class="text-center"> {{ __('Color') }} </th>
+                        @if ($showProductGst)
+                            <th class="text-center"> {{ __('GST (Included)') }} </th>
+                        @endif
+                        <th class="text-right"> {{ __('Price') }} </th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($order->products ?? [] as $product)
                         @php
                             $price = $product->discount_price > 0 ? $product->discount_price : $product->price;
-
                             $name = $product->name;
                             $shortDescription = $product->short_description;
-
                             if ($directory == 'rtl') {
                                 $translation = $product->translations()?->where('lang', 'ar')->first();
                                 $name = $translation?->name ?? $name;
                                 $shortDescription = $translation?->short_description ?? $short_description;
                             }
+                            $wrappedNameLines = preg_split('/\r\n|\r|\n/', wordwrap((string) $name, 22, "\n", true)) ?: [];
+                            $displayNameLines = array_slice($wrappedNameLines, 0, 2);
+                            if (count($wrappedNameLines) > 2 && isset($displayNameLines[1])) {
+                                $displayNameLines[1] = rtrim($displayNameLines[1], ". \t\n\r\0\x0B") . '...';
+                            }
+                            $displayName = implode("\n", $displayNameLines);
+                            $quantity = (float) ($product->pivot->quantity ?? 0);
+                            $lineSubtotal = $price * $quantity;
+                            $productTaxPercentage = (float) ($product->pivot->gst ?? $product->tax_percentage ?? 0);
+                            $productGstAmount = $showProductGst ? ($lineSubtotal * $productTaxPercentage) / 100 : 0;
+                            $totalProductGst += $productGstAmount;
                             $plainShortDescription = strip_tags($shortDescription);
-                        @endphp
-                        <tr>
+                        @endphp <tr>
                             <td>{{ $loop->iteration }}.</td>
                             <td style="border: none !important">
                                 <table>
                                     <tr>
-                                        <td style="width: 40px !important; padding: 0 !important">
-                                            <img src="{{ $product->thumbnail }}" alt=""
-                                                style="width: 40px; height: 40px">
-                                        </td>
-                                        <td style="padding: 3px">
-                                            <span style="text-transform: capitalize">
-                                                {{ $name }}
-                                            </span>
-                                            <p class="pt-1 text-gray product-des">
-                                                {{ $plainShortDescription }}
-                                            </p>
+                                        <td style="width: 40px !important; padding: 0 !important"> <img
+                                                src="{{ $product->thumbnail }}" alt=""
+                                                style="width: 40px; height: 40px"> </td>
+                                        <td style="padding: 3px"> <span style="text-transform: capitalize; white-space: pre-line; display: block; line-height: 1.2;">
+                                            {{ $displayName }} </span>
+                                            <p class="pt-1 text-gray product-des"> {{ $plainShortDescription }} </p>
                                         </td>
                                     </tr>
                                 </table>
@@ -446,133 +441,92 @@
                             <td class="text-center">{{ $product->pivot->quantity }}</td>
                             <td class="text-center">{{ $product->pivot->size ?? '--' }}</td>
                             <td class="text-center">{{ $product->pivot->color ?? '--' }}</td>
+                            @if ($showProductGst)
+                                <td class="text-center">{{ $productTaxPercentage > 0 ? showCurrency($productGstAmount) : '--' }}</td>
+                            @endif
                             <td class="text-right">{{ showCurrency($price * $product->pivot->quantity) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
-
         @if ($directory != 'rtl')
             <div class="invoice-total">
                 <div class="pt-2 w-full">
-                    <p class="float-left w-50">
-                        {{ __('Sub Total') }}
-                    </p>
-                    <p class="w-50 text-right fw-500">
-                        {{ showCurrency($order->total_amount) }}
-                    </p>
+                    <p class="float-left w-50"> {{ __('Sub Total') }} </p>
+                    <p class="w-50 text-right fw-500"> {{ showCurrency($showProductGst ? max((float) $order->total_amount - (float) $totalProductGst, 0) : $order->total_amount) }} </p>
                 </div>
+                @if ($showProductGst)
+                    <div class="w-full pt-2">
+                        <p class="w-50 float-left"> {{ __('GST (Included)') }} </p>
+                        <p class="w-50 text-right fw-500"> {{ showCurrency($totalProductGst) }} </p>
+                    </div>
+                @endif
                 @if ($order->coupon_discount > 0)
                     <div class="w-full pt-2">
-                        <p class="w-50 float-left">
-                            {{ __('Discount') }}
-                        </p>
-                        <p class="w-50 text-right fw-500">
-                            {{ showCurrency($order->coupon_discount) }}
-                        </p>
+                        <p class="w-50 float-left"> {{ __('Discount') }} </p>
+                        <p class="w-50 text-right fw-500"> {{ showCurrency($order->coupon_discount) }} </p>
                     </div>
                 @endif
                 <div class="w-full pt-2">
-                    <p class="w-50 float-left">
-                        {{ __('Delivery Charge') }}
-                    </p>
-                    <p class="w-50 text-right fw-500">
-                        {{ showCurrency($order->delivery_charge) }}
-                    </p>
+                    <p class="w-50 float-left"> {{ __('Delivery Charge') }} </p>
+                    <p class="w-50 text-right fw-500"> {{ showCurrency($order->delivery_charge) }} </p>
                 </div>
-
                 @foreach ($order->vatTaxes ?? [] as $vatTax)
                     <div class="w-full pt-2">
-                        <p class="w-50 float-left">
-                            {{ $vatTax->name . '(' . $vatTax->percentage . '%)' }}
-                        </p>
-                        <p class="w-50 text-right fw-500">
-                            {{ showCurrency($vatTax->amount) }}
-                        </p>
+                        <p class="w-50 float-left"> {{ $vatTax->name . '(' . $vatTax->percentage . '%)' }} </p>
+                        <p class="w-50 text-right fw-500"> {{ showCurrency($vatTax->amount) }} </p>
                     </div>
-                @endforeach
-                @if ($order->tax_amount > 0 && count($order->vatTaxes ?? []) <= 0)
-                    <div class="w-full pt-2">
-                        <p class="w-50 float-left">
-                            {{ __('Total Tax Amount') }}
-                        </p>
-                        <p class="w-50 text-right fw-500">
-                            {{ showCurrency($order->tax_amount) }}
-                        </p>
+                    @endforeach @if ($order->tax_amount > 0 && count($order->vatTaxes ?? []) <= 0)
+                        <div class="w-full pt-2">
+                            <p class="w-50 float-left"> {{ __('Total Tax Amount') }} </p>
+                            <p class="w-50 text-right fw-500"> {{ showCurrency($order->tax_amount) }} </p>
+                        </div>
+                    @endif
+                    <div class="w-full pt-2 border-top">
+                        <p class="w-50 float-left"> {{ __('Total Amount') }} </p>
+                        <p class="w-50 text-right total"> {{ showCurrency($order->payable_amount) }} </p>
                     </div>
-                @endif
-                <div class="w-full pt-2 border-top">
-                    <p class="w-50 float-left">
-                        {{ __('Total Amount') }}
-                    </p>
-                    <p class="w-50 text-right total">
-                        {{ showCurrency($order->payable_amount) }}
-                    </p>
-                </div>
             </div>
         @else
             <div class="invoice-total" style="margin-left: 30px">
                 <div class="pt-2 w-full" style="padding-left: 20px">
-                    <p class="w-50 float-left text-left">
-                        {{ showCurrency($order->total_amount) }}
-                    </p>
-                    <p class="w-50">
-                        {{ __('Sub Total') }}
-                    </p>
-
+                    <p class="w-50 float-left text-left"> {{ showCurrency($showProductGst ? max((float) $order->total_amount - (float) $totalProductGst, 0) : $order->total_amount) }} </p>
+                    <p class="w-50"> {{ __('Sub Total') }} </p>
                 </div>
+                @if ($showProductGst)
+                    <div class="w-full pt-2" style="padding-left: 20px">
+                        <p class="w-50 float-left text-left"> {{ showCurrency($totalProductGst) }} </p>
+                        <p class="w-50"> {{ __('GST (Included)') }} </p>
+                    </div>
+                @endif
                 @if ($order->coupon_discount > 0)
                     <div class="w-full pt-2" style="padding-left: 20px">
-                        <p class="w-50 float-left text-left">
-                            {{ showCurrency($order->coupon_discount) }}
-                        </p>
-                        <p class="w-50">
-                            {{ __('Discount') }}
-                        </p>
+                        <p class="w-50 float-left text-left"> {{ showCurrency($order->coupon_discount) }} </p>
+                        <p class="w-50"> {{ __('Discount') }} </p>
                     </div>
                 @endif
                 <div class="w-full pt-2" style="padding-left: 20px">
-                    <p class="w-50 float-left text-left">
-                        {{ showCurrency($order->delivery_charge) }}
-                    </p>
-                    <p class="w-50">
-                        {{ __('Delivery Charge') }}
-                    </p>
+                    <p class="w-50 float-left text-left"> {{ showCurrency($order->delivery_charge) }} </p>
+                    <p class="w-50"> {{ __('Delivery Charge') }} </p>
                 </div>
                 @if ($order->tax_amount > 0)
                     <div class="w-full pt-2" style="padding-left: 20px">
-                        <p class="w-50 float-left text-left">
-                            {{ showCurrency($order->tax_amount) }}
-                        </p>
-                        <p class="w-50">
-                            {{ __('VAT & Tax') }}
-                        </p>
+                        <p class="w-50 float-left text-left"> {{ showCurrency($order->tax_amount) }} </p>
+                        <p class="w-50"> {{ __('VAT & Tax') }} </p>
                     </div>
                 @endif
                 <div class="w-full pt-2 border-top" style="padding-left: 20px">
-                    <p class="w-50 float-left total text-left">
-                        {{ showCurrency($order->payable_amount) }}
-                    </p>
-                    <p class="w-50 total">
-                        {{ __('Total Amount') }}
-                    </p>
+                    <p class="w-50 float-left total text-left"> {{ showCurrency($order->payable_amount) }} </p>
+                    <p class="w-50 total"> {{ __('Total Amount') }} </p>
                 </div>
             </div>
         @endif
     </div>
-
     <div class="footer">
-        <p class="w-50 float-left">
-            {{ __('Thanks for the business.') }}
-        </p>
-        <div class="w-50 text-right float-left">
-            <span class="signature">
-                {{ __('Signature') }}
-            </span>
-        </div>
+        <p class="w-50 float-left"> {{ __('Thanks for the business.') }} </p>
+        <div class="w-50 text-right float-left"> <span class="signature"> {{ __('Signature') }} </span> </div>
     </div>
-
 </body>
 
 </html>

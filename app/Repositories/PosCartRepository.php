@@ -295,6 +295,7 @@ class PosCartRepository extends Repository
                 'color' => $color?->name,
                 'size' => $size?->name,
                 'unit' => $product->pivot->unit,
+                'gst' => (float) ($product->tax_percentage ?? 0),
             ]);
         }
 

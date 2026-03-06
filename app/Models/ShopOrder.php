@@ -26,7 +26,7 @@ class ShopOrder extends Model
      */
     public function products(): BelongsToMany
     {
-        return $this->belongsToMany(Product::class, 'order_products')->withPivot('id', 'quantity', 'color', 'unit', 'size');
+        return $this->belongsToMany(Product::class, 'order_products')->withPivot('id', 'quantity', 'color', 'unit', 'size', 'gst');
     }
 
     /**

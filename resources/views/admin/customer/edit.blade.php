@@ -60,6 +60,10 @@
                                     <span>{{$user->phone}}</span>
                                 </div>
                                 <div class="item">
+                                    <strong>GST</strong>
+                                    <span>{{ $user->gst ?? '-' }}</span>
+                                </div>
+                                <div class="item">
                                     <strong>Status</strong>
                                     @if($user->customer->status=='active')
                                     <span class="badge bg-success">Active</span>
@@ -238,10 +242,6 @@
                                     placeholder="Enter Name" required="true" :value="$user->name" />
                                 </div>
 
-                                <div class="col-md-6 mt-3">
-                                    <x-input label="Last Name" name="last_name" type="text"
-                                    placeholder="Enter Name" :value="$user->last_name" />
-                                </div>
                             </div>
 
                             <div class="mt-3">

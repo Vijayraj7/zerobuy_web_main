@@ -120,8 +120,8 @@
 
                                 <th>SL</th>
                                 <th>Create Date</th>
-                                <th>Product Code</th>
-                                <th>Store Code</th>
+                                <th>Product ID</th>
+                                <th>Store ID</th>
                                 <th>Store Name</th>
                                 <th>Product Name</th>
                                 <th>Image</th>

@@ -59,6 +59,13 @@
             object-fit: contain;
         }
 
+        .shop-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #111827;
+            line-height: 1.2;
+        }
+
         .header img {
             width: 100%;
             height: 100%;
@@ -100,7 +107,7 @@
         }
 
         .receipt-title {
-            background-color: #ffea00;
+            background-color: #00846f;
             padding: 6px;
             border-radius: 5px;
             text-align: right;
@@ -113,6 +120,7 @@
             padding: 8px;
             margin: 0;
             border-radius: 5px;
+            border: 1px solid #00846f;
             font-size: 20px;
             color: #333;
         }
@@ -191,20 +199,40 @@
 
 <body>
     <div class="receipt-container">
+        @php
+            $shopName = $order->shop?->name ?? ($generaleSetting?->name ?? config('app.name'));
+            $shopAddress = $order->shop?->address ?? $generaleSetting?->address;
+            $shopMobile = $order->shop?->mobile ?? $generaleSetting?->mobile;
+            $shopDistrict =
+                $order->shop?->districts?->name ??
+                (is_string($order->shop?->district ?? null) ? $order->shop->district : null);
+            $shopState =
+                $order->shop?->states?->name ??
+                (is_string($order->shop?->state ?? null) ? $order->shop->state : null);
+        @endphp
         <div class="header">
             <div class="row float-left">
                 <div class="clearfix">
-                    <div class="logo">
-                        <img src="{{ $generaleSetting?->logo ?? asset('assets/logo.png') }}" alt="logo" />
-                    </div>
-                    <p class="pt-2">{{ config('app.url') }}</p>
+                    <p class="shop-name">{{ __($shopName) }}</p>
+                    @if (!empty($shopMobile))
+                        <p class="pt-1-5 text-black">{{ $shopMobile }}</p>
+                    @endif
                 </div>
             </div>
 
             <div class="pt-4 float-right text-right">
                 <p class="fz-14">{{ __('Business Address') }}</p>
-                <p class="fz-14 pt-1-5 text-black">{{ __($generaleSetting?->address) }}</p>
-                <p class="pt-1-5 text-black">{{ $generaleSetting?->mobile }}</p>
+                <p class="fz-14 pt-1-5 text-black">{{ __($shopAddress) }}</p>
+                @if (!empty($shopDistrict) || !empty($shopState))
+                    <p class="pt-1-5 text-black">
+                        {{ $shopDistrict }}@if (!empty($shopDistrict) && !empty($shopState))
+                            ,
+                        @endif{{ $shopState }}
+                    </p>
+                @endif
+                @if (!empty($shopMobile))
+                    <p class="pt-1-5 text-black">{{ $shopMobile }}</p>
+                @endif
             </div>
         </div>
 
@@ -227,7 +255,7 @@
                             <table>
                                 <tr>
                                     <td><strong>Payment Method:</strong></td>
-                                    <td class="text">{{ $order->payment_method->value }}</td>
+                                    <td class="text">{{ $order->payment_method->value === 'Cash Payment' ? __('Cash on delivery') : $order->payment_method->value }}</td>
                                 </tr>
                                 <tr>
                                     <td><strong>Transaction ID:</strong></td>

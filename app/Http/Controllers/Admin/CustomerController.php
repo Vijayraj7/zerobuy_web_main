@@ -15,6 +15,7 @@ use App\Models\Shop;
 use App\Models\ReturnOrder;
 use Illuminate\Http\Request;
 use App\Repositories\CustomerRepository;
+use App\Models\District;
 use App\Models\State;
 use App\Repositories\UserRepository;
 use App\Repositories\WalletRepository;
@@ -132,7 +133,9 @@ class CustomerController extends Controller
     public function create()
     {
         $states = State::orderBy('name')->pluck('name', 'id');
-        return view('admin.customer.create', compact('states'));
+        $districts = District::select('id', 'state_id', 'name')->orderBy('name')->get();
+
+        return view('admin.customer.create', compact('states', 'districts'));
     }
 
     public function show(User $user)

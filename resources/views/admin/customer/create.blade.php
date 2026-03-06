@@ -21,12 +21,6 @@
                                                     placeholder="Enter Name" required="true" />
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="mt-3">
-                                                <x-input label="Last Name" name="last_name" type="text"
-                                                    placeholder="Enter Name" />
-                                            </div>
-                                        </div>
                                     </div>
 
                                     <div class="row">
@@ -96,7 +90,8 @@
                                 </div>
                                 <div class="row">
                                     <div class="mt-3 col-md-3">
-                                        <x-input label="City/Area" name="area" placeholder="Enter Area" required="true" />
+                                        <x-select label="District" name="area" id="district" required="true">
+                                        </x-select>
                                     </div>
 
                                     <div class="mt-3 col-md-3">
@@ -134,3 +129,50 @@
         </form>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const stateSelect = document.getElementById('state');
+        const districtSelect = document.getElementById('district');
+
+        if (!stateSelect || !districtSelect) {
+            return;
+        }
+
+        const districts = @json($districts);
+        const selectedDistrict = @json(old('area'));
+
+        function populateDistricts(stateId) {
+            districtSelect.innerHTML = '';
+            districtSelect.disabled = !stateId;
+
+            if (!stateId) {
+                return;
+            }
+
+            districts
+                .filter((district) => String(district.state_id) === String(stateId))
+                .forEach((district) => {
+                    const option = document.createElement('option');
+                    option.value = district.name;
+                    option.textContent = district.name;
+                    if (selectedDistrict && selectedDistrict === district.name) {
+                        option.selected = true;
+                    }
+                    districtSelect.appendChild(option);
+                });
+
+            if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+                window.jQuery(districtSelect).trigger('change.select2');
+            }
+        }
+
+        populateDistricts(stateSelect.value);
+
+        stateSelect.addEventListener('change', function () {
+            populateDistricts(this.value);
+        });
+    });
+</script>
+@endpush

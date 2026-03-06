@@ -25,8 +25,6 @@ class DashboardController extends Controller
 
         $totalCustomer = Customer::count();
 
-        $totalRider = User::role('driver')->count();
-
         $shop = null;
 
         if (! $generaleSetting || $generaleSetting?->shop_type != 'single') {
@@ -72,7 +70,7 @@ class DashboardController extends Controller
 
         $flashSale = FlashSaleRepository::getIncoming();
 
-        return view('admin.dashboard', compact('totalShop', 'totalOrder', 'totalCustomer', 'totalProduct', 'orderStatuses', 'topCustomers', 'topSellingProducts', 'topReviewProducts', 'topShops', 'latestOrders', 'topFavorites', 'pendingWithdraw', 'alreadyWithdraw', 'deniedWithdraw', 'totalCommission', 'totalCategories', 'flashSale', 'totalRider'));
+        return view('admin.dashboard', compact('totalShop', 'totalOrder', 'totalCustomer', 'totalProduct', 'orderStatuses', 'topCustomers', 'topSellingProducts', 'topReviewProducts', 'topShops', 'latestOrders', 'topFavorites', 'pendingWithdraw', 'alreadyWithdraw', 'deniedWithdraw', 'totalCommission', 'totalCategories', 'flashSale'));
     }
 
     public function orderStatistics()

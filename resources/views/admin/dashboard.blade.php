@@ -301,7 +301,7 @@
                     <div class="card h-100 border theme-dark">
                         <div class="card-body d-flex flex-column justify-content-between">
                             <div class="border-bottom pb-3">
-                                <h3>{{ $totalCustomer + $totalShop + $totalRider }}</h3>
+                                <h3>{{ $totalCustomer + $totalShop }}</h3>
                                 <p>{{ __('User Overview') }}</p>
                             </div>
 
@@ -626,11 +626,11 @@
 
         const shopType = "{{ $generaleSetting?->shop_type }}";
         const ismultiShop = shopType != 'single' ? true : false;
-        const labelsData = ismultiShop ? ["{{ __('Customer') }}", "{{ __('Shop') }}", "{{ __('Rider') }}"] : ["{{ __('Customer') }}", "{{ __('Rider') }}"];
-        const chartData = ismultiShop ? ["{{ $totalCustomer }}", "{{ $totalShop }}", "{{ $totalRider }}"] : ["{{ $totalCustomer }}", "{{ $totalRider }}"];
-        const chartDataBg = isDarkMode ? ['#EE456B', '#318E55', '#067BFF'] : ['#EE456B', '#067BFF'];
+        const labelsData = ismultiShop ? ["{{ __('Customer') }}", "{{ __('Shop') }}"] : ["{{ __('Customer') }}"];
+        const chartData = ismultiShop ? ["{{ $totalCustomer }}", "{{ $totalShop }}"] : ["{{ $totalCustomer }}"];
+        const chartDataBg = isDarkMode ? ['#EE456B', '#067BFF'] : ['#EE456B', '#067BFF'];
 
-        // customer, shop, rider chart
+        // customer/shop chart
         const cutOut = document.getElementById('myPieChart').getContext('2d');
         new Chart(cutOut, {
             type: 'doughnut',
