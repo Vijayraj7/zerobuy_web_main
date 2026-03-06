@@ -261,6 +261,11 @@
                             </div>
                         </div>
 
+                        <div v-if="hasBulkItems && bulkItemsTotalQty > 0" class="text-sm text-slate-700 -mt-2 pb-2">
+                            {{ $t("Selected Models Total") }}:
+                            <span class="font-semibold text-primary">{{ masterStore.showCurrency(bulkItemsTotal) }}</span>
+                        </div>
+
                         <!-- Size -->
                         <div v-if="availableSizes.length > 0" class="flex items-center gap-3 py-4">
                             <div class="w-[40px] md:w-[88px] text-slate-600 text-base font-normal leading-normal">
@@ -647,14 +652,132 @@ const isShortDescriptionExpanded = ref(false);
 
 const cartProduct = ref(null);
 const isLoading = ref(true);
+const selectedVariantId = ref(null);
+const selectedBulkItems = ref([]);
 
 const hasLongShortDescription = computed(() =>
     (product.value?.short_description?.length ?? 0) > 140
 );
 
+const hasVariants = computed(() => (product.value?.variants?.length ?? 0) > 0);
+const hasBulkItems = computed(() => (product.value?.bulk_items?.length ?? 0) > 0);
+
+const selectedVariant = computed(() => {
+    const variants = product.value?.variants ?? [];
+    return variants.find((variant) => variant.id === selectedVariantId.value) ?? null;
+});
+
+const availableSizes = computed(() => {
+    if (!hasVariants.value) {
+        return product.value?.sizes ?? [];
+    }
+
+    const variants = product.value?.variants ?? [];
+    const filtered = formData.value.color
+        ? variants.filter((variant) => variant?.color?.id === formData.value.color)
+        : variants;
+
+    const uniqueMap = new Map();
+    filtered.forEach((variant) => {
+        if (variant?.size?.id != null && !uniqueMap.has(variant.size.id)) {
+            uniqueMap.set(variant.size.id, variant.size);
+        }
+    });
+
+    return Array.from(uniqueMap.values());
+});
+
+const availableColors = computed(() => {
+    if (!hasVariants.value) {
+        return product.value?.colors ?? [];
+    }
+
+    const variants = product.value?.variants ?? [];
+    const filtered = formData.value.size
+        ? variants.filter((variant) => variant?.size?.id === formData.value.size)
+        : variants;
+
+    const uniqueMap = new Map();
+    filtered.forEach((variant) => {
+        if (variant?.color?.id != null && !uniqueMap.has(variant.color.id)) {
+            uniqueMap.set(variant.color.id, variant.color);
+        }
+    });
+
+    return Array.from(uniqueMap.values());
+});
+
+const selectedBulkItemsPayload = computed(() =>
+    selectedBulkItems.value
+        .filter((item) => Number(item.buyqnty) > 0)
+        .map((item) => ({
+            id: item.id,
+            buyqnty: Number(item.buyqnty),
+        }))
+);
+
+const bulkItemsTotalQty = computed(() =>
+    selectedBulkItemsPayload.value.reduce((total, item) => total + Number(item.buyqnty), 0)
+);
+
+const bulkItemsTotal = computed(() => {
+    const productBulkItems = product.value?.bulk_items ?? [];
+    return selectedBulkItemsPayload.value.reduce((total, selectedItem) => {
+        const item = productBulkItems.find((bulkItem) => bulkItem.id === selectedItem.id);
+        if (!item) {
+            return total;
+        }
+        return total + (Number(item.selling_price) * Number(selectedItem.buyqnty));
+    }, 0);
+});
+
+const selectedQtyForTier = computed(() => {
+    return Number(cartProduct.value?.quantity ?? product.value?.min_order_quantity ?? 1);
+});
+
+const bulkPriceForDisplay = computed(() => {
+    if (!product.value?.bulk_prices?.length || hasVariants.value || hasBulkItems.value) {
+        return null;
+    }
+
+    const tiers = product.value.bulk_prices;
+    const qty = selectedQtyForTier.value;
+    const matchedTier = tiers.find((tier) => qty >= tier.min_qty && qty <= tier.max_qty);
+    if (matchedTier) {
+        return matchedTier;
+    }
+
+    const lastTier = tiers.slice().sort((a, b) => Number(b.max_qty) - Number(a.max_qty))[0];
+    if (lastTier && qty > Number(lastTier.max_qty)) {
+        return lastTier;
+    }
+
+    return null;
+});
+
 const isInStock = computed(() => {
+    if (hasBulkItems.value) {
+        return (product.value?.bulk_items ?? []).some((item) => Number(item.quantity ?? 0) > 0);
+    }
+
+    if (selectedVariant.value) {
+        return Number(selectedVariant.value.quantity ?? 0) > 0;
+    }
+
     const quantity = Number(product.value?.quantity ?? 0);
     return quantity > 0;
+});
+
+const canAddToCart = computed(() => {
+    if (!isInStock.value) {
+        return false;
+    }
+
+    if (hasBulkItems.value) {
+        return bulkItemsTotalQty.value > 0;
+    }
+
+    return true;
 });
 
 onMounted(() => {
@@ -667,6 +790,11 @@ onMounted(() => {
 watch(formData, () => {
     calculateProductPrice();
 }, { deep: true });
+
+watch(selectedVariantId, () => {
+    calculateProductPrice();
+    findProductInCart(route.params.id);
+});
 
 const shareOptions = [
     { name: "facebook", icon: faFacebookF, color: "#0d68f1" },
@@ -697,6 +825,24 @@ const share = (network) => {
 }
 
 const calculateProductPrice = () => {
+    if (selectedVariant.value) {
+        const basePrice = Number(product.value.price ?? 0);
+        const variantPrice = Number(selectedVariant.value.price ?? 0);
+
+        mainPrice.value = basePrice;
+        productPrice.value = variantPrice;
+
+        if (mainPrice.value <= 0) {
+            discountPercentage.value = 0;
+            return;
+        }
+
+        discountPercentage.value = Number(
+            (((mainPrice.value - productPrice.value) / mainPrice.value) * 100).toFixed(2)
+        );
+        return;
+    }
+
     var colorPrice = 0;
     var sizePrice = 0;
 
@@ -710,7 +856,10 @@ const calculateProductPrice = () => {
         sizePrice = size.price ?? 0;
     }
 
-    if (product.value.discount_price > 0) {
+    if (bulkPriceForDisplay.value) {
+        productPrice.value = Number(bulkPriceForDisplay.value.price) + colorPrice + sizePrice;
+        mainPrice.value = product.value.price + colorPrice + sizePrice;
+    } else if (product.value.discount_price > 0) {
         productPrice.value = product.value.discount_price + colorPrice + sizePrice;
         mainPrice.value = product.value.price + colorPrice + sizePrice;
     } else {
@@ -727,21 +876,125 @@ const calculateProductPrice = () => {
     }
 }
 
+const resolveVariantBySelection = () => {
+    if (!hasVariants.value) {
+        selectedVariantId.value = null;
+        return;
+    }
+
+    const variants = product.value?.variants ?? [];
+    let matchedVariant = variants.find((variant) => {
+        const sizeMatch = formData.value.size ? variant?.size?.id === formData.value.size : true;
+        const colorMatch = formData.value.color ? variant?.color?.id === formData.value.color : true;
+        return sizeMatch && colorMatch;
+    });
+
+    if (!matchedVariant && formData.value.size) {
+        matchedVariant = variants.find((variant) => variant?.size?.id === formData.value.size);
+    }
+    if (!matchedVariant && formData.value.color) {
+        matchedVariant = variants.find((variant) => variant?.color?.id === formData.value.color);
+    }
+    if (!matchedVariant) {
+        matchedVariant = variants[0] ?? null;
+    }
+
+    selectedVariantId.value = matchedVariant?.id ?? null;
+    if (matchedVariant) {
+        formData.value.size = matchedVariant?.size?.id ?? null;
+        formData.value.color = matchedVariant?.color?.id ?? null;
+    }
+};
+
+const isSizeSelectable = (sizeId) => {
+    if (!hasVariants.value) {
+        return true;
+    }
+
+    return (product.value?.variants ?? []).some((variant) => {
+        const colorMatch = formData.value.color ? variant?.color?.id === formData.value.color : true;
+        return variant?.size?.id === sizeId && colorMatch;
+    });
+};
+
+const isColorSelectable = (colorId) => {
+    if (!hasVariants.value) {
+        return true;
+    }
+
+    return (product.value?.variants ?? []).some((variant) => {
+        const sizeMatch = formData.value.size ? variant?.size?.id === formData.value.size : true;
+        return variant?.color?.id === colorId && sizeMatch;
+    });
+};
+
+const onSizeSelect = (sizeId) => {
+    formData.value.size = sizeId;
+    resolveVariantBySelection();
+};
+
+const onColorSelect = (colorId) => {
+    formData.value.color = colorId;
+    resolveVariantBySelection();
+};
+
+const getBulkItemQty = (itemId) => {
+    const selectedItem = selectedBulkItems.value.find((item) => item.id === itemId);
+    return Number(selectedItem?.buyqnty ?? 0);
+};
+
+const setBulkItemQty = (item, rawValue) => {
+    const max = Number(item.quantity ?? 0);
+    const parsedValue = Number(rawValue);
+    const normalizedValue = Number.isFinite(parsedValue) ? Math.max(0, Math.min(max, Math.floor(parsedValue))) : 0;
+
+    const index = selectedBulkItems.value.findIndex((selectedItem) => selectedItem.id === item.id);
+    if (normalizedValue === 0) {
+        if (index >= 0) {
+            selectedBulkItems.value.splice(index, 1);
+        }
+        return;
+    }
+
+    if (index >= 0) {
+        selectedBulkItems.value[index].buyqnty = normalizedValue;
+        return;
+    }
+
+    selectedBulkItems.value.push({
+        id: item.id,
+        buyqnty: normalizedValue,
+    });
+};
+
+const changeBulkItemQty = (item, delta) => {
+    const currentQty = getBulkItemQty(item.id);
+    setBulkItemQty(item, currentQty + delta);
+};
+
 const buyNow = () => {
     if (!isInStock.value) {
+        return;
+    }
+
+    if (hasBulkItems.value) {
+        toast.error("Please add selected models to cart first.");
         return;
     }
 
     if (authStore.token === null) {
         return (authStore.loginModal = true);
     }
+
+    const minQuantity = Number(product.value?.min_order_quantity ?? 1);
     basketStore.addToCart({
         product_id: formData.value.product_id,
         is_buy_now: true,
-        quantity: 1,
+        quantity: minQuantity,
         size: formData.value.size,
         color: formData.value.color,
-        unit: null
+        unit: null,
+        variant_id: selectedVariantId.value,
     }, product.value);
 
     basketStore.buyNowShopId = product.value?.shop.id;
@@ -757,6 +1010,8 @@ watch(route, async () => {
     review.value = false;
     isShortDescriptionExpanded.value = false;
     formData.value.product_id = route.params.id;
+    selectedVariantId.value = null;
+    selectedBulkItems.value = [];
     findProductInCart(route.params.id);
     fetchReviews();
 });
@@ -766,12 +1021,21 @@ watch(() => basketStore.products, () => {
 }, { deep: true });
 
 const findProductInCart = (productId) => {
+    if (hasBulkItems.value) {
+        cartProduct.value = null;
+        return;
+    }
+
     let foundProduct = null;
     basketStore.products.forEach((item) => {
         item.products.find((product) => {
             if (product.id == productId) {
+                if (selectedVariantId.value && product.variant?.id !== selectedVariantId.value) {
+                    return false;
+                }
                 return (foundProduct = product);
             }
+            return false;
         });
     });
     cartProduct.value = foundProduct;
@@ -779,29 +1043,51 @@ const findProductInCart = (productId) => {
         formData.value.size = foundProduct.size?.id;
         formData.value.color = foundProduct.color?.id;
         formData.value.unit = foundProduct.unit;
+        if (foundProduct.variant?.id) {
+            selectedVariantId.value = foundProduct.variant.id;
+        }
     }
 };
 
 const addToCart = () => {
-    if (!isInStock.value) {
+    if (!canAddToCart.value) {
         return;
     }
 
-    basketStore.addToCart(formData.value, product.value);
+    const payload = {
+        ...formData.value,
+        quantity: Number(product.value?.min_order_quantity ?? 1),
+        variant_id: selectedVariantId.value,
+    };
+
+    if (hasBulkItems.value) {
+        payload.bulk_items = selectedBulkItemsPayload.value;
+        payload.variant_id = null;
+    }
+
+    basketStore.addToCart(payload, product.value);
     setTimeout(() => {
         findProductInCart(route.params.id);
     }, 200);
 };
 
 const decrementQty = () => {
-    basketStore.decrementQuantity(product.value);
+    basketStore.decrementQuantity({
+        id: product.value.id,
+        variant: selectedVariant.value,
+        bulk_item: null,
+    });
     setTimeout(() => {
         findProductInCart(route.params.id);
     }, 200);
 };
 
 const incrementQty = () => {
-    basketStore.incrementQuantity(product.value);
+    basketStore.incrementQuantity({
+        id: product.value.id,
+        variant: selectedVariant.value,
+        bulk_item: null,
+    });
     setTimeout(() => {
         findProductInCart(route.params.id);
     }, 200);
@@ -884,12 +1170,24 @@ const fetchProductDetails = async () => {
             startCountdown();
         }
 
-        formData.value.color = product.value.colors?.length
-            ? product.value.colors[0].id
-            : null;
-        formData.value.size = product.value.sizes?.length
-            ? product.value.sizes[0].id
-            : null;
+        selectedBulkItems.value = [];
+        if (product.value.variants?.length) {
+            const preferredVariant = product.value.variants.find((variant) =>
+                Number(variant.quantity ?? 0) >= Number(product.value?.min_order_quantity ?? 1)
+            ) ?? product.value.variants[0];
+
+            selectedVariantId.value = preferredVariant?.id ?? null;
+            formData.value.size = preferredVariant?.size?.id ?? null;
+            formData.value.color = preferredVariant?.color?.id ?? null;
+        } else {
+            selectedVariantId.value = null;
+            formData.value.color = product.value.colors?.length
+                ? product.value.colors[0].id
+                : null;
+            formData.value.size = product.value.sizes?.length
+                ? product.value.sizes[0].id
+                : null;
+        }
 
         calculateProductPrice();
         findProductInCart(route.params.id);

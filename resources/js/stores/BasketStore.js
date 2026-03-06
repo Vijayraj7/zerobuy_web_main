@@ -190,7 +190,9 @@ export const useBasketStore = defineStore("basketStore", {
                 };
                 axios.post("/cart/decrement",
                     {
-                        product_id: product.id
+                        product_id: product.id,
+                        variant_id: product.variant?.id ?? null,
+                        bulk_item_id: product.bulk_item?.id ?? null,
                     },
                     {
                         headers: {
@@ -257,7 +259,9 @@ export const useBasketStore = defineStore("basketStore", {
             const masterStore = useMaster();
             if (product) {
                 axios.post("/cart/increment", {
-                    product_id: product.id
+                    product_id: product.id,
+                    variant_id: product.variant?.id ?? null,
+                    bulk_item_id: product.bulk_item?.id ?? null,
                 }, {
                     headers: {
                         Authorization: authStore.token,
