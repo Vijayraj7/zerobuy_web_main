@@ -91,6 +91,7 @@
                                 <div class="row">
                                     <div class="mt-3 col-md-3">
                                         <x-select label="District" name="area" id="district" required="true">
+                                            <option value="">{{ __('Select District') }}</option>
                                         </x-select>
                                     </div>
 
@@ -135,44 +136,90 @@
     document.addEventListener('DOMContentLoaded', function () {
         const stateSelect = document.getElementById('state');
         const districtSelect = document.getElementById('district');
+        const districtsUrlTemplate = @json(route('admin.get-districts', ['stateId' => 'STATE_ID']));
 
         if (!stateSelect || !districtSelect) {
             return;
         }
 
-        const districts = @json($districts);
         const selectedDistrict = @json(old('area'));
 
-        function populateDistricts(stateId) {
-            districtSelect.innerHTML = '';
-            districtSelect.disabled = !stateId;
+        function setDistrictOptions(items, selectedValue = null) {
+            let options = '<option value="">Select District</option>';
 
-            if (!stateId) {
-                return;
-            }
+            items.forEach((district) => {
+                const districtName = district?.name || '';
+                if (!districtName) {
+                    return;
+                }
 
-            districts
-                .filter((district) => String(district.state_id) === String(stateId))
-                .forEach((district) => {
-                    const option = document.createElement('option');
-                    option.value = district.name;
-                    option.textContent = district.name;
-                    if (selectedDistrict && selectedDistrict === district.name) {
-                        option.selected = true;
-                    }
-                    districtSelect.appendChild(option);
-                });
+                const isSelected = selectedValue && String(selectedValue) === String(districtName);
+                options += `<option value="${districtName}" ${isSelected ? 'selected' : ''}>${districtName}</option>`;
+            });
+
+            districtSelect.innerHTML = options;
+            districtSelect.disabled = !items.length;
 
             if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
-                window.jQuery(districtSelect).trigger('change.select2');
+                window.jQuery(districtSelect).trigger('change');
             }
         }
 
-        populateDistricts(stateSelect.value);
+        async function populateDistricts(stateId, selectedValue = null) {
+            districtSelect.disabled = true;
+            districtSelect.innerHTML = '<option value="">Select District</option>';
+
+            if (!stateId) {
+                if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+                    window.jQuery(districtSelect).trigger('change');
+                }
+                return;
+            }
+
+            const districtsUrl = districtsUrlTemplate.replace('STATE_ID', stateId);
+
+            try {
+                const response = await fetch(districtsUrl, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load districts');
+                }
+
+                const data = await response.json();
+                const districtItems = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+
+                setDistrictOptions(districtItems, selectedValue);
+            } catch (error) {
+                districtSelect.innerHTML = '<option value="">Failed to load districts</option>';
+                districtSelect.disabled = true;
+
+                if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+                    window.jQuery(districtSelect).trigger('change');
+                }
+            }
+        }
+
+        function handleStateChange(selectedValue = null) {
+            const stateId = stateSelect.value;
+            populateDistricts(stateId, selectedValue);
+        }
+
+        handleStateChange(selectedDistrict);
 
         stateSelect.addEventListener('change', function () {
-            populateDistricts(this.value);
+            handleStateChange(null);
         });
+
+        if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+            window.jQuery(stateSelect).on('change.select2', function () {
+                handleStateChange(null);
+            });
+        }
     });
 </script>
 @endpush

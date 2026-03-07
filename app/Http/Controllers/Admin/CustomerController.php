@@ -133,9 +133,8 @@ class CustomerController extends Controller
     public function create()
     {
         $states = State::orderBy('name')->pluck('name', 'id');
-        $districts = District::select('id', 'state_id', 'name')->orderBy('name')->get();
 
-        return view('admin.customer.create', compact('states', 'districts'));
+        return view('admin.customer.create', compact('states'));
     }
 
     public function show(User $user)

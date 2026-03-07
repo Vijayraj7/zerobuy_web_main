@@ -67,6 +67,7 @@ use App\Http\Controllers\Admin\SellerUserNotificationController;
 use App\Http\Controllers\Admin\RevenueController;
 use App\Http\Controllers\Admin\ShopReportController as AdminShopReportController;
 use App\Http\Controllers\Admin\AnalyticsController;
+use App\Http\Controllers\API\LocationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -91,6 +92,9 @@ Route::name('admin.')->group(function () {
         // Dashboard
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
         Route::post('/statistics', [DashboardController::class, 'orderStatistics'])->name('dashboard.statistics');
+
+        // Location
+        Route::get('/get-districts/{stateId}', [LocationController::class, 'getDistricts'])->name('get-districts');
 
         // banner
         Route::controller(BannerController::class)->group(function () {
