@@ -99,12 +99,13 @@ class DelhiveryDeliveryProvider implements DeliveryRateProviderInterface
                     $query['height'] = $heightValue;
                 }
 
+                $delhiveryBaseUrl = rtrim((string) (data_get(config('services'), 'delhivery.base_url', 'https://track.delhivery.com') ?: 'https://track.delhivery.com'), '/');
                 $response = Http::timeout(20)
                     ->acceptJson()
                     ->withHeaders([
                         'Authorization' => 'Token ' . $apiToken,
                     ])
-                    ->get('https://staging-express.delhivery.com/api/kinko/v1/invoice/charges/.json', $query);
+                    ->get($delhiveryBaseUrl . '/api/kinko/v1/invoice/charges/.json', $query);
 
                 $lastResponse = $response;
 
