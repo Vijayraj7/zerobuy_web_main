@@ -23,6 +23,17 @@ use App\Http\Controllers\Gateway\PayPal\ProcessController as PayPalProcessContro
 |
 */
 use Illuminate\Support\Facades\Cookie;
+
+Route::get('/', function () {
+    $flutterIndex = public_path('web/index.html');
+
+    if (file_exists($flutterIndex)) {
+        return response()->file($flutterIndex);
+    }
+
+    return view('app');
+});
+
 Route::get('/theme-switcher/{name?}', function ($name = null) {
     if($name && in_array($name, ['NovaStore','MegaMart', 'NextMart', 'PrimeCart', 'UltraMart'])){
         $cookie = cookie('theme_name', $name, 10);
