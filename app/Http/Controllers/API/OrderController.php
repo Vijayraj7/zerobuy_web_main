@@ -1083,15 +1083,38 @@ class OrderController extends Controller
     {
         // Validate the request
         $request->validate([
-            'order_id' => 'required|exists:orders,id',
+            'order_id' => 'nullable|integer|exists:orders,id',
+            'order_code' => 'nullable|string|exists:orders,order_code',
         ]);
 
-        // Find the order
-        $order = Order::with([
+        if (! $request->filled('order_id') && ! $request->filled('order_code')) {
+            return $this->json('Please provide order_id or order_code', [], 422);
+        }
+
+        $customer = auth()->user()?->customer;
+
+        // Find the order by id or code for the authenticated customer.
+        $orderQuery = Order::with([
             'products',     // ✅ only this
             'statusTimelines', // Add status timelines
             'payments',
-        ])->find($request->order_id);
+        ]);
+
+        if ($customer) {
+            $orderQuery->where('customer_id', $customer->id);
+        }
+
+        if ($request->filled('order_id')) {
+            $orderQuery->where('id', $request->order_id);
+        } elseif ($request->filled('order_code')) {
+            $orderQuery->where('order_code', $request->order_code);
+        }
+
+        $order = $orderQuery->first();
+
+        if (! $order) {
+            return $this->json('Order not found', [], 404);
+        }
 
         if ($order) {
             $this->syncRazorpayPaymentStatusForOrder($order);
