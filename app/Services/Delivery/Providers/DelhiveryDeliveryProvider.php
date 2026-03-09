@@ -104,7 +104,7 @@ class DelhiveryDeliveryProvider implements DeliveryRateProviderInterface
                     ->withHeaders([
                         'Authorization' => 'Token ' . $apiToken,
                     ])
-                    ->get('https://track.delhivery.com/api/kinko/v1/invoice/charges/.json', $query);
+                    ->get('https://staging-express.delhivery.com/api/kinko/v1/invoice/charges/.json', $query);
 
                 $lastResponse = $response;
 
