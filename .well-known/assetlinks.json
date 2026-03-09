@@ -4,7 +4,7 @@
             "delegate_permission/common.handle_all_urls"
         ],
         "target": {
-            "namespace": "android_app",
+            "namespace": "ZeroBuy",
             "package_name": "com.zerobuy.app",
             "sha256_cert_fingerprints": [
                 "DC:02:CD:E2:FA:A5:0A:68:E5:60:E5:26:CD:25:26:A1:B4:31:C6:F8:86:23:F0:38:8C:1A:26:F1:66:36:14:83",
