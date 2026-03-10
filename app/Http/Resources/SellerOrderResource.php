@@ -27,6 +27,8 @@ class SellerOrderResource extends JsonResource
 
         $orderedStatuses = [
             OrderStatus::PENDING->value,
+            OrderStatus::READY_TO_PAYMENT->value,
+            OrderStatus::PAYMENT_SUCCESSFUL->value,
             OrderStatus::CONFIRM->value,
             OrderStatus::SHIPPED->value,
             OrderStatus::DELIVERED->value,

@@ -276,6 +276,13 @@
             <div class="card">
                 <h5 class="fz-18 border-bottom p-3 m-0">{{ __('Order & Shipping Info') }}</h5>
 
+                @php
+                    $isCashOrderForStatusAction = in_array($normalizedPaymentMethod ?? '', ['cash', 'cash payment'], true);
+                    $showReadyToPaymentButton =
+                        ($order->order_status->value === 'Pending')
+                        && !$isCashOrderForStatusAction;
+                @endphp
+
                 <div class="px-3 py-12 d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom">
                     <div class="text-color">{{ __('Change Order Status') }}</div>
                     <div class="dropdown">
@@ -287,12 +294,19 @@
                             @hasPermission(['shop.order.status.change'])
                                 <ul class="dropdown-menu order-status">
                                     @foreach ($orderStatus as $status)
+                                        @php
+                                            $isCashOrder = in_array($normalizedPaymentMethod, ['cash', 'cash payment'], true);
+                                            $isOnlineOnlyStatus = in_array($status->value, ['Ready to Payment', 'Payment Successful'], true);
+                                            $isSystemPaymentStatus = $status->value === 'Payment Successful';
+                                        @endphp
+                                        @if (!($isCashOrder && $isOnlineOnlyStatus) && !$isSystemPaymentStatus)
                                         <li>
                                             <a class="dropdown-item @if (in_array($status->value, ['Delivered', 'Cancelled'])) OrderStatusConfirm @endif"
                                                 href="{{ route('shop.order.status.change', $order->id) }}?status={{ $status->value }}">
                                                 {{ __($status->value) }}
                                             </a>
                                         </li>
+                                        @endif
                                     @endforeach
                                 </ul>
                             @endhasPermission
@@ -300,7 +314,53 @@
                     </div>
                 </div>
 
-                @if ($showConfirmShipButton)
+                @php
+                    $showCreateShipmentButton =
+                        in_array($retryShipProvider, ['shiprocket', 'delhivery'], true)
+                        && !in_array($order->order_status->value, ['Delivered', 'Cancelled'], true)
+                        && !in_array($apiProviderStatus, ['shipment_created', 'awb_generated'], true);
+                @endphp
+
+                @if ($showCreateShipmentButton)
+                    @hasPermission(['shop.order.status.change'])
+                        <div class="p-3 border-bottom">
+                            <form action="{{ route('shop.order.create-shipment', $order->id) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                    {{ __('Create Shipment') }}
+                                </button>
+                            </form>
+                        </div>
+                    @endhasPermission
+                @endif
+
+                @if ($showCreateShipmentButton && $showReadyToPaymentButton)
+                    @hasPermission(['shop.order.status.change'])
+                        <div class="py-1 text-center">
+                            <small class="text-muted">Create Shipment to know the delivery charge then ready to payment.</small>
+                        </div>
+                    @endhasPermission
+                @endif
+
+                @if ($showReadyToPaymentButton)
+                    @hasPermission(['shop.order.status.change'])
+                        <div class="p-3 border-bottom">
+                            <button
+                                type="button"
+                                class="btn btn-warning btn-sm w-100 js-ready-to-payment"
+                                data-update-url="{{ route('shop.order.update-tracking', $order->id) }}"
+                                data-status-url="{{ route('shop.order.status.change', $order->id) }}?status={{ urlencode('Ready to Payment') }}"
+                                data-create-shipment-url="{{ $showCreateShipmentButton ? route('shop.order.create-shipment', $order->id) : '' }}"
+                                data-current-charge="{{ (float) ($order->delivery_charge ?? 0) }}"
+                                data-token="{{ csrf_token() }}"
+                            >
+                                {{ __('Ready to Payment') }}
+                            </button>
+                        </div>
+                    @endhasPermission
+                @endif
+
+                @if ($showConfirmShipButton && !$showReadyToPaymentButton)
                     @hasPermission(['shop.order.status.change'])
                         <div class="p-3 border-bottom">
                             <a href="{{ route('shop.order.status.change', $order->id) }}?status=Confirm" class="btn btn-success btn-sm w-100">
@@ -560,6 +620,105 @@
                     if (result.isConfirmed) {
                         window.location.href = url;
                     }
+                });
+            });
+
+            $(document).on('click', '.js-ready-to-payment', function(e) {
+                e.preventDefault();
+
+                const button = $(this);
+                const updateUrl = button.data('update-url');
+                const statusUrl = button.data('status-url');
+                const createShipmentUrl = String(button.data('create-shipment-url') || '').trim();
+                const hasCreateShipmentOption = createShipmentUrl.length > 0;
+                const csrfToken = button.data('token');
+                const currentCharge = Number(button.data('current-charge') || 0);
+
+                Swal.fire({
+                    title: 'Ready to Payment',
+                    html: hasCreateShipmentOption
+                        ? 'If delivery charge is not known yet, click <b>Create Shipment First</b> to get delivery charge, then update delivery charge here.'
+                        : 'Last chance to update delivery charge before switching status.',
+                    input: 'number',
+                    inputAttributes: {
+                        min: 0,
+                        step: '0.01'
+                    },
+                    inputValue: currentCharge,
+                    showCancelButton: true,
+                    showDenyButton: hasCreateShipmentOption,
+                    denyButtonText: 'Create Shipment First',
+                    confirmButtonText: 'Update & Continue',
+                    cancelButtonText: 'Cancel',
+                    preConfirm: (value) => {
+                        const normalized = value === '' || value === null || typeof value === 'undefined'
+                            ? currentCharge
+                            : Number(value);
+
+                        if (Number.isNaN(normalized) || normalized < 0) {
+                            Swal.showValidationMessage('Please enter a valid delivery charge (0 or more).');
+                            return false;
+                        }
+
+                        return normalized;
+                    }
+                }).then((result) => {
+                    if (result.isDenied && hasCreateShipmentOption) {
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = createShipmentUrl;
+
+                        const tokenInput = document.createElement('input');
+                        tokenInput.type = 'hidden';
+                        tokenInput.name = '_token';
+                        tokenInput.value = csrfToken;
+                        form.appendChild(tokenInput);
+
+                        document.body.appendChild(form);
+                        form.submit();
+                        return;
+                    }
+
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    const deliveryCharge = result.value;
+
+                    Swal.fire({
+                        title: 'Updating delivery charge...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    fetch(updateUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: new URLSearchParams({
+                            _token: csrfToken,
+                            delivery_charge: deliveryCharge,
+                            source: 'ready_to_payment'
+                        }).toString()
+                    })
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error('Failed to update delivery charge.');
+                        }
+
+                        window.location.href = statusUrl;
+                    })
+                    .catch((error) => {
+                        Swal.fire({
+                            title: 'Update Failed',
+                            text: error?.message || 'Unable to update delivery charge. Please try again.',
+                            icon: 'error'
+                        });
+                    });
                 });
             });
         });

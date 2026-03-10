@@ -253,12 +253,28 @@ class OrderController extends Controller
             return $this->json('Sorry, this order is not found', [], 422);
         }
 
-        $orderStatus = match ($request->order_status) {
+        $normalizedStatus = strtolower(trim((string) $request->order_status));
+
+        if (in_array($normalizedStatus, ['payment_successful', 'payment successful'], true)) {
+            return $this->json('Payment Successful is updated automatically after payment.', [], 422);
+        }
+
+        $orderStatus = match ($normalizedStatus) {
             'cancel'  => OrderStatus::CANCELLED->value,
             'shipped' => OrderStatus::SHIPPED->value,
             'delivered' => OrderStatus::DELIVERED->value,
+            'ready_to_payment', 'ready to payment' => OrderStatus::READY_TO_PAYMENT->value,
             default   => OrderStatus::CONFIRM->value,
         };
+
+        $isOnlineOrder = $order->payment_method !== PaymentMethod::CASH;
+        if ($orderStatus === OrderStatus::READY_TO_PAYMENT->value && ! $isOnlineOrder) {
+            return $this->json('Ready to Payment is allowed only for online payment orders.', [], 422);
+        }
+
+        if ($orderStatus === OrderStatus::READY_TO_PAYMENT->value && $order->order_status->value !== OrderStatus::PENDING->value) {
+            return $this->json('Ready to Payment can be set only when order is Pending.', [], 422);
+        }
 
         if ($orderStatus === OrderStatus::CANCELLED->value) {
             $payment = $order->payments()->latest('payments.id')->first();

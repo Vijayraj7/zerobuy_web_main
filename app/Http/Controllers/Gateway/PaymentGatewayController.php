@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Gateway;
 
 use App\Enums\PaymentStatus;
+use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\PaymentGateway;
+use App\Models\OrderStatusTimeline;
 use App\Models\User;
 use App\Repositories\OrderRepository;
 use Illuminate\Http\Request;
@@ -113,7 +115,20 @@ class PaymentGatewayController extends Controller
 
                 $payment->orders()->update([
                     'payment_status' => PaymentStatus::PAID->value,
+                    'order_status' => OrderStatus::PAYMENT_SUCCESSFUL->value,
                 ]);
+
+                foreach ($payment->orders as $paidOrder) {
+                    OrderStatusTimeline::updateOrCreate(
+                        [
+                            'order_id' => $paidOrder->id,
+                            'status' => OrderStatus::PAYMENT_SUCCESSFUL->value,
+                        ],
+                        [
+                            'changed_at' => now(),
+                        ]
+                    );
+                }
 
                 $payment->update([
                     'is_paid' => true,

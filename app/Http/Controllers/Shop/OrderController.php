@@ -179,6 +179,26 @@ class OrderController extends Controller
     {
         $request->validate(['status' => 'required']);
 
+        if (
+            $request->status === OrderStatus::READY_TO_PAYMENT->value
+            && $order->payment_method === PaymentMethod::CASH
+        ) {
+            return back()->with('error', __('Ready to Payment is allowed only for online payment orders.'));
+        }
+
+        if (
+            $request->status === OrderStatus::READY_TO_PAYMENT->value
+            && $order->order_status?->value !== OrderStatus::PENDING->value
+        ) {
+            return back()->with('error', __('Ready to Payment can be set only when order is pending.'));
+        }
+
+        if (
+            $request->status === OrderStatus::PAYMENT_SUCCESSFUL->value
+        ) {
+            return back()->with('error', __('Payment Successful is updated automatically after payment.'));
+        }
+
         if ($request->status == OrderStatus::CANCELLED->value) {
             $payment = $order->payments()->latest('payments.id')->first();
 
@@ -377,6 +397,71 @@ class OrderController extends Controller
         }
     }
 
+    public function createShipment(Order $order)
+    {
+        $order->loadMissing(['shop.deliverySetting']);
+
+        if (in_array($order->order_status?->value, [OrderStatus::DELIVERED->value, OrderStatus::CANCELLED->value], true)) {
+            return back()->with('error', __('Shipment cannot be created for delivered or cancelled orders.'));
+        }
+
+        $orderProvider = strtolower(trim((string) ($order->api_provider ?: $order->shop?->deliverySetting?->delivery_provider ?: '')));
+
+        if (!in_array($orderProvider, ['shiprocket', 'delhivery'], true)) {
+            return back()->with('error', __('No supported API provider found for this order.'));
+        }
+
+        $hasProviderShipmentId = !empty($order->provider_shipment_id) || !empty($order->shiprocket_shipment_id);
+        $hasProviderAwb = !empty($order->provider_awb_code) || !empty($order->shiprocket_awb_code);
+
+        if ($hasProviderShipmentId || $hasProviderAwb) {
+            return back()->with('success', __('Shipment already exists for this order.'));
+        }
+
+        if ($order->api_provider !== $orderProvider) {
+            $order->update(['api_provider' => $orderProvider]);
+        }
+
+        try {
+            $synced = false;
+            $providerFailureReason = null;
+
+            if ($orderProvider === 'shiprocket') {
+                $service = app(ShiprocketOrderSyncService::class);
+                $synced = $service->sync($order);
+                $providerFailureReason = $service->getLastSyncError();
+            }
+
+            if ($orderProvider === 'delhivery') {
+                $service = app(DelhiveryOrderSyncService::class);
+                $synced = $service->sync($order);
+                $providerFailureReason = $service->getLastSyncError();
+            }
+
+            $order->refresh();
+
+            if (!$synced) {
+                $reason = $providerFailureReason ?? null;
+                $message = 'Create shipment failed. Please check provider credentials or shipment data and try again.';
+                if (!empty($reason)) {
+                    $message .= ' Reason: ' . $reason;
+                }
+
+                return back()->with('error', $message)->with('provider_ship_error', $reason);
+            }
+
+            return back()->with('success', __('Shipment has been created successfully via :provider.', ['provider' => ucfirst($orderProvider)]));
+        } catch (\Throwable $e) {
+            Log::warning('Order create shipment failed (shop panel)', [
+                'order_id' => $order->id,
+                'provider' => $orderProvider,
+                'message' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', __('Create shipment failed due to an exception. Please try again.'));
+        }
+    }
+
     private function getShopRazorpayConfig(Shop $shop): array
     {
         if (! $shop->online_payment_enabled) {
@@ -532,8 +617,13 @@ class OrderController extends Controller
         // Only allow updating delivery_charge if manual delivery or current delivery_charge == 0
         $deliverySetting = $order->shop->deliverySetting;
         $isManualDelivery = $deliverySetting && $deliverySetting->delivery_mode === 'manual';
+        $isReadyToPaymentFlow = $request->input('source') === 'ready_to_payment';
+        $canUpdateViaReadyToPaymentFlow =
+            $isReadyToPaymentFlow
+            && $order->order_status?->value === OrderStatus::PENDING->value;
+
         if ($request->filled('delivery_charge')) {
-            if ($isManualDelivery || $order->delivery_charge == 0) {
+            if ($isManualDelivery || $order->delivery_charge == 0 || $canUpdateViaReadyToPaymentFlow) {
                 $oldDeliveryCharge = $order->delivery_charge;
                 $newDeliveryCharge = $request->delivery_charge;
                 $updateData['delivery_charge'] = $newDeliveryCharge;

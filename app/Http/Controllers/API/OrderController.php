@@ -252,111 +252,76 @@ class OrderController extends Controller
             }
         }
 
-        $paymentUrl = null;
-        if ($paymentMethod->name === 'RAZORPAY') {
+        $requiresPayBeforeOrder = false;
+        $onlineShop = null;
+        if ($isOnlineCheckout) {
             $shopId = (int) $shopProducts->keys()->first();
-            $shop = Shop::find($shopId);
+            $onlineShop = Shop::with('deliverySetting')->find($shopId);
 
-            if (! $shop) {
+            if (! $onlineShop) {
                 return $this->json('Shop not found for payment.', [], 422);
             }
 
-            $intentToken = Str::uuid()->toString();
-
-            $payment = Payment::create([
-                'amount' => (float) $totalPayableAmountx,
-                'currency' => 'INR',
-                'payment_method' => 'razorpay',
-                'is_paid' => false,
-                'payment_token' => $intentToken,
-            ]);
-
-            Log::info('place-order payment intent created', [
-                'user_id' => $user->id,
-                'payment_id' => $payment->id,
-                'payment_method' => $paymentMethod->name,
-                'elapsed_ms' => $elapsedMs(),
-            ]);
-
-            $razorpayData = $this->createShopRazorpayOrder($payment, $shop);
-
-            Log::info('place-order razorpay order attempt finished', [
-                'payment_id' => $payment->id,
-                'status' => $razorpayData['status'] ?? false,
-                'elapsed_ms' => $elapsedMs(),
-            ]);
-
-            if (! $razorpayData['status']) {
-                $payment->delete();
-                return $this->json('Razorpay order creation failed', [
-                    'error' => $razorpayData['message'],
-                ], 422);
-            }
-
-            Cache::put('payment_intent:'.$intentToken, [
-                'user_id' => $user->id,
-                'address_id' => (int) $request->address_id,
-                'coupon_code' => $request->coupon_code,
-                'note' => $request->note,
-                'payment_method' => 'razorpay',
-                'shop_ids' => array_map('intval', (array) $request->shop_ids),
-                'is_buy_now' => $isBuyNow,
-                'gst' => $request->gst,
-            ], now()->addMinutes(30));
-
-            return $this->json('Order created successfully', [
-                'payment_flow' => 'razorpay',
-                'order_payment_url' => null,
-                'razorpay' => $razorpayData['data'],
-            ]);
+            $deliveryMode = strtolower(trim((string) optional($onlineShop->deliverySetting)->delivery_mode));
+            $requiresPayBeforeOrder = in_array($deliveryMode, ['amount_based', 'state_wise', 'statewise'], true);
         }
 
-        if ($paymentMethod->name === 'CASHFREE') {
-            $shopId = (int) $shopProducts->keys()->first();
-            $shop = Shop::find($shopId);
-
-            if (! $shop) {
-                return $this->json('Shop not found for payment.', [], 422);
-            }
+        if ($isOnlineCheckout && $requiresPayBeforeOrder) {
+            $requestedGateway = $paymentMethod === PaymentMethod::RAZORPAY ? 'razorpay' : 'cashfree';
 
             $payment = Payment::create([
-                'amount' => (float) $totalPayableAmountx,
-                'currency' => 'INR',
-                'payment_method' => 'cashfree',
+                'amount' => $totalPayableAmountx,
+                'payment_method' => $requestedGateway,
                 'is_paid' => false,
-                'payment_token' => Str::uuid()->toString(),
+                'payment_token' => (string) Str::uuid(),
             ]);
 
-            $cashfreeData = $this->createShopCashfreeOrder($payment, $shop, $user);
-
-            if (! ($cashfreeData['status'] ?? false)) {
-                $payment->delete();
-                return $this->json('Cashfree order creation failed', [
-                    'error' => $cashfreeData['message'] ?? 'Unable to create Cashfree order.',
-                ], 422);
-            }
-
-            Cache::put('payment_intent_cashfree:'.$payment->id, [
-                'user_id' => $user->id,
-                'address_id' => (int) $request->address_id,
+            $intent = [
+                'user_id' => (int) $user->id,
+                'shop_ids' => array_map('intval', (array) $request->shop_ids),
+                'is_buy_now' => (bool) $isBuyNow,
+                'address_id' => (int) ($request->address_id ?? 0),
                 'coupon_code' => $request->coupon_code,
                 'note' => $request->note,
-                'payment_method' => 'cashfree',
-                'shop_ids' => array_map('intval', (array) $request->shop_ids),
-                'is_buy_now' => $isBuyNow,
+                'payment_method' => $requestedGateway,
                 'gst' => $request->gst,
-                'cashfree_order_id' => data_get($cashfreeData, 'data.cashfree_order_id'),
-                'cf_order_id' => data_get($cashfreeData, 'data.cf_order_id'),
-            ], now()->addMinutes(30));
+            ];
 
-            return $this->json('Order created successfully', [
-                'payment_flow' => 'cashfree',
-                'order_payment_url' => data_get($cashfreeData, 'data.payment_link'),
-                'cashfree' => $cashfreeData['data'],
-            ]);
+            Cache::put('payment_intent:'.$payment->payment_token, $intent, now()->addMinutes(30));
+
+            if ($paymentMethod === PaymentMethod::RAZORPAY) {
+                $gatewayOrder = $this->createShopRazorpayOrder($payment, $onlineShop);
+                if (! ($gatewayOrder['status'] ?? false)) {
+                    return $this->json($gatewayOrder['message'] ?? 'Unable to create Razorpay order.', [], 422);
+                }
+
+                $data = $gatewayOrder['data'] ?? [];
+
+                return $this->json('Proceed to payment', array_merge($data, [
+                    'payment_flow' => 'pay_before_order',
+                    'payment_method' => 'razorpay',
+                ]));
+            }
+
+            $gatewayOrder = $this->createShopCashfreeOrder($payment, $onlineShop, $user);
+            if (! ($gatewayOrder['status'] ?? false)) {
+                return $this->json($gatewayOrder['message'] ?? 'Unable to create Cashfree order.', [], 422);
+            }
+
+            $data = $gatewayOrder['data'] ?? [];
+            Cache::put('payment_intent_cashfree:'.$payment->id, array_merge($intent, [
+                'cashfree_order_id' => $data['cashfree_order_id'] ?? null,
+                'cf_order_id' => $data['cf_order_id'] ?? null,
+            ]), now()->addMinutes(30));
+
+            return $this->json('Proceed to payment', array_merge($data, [
+                'payment_flow' => 'pay_before_order',
+                'payment_method' => 'cashfree',
+            ]));
         }
 
-        // Store the order for non-razorpay payments
+        // Store the order for both cash and online methods.
+        // Online payment is deferred and can be initiated later from order details.
         try {
             $payment = OrderRepository::storeByRequestFromCart($request, $paymentMethod, $carts);
         } catch (\Throwable $e) {
@@ -370,15 +335,9 @@ class OrderController extends Controller
             'elapsed_ms' => $elapsedMs(),
         ]);
 
-        if ($paymentMethod->name != 'CASH') {
-            $gateway = $paymentMethod->name === 'CASHFREE' ? 'cashfree' : strtolower((string) $request->payment_method);
-            $paymentUrl = route('order.payment', ['payment' => $payment, 'gateway' => $gateway]);
-        }
-
-
         return $this->json('Order created successfully', [
-            'payment_flow' => $paymentMethod->name == 'CASH' ? 'cash' : 'redirect',
-            'order_payment_url' => $paymentUrl,
+            'payment_flow' => $paymentMethod->name == 'CASH' ? 'cash' : 'deferred_online',
+            'order_payment_url' => null,
         ]);
     }
 
@@ -471,7 +430,20 @@ class OrderController extends Controller
 
                 $payment->orders()->update([
                     'payment_status' => PaymentStatus::PAID->value,
+                    'order_status' => OrderStatus::PAYMENT_SUCCESSFUL->value,
                 ]);
+
+                foreach ($payment->orders as $paidOrder) {
+                    OrderStatusTimeline::updateOrCreate(
+                        [
+                            'order_id' => $paidOrder->id,
+                            'status' => OrderStatus::PAYMENT_SUCCESSFUL->value,
+                        ],
+                        [
+                            'changed_at' => now(),
+                        ]
+                    );
+                }
 
                 $payment->update([
                     'is_paid' => true,
@@ -513,8 +485,9 @@ class OrderController extends Controller
             ]);
         }
 
+        $hasExistingOrders = $payment->orders()->count() > 0;
         $intent = Cache::get('payment_intent_cashfree:'.$payment->id);
-        if (! is_array($intent)) {
+        if (! $hasExistingOrders && ! is_array($intent)) {
             return $this->json('Payment session expired. Please place order again.', [], 422);
         }
 
@@ -523,9 +496,11 @@ class OrderController extends Controller
             return $this->json('Invalid payment session user.', [], 422);
         }
 
-        $intentUserId = (int) ($intent['user_id'] ?? 0);
-        if ($intentUserId !== (int) $authUser->id) {
-            return $this->json('Invalid payment session user.', [], 422);
+        if (! $hasExistingOrders) {
+            $intentUserId = (int) ($intent['user_id'] ?? 0);
+            if ($intentUserId !== (int) $authUser->id) {
+                return $this->json('Invalid payment session user.', [], 422);
+            }
         }
 
         $shop = $payment->orders->first()?->shop;
@@ -646,7 +621,20 @@ class OrderController extends Controller
 
                 $payment->orders()->update([
                     'payment_status' => PaymentStatus::PAID->value,
+                    'order_status' => OrderStatus::PAYMENT_SUCCESSFUL->value,
                 ]);
+
+                foreach ($payment->orders as $paidOrder) {
+                    OrderStatusTimeline::updateOrCreate(
+                        [
+                            'order_id' => $paidOrder->id,
+                            'status' => OrderStatus::PAYMENT_SUCCESSFUL->value,
+                        ],
+                        [
+                            'changed_at' => now(),
+                        ]
+                    );
+                }
 
                 $payment->update([
                     'is_paid' => true,
@@ -1224,7 +1212,20 @@ class OrderController extends Controller
             if ($gatewayStatus === 'captured') {
                 $payment->orders()->update([
                     'payment_status' => PaymentStatus::PAID->value,
+                    'order_status' => OrderStatus::PAYMENT_SUCCESSFUL->value,
                 ]);
+
+                foreach ($payment->orders as $paidOrder) {
+                    OrderStatusTimeline::updateOrCreate(
+                        [
+                            'order_id' => $paidOrder->id,
+                            'status' => OrderStatus::PAYMENT_SUCCESSFUL->value,
+                        ],
+                        [
+                            'changed_at' => now(),
+                        ]
+                    );
+                }
             }
         } catch (\Throwable $e) {
             Log::warning('Razorpay payment status sync failed', [
@@ -1249,7 +1250,7 @@ class OrderController extends Controller
         // Find the order
         $order = Order::find($request->order_id);
 
-        if ($order->order_status->value == OrderStatus::PENDING->value) {
+        if (in_array($order->order_status->value, [OrderStatus::PENDING->value, OrderStatus::READY_TO_PAYMENT->value], true)) {
             $payment = $order->payments()->latest('payments.id')->first();
 
             $isOnlineOrder = $order->payment_method !== PaymentMethod::CASH;
@@ -1308,7 +1309,7 @@ class OrderController extends Controller
             ]);
         }
 
-        return $this->json('Sorry, order cannot be cancelled because it is not pending', [], 422);
+        return $this->json('Sorry, order cannot be cancelled at this stage', [], 422);
     }
 
     private function refundRazorpayPaymentForOrder(Order $order, Payment $payment): array
@@ -1412,20 +1413,91 @@ class OrderController extends Controller
 
     public function payment(Order $order, $paymentMethod = null)
     {
-        if ($paymentMethod != 'cash' && $paymentMethod != null) {
+        $authUser = auth()->user();
+        if (! $authUser || (int) ($authUser->customer?->id ?? 0) !== (int) $order->customer_id) {
+            return $this->json('Unauthorized order payment request.', [], 403);
+        }
 
+        $requestedMethod = strtolower(trim((string) $paymentMethod));
+        if (! in_array($requestedMethod, ['razorpay', 'cashfree'], true)) {
+            return $this->json('Please select a valid online payment method.', [], 422);
+        }
+
+        if ($order->payment_method === PaymentMethod::CASH) {
+            return $this->json('This order was placed with Cash on Delivery.', [], 422);
+        }
+
+        if ($order->order_status?->value !== OrderStatus::READY_TO_PAYMENT->value) {
+            return $this->json('Payment is available only when seller marks order as Ready to Payment.', [], 422);
+        }
+
+        if ($order->payment_status?->value === PaymentStatus::PAID->value) {
+            return $this->json('Order is already paid.', [], 422);
+        }
+
+        $order->loadMissing('shop');
+        $shop = $order->shop;
+        if (! $shop) {
+            return $this->json('Shop not found for this order.', [], 422);
+        }
+
+        $shopProvider = strtolower(trim((string) ($shop->online_payment_provider ?? '')));
+        if ($shopProvider !== $requestedMethod) {
+            return $this->json('Selected payment method is not available for this shop. Current provider: '.$shopProvider.'.', [], 422);
+        }
+
+        $payment = $order->payments()
+            ->where('is_paid', false)
+            ->latest('payments.id')
+            ->first();
+
+        if (! $payment) {
             $payment = Payment::create([
                 'amount' => $order->payable_amount,
-                'payment_method' => $paymentMethod,
+                'payment_method' => $requestedMethod,
+                'is_paid' => false,
             ]);
 
             $payment->orders()->attach($order->id);
-
-            $paymentUrl = route('order.payment', ['payment' => $payment, 'gateway' => $payment->payment_method]);
-
-            return $this->json('Payment created', [
-                'order_payment_url' => $paymentUrl,
+        } else {
+            $payment->update([
+                'amount' => $order->payable_amount,
+                'payment_method' => $requestedMethod,
             ]);
+        }
+
+        if ($requestedMethod === 'razorpay') {
+            $gatewayOrder = $this->createShopRazorpayOrder($payment, $shop);
+            if (! ($gatewayOrder['status'] ?? false)) {
+                return $this->json($gatewayOrder['message'] ?? 'Unable to create Razorpay order.', [], 422);
+            }
+
+            $data = $gatewayOrder['data'] ?? [];
+            $data['payment_method'] = 'razorpay';
+
+            return $this->json('Payment order created successfully', $data);
+        }
+
+        $gatewayOrder = $this->createShopCashfreeOrder($payment, $shop, $authUser);
+        if (! ($gatewayOrder['status'] ?? false)) {
+            return $this->json($gatewayOrder['message'] ?? 'Unable to create Cashfree order.', [], 422);
+        }
+
+        Cache::put('payment_intent_cashfree:'.$payment->id, [
+            'user_id' => (int) $authUser->id,
+            'shop_ids' => [(int) $shop->id],
+            'is_buy_now' => false,
+            'address_id' => (int) ($order->address_id ?? 0),
+            'coupon_code' => $order->coupon_code ?? null,
+            'note' => $order->note ?? null,
+            'payment_method' => 'cashfree',
+            'gst' => $order->gst ?? null,
+        ], now()->addMinutes(30));
+
+        $data = $gatewayOrder['data'] ?? [];
+        $data['payment_method'] = 'cashfree';
+
+        return $this->json('Payment order created successfully', $data);
 
             // $payment = $order->payments()?->first();
 
@@ -1456,8 +1528,6 @@ class OrderController extends Controller
             //     'amount' => $order->payable_amount,
             //     'payment_method' => $paymentMethod,
             // ]);
-        }
-
-        return $this->json('Sorry, You can not  re-payment because payment is CASH', [], 422);
+        
     }
 }
