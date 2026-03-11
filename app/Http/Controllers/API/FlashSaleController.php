@@ -18,8 +18,10 @@ class FlashSaleController extends Controller
      */
     public function index()
     {
-        $incoming = FlashSaleRepository::getIncoming();
-        $running = FlashSaleRepository::getRunning();
+        $businessCategoryId = request()->integer('business_category_id');
+
+        $incoming = FlashSaleRepository::getIncoming($businessCategoryId ?: null);
+        $running = FlashSaleRepository::getRunning($businessCategoryId ?: null);
 
         return $this->json('incoming and running flash sale', [
             'incoming_flash_sale' => $incoming ? FlashSaleResource::make($incoming) : null,

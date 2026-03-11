@@ -27,6 +27,7 @@
                                 <th class="text-center">{{ __('SL') }}</th>
                                 <th>{{ __('Thumbnail') }}</th>
                                 <th>{{ __('Name') }}</th>
+                                <th>{{ __('Business Category') }}</th>
                                 <th>{{ __('Start Date') }}</th>
                                 <th>{{ __('End Date') }}</th>
                                 @hasPermission('shop.flashSale.toggle')
@@ -47,6 +48,8 @@
                                 </td>
 
                                 <td>{{ $flashSale->name }}</td>
+
+                                <td>{{ $flashSale->businessCategory?->name ?? __('All') }}</td>
 
                                 <td>{{ $flashSale->start_date . ' - ' . $flashSale->start_time }}</td>
                                 <td>{{ $flashSale->end_date . ' - ' . $flashSale->end_time }}</td>

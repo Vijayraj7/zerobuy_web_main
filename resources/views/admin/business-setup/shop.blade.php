@@ -140,6 +140,21 @@
                             </label>
                         </div>
                     </div>
+
+                    <div class="col-lg-4">
+                        <div class="border rounded py-2.5 px-3 d-flex align-items-center justify-content-between">
+                            <span>Shop Licence / GST Upload</span>
+                            <div>
+                                <input type="hidden" name="shop_document_upload" value="0">
+                                <label class="switch mb-0" data-bs-toggle="tooltip" data-bs-placement="left"
+                                    data-bs-title="Enable/Disable">
+                                    <input type="checkbox" name="shop_document_upload" value="1"
+                                        {{ ($generaleSetting?->shop_document_upload ?? true) ? 'checked' : '' }}>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
             </div>

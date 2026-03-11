@@ -11,7 +11,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 class Shop extends Model
 {
@@ -23,8 +25,102 @@ class Shop extends Model
         'last_online' => 'datetime',
         'online_payment_enabled' => 'boolean',
         'cash_on_delivery_enabled' => 'boolean',
-        'online_payment_config' => 'array',
     ];
+
+    /**
+     * Store payment config encrypted and return it as decrypted array.
+     */
+    public function onlinePaymentConfig(): Attribute
+    {
+        return Attribute::make(
+            get: function ($value) {
+                if ($value === null || $value === '') {
+                    return null;
+                }
+
+                if (is_array($value)) {
+                    $payload = $value['__enc'] ?? null;
+                    if (is_string($payload) && $payload !== '') {
+                        try {
+                            $decrypted = Crypt::decryptString($payload);
+                            $decoded = json_decode($decrypted, true);
+
+                            return json_last_error() === JSON_ERROR_NONE ? $decoded : null;
+                        } catch (Throwable) {
+                            return null;
+                        }
+                    }
+
+                    return $value;
+                }
+
+                if (! is_string($value)) {
+                    return null;
+                }
+
+                try {
+                    $decoded = json_decode($value, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $payload = $decoded['__enc'] ?? null;
+                        if (is_string($payload) && $payload !== '') {
+                            $decrypted = Crypt::decryptString($payload);
+                            $innerDecoded = json_decode($decrypted, true);
+
+                            return json_last_error() === JSON_ERROR_NONE ? $innerDecoded : null;
+                        }
+
+                        // Backward compatibility for older plain JSON records.
+                        return $decoded;
+                    }
+
+                    // Last fallback for previously stored raw encrypted strings.
+                    $decrypted = Crypt::decryptString($value);
+                    $decoded = json_decode($decrypted, true);
+
+                    return json_last_error() === JSON_ERROR_NONE ? $decoded : null;
+                } catch (Throwable) {
+                    return null;
+                }
+            },
+            set: function ($value) {
+                if ($value === null || $value === '') {
+                    return null;
+                }
+
+                if (is_array($value) || is_object($value)) {
+                    $json = json_encode($value);
+
+                    if ($json === false) {
+                        return null;
+                    }
+
+                    return json_encode([
+                        '__enc' => Crypt::encryptString($json),
+                    ]);
+                }
+
+                if (! is_string($value)) {
+                    return null;
+                }
+
+                $trimmed = trim($value);
+                if ($trimmed === '') {
+                    return null;
+                }
+
+                json_decode($trimmed, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    return json_encode([
+                        '__enc' => Crypt::encryptString($trimmed),
+                    ]);
+                }
+
+                return json_encode([
+                    '__enc' => Crypt::encryptString(json_encode($trimmed)),
+                ]);
+            }
+        );
+    }
 
     /**
      * Get the shop user.
@@ -71,6 +167,11 @@ class Shop extends Model
         return $this->belongsTo(Media::class, 'banner_id');
     }
 
+    public function documentMedia(): BelongsTo
+    {
+        return $this->belongsTo(Media::class, 'shop_document');
+    }
+
     /**
      * get all gallery images for this shop
      */
@@ -106,6 +207,18 @@ class Shop extends Model
 
         return Attribute::make(
             get: fn() => $banner
+        );
+    }
+
+        public function document(): Attribute
+    {
+        $document = asset('default/default.jpg');
+        if ($this->documentMedia && Storage::exists($this->documentMedia->src)) {
+            $document = Storage::url($this->documentMedia->src);
+        }
+
+        return Attribute::make(
+            get: fn() => $document
         );
     }
 

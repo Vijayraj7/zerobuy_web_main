@@ -24,6 +24,21 @@
                             <x-input label="Minimum Discount" onlyNumber="true" name="discount" type="text" required="true" placeholder="Enter discount" :value="$flashSale->discount" />
                         </div>
 
+                        <div class="mt-3">
+                            <label class="form-label">{{ __('Business Category') }}</label>
+                            <select name="business_category_id" class="form-control select2">
+                                <option value="">-- {{ __('All Business Categories') }} --</option>
+                                @foreach($businessCategories as $businessCategory)
+                                    <option value="{{ $businessCategory->id }}" @selected(old('business_category_id', $flashSale->business_category_id) == $businessCategory->id)>
+                                        {{ $businessCategory->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('business_category_id')
+                                <p class="text text-danger m-0">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <div class="row mt-3">
                             <div class="col-12 col-md-6 mb-3">
                                 <x-input type="text" id="datepicker" label="Start Date" name="start_date" required="true"

@@ -19,6 +19,7 @@
                                 <th class="text-center">{{ __('SL') }}</th>
                                 <th>{{ __('Thumbnail') }}</th>
                                 <th>{{ __('Name') }}</th>
+                                <th>{{ __('Business Category') }}</th>
                                 <th>{{ __('Start Date') }}</th>
                                 <th>{{ __('End Date') }}</th>
                                 <th>{{ __('Status') }}</th>
@@ -40,6 +41,8 @@
                                 </td>
 
                                 <td>{{ $flashsale->name }}</td>
+
+                                <td>{{ $flashsale->businessCategory?->name ?? __('All') }}</td>
 
                                 <td>{{ $flashsale->start_date . ' - ' . $flashsale->start_time }}</td>
                                 <td>{{ $flashsale->end_date . ' - ' . $flashsale->end_time }}</td>

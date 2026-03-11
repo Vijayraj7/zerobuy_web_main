@@ -31,6 +31,7 @@ class ShopController extends Controller
     public function create()
     {
         $states = State::orderBy('name')->get();
+
         $sellerTerms = Page::where('slug', 'seller-terms-of-service')->where('is_active', 1)->first();
         $businessCategories = BusinessCategory::where('status', 1)->get();
         return view('admin.shop.create-edit', [

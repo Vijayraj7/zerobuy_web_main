@@ -42,6 +42,9 @@
                             <div style="color: white; font-size: 16px; font-family: Inter; font-weight: 600;">
                                 {{ $subscriptionPlan->name }}
                             </div>
+                            <div style="font-size: 12px; font-family: Inter; font-weight: 500; margin-top: -10px;" class="{{ $subscriptionPlan->is_one_time_purchase ? 'text-success' : 'text-warning' }}">
+                                {{ $subscriptionPlan->is_one_time_purchase ? 'One Time Purchase Per Store' : 'Repeat Purchase Allowed' }}
+                            </div>
                             <!-- Price Row -->
                             <div style="display: inline-flex; align-items: center; gap: 12px;">
                                 <!-- Price Section -->
@@ -101,9 +104,9 @@
                             <a class="btn btn-info btn-sm text-capitalize w-100" href="{{ route('admin.subscription-plan.edit', $subscriptionPlan->id) }}">
                                 Edit
                             </a>
-                            <a href="{{ route('admin.subscription-plan.destroy', $subscriptionPlan->id) }}"
-                                class="btn btn-danger btn-sm text-capitalize confirmDelete w-100" data-bs-toggle="tooltip">
-                                Delete
+                            <a href="{{ route('admin.subscription-plan.toggle', $subscriptionPlan->id) }}"
+                                class="btn btn-sm text-capitalize w-100 {{ $subscriptionPlan->is_active ? 'btn-warning' : 'btn-success' }}">
+                                {{ $subscriptionPlan->is_active ? 'Deactivate' : 'Activate' }}
                             </a>
                         </div>
                     </div>
@@ -124,10 +127,6 @@
             {{ $subscriptionPlans->links() }}
         </div>
 
-        <form method="POST" id="deleteForm">
-            @csrf
-            @method('DELETE')
-        </form>
     </div>
 @endsection
 
@@ -206,27 +205,6 @@
 
 @push('scripts')
     <script>
-        $(".confirmDelete").on("click", function(e) {
-            e.preventDefault();
-            const url = $(this).attr("href");
-            const deleteForm = $('#deleteForm');
-            deleteForm.attr('action', url);
-
-            Swal.fire({
-                title: "Are you sure?",
-                text: "You want to delete this plan!",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#3085d6",
-                cancelButtonColor: "#d33",
-                confirmButtonText: "Yes, Delete it!",
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    deleteForm.submit();
-                }
-            });
-        });
-
         fixHeight();
 
         window.addEventListener('resize', fixHeight);

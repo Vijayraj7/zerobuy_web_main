@@ -35,6 +35,7 @@ class ProductController extends Controller
         $shopID = $request->shop_id;
         $categoryID = $request->category_id;
         $subCategoryID = $request->sub_category_id;
+        $childCategoryID = $request->child_category_id;
         $businessCategoryID = $request->business_category_id;
 
         $rating = $request->rating; // 4.0
@@ -104,6 +105,10 @@ class ProductController extends Controller
             })->when($subCategoryID, function ($query) use ($subCategoryID) {
                 $query->whereHas('subcategories', function ($query) use ($subCategoryID) {
                     return $query->where('id', $subCategoryID);
+                });
+            })->when($childCategoryID, function ($query) use ($childCategoryID) {
+                $query->whereHas('childCategories', function ($query) use ($childCategoryID) {
+                    return $query->where('child_categories.id', $childCategoryID);
                 });
             })->when($businessCategoryID, function ($query) use ($businessCategoryID) {
                 return $query->whereHas('categories', function ($q) use ($businessCategoryID) {

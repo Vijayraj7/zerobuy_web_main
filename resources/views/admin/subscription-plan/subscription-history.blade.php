@@ -10,7 +10,7 @@
             <h3>Subscription History</h3>
             <p class="text-muted">
                 Store: <strong>{{ $shop->name }}</strong>
-                (STR0{{ $shop->id }})
+                (STR0{{ $shop->shop_code }})
             </p>
         </div>
     </div>

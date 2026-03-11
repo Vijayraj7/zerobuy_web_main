@@ -71,6 +71,17 @@
                         <span class="slider round"></span>
                     </label>
                 </div>
+
+                <div class="mt-3 d-flex align-items-center gap-4 flex-wrap">
+                    <label class="form-label m-0 fw-medium" for="is_one_time_purchase">
+                        {{ __('One Time Purchase Per Store') }}
+                    </label>
+                    <label class="switch mb-0">
+                        <input type="hidden" name="is_one_time_purchase" value="0">
+                        <input id="is_one_time_purchase" type="checkbox" name="is_one_time_purchase" value="1" {{ old('is_one_time_purchase') ? 'checked' : '' }}>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
             </div>
         </div>
 

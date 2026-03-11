@@ -17,6 +17,8 @@ class FlashSaleResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'business_category_id' => $this->business_category_id,
+            'business_category_name' => $this->businessCategory?->name,
             'thumbnail' => $this->thumbnail,
             'start_date' => $this->start_date && $this->start_time
                 ? $this->start_date.' '.$this->start_time

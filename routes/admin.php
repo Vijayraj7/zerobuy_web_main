@@ -198,6 +198,7 @@ Route::name('admin.')->group(function () {
             Route::delete('/subscription-plans/{subscriptionPlan}/destroy', 'destroy')->name('subscription-plan.destroy');
 
             Route::get('/subscription-shopmanual/create', 'createShopSubscription')->name('subscription-plan.shopmanual.create');
+            Route::get('/subscription-shopmanual/current-subscription/{shop}', 'currentShopSubscription')->name('subscription-plan.shopmanual.current-subscription');
             Route::post('/subscription-shopmanual/store', 'storeShopSubscription')->name('subscription-plan.shopmanual.store');
             Route::get('/subscription-offline-payment/create', 'createOfflineDetails')->name('subscription-plan.offline.create');
             Route::post('/subscription-offline-payment/store', 'storeOfflineDetails')->name('subscription-plan.offline.store');

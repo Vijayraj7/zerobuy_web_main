@@ -219,6 +219,7 @@ class GeneraleSettingRepository extends Repository
             'commission_charge' => $request->commission_charge,
             'new_product_approval' => $request->new_product_approval ? true : false,
             'update_product_approval' => $request->update_product_approval ? true : false,
+            'shop_document_upload' => $request->shop_document_upload ? true : false,
         ]);
     }
 

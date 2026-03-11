@@ -46,6 +46,12 @@ class ShopRepository extends Repository
             $banner = MediaRepository::storeByRequest($request->shop_banner, 'shops/banner', 'image');
         }
 
+        // shop document upload
+        $shopDocumentMedia = null;
+        if ($request->hasFile('shop_document')) {
+            $shopDocumentMedia = MediaRepository::storeByRequest($request->shop_document, 'shops/documents', 'document');
+        }
+
         $state = State::find($request->state_id);
         $district = District::find($request->district_id);
 
@@ -119,6 +125,7 @@ class ShopRepository extends Repository
             'cash_on_delivery_enabled' => $cashOnDeliveryEnabled,
             'online_payment_provider' => $onlinePaymentProvider,
             'online_payment_config' => $onlinePaymentConfig,
+            'shop_document' => $shopDocumentMedia ? $shopDocumentMedia->id : null,
         ]);
 
         $shop->businessCategories()->sync($request->bussiness_categories_id);
@@ -212,8 +219,14 @@ class ShopRepository extends Repository
         // UserRepository::updateByRequest($request, $shop->user);
 
         // Only update images if files uploaded
-        $thumbnail = $request->hasFile('shop_logo') ? self::updateLogo($shop, $request) : $shop->logo;
-        $banner = $request->hasFile('shop_banner') ? self::updateBanner($shop, $request) : $shop->banner;
+        $thumbnail = $request->hasFile('shop_logo') ? self::updateLogo($shop, $request) : $shop->mediaLogo;
+        $banner = $request->hasFile('shop_banner') ? self::updateBanner($shop, $request) : $shop->mediaBanner;
+
+        // Handle shop document update
+        $shopDocumentMedia = null;
+        if ($request->hasFile('shop_document')) {
+            $shopDocumentMedia = MediaRepository::storeByRequest($request->shop_document, 'shops/documents', 'document');
+        }
 
         $onlinePaymentEnabled = $request->boolean('online_payment_enabled');
         $cashOnDeliveryEnabled = $request->has('cash_on_delivery_enabled')
@@ -297,6 +310,7 @@ class ShopRepository extends Repository
             'cash_on_delivery_enabled' => $cashOnDeliveryEnabled,
             'online_payment_provider' => $onlinePaymentProvider,
             'online_payment_config' => $onlinePaymentConfig,
+            'shop_document' => $shopDocumentMedia ? $shopDocumentMedia->id : $shop->shop_document,
         ]);
 
         $shop->businessCategories()->sync($request->bussiness_categories_id);
@@ -435,6 +449,12 @@ class ShopRepository extends Repository
             $onlinePaymentConfig = null;
         }
 
+        // Handle shop document update
+        $shopDocumentMedia = null;
+        if ($request->hasFile('shop_document')) {
+            $shopDocumentMedia = MediaRepository::storeByRequest($request->shop_document, 'shops/documents', 'document');
+        }
+
         // update shop
         self::update($shop, [
             'delivery_charge' => $request->delivery_charge ?? 0,
@@ -450,7 +470,7 @@ class ShopRepository extends Repository
             'cash_on_delivery_enabled' => $cashOnDeliveryEnabled,
             'online_payment_provider' => $onlinePaymentProvider,
             'online_payment_config' => $onlinePaymentConfig,
-
+            'shop_document' => $shopDocumentMedia ? $shopDocumentMedia->id : $shop->shop_document,
         ]);
 
         return $shop;
@@ -464,6 +484,12 @@ class ShopRepository extends Repository
         // shop banner
         $banner = self::updateBanner($shop, $request);
 
+        // Handle shop document update
+        $shopDocumentMedia = null;
+        if ($request->hasFile('shop_document')) {
+            $shopDocumentMedia = MediaRepository::storeByRequest($request->shop_document, 'shops/documents', 'document');
+        }
+
         // update shop
         self::update($shop, [
             'name' => $request->name,
@@ -471,6 +497,7 @@ class ShopRepository extends Repository
             'banner_id' => $banner ? $banner->id : null,
             'address' => $request->address,
             'description' => $request->description,
+            'shop_document' => $shopDocumentMedia ? $shopDocumentMedia->id : $shop->shop_document,
         ]);
 
         return $shop;
@@ -541,11 +568,18 @@ class ShopRepository extends Repository
             $onlinePaymentConfig = null;
         }
 
+        // Handle shop document update
+        $shopDocumentMedia = null;
+        if ($request->hasFile('shop_document')) {
+            $shopDocumentMedia = MediaRepository::storeByRequest($request->shop_document, 'shops/documents', 'document');
+        }
+
         self::update($shop, [
             'online_payment_enabled' => $onlinePaymentEnabled,
             'cash_on_delivery_enabled' => $cashOnDeliveryEnabled,
             'online_payment_provider' => $onlinePaymentProvider,
             'online_payment_config' => $onlinePaymentConfig,
+            'shop_document' => $shopDocumentMedia ? $shopDocumentMedia->id : $shop->shop_document,
         ]);
 
         return $shop;

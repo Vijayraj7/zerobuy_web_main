@@ -130,7 +130,8 @@
                                     <thead>
                                         <tr class="text-center">
                                             <!-- <th>#</th> -->
-                                            <th class="text-center">{{ __('Order ID') }}</th>
+                                            <th class="text-center">Order ID</th>
+                                            <th class="text-center">Product</th>
                                             <th class="text-center">{{ __('Order Date') }}</th>
                                             <th>{{ __('Order Amount') }}</th>
                                             <th class="text-center">{{ __('Status') }}</th>
@@ -141,7 +142,15 @@
                                         @foreach($orders as $order)
                                         <tr class="text-center">
                                             <!-- <td></td> -->
-                                            <td>ORD{{ $order->id }}</td>
+                                            <td>{{ ($order->prefix ?? '') . ($order->order_code ?? ('ORD' . $order->id)) }}</td>
+                                            <td>
+                                                @php
+                                                    $firstProduct = $order->orderProducts->first()?->product;
+                                                    $firstProductImage = $firstProduct?->thumbnail ?? asset('default/default.jpg');
+                                                @endphp
+                                                <img src="{{ $firstProductImage }}" alt="product" class="rounded"
+                                                    width="44" height="44" style="object-fit: cover;">
+                                            </td>
                                             <td>{{ $order->created_at->format('d-m-Y | h:i A') }}</td>
                                             <td>₹ {{ $order->payable_amount }}</td>
                                             <td>

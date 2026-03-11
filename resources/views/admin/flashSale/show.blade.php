@@ -34,6 +34,11 @@
                         </p>
                     </div>
 
+                    <div class="col-md-6 col-lg-4">
+                        <h6>{{ __('Business Category') }}:</h6>
+                        <p>{{ $flashSale->businessCategory?->name ?? __('All') }}</p>
+                    </div>
+
                     @hasPermission('admin.flashSale.toggle')
                         <div class="col-md-6 col-lg-4">
                             <h6>{{ __('Publish Status') }}:</h6>

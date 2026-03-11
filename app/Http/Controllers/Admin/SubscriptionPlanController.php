@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\ShopSubscription;
 use App\Models\SubscriptionPlan;
 use App\Models\Shop;
+use App\Models\Payment;
 use App\Enums\SubscriptionStatus;
 use App\Http\Controllers\Controller;
 use App\Repositories\ShopRepository;
@@ -15,6 +16,7 @@ use App\Repositories\SubscriptionPlanRepository;
 use App\Models\OfflinePaymentDetail;
 use Yajra\DataTables\DataTables;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class SubscriptionPlanController extends Controller
 {
@@ -60,6 +62,10 @@ class SubscriptionPlanController extends Controller
 
     public function destroy(SubscriptionPlan $subscriptionPlan)
     {
+        $subscriptionPlan->update([
+            'is_active' => false,
+        ]);
+
         $subscriptionPlan->delete();
 
         return back()->withSuccess('deleted successfully');
@@ -114,12 +120,146 @@ class SubscriptionPlanController extends Controller
 
     public function createShopSubscription()
     {
-        return view('admin.subscription-plan.create-shop-subscription');
+        $shops = Shop::query()
+            ->select('id', 'name')
+            ->withCount('currentSubscription')
+            ->orderBy('name')
+            ->get();
+
+        $plans = SubscriptionPlanRepository::query()
+            ->active()
+            ->select('id', 'name', 'price', 'duration', 'sale_limit')
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.subscription-plan.create-shop-subscription', compact('shops', 'plans'));
     }
-    
+
+    public function currentShopSubscription(Shop $shop)
+    {
+        $subscription = $shop->currentSubscription()->with('plan:id,name')->first();
+
+        if (! $subscription) {
+            return response()->json([
+                'status' => true,
+                'has_active_subscription' => false,
+                'message' => 'No active subscription found for this shop',
+                'data' => null,
+            ]);
+        }
+
+        $remainingDays = null;
+        if ($subscription->ends_at) {
+            $remainingDays = max(0, now()->startOfDay()->diffInDays($subscription->ends_at->startOfDay(), false));
+        }
+
+        return response()->json([
+            'status' => true,
+            'has_active_subscription' => true,
+            'data' => [
+                'plan_name' => $subscription->plan?->name,
+                'price' => $subscription->price,
+                'duration' => $subscription->duration,
+                'starts_at' => optional($subscription->starts_at)->format('d-m-Y'),
+                'ends_at' => optional($subscription->ends_at)->format('d-m-Y'),
+                'sale_limit' => $subscription->sale_limit,
+                'remaining_sales' => $subscription->remaining_sales,
+                'remaining_days' => $remainingDays,
+                'status' => $subscription->status,
+            ],
+        ]);
+    }
+
+    public function storeShopSubscription(Request $request)
+    {
+        $request->validate([
+            'store_id' => 'required|exists:shops,id',
+            'plan_id' => 'required|exists:subscription_plans,id',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $shop = Shop::query()->findOrFail($request->store_id);
+
+            $subscriptionPlan = SubscriptionPlanRepository::query()
+                ->active()
+                ->findOrFail($request->plan_id);
+
+            if (! $subscriptionPlan->canBePurchasedByShop($shop->id)) {
+                DB::rollBack();
+
+                return back()->withInput()->withError('This plan can only be purchased once per store');
+            }
+
+            $payment = Payment::create([
+                'amount' => $subscriptionPlan->price,
+                'payment_method' => 'manual_admin',
+                'is_paid' => true,
+            ]);
+
+            $subscription = ShopSubscriptionRepository::create([
+                'shop_id' => $shop->id,
+                'plan_id' => $subscriptionPlan->id,
+                'price' => $subscriptionPlan->price,
+                'duration' => $subscriptionPlan->duration,
+                'sale_limit' => $subscriptionPlan->sale_limit,
+                'remaining_sales' => $subscriptionPlan->sale_limit,
+                'payment_id' => $payment->id,
+                'status' => SubscriptionStatus::PENDING->value,
+            ]);
+
+            $currentSubscription = ShopSubscriptionRepository::query()
+                ->where('shop_id', $shop->id)
+                ->where('status', SubscriptionStatus::ACTIVE->value)
+                ->where('id', '!=', $subscription->id)
+                ->first();
+
+            $saleLimit = $subscription->sale_limit;
+            $remainingSales = $subscription->sale_limit;
+            $extraDays = 0;
+
+            if ($currentSubscription) {
+                if ($currentSubscription->remaining_sales) {
+                    if ($saleLimit !== null) {
+                        $saleLimit = $saleLimit + $currentSubscription->remaining_sales;
+                    }
+                    $remainingSales = ($remainingSales ?? 0) + $currentSubscription->remaining_sales;
+                }
+
+                if ($currentSubscription->ends_at && $currentSubscription->ends_at->gt(now())) {
+                    $extraDays = (int) now()->diffInDays($currentSubscription->ends_at);
+                }
+
+                $currentSubscription->update([
+                    'status' => SubscriptionStatus::CANCELLED->value,
+                ]);
+            }
+
+            $totalDays = $subscription->duration ? (int) $subscription->duration + $extraDays : null;
+
+            $subscription->update([
+                'starts_at' => now(),
+                'ends_at' => $totalDays ? now()->addDays($totalDays) : null,
+                'sale_limit' => $saleLimit,
+                'remaining_sales' => $remainingSales,
+                'status' => SubscriptionStatus::ACTIVE->value,
+            ]);
+
+            DB::commit();
+
+            return to_route('admin.subscription-plan.subscription.list')
+                ->withSuccess(__('Subscription created successfully'));
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return back()->withInput()->withError($e->getMessage());
+        }
+    }
+
     public function createOfflineDetails()
     {
-        $offline = OfflinePaymentDetail::first(); 
+        $offline = OfflinePaymentDetail::first();
         return view('admin.subscription-plan.create-offline-details', compact('offline'));
     }
 
@@ -155,11 +295,11 @@ class SubscriptionPlanController extends Controller
                 ->select('shop_subscriptions.*')
                 ->whereIn('shop_subscriptions.id', function ($q) {
                     $q->selectRaw('MAX(id)')
-                    ->from('shop_subscriptions')
-                    ->groupBy('shop_id');
+                        ->from('shop_subscriptions')
+                        ->groupBy('shop_id');
                 })
                 ->with(['shop:id,name', 'plan:id,name,duration']);
-            
+
             /** STATUS FILTER */
             $now = Carbon::now();
             if ($request->status === 'Active') {
@@ -176,34 +316,46 @@ class SubscriptionPlanController extends Controller
             return DataTables::of($query)
                 ->addIndexColumn()
 
-                ->addColumn('activation_date', fn ($row) =>
+                ->addColumn(
+                    'activation_date',
+                    fn($row) =>
                     optional($row->starts_at)->format('d-m-Y')
                 )
 
-                ->addColumn('shop_id', fn ($row) =>
+                ->addColumn(
+                    'shop_id',
+                    fn($row) =>
                     'STR0' . $row->shop_id
                 )
 
-                ->addColumn('shop_name', fn ($row) =>
+                ->addColumn(
+                    'shop_name',
+                    fn($row) =>
                     $row->shop->name ?? '-'
                 )
 
-                ->addColumn('subscription_plan_name', fn ($row) =>
+                ->addColumn(
+                    'subscription_plan_name',
+                    fn($row) =>
                     $row->plan->name ?? '-'
                 )
 
-                ->addColumn('plan_validity', fn ($row) =>
+                ->addColumn(
+                    'plan_validity',
+                    fn($row) =>
                     $row->duration . ' Days'
                 )
 
-                ->addColumn('expiry_date', fn ($row) =>
+                ->addColumn(
+                    'expiry_date',
+                    fn($row) =>
                     optional($row->ends_at)->format('d-m-Y')
-                ) 
+                )
 
-                ->addColumn('remaining_days', function ($row) { 
+                ->addColumn('remaining_days', function ($row) {
                     if ($row->status === 'cancelled') {
                         return '_';
-                    } 
+                    }
                     if (empty($row->ends_at)) {
                         return '_';
                     }
@@ -214,18 +366,20 @@ class SubscriptionPlanController extends Controller
 
                     if ($endDate->lt($today)) {
                         return '0 Days';
-                    } 
+                    }
                     // $days = $now->diffInDays($endDate, false);
                     $days = $today->diffInDays($endDate, false);
-                    return max(0, (int) $days) . ' Days'; 
+                    return max(0, (int) $days) . ' Days';
                 })
 
-                ->addColumn('price', fn ($row) =>
+                ->addColumn(
+                    'price',
+                    fn($row) =>
                     number_format($row->price, 2)
                 )
- 
+
                 ->addColumn('status', function ($row) {
- 
+
                     if ($row->status === 'cancelled') {
                         return "<span class='badge bg-dark'>Cancelled</span>";
                     }
@@ -249,10 +403,12 @@ class SubscriptionPlanController extends Controller
                     }
 
                     return "<span class='badge bg-secondary'>Unknown</span>";
-                }) 
+                })
 
-                ->addColumn('actions', fn ($row) =>
-                    '<a href="'.route('admin.subscription-plan.subscription.history', $row->shop_id).'"
+                ->addColumn(
+                    'actions',
+                    fn($row) =>
+                    '<a href="' . route('admin.subscription-plan.subscription.history', $row->shop_id) . '"
                         class="btn btn-sm btn-primary">
                         History
                     </a>'
@@ -261,15 +417,15 @@ class SubscriptionPlanController extends Controller
 
                 ->rawColumns(['status', 'actions'])
                 ->make(true);
-        } 
+        }
         $now = Carbon::now();
 
         /** Active Stores */
         $activeCount = ShopSubscription::whereIn('id', function ($q) {
-                $q->selectRaw('MAX(id)')
+            $q->selectRaw('MAX(id)')
                 ->from('shop_subscriptions')
                 ->groupBy('shop_id');
-            })
+        })
             ->where('starts_at', '<=', $now)
             ->where('ends_at', '>=', $now)
             ->where('status', '!=', 'cancelled')
@@ -277,23 +433,23 @@ class SubscriptionPlanController extends Controller
 
         /** Expired Stores */
         $expiredCount = ShopSubscription::whereIn('id', function ($q) {
-                $q->selectRaw('MAX(id)')
+            $q->selectRaw('MAX(id)')
                 ->from('shop_subscriptions')
                 ->groupBy('shop_id');
-            })
+        })
             ->where('ends_at', '<', $now)
             ->where('status', '!=', 'cancelled')
             ->count();
 
 
-        return view( 'admin.subscription-plan.subscription-store-list', compact('activeCount', 'expiredCount') );
+        return view('admin.subscription-plan.subscription-store-list', compact('activeCount', 'expiredCount'));
     }
 
     public function subscriptionHistory($shopId)
     {
         $shop = Shop::findOrFail($shopId);
 
-        $today = now()->startOfDay();
+        $today = now();
 
         $subscriptions = ShopSubscription::with('plan:id,name,duration')
             ->where('shop_id', $shopId)
@@ -303,7 +459,7 @@ class SubscriptionPlanController extends Controller
 
                 // ---------- STATUS ----------
                 if ($row->status === 'cancelled') {
-                    $status = 'Cancelled';
+                    $status = 'Expired';
                 } elseif (!$row->starts_at) {
                     $status = 'Pending';
                 } elseif ($row->starts_at->gt($today)) {
@@ -345,5 +501,4 @@ class SubscriptionPlanController extends Controller
             compact('shop', 'subscriptions')
         );
     }
-
 }

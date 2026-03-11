@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\FlashSaleRequest;
+use App\Models\BusinessCategory;
 use App\Models\FlashSale;
 use App\Repositories\FlashSaleRepository;
 use Illuminate\Support\Facades\Storage;
@@ -12,14 +13,16 @@ class FlashSaleController extends Controller
 {
     public function index()
     {
-        $flashSales = FlashSale::latest('id')->paginate(20);
+        $flashSales = FlashSale::with('businessCategory:id,name')->latest('id')->paginate(20);
 
         return view('admin.flashSale.index', compact('flashSales'));
     }
 
     public function create()
     {
-        return view('admin.flashSale.create');
+        $businessCategories = BusinessCategory::query()->active()->orderBy('name')->get(['id', 'name']);
+
+        return view('admin.flashSale.create', compact('businessCategories'));
     }
 
     public function store(FlashSaleRequest $request)
@@ -31,7 +34,9 @@ class FlashSaleController extends Controller
 
     public function edit(FlashSale $flashSale)
     {
-        return view('admin.flashSale.edit', compact('flashSale'));
+        $businessCategories = BusinessCategory::query()->active()->orderBy('name')->get(['id', 'name']);
+
+        return view('admin.flashSale.edit', compact('flashSale', 'businessCategories'));
     }
 
     public function update(FlashSaleRequest $request, FlashSale $flashSale)

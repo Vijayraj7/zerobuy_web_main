@@ -26,10 +26,19 @@ class FlashSaleRepository extends Repository
      *
      * @throws \Exception
      */
-    public static function getIncoming()
+    public static function getIncoming(?int $businessCategoryId = null)
     {
-        return self::query()->where('start_date', '>', Carbon::now()->format('Y-m-d'))
-            ->where('status', true)->latest('id')->first();
+        return self::query()
+            ->where('start_date', '>', Carbon::now()->format('Y-m-d'))
+            ->where('status', true)
+            ->when($businessCategoryId, function ($query) use ($businessCategoryId) {
+                $query->where(function ($categoryQuery) use ($businessCategoryId) {
+                    $categoryQuery->whereNull('business_category_id')
+                        ->orWhere('business_category_id', $businessCategoryId);
+                });
+            })
+            ->latest('id')
+            ->first();
     }
 
     /**
@@ -37,7 +46,7 @@ class FlashSaleRepository extends Repository
      *
      * @return \App\Models\FlashSale | null
      */
-    public static function getRunning()
+    public static function getRunning(?int $businessCategoryId = null)
     {
         $currentDateTime = Carbon::now();
 
@@ -51,6 +60,12 @@ class FlashSaleRepository extends Repository
                     });
             })
             ->where('status', true)
+            ->when($businessCategoryId, function ($query) use ($businessCategoryId) {
+                $query->where(function ($categoryQuery) use ($businessCategoryId) {
+                    $categoryQuery->whereNull('business_category_id')
+                        ->orWhere('business_category_id', $businessCategoryId);
+                });
+            })
             ->latest('id')
             ->first();
     }
@@ -67,6 +82,7 @@ class FlashSaleRepository extends Repository
 
         return self::create([
             'name' => $request->name,
+            'business_category_id' => $request->business_category_id,
             'discount' => $request->discount,
             'start_date' => $startDate,
             'start_time' => $request->start_time,
@@ -93,6 +109,7 @@ class FlashSaleRepository extends Repository
 
         $flashSale->update([
             'name' => $request->name,
+            'business_category_id' => $request->business_category_id,
             'discount' => $request->discount,
             'start_date' => $startDate,
             'start_time' => $request->start_time,

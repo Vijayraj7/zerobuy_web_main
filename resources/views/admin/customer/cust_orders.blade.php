@@ -49,6 +49,7 @@
                             <th>#</th>
                             <th>{{ __('Order Date') }}</th>
                             <th>{{ __('Order ID') }}</th>
+                            <th>{{ __('Product') }}</th>
                             <th>{{ __('Store ID') }}</th>
                             <th>{{ __('Store Name') }}</th>
                             <th>{{ __('Customer Name') }}</th>
@@ -93,6 +94,7 @@
                 { data: 'DT_RowIndex', orderable: false, searchable: false },
                 { data: 'created_at', name: 'created_at' },
                 { data: 'order_id_display', name: 'order_id_display' },
+                { data: 'first_product_image', name: 'first_product_image', orderable: false, searchable: false },
                 { data: 'shop_id_display', name: 'shop_id_display' },
                 { data: 'store_name', name: 'shop.name' },
                 { data: 'customer_name', name: 'address.name' },

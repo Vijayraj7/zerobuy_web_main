@@ -30,6 +30,7 @@ class FlashSaleRequest extends FormRequest
             'end_date' => 'required|date|after:start_date',
             'start_time' => 'required',
             'end_time' => 'required',
+            'business_category_id' => 'nullable|exists:business_categories,id',
             'thumbnail' => "$file|image|mimes:png,jpg,jpeg,gif,svg|max:2048",
             'description' => 'nullable|string|max:191',
         ];

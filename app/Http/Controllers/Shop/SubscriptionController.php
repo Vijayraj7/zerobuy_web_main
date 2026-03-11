@@ -17,12 +17,16 @@ class SubscriptionController extends Controller
     public function index()
     {
         $generalSettings = generaleSetting('setting');
+        $shop = generaleSetting('shop');
 
         if ($generalSettings?->business_based_on != 'subscription') {
             abort(404);
         }
 
-        $subscriptionPlans = SubscriptionPlanRepository::query()->active()->paginate(20);
+        $subscriptionPlans = SubscriptionPlanRepository::query()
+            ->active()
+            ->visibleForShop($shop->id)
+            ->paginate(20);
         $paymentGateways = Cache::rememberForever('payment_gateway', function () {
             return PaymentGateway::where('is_active', true)->get();
         });
@@ -32,6 +36,8 @@ class SubscriptionController extends Controller
 
     public function purchase(SubscriptionPurchaseRequest $request)
     {
+        $shop = generaleSetting('shop');
+
         $paymentGateway = PaymentGateway::where('name', $request->payment_method)->first();
 
         if (! $paymentGateway || ! $paymentGateway->is_active) {
@@ -40,7 +46,18 @@ class SubscriptionController extends Controller
             return back()->withErrors(['payment_method' => $message]);
         }
 
-        $subscriptionPlan = SubscriptionPlanRepository::find($request->plan_id);
+        $subscriptionPlan = SubscriptionPlanRepository::query()
+            ->active()
+            ->find($request->plan_id);
+
+        if (! $subscriptionPlan) {
+            return back()->withErrors(['plan_id' => 'Selected plan is not available']);
+        }
+
+        if (! $subscriptionPlan->canBePurchasedByShop($shop->id)) {
+            return back()->withErrors(['plan_id' => 'This plan can only be purchased once per store']);
+        }
+
         $result = ShopSubscriptionRepository::storeByRequest($request, $subscriptionPlan);
 
         $payment = $result['payment'];

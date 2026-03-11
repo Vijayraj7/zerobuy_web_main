@@ -380,6 +380,16 @@
                                     <div id="salesOrderChart"></div>
                                 </div>
                             </div>
+                            
+                            {{-- Shop Document Preview --}}
+                            @if($shop->shop_document && $shop->documentMedia)
+                                <div class="mt-3">
+                                    <span class="fw-bold">Shop Licence / GST Document:</span><br>
+                                       <a href="{{ $shop->document }}" target="_blank">
+                                          <img src="{{ $shop->document }}" alt="Shop Document" class="img-fluid border rounded" style="max-width:300px; max-height:200px;" />
+                                       </a> 
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>

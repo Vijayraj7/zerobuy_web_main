@@ -14,7 +14,13 @@ class FlashSaleController extends Controller
 {
     public function index()
     {
-        $flashSales = FlashSale::latest('id')->get();
+        $shop = generaleSetting('shop');
+        $categoryIds = $shop->businessCategories()->pluck('business_categories.id');
+
+        $flashSales = FlashSale::where(function ($query) use ($categoryIds) {
+            $query->whereNull('business_category_id')
+                ->orWhereIn('business_category_id', $categoryIds);
+        })->latest('id')->get();
 
         return $this->json('flash sales list', [
             'flash_sales' => FlashSaleResource::collection($flashSales),
@@ -32,6 +38,11 @@ class FlashSaleController extends Controller
         $availableProducts = $shop->products()
             ->whereNotIn('id', $dealProducts->pluck('id'))
             ->isActive()
+            ->when($flashSale->business_category_id, function ($query) use ($flashSale) {
+                $query->whereHas('categories', function ($categoryQuery) use ($flashSale) {
+                    $categoryQuery->where('business_category_id', $flashSale->business_category_id);
+                });
+            })
             ->get();
 
         return $this->json('flash sale details', [
@@ -73,6 +84,14 @@ class FlashSaleController extends Controller
                 $errors[] = [
                     'product_id' => $productId,
                     'message' => 'Product not found for this shop.',
+                ];
+                continue;
+            }
+
+            if (! $this->isProductAllowedForFlashSale($flashSale, $product)) {
+                $errors[] = [
+                    'product_id' => $productId,
+                    'message' => 'Product does not belong to flash sale business category.',
                 ];
                 continue;
             }
@@ -135,6 +154,10 @@ class FlashSaleController extends Controller
             return $this->json('Price and quantity are required.', [], 422);
         }
 
+        if (! $this->isProductAllowedForFlashSale($flashSale, $product)) {
+            return $this->json('Product does not belong to flash sale business category.', [], 422);
+        }
+
         $productPrice = $product->discount_price > 0
             ? $product->discount_price
             : $product->price;
@@ -156,5 +179,16 @@ class FlashSaleController extends Controller
         ]);
 
         return $this->json('updated successfully', []);
+    }
+
+    private function isProductAllowedForFlashSale(FlashSale $flashSale, Product $product): bool
+    {
+        if (! $flashSale->business_category_id) {
+            return true;
+        }
+
+        return $product->categories()
+            ->where('business_category_id', $flashSale->business_category_id)
+            ->exists();
     }
 }

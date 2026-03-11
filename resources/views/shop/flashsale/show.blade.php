@@ -34,6 +34,10 @@
                         </p>
                     </div>
                     <div class="col-md-6 col-lg-4">
+                        <h6>{{ __('Business Category') }}:</h6>
+                        <p>{{ $flashSale->businessCategory?->name ?? __('All') }}</p>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
                         <h6>{{ __('Publish Status') }}:</h6>
                         <p class="badge {{ $flashSale->status ? 'bg-success' : 'bg-danger' }} text-white">
                             {{ $flashSale->status ? __('Active') : __('Inactive') }}

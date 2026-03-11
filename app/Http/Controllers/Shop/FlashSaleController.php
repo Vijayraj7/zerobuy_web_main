@@ -11,18 +11,37 @@ class FlashSaleController extends Controller
 {
     public function index()
     {
-        $flashSales = FlashSale::latest('id')->paginate(20);
+        $shop = generaleSetting('shop');
+        $categoryIds = $shop->businessCategories()->pluck('business_categories.id');
+
+        $flashSales = FlashSale::with('businessCategory:id,name')
+            ->where(function ($query) use ($categoryIds) {
+                $query->whereNull('business_category_id')
+                    ->orWhereIn('business_category_id', $categoryIds);
+            })
+            ->latest('id')
+            ->paginate(20);
 
         return view('shop.flashsale.index', compact('flashSales'));
     }
 
     public function show(FlashSale $flashSale)
     {
+        $flashSale->load('businessCategory:id,name');
+
         $shop = generaleSetting('shop');
 
         $dealProducts = $flashSale->products()->where('shop_id', $shop->id)->get();
 
-        $products = $shop->products()->whereNotIn('id', $dealProducts->pluck('id'))->isActive()->get();
+        $products = $shop->products()
+            ->whereNotIn('id', $dealProducts->pluck('id'))
+            ->isActive()
+            ->when($flashSale->business_category_id, function ($query) use ($flashSale) {
+                $query->whereHas('categories', function ($categoryQuery) use ($flashSale) {
+                    $categoryQuery->where('business_category_id', $flashSale->business_category_id);
+                });
+            })
+            ->get();
 
         return view('shop.flashsale.show', compact('flashSale', 'products', 'dealProducts'));
     }
@@ -36,6 +55,10 @@ class FlashSaleController extends Controller
             $product = Product::find($productArr['id']);
 
             if ($product) {
+                if (! $this->isProductAllowedForFlashSale($flashSale, $product)) {
+                    $hasAnyErrors[] = $product;
+                    continue;
+                }
 
                 $productPrice = $product->discount_price > 0 ? $product->discount_price : $product->price;
 
@@ -66,6 +89,10 @@ class FlashSaleController extends Controller
 
     public function update(FlashSale $flashSale, Product $product, Request $request)
     {
+        if (! $this->isProductAllowedForFlashSale($flashSale, $product)) {
+            return back()->withError(__('Selected product does not belong to this flash sale business category.'));
+        }
+
         $discountPercentage = $request->price / 100 * $product->price;
 
         $productPrice = $product->discount_price > 0 ? $product->discount_price : $product->price;
@@ -85,5 +112,16 @@ class FlashSaleController extends Controller
         ]);
 
         return back()->withSuccess(__('Updated Successfully'));
+    }
+
+    private function isProductAllowedForFlashSale(FlashSale $flashSale, Product $product): bool
+    {
+        if (! $flashSale->business_category_id) {
+            return true;
+        }
+
+        return $product->categories()
+            ->where('business_category_id', $flashSale->business_category_id)
+            ->exists();
     }
 }

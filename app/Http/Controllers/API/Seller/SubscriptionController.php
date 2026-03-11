@@ -26,7 +26,10 @@ class SubscriptionController extends Controller
             abort(404);
         }
 
-        $subscriptionPlans = SubscriptionPlanRepository::query()->active()->paginate(20);
+        $subscriptionPlans = SubscriptionPlanRepository::query()
+            ->active()
+            ->visibleForShop($shop->id)
+            ->paginate(20);
         $paymentGateways = Cache::rememberForever('payment_gateway', function () {
             return PaymentGateway::where('is_active', true)->get();
         });
@@ -49,7 +52,23 @@ class SubscriptionController extends Controller
         ]);
 
         $shop = generaleSetting('shop');
-        $subscriptionPlan = SubscriptionPlanRepository::find($request->plan_id);
+        $subscriptionPlan = SubscriptionPlanRepository::query()
+            ->active()
+            ->find($request->plan_id);
+
+        if (! $subscriptionPlan) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Selected plan is not available'
+            ], 422);
+        }
+
+        if (! $subscriptionPlan->canBePurchasedByShop($shop->id)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'This plan can only be purchased once per store'
+            ], 422);
+        }
 
         // Get Razorpay credentials from PaymentGateway table
         $razorpay = PaymentGateway::where('name', 'Razorpay')
@@ -481,7 +500,26 @@ class SubscriptionController extends Controller
      */
     public function purchase(SubscriptionPurchaseRequest $request)
     {
-        $subscriptionPlan = SubscriptionPlanRepository::find($request->plan_id);
+        $shop = generaleSetting('shop');
+
+        $subscriptionPlan = SubscriptionPlanRepository::query()
+            ->active()
+            ->find($request->plan_id);
+
+        if (! $subscriptionPlan) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Selected plan is not available'
+            ], 422);
+        }
+
+        if (! $subscriptionPlan->canBePurchasedByShop($shop->id)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'This plan can only be purchased once per store'
+            ], 422);
+        }
+
         $result = ShopSubscriptionRepository::storeByRequest($request, $subscriptionPlan);
 
         $subscription = $result['subscription'];

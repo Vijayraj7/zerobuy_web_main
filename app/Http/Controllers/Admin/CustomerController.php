@@ -167,10 +167,13 @@ class CustomerController extends Controller
 
         $customerId = $user->customer->id;
 
-        $orders = Order::fromSub(
-            Order::where('customer_id', $customerId)->latest()->limit(10),
-            'orders'
-        )->paginate(5);
+        $orders = Order::query()
+            ->fromSub(
+                Order::where('customer_id', $customerId)->latest()->limit(10),
+                'orders'
+            )
+            ->with(['orderProducts.product.media'])
+            ->paginate(5);
 
         return view('admin.customer.edit', [
             'user'               => $user,
@@ -248,7 +251,7 @@ class CustomerController extends Controller
     {
         $query = Order::query()
             ->select('orders.*') 
-            ->with(['shop', 'address', 'orderProducts'])
+            ->with(['shop', 'address', 'orderProducts.product.media'])
             ->where('orders.customer_id', $customerId);
         if ($request->status) {
             $query->where('orders.order_status', $request->status);
@@ -267,8 +270,14 @@ class CustomerController extends Controller
                 $row->created_at?->format('d-m-Y | h:i A')
             )
             ->addColumn('order_id_display', fn($row) =>
-                'ORD0' . $row->id
+                ($row->prefix ?? '') . ($row->order_code ?? ('ORD0' . $row->id))
             )
+            ->addColumn('first_product_image', function ($row) {
+                $firstProduct = $row->orderProducts->first()?->product;
+                $image = $firstProduct?->thumbnail ?? asset('default/default.jpg');
+
+                return '<img src="' . e($image) . '" alt="product" class="rounded" width="44" height="44" style="object-fit: cover;">';
+            })
             ->addColumn('shop_id_display', fn($row) =>
                 'STR0' . $row->shop_id
             )
@@ -290,8 +299,11 @@ class CustomerController extends Controller
 
             // ✔ SEARCH — ORDER ID
             ->filterColumn('order_id_display', function ($query, $keyword) {
-                $keyword = str_replace('ORD0', '', $keyword);
-                $query->where('orders.id', 'LIKE', "%$keyword%");
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('orders.order_code', 'LIKE', "%$keyword%")
+                        ->orWhereRaw("CONCAT(COALESCE(orders.prefix, ''), COALESCE(orders.order_code, '')) LIKE ?", ["%$keyword%"])
+                        ->orWhere('orders.id', 'LIKE', "%$keyword%");
+                });
             })
 
             // ✔ SEARCH — STORE ID
@@ -302,7 +314,7 @@ class CustomerController extends Controller
 
             // ✔ SORT BY RELEVANT FIELDS
             ->orderColumn('order_id_display', fn($query, $order) =>
-                $query->orderBy('orders.id', $order)
+                $query->orderBy('orders.order_code', $order)
             )
 
             ->orderColumn('shop_id_display', fn($query, $order) =>
@@ -349,7 +361,7 @@ class CustomerController extends Controller
                         ';
             })
 
-            ->rawColumns(['order_status_badge', 'actions'])
+            ->rawColumns(['first_product_image', 'order_status_badge', 'actions'])
             ->toJson();
         }
 
@@ -360,7 +372,9 @@ class CustomerController extends Controller
     {
         $search = $request->search;
 
-        $stores = Shop::join('shop_followers', 'shops.id', '=', 'shop_followers.shop_id')
+        $stores = Shop::query()
+            ->with(['mediaLogo:id,src'])
+            ->join('shop_followers', 'shops.id', '=', 'shop_followers.shop_id')
             ->where('shop_followers.customer_id', $customerId)
             ->when($search, function ($q) use ($search) {
                 $q->where('shops.name', 'like', "%{$search}%");

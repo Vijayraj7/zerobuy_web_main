@@ -29,6 +29,12 @@ class CartRequest extends FormRequest
             'color' => 'nullable|exists:colors,id',
             'size' => 'nullable|exists:sizes,id',
             'unit' => 'nullable|string',
+            'variant_id' => 'nullable|exists:product_variants,id',
+            'bulk_item_id' => 'nullable|exists:product_bulk_items,id',
+            'bulk_price_id' => 'nullable|exists:product_bulk_prices,id',
+            'bulk_items' => 'nullable|array',
+            'bulk_items.*.id' => 'required_with:bulk_items|exists:product_bulk_items,id',
+            'bulk_items.*.buyqnty' => 'required_with:bulk_items|integer|min:1',
         ];
     }
 

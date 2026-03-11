@@ -29,6 +29,7 @@ class SubscriptionPlanRequest extends FormRequest
             'price' => 'required|numeric|min:0',
             'duration' => 'nullable|numeric|min:0',
             'sale_limit' => 'nullable|numeric|min:0',
+            'is_one_time_purchase' => 'nullable|boolean',
         ];
     }
 }

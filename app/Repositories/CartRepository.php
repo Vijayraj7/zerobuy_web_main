@@ -165,10 +165,12 @@ class CartRepository extends Repository
 
 
                 $product_quantity = $product->quantity;
+                $product_min_quantity = $product->min_order_quantity ?? 1;
                 if ($cart->variant != null) {
                     $product_quantity = $cart->variant->quantity;
                 } elseif ($cart->bulkItem != null) {
                     $product_quantity = $cart->bulkItem->quantity;
+                    $product_min_quantity = $cart->bulkItem->moq ?? 1;
                 }
 
                 $productArray[] = (object) [
@@ -176,7 +178,7 @@ class CartRepository extends Repository
                     'cart_id' => (int) $cart->id,
                     'quantity' => (int) $cart->quantity,
                     'product_quantity' => (int) $product_quantity,
-                    'product_min_quantity' => (int) $product->min_order_quantity,
+                    'product_min_quantity' => (int) $product_min_quantity,
                     'name' => $pname,
                     'thumbnail' => $product->thumbnail,
                     'variant' => $cart->variant ? ProductVariantResource::make($cart->variant) : null,
@@ -315,31 +317,93 @@ class CartRepository extends Repository
         //     'unit' => $unit,
         // ]);
         if ($request->filled('bulk_items')) {
+            $selectedBulkIds = [];
+            $cart = null;
+
+            $existingBulkCarts = $customer->carts()
+                ->where('is_buy_now', $isBuyNow)
+                ->where('product_id', $product->id)
+                ->whereNull('variant_id')
+                ->whereNotNull('bulk_item_id')
+                ->get()
+                ->keyBy('bulk_item_id');
 
             foreach ($request->bulk_items as $bulkitem) {
+                $bulkId = isset($bulkitem['id']) ? (int) $bulkitem['id'] : null;
+                $requestQty = isset($bulkitem['buyqnty']) ? (int) $bulkitem['buyqnty'] : 0;
 
-                // ✅ Find only (no exception)
-                $bulk = ProductBulkItem::find($bulkitem['id']);
+                if (! $bulkId || $requestQty < 1) {
+                    continue;
+                }
 
-                // ✅ Skip if bulk item not found
+                $bulk = ProductBulkItem::find($bulkId);
+
                 if (! $bulk) {
                     continue;
                 }
-                $qty = (int) $bulkitem['buyqnty'];
 
-                $cart = self::create([
-                    'product_id'  => $product->id,
-                    'shop_id'     => $product->shop->id,
-                    'is_buy_now'  => $isBuyNow,
-                    'customer_id' => $customer->id,
-                    'quantity'    => $qty,
-                    'size'        => $size,
-                    'color'       => $color,
-                    'unit'        => $unit,
-                    'variant_id' => null,
-                    'bulk_item_id' => $bulk->id,
-                ]);
+                $qty = min($requestQty, (int) $bulk->quantity);
+
+                if ($qty < 1) {
+                    continue;
+                }
+
+                $selectedBulkIds[] = $bulk->id;
+
+                $existing = $existingBulkCarts->get($bulk->id);
+
+                if ($existing) {
+                    $existing->update([
+                        'quantity' => $qty,
+                        'size' => $size,
+                        'color' => $color,
+                        'unit' => $unit,
+                    ]);
+                    $cart = $existing;
+                } else {
+                    $cart = self::create([
+                        'product_id'  => $product->id,
+                        'shop_id'     => $product->shop->id,
+                        'is_buy_now'  => $isBuyNow,
+                        'customer_id' => $customer->id,
+                        'quantity'    => $qty,
+                        'size'        => $size,
+                        'color'       => $color,
+                        'unit'        => $unit,
+                        'variant_id' => null,
+                        'bulk_item_id' => $bulk->id,
+                    ]);
+                }
             }
+
+            $removeQuery = $customer->carts()
+                ->where('is_buy_now', $isBuyNow)
+                ->where('product_id', $product->id)
+                ->whereNull('variant_id')
+                ->whereNotNull('bulk_item_id');
+
+            if (! empty($selectedBulkIds)) {
+                $removeQuery->whereNotIn('bulk_item_id', $selectedBulkIds);
+            }
+
+            $removeQuery->delete();
+
+            if ($cart) {
+                return $cart;
+            }
+
+            return self::create([
+                'product_id'  => $product->id,
+                'shop_id'     => $product->shop->id,
+                'is_buy_now'  => $isBuyNow,
+                'customer_id' => $customer->id,
+                'quantity'    => $product->min_order_quantity ?? 1,
+                'size'        => $size,
+                'color'       => $color,
+                'unit'        => $unit,
+                'variant_id' => null,
+                'bulk_item_id' => null,
+            ]);
         } else {
             $qty = $product->min_order_quantity ?? 1;
             $req_qty = $request->quantity ?? 1;

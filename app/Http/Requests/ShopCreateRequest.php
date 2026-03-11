@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\GeneraleSetting;
 use App\Models\VerifyManage;
 use App\Rules\EmailRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -43,6 +44,16 @@ class ShopCreateRequest extends FormRequest
         $phoneRequired = $verifyManage?->phone_required ? 'required' : 'nullable';
         $phoneRequired = $verifyManage ? $phoneRequired : 'required';
 
+        $isShopDocumentUploadEnabled = (bool) (GeneraleSetting::query()->value('shop_document_upload') ?? true);
+        $hasExistingShopDocument = $isUpdate && ! empty($this->shop?->shop_document);
+        $shopDocumentRules = ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:4096'];
+
+        if (! $isShopDocumentUploadEnabled) {
+            $shopDocumentRules = ['prohibited'];
+        } elseif (! $isUpdate || ! $hasExistingShopDocument) {
+            array_unshift($shopDocumentRules, 'required');
+        }
+
         $min = $verifyManage?->phone_min_length ?? 9;
         $max = $verifyManage?->phone_max_length ?? 16;
 
@@ -60,9 +71,10 @@ class ShopCreateRequest extends FormRequest
             'address' => ['required', 'string', 'max:150'],
 
             // Shop images not required on update
-            'profile_photo' => [$isUpdate ? 'nullable' : 'required', 'image', 'mimes:jpg,png,jpeg,gif', 'max:2048'],
-            'shop_logo' => [$isUpdate ? 'nullable' : 'required', 'image', 'mimes:jpg,png,jpeg,gif', 'max:2048'],
-            'shop_banner' => [$isUpdate ? 'nullable' : 'required', 'image', 'mimes:jpg,png,jpeg,gif', 'max:2048'],
+                'profile_photo' => [$isUpdate ? 'nullable' : 'required', 'image', 'mimes:jpg,png,jpeg,gif', 'max:2048'],
+                'shop_logo' => [$isUpdate ? 'nullable' : 'required', 'image', 'mimes:jpg,png,jpeg,gif', 'max:2048'],
+                'shop_banner' => [$isUpdate ? 'nullable' : 'required', 'image', 'mimes:jpg,png,jpeg,gif', 'max:2048'],
+                'shop_document' => $shopDocumentRules,
 
             'shop_name' => ['required', 'string', 'max:100'],
             'store_type' => ['required'],
@@ -118,6 +130,11 @@ class ShopCreateRequest extends FormRequest
             'password.confirmed' => __('The password and confirmation password do not match.'),
             'profile_photo.image' => __('The profile photo must be an image.'),
             'profile_photo.max' => __('The profile photo must not be greater than 2 MB.'),
+            'shop_document.required' => __('The Shop Licence / GST Document field is required.'),
+            'shop_document.file' => __('The Shop Licence / GST Document must be a file.'),
+            'shop_document.mimes' => __('The Shop Licence / GST Document must be a file of type: pdf, jpg, jpeg, png.'),
+            'shop_document.max' => __('The Shop Licence / GST Document must not be greater than 4 MB.'),
+            'shop_document.prohibited' => __('Shop Licence / GST Document upload is currently disabled by admin settings.'),
             'shop_name.required' => __('The shop name field is required.'),
             'shop_logo.image' => __('The shop logo must be an image.'),
             'shop_logo.max' => __('The shop logo must not be greater than 2 MB.'),

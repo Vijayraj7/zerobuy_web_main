@@ -23,6 +23,7 @@ class SubscriptionPlanRepository extends Repository
             'duration' => $request->duration,
             'sale_limit' => $request->sale_limit,
             'is_popular' => $request->is_popular ? true : false,
+            'is_one_time_purchase' => $request->boolean('is_one_time_purchase'),
         ]);
     }
 
@@ -37,6 +38,7 @@ class SubscriptionPlanRepository extends Repository
             'duration' => $request->duration,
             'sale_limit' => $request->sale_limit,
             'is_popular' => $request->is_popular ? true : false,
+            'is_one_time_purchase' => $request->boolean('is_one_time_purchase'),
         ]);
 
         return $subscriptionPlan;

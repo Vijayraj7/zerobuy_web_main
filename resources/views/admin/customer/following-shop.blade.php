@@ -20,6 +20,7 @@
                         <tr>
                             <th>SL</th>
                             <th>Follow Date</th>
+                            <th>Image</th>
                             <th>Store ID</th>
                             <th>Store Name</th>
                         </tr>
@@ -30,12 +31,17 @@
                             <tr>
                                 <td>{{ $stores->firstItem() + $key }}</td>
                                 <td>{{ \Carbon\Carbon::parse($store->followed_at)->format('d M Y | h:i A') }}</td>
-                                <td>STR0{{ $store->id }}</td>
+                                <td>
+                                    <img src="{{ $store->logo }}" alt="{{ $store->name }}"
+                                        class="rounded" width="44" height="44"
+                                        style="object-fit: cover;">
+                                </td>
+                                <td>{{ $store->shop_code ?? '-' }}</td>
                                 <td>{{ $store->name }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="text-center text-muted">
+                                <td colspan="5" class="text-center text-muted">
                                     No following stores found
                                 </td>
                             </tr>

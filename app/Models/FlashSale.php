@@ -31,6 +31,11 @@ class FlashSale extends Model
         return $this->belongsTo(Media::class);
     }
 
+    public function businessCategory(): BelongsTo
+    {
+        return $this->belongsTo(BusinessCategory::class, 'business_category_id');
+    }
+
     /**
      * Create a thumbnail for the media, with a default image if none is present.
      */
