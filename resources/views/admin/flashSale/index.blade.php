@@ -30,6 +30,7 @@
                                 <th>{{ __('Business Category') }}</th>
                                 <th>{{ __('Start Date') }}</th>
                                 <th>{{ __('End Date') }}</th>
+                                <th class="text-center">{{ __('Discount %') }}</th>
                                 @hasPermission('shop.flashSale.toggle')
                                     <th class="text-center">{{ __('Status') }}</th>
                                 @endhasPermission
@@ -53,6 +54,7 @@
 
                                 <td>{{ $flashSale->start_date . ' - ' . $flashSale->start_time }}</td>
                                 <td>{{ $flashSale->end_date . ' - ' . $flashSale->end_time }}</td>
+                                <td class="text-center">{{ $flashSale->discount }}%</td>
 
                                 @hasPermission('admin.flashSale.toggle')
                                     <td class="text-center">

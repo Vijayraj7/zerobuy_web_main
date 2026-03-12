@@ -88,6 +88,7 @@ class ProductResource extends JsonResource
             'unit' => $this->unit ? UnitResource::make($this->unit) : null,
             'brand' => $brandName,
             'condition_status' => $this->condition_status,
+            'is_flash_sale' => (bool) $flashSaleProduct,
             'is_ad' => $this->advertisements()->active()->exists(),
             'shop' => ProductShopResource::make($this->shop),
             'business_category_id' => $businessCategoryId,

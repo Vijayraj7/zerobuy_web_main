@@ -46,10 +46,11 @@ class DashboardController extends Controller
         $totalPosSales = Order::withoutGlobalScopes()->where('shop_id', $shop->id)->where('pos_order', true)->where('order_status', OrderStatus::DELIVERED->value)->sum('payable_amount');
 
         $totalDeliveryCollected = (clone $orderObject)->where('order_status', OrderStatus::DELIVERED->value)->sum('delivery_charge');
+        $totalSaleAmount = (clone $orderObject)->where('order_status', OrderStatus::DELIVERED->value)->sum('payable_amount');
 
         $flashSale = FlashSaleRepository::getIncoming();
 
-        return view('shop.dashboard', compact('totalOrder', 'totalProduct', 'orderStatuses', 'topSellingProducts', 'topReviewProducts', 'latestOrders', 'topFavorites', 'totalCategories', 'totalBrand', 'totalColor', 'totalSize', 'totalUnit', 'totalWithdraw', 'totalPosSales', 'totalDeliveryCollected', 'pendingWithdraw', 'alreadyWithdraw', 'deniedWithdraw', 'flashSale'));
+        return view('shop.dashboard', compact('totalOrder', 'totalProduct', 'orderStatuses', 'topSellingProducts', 'topReviewProducts', 'latestOrders', 'topFavorites', 'totalCategories', 'totalBrand', 'totalColor', 'totalSize', 'totalUnit', 'totalWithdraw', 'totalPosSales', 'totalDeliveryCollected', 'totalSaleAmount', 'pendingWithdraw', 'alreadyWithdraw', 'deniedWithdraw', 'flashSale'));
     }
 
     public function orderStatistics()

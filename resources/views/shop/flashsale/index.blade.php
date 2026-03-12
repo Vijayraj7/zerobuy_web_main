@@ -22,6 +22,7 @@
                                 <th>{{ __('Business Category') }}</th>
                                 <th>{{ __('Start Date') }}</th>
                                 <th>{{ __('End Date') }}</th>
+                                <th class="text-center">{{ __('Discount %') }}</th>
                                 <th>{{ __('Status') }}</th>
                                 <th style="max-width: 250px">{{ __('Description') }}</th>
                                 @hasPermission('shop.flashSale.show')
@@ -46,6 +47,7 @@
 
                                 <td>{{ $flashsale->start_date . ' - ' . $flashsale->start_time }}</td>
                                 <td>{{ $flashsale->end_date . ' - ' . $flashsale->end_time }}</td>
+                                <td class="text-center">{{ $flashsale->discount }}%</td>
 
                                 <td>
                                     @if ($flashsale->status)

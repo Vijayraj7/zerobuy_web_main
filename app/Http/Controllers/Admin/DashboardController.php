@@ -22,6 +22,16 @@ class DashboardController extends Controller
     public function index()
     {
         $generaleSetting = generaleSetting('setting');
+        $createdFilter = request('created_filter', 'today');
+
+        $filterStartDate = match ($createdFilter) {
+            'today' => now()->startOfDay(),
+            '2days' => now()->subDays(2)->startOfDay(),
+            'last_week' => now()->subWeek()->startOfDay(),
+            'last_month' => now()->subMonth()->startOfDay(),
+            'last_year' => now()->subYear()->startOfDay(),
+            default => now()->startOfDay(),
+        };
 
         $totalCustomer = Customer::count();
 
@@ -56,6 +66,19 @@ class DashboardController extends Controller
 
         $topShops = Shop::withCount('orders')->orderBy('orders_count', 'desc')->withAvg('reviews as average_rating', 'rating')->orderBy('average_rating', 'desc')->limit(8)->get();
 
+        $latestCreatedShops = Shop::with('user.media')
+            ->where('created_at', '>=', $filterStartDate)
+            ->latest('id')
+            ->limit(8)
+            ->get();
+
+        $latestCreatedCustomers = Customer::with(['user.media'])
+            ->withCount('orders')
+            ->where('created_at', '>=', $filterStartDate)
+            ->latest('id')
+            ->limit(8)
+            ->get();
+
         $latestOrders = Order::when($shop, function ($query) use ($shop) {
             return $query->where('shop_id', $shop?->id);
         })->latest('id')->limit(6)->get();
@@ -70,7 +93,7 @@ class DashboardController extends Controller
 
         $flashSale = FlashSaleRepository::getIncoming();
 
-        return view('admin.dashboard', compact('totalShop', 'totalOrder', 'totalCustomer', 'totalProduct', 'orderStatuses', 'topCustomers', 'topSellingProducts', 'topReviewProducts', 'topShops', 'latestOrders', 'topFavorites', 'pendingWithdraw', 'alreadyWithdraw', 'deniedWithdraw', 'totalCommission', 'totalCategories', 'flashSale'));
+        return view('admin.dashboard', compact('totalShop', 'totalOrder', 'totalCustomer', 'totalProduct', 'orderStatuses', 'topCustomers', 'topSellingProducts', 'topReviewProducts', 'topShops', 'latestCreatedShops', 'latestCreatedCustomers', 'createdFilter', 'latestOrders', 'topFavorites', 'pendingWithdraw', 'alreadyWithdraw', 'deniedWithdraw', 'totalCommission', 'totalCategories', 'flashSale'));
     }
 
     public function orderStatistics()

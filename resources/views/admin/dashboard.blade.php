@@ -20,6 +20,7 @@
 
     @php
         $text = 'Total ' . ($businessModel == 'single' ? 'Categories' : 'Shops');
+        $showWalletSection = ($generaleSetting?->business_based_on ?? null) === 'commission';
     @endphp
 
     <!-- Flash Deal Alert -->
@@ -161,8 +162,9 @@
     @endhasPermission
 
     <!---- Shop Wallet -->
-    <div class="card mt-4">
-        <div class="card-body">
+    @if ($showWalletSection)
+        <div class="card mt-4">
+            <div class="card-body">
             <div class="cardTitleBox">
                 <h5 class="card-title chartTitle">
                     {{ __('Admin Wallet') }}
@@ -252,8 +254,9 @@
                 </div>
             </div>
 
+            </div>
         </div>
-    </div>
+    @endif
 
     <!-- statistics Overview -->
     <div class="card mt-3">
@@ -382,6 +385,100 @@
                         @endforeach
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-body">
+            <div class="cardTitleBox d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <h5 class="card-title chartTitle mb-0">
+                    {{ __('Latest Created Shops & Customers') }}
+                </h5>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    @php
+                        $createdFilters = [
+                            'today' => __('Today'),
+                            '2days' => __('2 Days'),
+                            'last_week' => __('Last Week'),
+                            'last_month' => __('Last Month'),
+                            'last_year' => __('Last Year'),
+                        ];
+                    @endphp
+                    @foreach ($createdFilters as $filterKey => $filterLabel)
+                        <a href="{{ route('admin.dashboard.index', ['created_filter' => $filterKey]) }}"
+                            class="statisticsBtn {{ $createdFilter == $filterKey ? 'active' : '' }}">
+                            {{ $filterLabel }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="row g-3 mt-1">
+                <div class="col-xxl-6">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="mb-3">{{ __('Last Created Shops') }}</h6>
+                        <div class="d-flex flex-column gap-1">
+                            @forelse ($latestCreatedShops as $recentShop)
+                                <a href="{{ route('admin.shop.show', $recentShop->id) }}" class="customer-section">
+                                    <div class="customer-details">
+                                        <div class="customer-image">
+                                            <img src="{{ $recentShop->logo }}" alt="logo" loading="lazy" />
+                                        </div>
+                                        <div class="customer-about">
+                                            <p class="name text-dark mb-0">
+                                                {{ Str::limit($recentShop->name, 30, '...') }}
+                                            </p>
+                                            <p class="order mb-0">
+                                                {{ __('Owner') }}:
+                                                {{ Str::limit($recentShop->user?->name ?? __('N/A'), 20, '...') }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="border text-black px-2 py-1 flex-shrink-0"
+                                        style="font-size: 13px; border-radius: 25px;">
+                                        <div>{{ $recentShop->created_at->format('d M, Y') }}</div>
+                                    </div>
+                                </a>
+                            @empty
+                                <p class="text-muted mb-0">{{ __('No shops found in selected period') }}</p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xxl-6">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="mb-3">{{ __('Last Created Customers') }}</h6>
+                        <div class="d-flex flex-column gap-1">
+                            @forelse ($latestCreatedCustomers as $recentCustomer)
+                                <a href="{{ route('admin.customer.show', $recentCustomer->user_id) }}"
+                                    class="customer-section">
+                                    <div class="customer-details">
+                                        <div class="customer-image">
+                                            <img src="{{ $recentCustomer->user?->thumbnail ?? asset('default/profile.jpg') }}"
+                                                alt="customer" loading="lazy" />
+                                        </div>
+                                        <div class="customer-about">
+                                            <p class="name text-dark mb-0">
+                                                {{ Str::limit($recentCustomer->user?->name ?? __('N/A'), 30, '...') }}
+                                            </p>
+                                            <p class="order mb-0">
+                                                {{ Str::limit($recentCustomer->user?->email ?? __('No email'), 28, '...') }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="border text-black px-2 py-1 flex-shrink-0"
+                                        style="font-size: 13px; border-radius: 25px;">
+                                        <div>{{ __('Orders') }}: {{ $recentCustomer->orders_count }}</div>
+                                    </div>
+                                </a>
+                            @empty
+                                <p class="text-muted mb-0">{{ __('No customers found in selected period') }}</p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -796,6 +893,286 @@
         .addBtn{
             border-radius: 25px;
             padding: 10px 20px;
+        }
+
+        .orderStatus .status {
+            border: 1px solid transparent;
+            border-radius: 12px;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            animation: statusPulse 2.4s ease-in-out infinite;
+        }
+
+        .orderStatus .status:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(17, 24, 39, 0.12);
+        }
+
+        .orderStatus .status.pending {
+            background: #fff7ed;
+            border-color: #fed7aa;
+        }
+
+        .orderStatus .status.confirm {
+            background: #f0fdf4;
+            border-color: #86efac;
+        }
+
+        .orderStatus .status.readyToPayment {
+            background: #fff7ed;
+            border-color: #fdba74;
+        }
+
+        .orderStatus .status.paymentSuccessful {
+            background: #ecfdf5;
+            border-color: #34d399;
+        }
+
+        .orderStatus .status.processing {
+            background: #eff6ff;
+            border-color: #93c5fd;
+        }
+
+        .orderStatus .status.pickup {
+            background: #f5f3ff;
+            border-color: #c4b5fd;
+        }
+
+        .orderStatus .status.shipped {
+            background: #ecfeff;
+            border-color: #67e8f9;
+            animation: shippedGlow 1.8s ease-in-out infinite;
+        }
+
+        .orderStatus .status.delivered {
+            background: #ecfdf5;
+            border-color: #6ee7b7;
+        }
+
+        .orderStatus .status.cancelled,
+        .orderStatus .status.userCancelled {
+            background: #fef2f2;
+            border-color: #fca5a5;
+        }
+
+        .tableStatus .statusText span {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 2px 10px;
+            font-weight: 600;
+            animation: statusPulse 2.8s ease-in-out infinite;
+        }
+
+        .tableStatus .statusText .statusPending {
+            background: #fff7ed;
+            color: #9a3412;
+        }
+
+        .tableStatus .statusText .statusConfirm {
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        .tableStatus .statusText .statusReadytoPayment {
+            background: #fff7ed;
+            color: #9a3412;
+        }
+
+        .tableStatus .statusText .statusPaymentSuccessful {
+            background: #ecfdf5;
+            color: #065f46;
+        }
+
+        .tableStatus .statusText .statusProcessing {
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .tableStatus .statusText .statusPickup {
+            background: #f5f3ff;
+            color: #6d28d9;
+        }
+
+        .tableStatus .statusText .statusShipped {
+            background: #ecfeff;
+            color: #155e75;
+            animation: shippedGlow 1.8s ease-in-out infinite;
+        }
+
+        .tableStatus .statusText .statusDelivered {
+            background: #ecfdf5;
+            color: #065f46;
+        }
+
+        .tableStatus .statusText .statusCancelled,
+        .tableStatus .statusText .statusUsercancelled {
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .tableStatus .circleDot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            position: relative;
+            animation: dotPulse 1.6s ease-in-out infinite;
+        }
+
+        .tableStatus .circleDot::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            opacity: 0.35;
+            transform: scale(1);
+            animation: dotRing 1.6s ease-in-out infinite;
+        }
+
+        .tableStatus .animatedPending,
+        .tableStatus .animatedpending {
+            background: #f97316;
+        }
+
+        .tableStatus .animatedPending::after,
+        .tableStatus .animatedpending::after {
+            background: #f97316;
+        }
+
+        .tableStatus .animatedConfirm,
+        .tableStatus .animatedconfirm {
+            background: #22c55e;
+        }
+
+        .tableStatus .animatedConfirm::after,
+        .tableStatus .animatedconfirm::after {
+            background: #22c55e;
+        }
+
+        .tableStatus .animatedReadytoPayment,
+        .tableStatus .animatedreadytoPayment,
+        .tableStatus .animatedreadytopayment {
+            background: #f97316;
+        }
+
+        .tableStatus .animatedReadytoPayment::after,
+        .tableStatus .animatedreadytoPayment::after,
+        .tableStatus .animatedreadytopayment::after {
+            background: #f97316;
+        }
+
+        .tableStatus .animatedPaymentSuccessful,
+        .tableStatus .animatedpaymentSuccessful,
+        .tableStatus .animatedpaymentsuccessful {
+            background: #10b981;
+        }
+
+        .tableStatus .animatedPaymentSuccessful::after,
+        .tableStatus .animatedpaymentSuccessful::after,
+        .tableStatus .animatedpaymentsuccessful::after {
+            background: #10b981;
+        }
+
+        .tableStatus .animatedProcessing,
+        .tableStatus .animatedprocessing {
+            background: #3b82f6;
+        }
+
+        .tableStatus .animatedProcessing::after,
+        .tableStatus .animatedprocessing::after {
+            background: #3b82f6;
+        }
+
+        .tableStatus .animatedPickup,
+        .tableStatus .animatedpickup {
+            background: #8b5cf6;
+        }
+
+        .tableStatus .animatedPickup::after,
+        .tableStatus .animatedpickup::after {
+            background: #8b5cf6;
+        }
+
+        .tableStatus .animatedShipped,
+        .tableStatus .animatedshipped {
+            background: #06b6d4;
+        }
+
+        .tableStatus .animatedShipped::after,
+        .tableStatus .animatedshipped::after {
+            background: #06b6d4;
+        }
+
+        .tableStatus .animatedDelivered,
+        .tableStatus .animateddelivered {
+            background: #10b981;
+        }
+
+        .tableStatus .animatedDelivered::after,
+        .tableStatus .animateddelivered::after {
+            background: #10b981;
+        }
+
+        .tableStatus .animatedCancelled,
+        .tableStatus .animatedcancelled,
+        .tableStatus .animatedUserCancelled,
+        .tableStatus .animatedUsercancelled,
+        .tableStatus .animatedusercancelled {
+            background: #ef4444;
+        }
+
+        .tableStatus .animatedCancelled::after,
+        .tableStatus .animatedcancelled::after,
+        .tableStatus .animatedUserCancelled::after,
+        .tableStatus .animatedUsercancelled::after,
+        .tableStatus .animatedusercancelled::after {
+            background: #ef4444;
+        }
+
+        @keyframes statusPulse {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.01);
+            }
+        }
+
+        @keyframes shippedGlow {
+            0%,
+            100% {
+                box-shadow: 0 0 0 rgba(6, 182, 212, 0);
+            }
+
+            50% {
+                box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.16);
+            }
+        }
+
+        @keyframes dotPulse {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.15);
+            }
+        }
+
+        @keyframes dotRing {
+            0% {
+                transform: scale(1);
+                opacity: 0.35;
+            }
+
+            100% {
+                transform: scale(2.1);
+                opacity: 0;
+            }
         }
     </style>
 @endpush

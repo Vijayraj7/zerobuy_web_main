@@ -62,14 +62,21 @@ class FlashSaleController extends Controller
 
                 $productPrice = $product->discount_price > 0 ? $product->discount_price : $product->price;
 
+                $flashDiscountPercentage = (float) $flashSale->discount;
+                $flashPrice = (float) number_format(
+                    $productPrice - ($productPrice * ($flashDiscountPercentage / 100)),
+                    2,
+                    '.',
+                    ''
+                );
+
                 $productQty = $productArr['quantity'] < $product->quantity ? $productArr['quantity'] : $product->quantity;
 
-                $discountPercentage = ($productPrice - $productArr['discount_price']) / $productPrice * 100;
-                if ($productPrice >= $productArr['discount_price']) {
+                if ($productPrice >= $flashPrice) {
                     $flashSale->products()->attach($productArr['id'], [
-                        'price' => $productArr['discount_price'],
+                        'price' => $flashPrice,
                         'quantity' => $productQty,
-                        'discount' => $discountPercentage,
+                        'discount' => $flashDiscountPercentage,
                     ]);
                 } else {
                     $hasAnyErrors[] = $product;
@@ -93,12 +100,18 @@ class FlashSaleController extends Controller
             return back()->withError(__('Selected product does not belong to this flash sale business category.'));
         }
 
-        $discountPercentage = $request->price / 100 * $product->price;
-
         $productPrice = $product->discount_price > 0 ? $product->discount_price : $product->price;
 
-        if ($productPrice <= $request->price) {
-            return back()->withError(__('Discount price cannot be greater or equal than product price!'));
+        $flashDiscountPercentage = (float) $flashSale->discount;
+        $flashPrice = (float) number_format(
+            $productPrice - ($productPrice * ($flashDiscountPercentage / 100)),
+            2,
+            '.',
+            ''
+        );
+
+        if ($productPrice <= $flashPrice) {
+            return back()->withError(__('Flash sale price cannot be greater or equal than product price!'));
         }
 
         if ($request->quantity > $product->quantity) {
@@ -106,9 +119,9 @@ class FlashSaleController extends Controller
         }
 
         $flashSale->products()->updateExistingPivot($product->id, [
-            'price' => $request->price,
+            'price' => $flashPrice,
             'quantity' => $request->quantity,
-            'discount' => $discountPercentage,
+            'discount' => $flashDiscountPercentage,
         ]);
 
         return back()->withSuccess(__('Updated Successfully'));

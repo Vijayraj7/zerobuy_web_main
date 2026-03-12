@@ -185,15 +185,13 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="updatePrice" class="form-label m-0">
-                                {{ __('Price') }}
-                                <span class="text-danger">*</span>
+                            <label class="form-label m-0">
+                                {{ __('Flash Sale Price') }}
                             </label>
-                            <input type="number" class="form-control" id="updatePrice" name="price"
-                                placeholder="Enter Price" required />
-                            @error('price')
-                                <p class="text text-danger m-0">{{ $message }}</p>
-                            @enderror
+                            <p id="updatePriceText" class="mb-0 fw-semibold"></p>
+                            <small class="text-muted">
+                                {{ __('Auto-calculated from flash sale discount percentage.') }}
+                            </small>
                         </div>
 
                         <div class="mb-3">
@@ -228,7 +226,13 @@
         function openProductUpdateModal(product) {
             var flashSaleID = "{{ $flashSale->id }}";
             $("#updateName").text(product.name);
-            $("#updatePrice").val(product.pivot.price);
+
+            const basePrice = Number(product.discount_price) > 0 ? Number(product.discount_price) : Number(product
+                .price);
+            const flashPercentage = Number("{{ $flashSale->discount }}") || 0;
+            const flashPrice = (basePrice - (basePrice * flashPercentage / 100)).toFixed(2);
+            $("#updatePriceText").text(flashPrice);
+
             $("#updateQuantity").val(product.pivot.quantity);
             $("#productUpdateForm").attr('action',
                 `{{ route('shop.flashSale.product.edit', ['flashSale' => ':flashSale', 'product' => ':product']) }}`
@@ -314,7 +318,8 @@
 
                             <div class="flex-grow-1">
                                 <p class="mb-1"><small>Discount Price:</small></p>
-                                <input class="product-input" type="text" name="products[${index}][discount_price]" placeholder="Discount Price" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/^(\d*\.\d{0,2}|\d*)$/, '$1');" value="${discountPrice}"/>
+                                <p class="mb-0 fw-semibold">${discountPrice.toFixed(2)}</p>
+                                <small class="text-muted">Auto-calculated</small>
                             </div>
 
                             <div class="flex-grow-1">
