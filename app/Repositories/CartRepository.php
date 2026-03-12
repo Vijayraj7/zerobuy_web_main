@@ -97,9 +97,11 @@ class CartRepository extends Repository
                 $colorPrice = $color?->pivot?->price ?? 0;
                 $extraPrice = $sizePrice + $colorPrice;
 
+                $flashPercentage = null;
                 $discountPrice = $product->discount_price > 0 ? ($product->discount_price + $extraPrice) : 0;
                 if ($flashSaleProduct) {
-                    $discountPrice = $flashSaleProduct->pivot->price + $extraPrice;
+                    $flashPercentage = $flashSale?->pivot->discount;
+                    // $discountPrice = $flashSaleProduct->pivot->price + $extraPrice;
                 }
 
                 $mainPrice = $product->price + $extraPrice;
@@ -125,29 +127,34 @@ class CartRepository extends Repository
                 $dprice = 0;
                 $mprice = (float) number_format($mainPrice, 2, '.', '');
                 if ($cart->variant) {
-                    $dprice =  (float) number_format($cart->variant->price, 2, '.', '');
+                    $dprice =  (float) $cart->variant->price;
                 } else if ($cart->bulkItem) {
                     $pname = $cart->bulkItem->name;
                     $mprice = (float) number_format($cart->bulkItem->mrp, 2, '.', '');
-                    $dprice =  (float) number_format($cart->bulkItem->selling_price, 2, '.', '');
+                    $dprice = (float) $cart->bulkItem->selling_price;
                 } else if ($product->bulkPrices) {
                     if ($product->bulkPrices->count() > 0) {
                         $ogprice = $product->bulkPrices->where('min_qty', '<=', $cart->quantity)
                             ->where('max_qty', '>=', $cart->quantity)
                             ->first();
                         if ($ogprice) {
-                            $dprice =  (float) number_format($ogprice->price, 2, '.', '');
+                            $dprice = (float) $ogprice->price;
                         } else {
                             $lastbulkprice = $product->bulkPrices->sortByDesc('max_qty')->first();
                             if ($lastbulkprice && $cart->quantity > $lastbulkprice->max_qty) {
-                                $dprice =  (float) number_format($lastbulkprice->price, 2, '.', '');
+                                $dprice =  (float) $lastbulkprice->price;
                             }
                         }
                     } else {
-                        $dprice = (float) number_format($discountPrice, 2, '.', '');
+                        $dprice = (float) $discountPrice;
                     }
                 } else {
-                    $dprice = (float) number_format($discountPrice, 2, '.', '');
+                    $dprice = (float) $discountPrice;
+                }
+
+                if ($flashPercentage) {
+                    $dprice = $dprice - ($dprice * ($flashPercentage / 100));
+                    $dprice = (float) number_format($dprice, 2, '.', '');
                 }
 
                 // $product_quantity = $product->quantity;
@@ -521,6 +528,22 @@ class CartRepository extends Repository
 
             $price = $product->discount_price > 0 ? $product->discount_price : $product->price;
 
+            $falshPercentage = null;
+            if ($flashSale) {
+                $flashSaleProduct = $flashSale?->products()->where('id', $product->id)->first();
+
+                $quantity = $flashSaleProduct?->pivot->quantity - $flashSaleProduct->pivot->sale_quantity;
+
+                if ($quantity == 0) {
+                    $quantity = null;
+                    $flashSaleProduct = null;
+                } else {
+                    $falshPercentage = $flashSale?->pivot->discount;
+                    // $price = $flashSaleProduct->pivot->price;
+                }
+            }
+
+
             if ($cart->variant != null) {
                 $price = (float)$cart->variant->price;
             } else if ($cart->bulkItem) {
@@ -539,17 +562,8 @@ class CartRepository extends Repository
                 }
             }
 
-            if ($flashSale) {
-                $flashSaleProduct = $flashSale?->products()->where('id', $product->id)->first();
-
-                $quantity = $flashSaleProduct?->pivot->quantity - $flashSaleProduct->pivot->sale_quantity;
-
-                if ($quantity == 0) {
-                    $quantity = null;
-                    $flashSaleProduct = null;
-                } else {
-                    $price = $flashSaleProduct->pivot->price;
-                }
+            if ($falshPercentage) {
+                $price = $price - ($price * ($falshPercentage / 100));
             }
 
             $sizePrice = $product->sizes()?->where('id', $cart->size)->first()?->pivot?->price ?? 0;
