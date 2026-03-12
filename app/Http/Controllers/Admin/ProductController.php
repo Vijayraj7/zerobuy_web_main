@@ -340,10 +340,20 @@ class ProductController extends Controller
     public function create()
     {
         $shop = generaleSetting('shop');
-        $rshop = generaleSetting('rootShop');
 
-        $categories = Category::all();
-        // $categories = $rshop?->categories()->active()->get();
+        // Resolve product from route binding or URL segment (/shop/product/{id}/edit)
+        $productId = request()->route('product') ?? request()->segment(3);
+        $targetShop = null;
+
+        if ($productId) {
+            $targetShop = Product::find($productId)?->shop;
+        }
+
+        $targetShop = $targetShop ?? $shop;
+
+        $businessCategoryIds = $targetShop?->businessCategories()->pluck('business_categories.id') ?? collect();
+        $categories = Category::whereIn('business_category_id', $businessCategoryIds)->get();
+
         $colors = $shop?->colors()->isActive()->get();
         $sizes = $shop?->sizes()->isActive()->get();
 

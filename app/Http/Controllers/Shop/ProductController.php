@@ -95,8 +95,8 @@ class ProductController extends Controller
         // get brands, colors and categories
         $brands = $shop?->brands()->isActive()->get();
         $colors = $shop?->colors()->isActive()->get();
-        $categories = Category::all();
-        // $categories = $rshop?->categories()->active()->get();
+        $businessCategoryIds = $shop?->businessCategories()->pluck('business_categories.id') ?? collect();
+        $categories = Category::whereIn('business_category_id', $businessCategoryIds)->get();
         $units = $shop?->units()->isActive()->get();
         $sizes = $shop?->sizes()->isActive()->get();
 
@@ -184,8 +184,8 @@ class ProductController extends Controller
         // get brands, colors, units, sizes and categories
         $brands = $rootShop?->brands()->isActive()->get();
         $colors = $rootShop?->colors()->isActive()->get();
-        $categories = Category::all();
-        // $categories = $rshop?->categories()->active()->get();
+        $businessCategoryIds = $rootShop?->businessCategories()->pluck('business_categories.id') ?? collect();
+        $categories = Category::whereIn('business_category_id', $businessCategoryIds)->get();
         $units = $rootShop?->units()->isActive()->get();
         $sizes = $rootShop?->sizes()->isActive()->get();
 
