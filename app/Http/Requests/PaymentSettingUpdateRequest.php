@@ -24,9 +24,11 @@ class PaymentSettingUpdateRequest extends FormRequest
         return [
             'cash_on_delivery_enabled' => 'nullable|boolean',
             'online_payment_enabled' => 'nullable|boolean',
-            'online_payment_provider' => 'nullable|required_if:online_payment_enabled,1|string|in:razorpay',
+            'online_payment_provider' => 'nullable|required_if:online_payment_enabled,1|string|in:razorpay,cashfree',
             'razorpay_key_id' => 'nullable|required_if:online_payment_provider,razorpay|string|max:255',
             'razorpay_key_secret' => 'nullable|required_if:online_payment_provider,razorpay|string|max:255',
+            'cashfree_app_id' => 'nullable|required_if:online_payment_provider,cashfree|string|max:255',
+            'cashfree_secret_key' => 'nullable|required_if:online_payment_provider,cashfree|string|max:255',
         ];
     }
 
@@ -45,6 +47,8 @@ class PaymentSettingUpdateRequest extends FormRequest
             'cash_on_delivery_enabled.boolean' => __('Cash on Delivery toggle value is invalid.'),
             'razorpay_key_id.required_if' => __('The Razorpay key ID field is required when Razorpay is selected.'),
             'razorpay_key_secret.required_if' => __('The Razorpay key secret field is required when Razorpay is selected.'),
+            'cashfree_app_id.required_if' => __('The Cashfree app ID field is required when Cashfree is selected.'),
+            'cashfree_secret_key.required_if' => __('The Cashfree secret key field is required when Cashfree is selected.'),
         ];
     }
 

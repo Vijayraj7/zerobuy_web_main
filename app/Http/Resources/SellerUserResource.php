@@ -67,6 +67,8 @@ class SellerUserResource extends JsonResource
                 'online_payment_provider' => $shop->online_payment_provider,
                 'razorpay_key_id' => data_get($shop->online_payment_config, 'razorpay.key_id'),
                 'razorpay_key_secret' => data_get($shop->online_payment_config, 'razorpay.key_secret'),
+                'cashfree_app_id' => data_get($shop->online_payment_config, 'cashfree.app_id'),
+                'cashfree_secret_key' => data_get($shop->online_payment_config, 'cashfree.secret_key'),
                 'followers' => (int) ShopFollower::where('shop_id', $shop->id)->count(),
                 'estimated_delivery_time' => $shop->estimated_delivery_time,
                 'min_order_amount' => (float) $shop->min_order_amount ?? 0,

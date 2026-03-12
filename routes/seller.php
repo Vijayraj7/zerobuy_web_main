@@ -125,6 +125,8 @@ Route::prefix('/seller')->group(function () {
             Route::post('/orders/status-update', 'update');
             Route::post('/orders/delivery-charge-update', 'deliveryChargeUpdate');
             Route::post('/orders/track-url-update', 'trackUrlUpdate');
+            Route::post('/orders/create-shipment', 'createShipment');
+            Route::post('/orders/retry-ship', 'retryShip');
         });
 
         Route::controller(ReturnOrderController::class)->group(function () {

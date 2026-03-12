@@ -438,6 +438,146 @@ class OrderController extends Controller
         ]);
     }
 
+    public function createShipment(OrderIdRequest $request)
+    {
+        $order = OrderRepository::find($request->order_id);
+
+        if (! $order) {
+            return $this->json('Sorry, this order is not found', [], 422);
+        }
+
+        $order->loadMissing(['shop.deliverySetting']);
+
+        if (in_array($order->order_status?->value, [OrderStatus::DELIVERED->value, OrderStatus::CANCELLED->value], true)) {
+            return $this->json('Shipment cannot be created for delivered or cancelled orders.', [], 422);
+        }
+
+        $orderProvider = strtolower(trim((string) ($order->api_provider ?: $order->shop?->deliverySetting?->delivery_provider ?: '')));
+        if (! in_array($orderProvider, ['shiprocket', 'delhivery'], true)) {
+            return $this->json('No supported API provider found for this order.', [], 422);
+        }
+
+        $hasProviderShipmentId = ! empty($order->provider_shipment_id) || ! empty($order->shiprocket_shipment_id);
+        $hasProviderAwb = ! empty($order->provider_awb_code) || ! empty($order->shiprocket_awb_code);
+        if ($hasProviderShipmentId || $hasProviderAwb) {
+            return $this->json('Shipment already exists for this order.', [
+                'order' => SellerOrderResource::make($order),
+            ]);
+        }
+
+        if ($order->api_provider !== $orderProvider) {
+            $order->update(['api_provider' => $orderProvider]);
+        }
+
+        try {
+            $synced = false;
+            $providerFailureReason = null;
+
+            if ($orderProvider === 'shiprocket') {
+                $service = app(ShiprocketOrderSyncService::class);
+                $synced = $service->sync($order);
+                $providerFailureReason = $service->getLastSyncError();
+            }
+
+            if ($orderProvider === 'delhivery') {
+                $service = app(DelhiveryOrderSyncService::class);
+                $synced = $service->sync($order);
+                $providerFailureReason = $service->getLastSyncError();
+            }
+
+            $order->refresh();
+
+            if (! $synced) {
+                $message = 'Create shipment failed. Please check provider credentials or shipment data and try again.';
+                if (! empty($providerFailureReason)) {
+                    $message .= ' Reason: ' . $providerFailureReason;
+                }
+
+                return $this->json($message, [
+                    'order' => SellerOrderResource::make($order),
+                ], 422);
+            }
+
+            return $this->json('Shipment has been created successfully via ' . ucfirst($orderProvider) . '.', [
+                'order' => SellerOrderResource::make($order),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Order create shipment failed (seller API)', [
+                'order_id' => $order->id,
+                'provider' => $orderProvider,
+                'message' => $e->getMessage(),
+            ]);
+
+            return $this->json('Create shipment failed due to an exception. Please try again.', [], 422);
+        }
+    }
+
+    public function retryShip(OrderIdRequest $request)
+    {
+        $order = OrderRepository::find($request->order_id);
+
+        if (! $order) {
+            return $this->json('Sorry, this order is not found', [], 422);
+        }
+
+        $order->loadMissing(['shop.deliverySetting']);
+
+        if ($order->order_status?->value !== OrderStatus::CONFIRM->value) {
+            return $this->json('Retry shipping is allowed only for confirmed orders.', [], 422);
+        }
+
+        $orderProvider = strtolower(trim((string) ($order->api_provider ?: $order->shop?->deliverySetting?->delivery_provider ?: '')));
+        if (! in_array($orderProvider, ['shiprocket', 'delhivery'], true)) {
+            return $this->json('No supported API provider found for this order.', [], 422);
+        }
+
+        if ($order->api_provider !== $orderProvider) {
+            $order->update(['api_provider' => $orderProvider]);
+        }
+
+        try {
+            $synced = false;
+            $providerFailureReason = null;
+
+            if ($orderProvider === 'shiprocket') {
+                $service = app(ShiprocketOrderSyncService::class);
+                $synced = $service->sync($order);
+                $providerFailureReason = $service->getLastSyncError();
+            }
+
+            if ($orderProvider === 'delhivery') {
+                $service = app(DelhiveryOrderSyncService::class);
+                $synced = $service->sync($order);
+                $providerFailureReason = $service->getLastSyncError();
+            }
+
+            $order->refresh();
+
+            if (! $synced) {
+                $message = 'Retry ship failed. Please check provider credentials or shipment data and try again.';
+                if (! empty($providerFailureReason)) {
+                    $message .= ' Reason: ' . $providerFailureReason;
+                }
+
+                return $this->json($message, [
+                    'order' => SellerOrderResource::make($order),
+                ], 422);
+            }
+
+            return $this->json('Order has been shipped successfully via ' . ucfirst($orderProvider) . '.', [
+                'order' => SellerOrderResource::make($order),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Order retry ship failed (seller API)', [
+                'order_id' => $order->id,
+                'provider' => $orderProvider,
+                'message' => $e->getMessage(),
+            ]);
+
+            return $this->json('Retry ship failed due to an exception. Please try again.', [], 422);
+        }
+    }
+
     private function getShopRazorpayConfig(Shop $shop): array
     {
         if (! $shop->online_payment_enabled) {

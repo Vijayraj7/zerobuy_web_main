@@ -1,0 +1,7 @@
+{
+    "captured_at": "2026-03-12 17:04:38",
+    "order_id": 126,
+    "order_code": "ORDQNG7COD1IM",
+    "outcome": "skipped",
+    "reason": "invalid_or_missing_delhivery_provider_setting"
+}

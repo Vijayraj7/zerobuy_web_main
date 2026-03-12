@@ -20,6 +20,79 @@ class SellerOrderResource extends JsonResource
     public function toArray(Request $request): array
     {
         $estimateDays = $this->shop->estimated_delivery_time ?? '2-4 days';
+        $latestPayment = $this->payments?->sortByDesc('id')->first();
+        $gatewayPaymentStatus = null;
+
+        if ($latestPayment) {
+            if (! empty($latestPayment->razorpay_refund_id)) {
+                $gatewayPaymentStatus = 'Refunded';
+            } elseif ($latestPayment->is_paid) {
+                $gatewayPaymentStatus = 'Paid';
+            } elseif (! empty($latestPayment->razorpay_payment_id)) {
+                $gatewayPaymentStatus = 'Authorized';
+            } elseif (! empty($latestPayment->cashfree_order_id)) {
+                $gatewayPaymentStatus = 'Initiated';
+            } else {
+                $gatewayPaymentStatus = 'Pending';
+            }
+        }
+
+        $paymentMethodValue = strtolower(trim((string) ($this->payment_method?->value ?? $this->payment_method)));
+        $isCashOrder = in_array($paymentMethodValue, ['cash', 'cash payment'], true);
+
+        $retryShipProvider = strtolower(trim((string) ($this->api_provider ?: $this->shop?->deliverySetting?->delivery_provider ?: '')));
+        $hasProviderOrderId = ! empty($this->provider_order_id) || ! empty($this->shiprocket_order_id);
+        $hasProviderShipmentId = ! empty($this->provider_shipment_id) || ! empty($this->shiprocket_shipment_id);
+        $hasProviderAwb = ! empty($this->provider_awb_code) || ! empty($this->shiprocket_awb_code);
+
+        $apiProviderStatus = null;
+        $apiProviderStatusLabel = null;
+        if (in_array($retryShipProvider, ['shiprocket', 'delhivery'], true)) {
+            if ($hasProviderAwb) {
+                $apiProviderStatus = 'awb_generated';
+                $apiProviderStatusLabel = 'AWB Generated';
+            } elseif ($hasProviderShipmentId) {
+                $apiProviderStatus = 'shipment_created';
+                $apiProviderStatusLabel = 'Shipment Created';
+            } elseif ($hasProviderOrderId) {
+                $apiProviderStatus = 'order_created';
+                $apiProviderStatusLabel = 'Order Created';
+            } else {
+                $apiProviderStatus = 'not_created';
+                $apiProviderStatusLabel = 'Not Created';
+            }
+        }
+
+        $isManualDelivery = ($this->shop?->deliverySetting?->delivery_mode ?? null) === 'manual';
+        $isTrackingUpdateLocked = in_array($this->order_status?->value, [OrderStatus::DELIVERED->value, OrderStatus::CANCELLED->value], true);
+        $isApiProviderOrder =
+            (($this->shop?->deliverySetting?->delivery_mode ?? null) === 'provider_api' && in_array($retryShipProvider, ['shiprocket', 'delhivery'], true))
+            || in_array($retryShipProvider, ['shiprocket', 'delhivery'], true);
+
+        $isProviderOrderCreated = false;
+        if ($retryShipProvider === 'shiprocket') {
+            $isProviderOrderCreated = ! empty($this->provider_order_id) || ! empty($this->shiprocket_order_id);
+        } elseif ($retryShipProvider === 'delhivery') {
+            $isProviderOrderCreated = ! empty($this->provider_order_id);
+        }
+
+        $showRetryShipButton =
+            $this->order_status?->value === OrderStatus::CONFIRM->value
+            && in_array($retryShipProvider, ['shiprocket', 'delhivery'], true)
+            && ! $isProviderOrderCreated;
+
+        $showConfirmShipButton =
+            $this->order_status?->value === OrderStatus::PENDING->value
+            && $isApiProviderOrder;
+
+        $showCreateShipmentButton =
+            in_array($retryShipProvider, ['shiprocket', 'delhivery'], true)
+            && ! in_array($this->order_status?->value, [OrderStatus::DELIVERED->value, OrderStatus::CANCELLED->value], true)
+            && ! in_array($apiProviderStatus, ['shipment_created', 'awb_generated'], true);
+
+        $showReadyToPaymentButton =
+            ($this->order_status?->value === OrderStatus::PENDING->value)
+            && ! $isCashOrder;
 
         $statusTimelines = $this->statusTimelines
             ?->sortBy('changed_at')
@@ -82,6 +155,24 @@ class SellerOrderResource extends JsonResource
             'order_status' => $this->order_status->value,
             'payment_status' => $this->payment_status->value,
             'payment_method' => $this->payment_method->value == PaymentMethod::CASH->value ? 'Cash' : 'Online',
+            'gateway_payment_method' => $latestPayment?->payment_method,
+            'gateway_payment_status' => $gatewayPaymentStatus,
+            'razorpay_order_id' => $latestPayment?->razorpay_order_id,
+            'razorpay_payment_id' => $latestPayment?->razorpay_payment_id,
+            'razorpay_refund_id' => $latestPayment?->razorpay_refund_id,
+            'cashfree_order_id' => $latestPayment?->cashfree_order_id,
+            'cf_order_id' => $latestPayment?->cf_order_id,
+            'payment_session_id' => $latestPayment?->payment_session_id,
+            'retry_ship_provider' => in_array($retryShipProvider, ['shiprocket', 'delhivery'], true) ? $retryShipProvider : null,
+            'api_provider_status' => $apiProviderStatus,
+            'api_provider_status_label' => $apiProviderStatusLabel,
+            'can_create_shipment' => (bool) $showCreateShipmentButton,
+            'can_retry_ship' => (bool) $showRetryShipButton,
+            'can_confirm_ship' => (bool) $showConfirmShipButton,
+            'can_ready_to_payment' => (bool) $showReadyToPaymentButton,
+            'is_tracking_update_locked' => (bool) $isTrackingUpdateLocked,
+            'is_manual_delivery' => (bool) $isManualDelivery,
+            'can_update_delivery_charge' => (bool) ($isManualDelivery || ((float) $this->delivery_charge) == 0),
             'estimated_delivery_date' => (string) $estimateDays,
             'track_url' => $this->track_url,
             'gst' => $this->gst,
@@ -102,6 +193,7 @@ class SellerOrderResource extends JsonResource
             'products' => SellerOrderProductResource::collection($this->orderProducts),
             'rider' => $this->driverOrder ? OrderRiderResource::make($this->driverOrder) : null,
             'invoice_url' => route('shop.download-invoice', $this->id),
+            'payment_receipt_url' => route('shop.payment-slip', $this->id),
             'status_timeline' => $timeline,
         ];
     }
