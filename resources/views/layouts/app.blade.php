@@ -735,8 +735,7 @@
                 const url = $(this).attr("href");
                 Swal.fire({
                     title: "{{ __('Are you sure?') }}",
-                    text: '{{ __('
-                    You will not be able to revert this!') }}',
+                    text: "{{ __('You will not be able to revert this!') }}",
                     icon: "warning",
                     showCancelButton: true,
                     confirmButtonColor: themeColor,
@@ -745,6 +744,29 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         window.location.href = url;
+                    }
+                });
+            });
+
+            $(document).on("submit", "form.deleteConfirmForm", function(e) {
+                const form = this;
+                if (form.dataset.confirmed === "1") {
+                    return;
+                }
+
+                e.preventDefault();
+                Swal.fire({
+                    title: "{{ __('Are you sure?') }}",
+                    text: "{{ __('You will not be able to revert this!') }}",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: themeColor,
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "{{ __('Yes, delete it!') }}",
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.dataset.confirmed = "1";
+                        form.submit();
                     }
                 });
             });
@@ -768,6 +790,10 @@
 
             // form submit loader
             $('form').on('submit', function() {
+                if ($(this).hasClass('deleteConfirmForm')) {
+                    return;
+                }
+
                 var submitButton = $(this).find('button[type="submit"]');
 
                 submitButton.prop('disabled', true);

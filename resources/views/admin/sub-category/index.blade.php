@@ -86,8 +86,7 @@
                                     <a href="javascript:;" class="btn btn-outline-primary editSubCategoryButton" data-id="{{$subCategory->id}}"><i class="fa fa-edit"></i></a>
                                     @hasPermission('admin.subcategory.destroy')
                                         @if((int) $subCategory->products_count === 0)
-                                            <form action="{{ route('admin.subcategory.destroy', $subCategory->id) }}" method="POST" class="d-inline"
-                                                onsubmit="return confirm('Delete this sub category?');">
+                                            <form action="{{ route('admin.subcategory.destroy', $subCategory->id) }}" method="POST" class="d-inline deleteConfirmForm">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-outline-danger" title="Delete">

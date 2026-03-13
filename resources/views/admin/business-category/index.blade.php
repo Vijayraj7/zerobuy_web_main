@@ -60,8 +60,7 @@
                                 <a href="javascript:;" class="btn btn-outline-primary editBusinessCategoryButton" data-id="{{$category->id}}"><i class="fa fa-edit"></i></a>
                                 @hasPermission('admin.business-category.destroy')
                                     @if((int) $category->category_products_count === 0)
-                                        <form action="{{ route('admin.business-category.destroy', $category->id) }}" method="POST" class="d-inline"
-                                            onsubmit="return confirm('Delete this business category?');">
+                                        <form action="{{ route('admin.business-category.destroy', $category->id) }}" method="POST" class="d-inline deleteConfirmForm">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-outline-danger" title="Delete">
