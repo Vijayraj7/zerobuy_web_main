@@ -63,6 +63,9 @@ class ShopDetailsResource extends JsonResource
             'certificate_thumbnail' => $this->certificates()->active()->first()?->thumbnail ?? null,
             'estimated_delivery_time' => (string) ($this->estimated_delivery_time ?? '2-3 days'),
             'delivery_charge' => (float) getDeliveryCharge(1),
+            'cash_on_delivery_enabled' => (bool) ($this->cash_on_delivery_enabled ?? true),
+            'online_payment_enabled' => (bool) ($this->online_payment_enabled ?? false),
+            'online_payment_provider' => $this->online_payment_provider,
         ];
     }
 }

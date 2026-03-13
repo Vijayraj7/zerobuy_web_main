@@ -42,7 +42,10 @@ class ProductShopResource extends JsonResource
             'banners' => BannerResource::collection($this->banners()->where('status', 1)->get()),
             'estimated_delivery_time' => (string) ($this->estimated_delivery_time ?? '2-3 days'),
             'delivery_charge' => (float) getDeliveryCharge(1),
-            'last_online' => $lastOnline
+            'last_online' => $lastOnline,
+            'cash_on_delivery_enabled' => (bool) ($this->cash_on_delivery_enabled ?? true),
+            'online_payment_enabled' => (bool) ($this->online_payment_enabled ?? false),
+            'online_payment_provider' => $this->online_payment_provider,
         ];
     }
 }

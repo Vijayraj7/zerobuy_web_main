@@ -84,25 +84,23 @@ class OrderController extends Controller
         }
 
         // status wise orders
-        $statusWiseOrders = collect(OrderStatus::cases())->mapWithKeys(function ($status) use ($customer) {
-            return [$status->value => $customer->orders()->where('order_status', $status->value)->count()];
-        });
+        $statusWiseOrders = collect(['all' => $customer->orders()->count()])
+            ->merge(
+                collect(OrderStatus::cases())->mapWithKeys(function ($status) use ($customer) {
+                    $count = $customer->orders()->where('order_status', $status->value)->count();
+
+                    if ($status === OrderStatus::CANCELLED_BY_CUSTOMER) {
+                        $count += $customer->orders()->where('order_status', self::LEGACY_CANCELLED_BY_CUSTOMER)->count();
+                    }
+
+                    return [$status->value => $count];
+                })
+            );
 
         // Response
         return $this->json('orders', [
             'total' => $total,
-            'status_wise_orders' => [
-                'all' => $customer->orders()->count(),
-                'pending' => $statusWiseOrders[OrderStatus::PENDING->value],
-                'confirm' => $statusWiseOrders[OrderStatus::CONFIRM->value],
-                'processing' => $statusWiseOrders[OrderStatus::PENDING->value],
-                'pickup' => $statusWiseOrders[OrderStatus::SHIPPED->value],
-                'on_the_way' => $statusWiseOrders[OrderStatus::SHIPPED->value],
-                'delivered' => $statusWiseOrders[OrderStatus::DELIVERED->value],
-                'cancelled' => ($statusWiseOrders[OrderStatus::CANCELLED->value] ?? 0)
-                    + ($statusWiseOrders[OrderStatus::CANCELLED_BY_CUSTOMER->value] ?? 0)
-                    + $customer->orders()->where('order_status', self::LEGACY_CANCELLED_BY_CUSTOMER)->count(),
-            ],
+            'status_wise_orders' => $statusWiseOrders,
             'orders' => OrderResource::collection($orders),
         ]);
     }
