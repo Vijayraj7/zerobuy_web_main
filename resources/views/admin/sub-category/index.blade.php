@@ -4,16 +4,35 @@
 
 <div class="d-flex align-items-center justify-content-between px-3">
     <h4>{{ __('Sub Categories') }}</h4>
-    @hasPermission('admin.subcategory.create')
-    <button class="btn btn-primary" id="addSubCategoryBtn"><i class="fa fa-plus"></i> Add Sub Category</button>
-    @endhasPermission
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-dark" id="reorderSubCategoryAlphabetBtn"><i class="fa fa-sort-alpha-asc"></i> Reorder A-Z</button>
+        @hasPermission('admin.subcategory.create')
+        <button class="btn btn-primary" id="addSubCategoryBtn"><i class="fa fa-plus"></i> Add Sub Category</button>
+        @endhasPermission
+    </div>
 </div>
 
 <div class="container-fluid mt-3">
     <div class="card">
         <div class="card-body"> 
             <div class="row mb-3 g-2">
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <select id="filter_business_category_id" class="form-control">
+                        <option value="">All Business Categories</option>
+                        @foreach($businessCategories as $bc)
+                            <option value="{{ $bc->id }}" {{ (string) request('business_category_id') === (string) $bc->id ? 'selected' : '' }}>{{ $bc->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select id="filter_category_id" class="form-control">
+                        <option value="">All Main Categories</option>
+                        @foreach($categories as $cat)
+                            <option value="{{ $cat->id }}" {{ (string) request('category_id') === (string) $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <input type="text" id="search" class="form-control" placeholder="Search Business/Main/Sub Categories" value="{{ request('search') }}">
                 </div>
                 <div class="col-md-2">
@@ -33,15 +52,16 @@
                             @hasPermission('admin.subcategory.toggle')
                             <th>Status</th>
                             @endhasPermission
+                            <th>Move</th>
                             @hasPermission('admin.subcategory.edit')
                             <th class="text-center">Action</th>
                             @endhasPermission
                         </tr>
                     </thead>
 
-                    <tbody>
+                    <tbody id="sortable-subcategories">
                         @forelse($subCategories as $key => $subCategory)
-                            <tr>
+                            <tr data-id="{{ $subCategory->id }}" data-order="{{ $subCategory->sort_order }}">
                                 <td class="text-center">{{ $subCategories->firstItem() + $key }}</td>
                                 <td><img src="{{ $subCategory->thumbnail }}" width="50"></td>
                                 <td>{{ $subCategory->businessCategory?->name ?? 'N/A' }}</td>
@@ -56,6 +76,7 @@
                                     </label>
                                 </td>
                                 @endhasPermission
+                                <td class="drag-handle" style="cursor: grab;"><i class="fa fa-bars"></i></td>
                                 @hasPermission('admin.subcategory.edit')
                                 <td class="text-center"> 
                                     <a href="{{ route('admin.product.index', ['approve' => 'true', 'business_category' => $subCategory->business_category_id, 'category' => $subCategory->category_id, 'sub_category' => $subCategory->id]) }}"
@@ -129,18 +150,64 @@
 @endsection
 
 @push('scripts') 
+<script src="{{ asset('assets/scripts/Sortable.min.js') }}"></script>
 <script>
+    const indexRoute = "{{ route('admin.subcategory.index') }}";
+
+    function applyListFilters() {
+        const params = new URLSearchParams(window.location.search);
+        const search = $('#search').val().trim();
+        const businessId = $('#filter_business_category_id').val();
+        const categoryId = $('#filter_category_id').val();
+
+        if (search) {
+            params.set('search', search);
+        } else {
+            params.delete('search');
+        }
+
+        if (businessId) {
+            params.set('business_category_id', businessId);
+        } else {
+            params.delete('business_category_id');
+            params.delete('category_id');
+        }
+
+        if (categoryId && businessId) {
+            params.set('category_id', categoryId);
+        } else {
+            params.delete('category_id');
+        }
+
+        window.location = `${indexRoute}?${params.toString()}`;
+    }
+
     // Search
     let timer;
     $('#search').on('keyup', function () {
         clearTimeout(timer);
         timer = setTimeout(() => {
-            let value = $(this).val();
-            window.location = `?search=${value}`;
+            applyListFilters();
         }, 500);
     });
+    $('#filter_business_category_id').on('change', function () {
+        const businessId = this.value;
+        const categorySelect = $('#filter_category_id');
+        categorySelect.html('<option value="">All Main Categories</option>');
+
+        if (!businessId) {
+            applyListFilters();
+            return;
+        }
+
+        $.get(`/admin/get-categories/${businessId}`, res => {
+            res.forEach(item => categorySelect.append(`<option value="${item.id}">${item.name}</option>`));
+            applyListFilters();
+        });
+    });
+    $('#filter_category_id').on('change', applyListFilters);
     $('#resetSearch').on('click', function () {
-        window.location = "{{ route('admin.subcategory.index') }}";
+        window.location = indexRoute;
     });
 
     // Add/Edit subcategory
@@ -257,6 +324,61 @@
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 }
+            });
+        });
+    });
+
+    const sortableSubBody = document.getElementById('sortable-subcategories');
+    if (sortableSubBody && typeof Sortable !== 'undefined') {
+        new Sortable(sortableSubBody, {
+            handle: '.drag-handle',
+            animation: 150,
+            onEnd: function () {
+                const rows = Array.from(sortableSubBody.querySelectorAll('tr[data-id]'));
+                const ids = rows.map(row => Number(row.dataset.id));
+                const orders = rows.map(row => Number(row.dataset.order || 0)).filter(order => order > 0);
+                const base = orders.length ? Math.min(...orders) : 1;
+
+                fetch("{{ route('admin.subcategory.reorder') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ ids, base })
+                }).then(() => {
+                    Toast.fire({ icon: 'success', title: 'Order saved' });
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 700);
+                });
+            }
+        });
+    }
+
+    $('#reorderSubCategoryAlphabetBtn').on('click', function () {
+        Swal.fire({
+            title: 'Apply Alphabetic Order?',
+            text: 'This will reorder current sub category list from A to Z.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, reorder',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            fetch("{{ route('admin.subcategory.reorder-alphabetic') }}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            }).then(() => {
+                Toast.fire({ icon: 'success', title: 'Reordered A-Z' });
+                setTimeout(() => {
+                    window.location.reload();
+                }, 700);
             });
         });
     });

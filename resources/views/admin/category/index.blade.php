@@ -4,15 +4,26 @@
 
 <div class="d-flex align-items-center justify-content-between px-3">
     <h4>{{ __('Categories') }}</h4>
-    @hasPermission('admin.category.create')
-    <button class="btn btn-primary" id="addCategoryBtn"><i class="fa fa-plus"></i> Add Category</button>
-    @endhasPermission
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-dark" id="reorderCategoryAlphabetBtn"><i class="fa fa-sort-alpha-asc"></i> Reorder A-Z</button>
+        @hasPermission('admin.category.create')
+        <button class="btn btn-primary" id="addCategoryBtn"><i class="fa fa-plus"></i> Add Category</button>
+        @endhasPermission
+    </div>
 </div>
 
 <div class="container-fluid mt-3">
     <div class="card">
         <div class="card-body"> 
             <div class="row mb-3 g-2">
+                <div class="col-md-4">
+                    <select id="filter_business_category_id" class="form-control">
+                        <option value="">All Business Categories</option>
+                        @foreach($businessCategories as $bc)
+                            <option value="{{ $bc->id }}" {{ (string) request('business_category_id') === (string) $bc->id ? 'selected' : '' }}>{{ $bc->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="col-md-4">
                     <input type="text" id="search" class="form-control" placeholder="Search Business/Main Categories" value="{{ request('search') }}">
                 </div>
@@ -32,15 +43,16 @@
                             @hasPermission('admin.category.toggle')
                             <th>Status</th>
                             @endhasPermission
+                            <th>Move</th>
                             @hasPermission('admin.category.edit')
                             <th class="text-center">Action</th>
                             @endhasPermission
                         </tr>
                     </thead>
 
-                    <tbody>
+                    <tbody id="sortable-categories">
                         @forelse($Categories as $key => $Category)
-                            <tr>
+                            <tr data-id="{{ $Category->id }}" data-order="{{ $Category->sort_order }}">
                                 <td class="text-center">{{ $Categories->firstItem() + $key }}</td>
                                 <td><img src="{{ $Category->thumbnail }}" width="50"></td>
                                 <td>{{ $Category->businessCategory?->name ?? 'N/A' }}</td> 
@@ -54,6 +66,7 @@
                                     </label>
                                 </td>
                                 @endhasPermission
+                                <td class="drag-handle" style="cursor: grab;"><i class="fa fa-bars"></i></td>
                                 @hasPermission('admin.category.edit')
                                 <td class="text-center"> 
                                     <a href="{{ route('admin.product.index', ['approve' => 'true', 'business_category' => $Category->business_category_id, 'category' => $Category->id]) }}"
@@ -123,18 +136,41 @@
 @endsection
 
 @push('scripts') 
+<script src="{{ asset('assets/scripts/Sortable.min.js') }}"></script>
 <script>
+    const indexRoute = "{{ route('admin.category.index') }}";
+
+    function applyListFilters() {
+        const params = new URLSearchParams(window.location.search);
+        const search = $('#search').val().trim();
+        const businessId = $('#filter_business_category_id').val();
+
+        if (search) {
+            params.set('search', search);
+        } else {
+            params.delete('search');
+        }
+
+        if (businessId) {
+            params.set('business_category_id', businessId);
+        } else {
+            params.delete('business_category_id');
+        }
+
+        window.location = `${indexRoute}?${params.toString()}`;
+    }
+
     // Search
     let timer;
     $('#search').on('keyup', function () {
         clearTimeout(timer);
         timer = setTimeout(() => {
-            let value = $(this).val();
-            window.location = `?search=${value}`;
+            applyListFilters();
         }, 500);
     });
+    $('#filter_business_category_id').on('change', applyListFilters);
     $('#resetSearch').on('click', function () {
-        window.location = "{{ route('admin.category.index') }}";
+        window.location = indexRoute;
     });
 
     // Add/Edit category
@@ -226,6 +262,61 @@
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 }
+            });
+        });
+    });
+
+    const sortableCategoryBody = document.getElementById('sortable-categories');
+    if (sortableCategoryBody && typeof Sortable !== 'undefined') {
+        new Sortable(sortableCategoryBody, {
+            handle: '.drag-handle',
+            animation: 150,
+            onEnd: function () {
+                const rows = Array.from(sortableCategoryBody.querySelectorAll('tr[data-id]'));
+                const ids = rows.map(row => Number(row.dataset.id));
+                const orders = rows.map(row => Number(row.dataset.order || 0)).filter(order => order > 0);
+                const base = orders.length ? Math.min(...orders) : 1;
+
+                fetch("{{ route('admin.category.reorder') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ ids, base })
+                }).then(() => {
+                    Toast.fire({ icon: 'success', title: 'Order saved' });
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 700);
+                });
+            }
+        });
+    }
+
+    $('#reorderCategoryAlphabetBtn').on('click', function () {
+        Swal.fire({
+            title: 'Apply Alphabetic Order?',
+            text: 'This will reorder current category list from A to Z.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, reorder',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            fetch("{{ route('admin.category.reorder-alphabetic') }}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            }).then(() => {
+                Toast.fire({ icon: 'success', title: 'Reordered A-Z' });
+                setTimeout(() => {
+                    window.location.reload();
+                }, 700);
             });
         });
     });

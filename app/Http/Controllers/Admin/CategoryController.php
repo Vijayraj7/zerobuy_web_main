@@ -13,27 +13,38 @@ class CategoryController extends Controller
 {
     public function index(Request $request)
     {
-        $sortBy    = $request->input('sort_by', 'id');
-        $sortOrder = $request->input('sort_order', 'desc');
+        $sortBy    = $request->input('sort_by');
+        $sortOrder = $request->input('sort_order', 'asc');
+        $businessCategoryId = $request->input('business_category_id');
 
         $query = Category::with(['businessCategory'])->withCount([ 'products' ]);
 
+        if ($businessCategoryId) {
+            $query->where('business_category_id', $businessCategoryId);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where('name', 'like', "%{$search}%")
-            ->orWhereHas('businessCategory', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('businessCategory', function ($q2) use ($search) {
+                        $q2->where('name', 'like', "%{$search}%");
+                    });
             });
         }
-        // $Categories = $query->paginate(50);
-        $Categories = $query->sortByField($sortBy, $sortOrder)->paginate(50)->withQueryString();
+        if ($sortBy) {
+            $query->sortByField($sortBy, $sortOrder);
+        }
+        $Categories = $query->paginate(50)->withQueryString();
 
         $businessCategories = BusinessCategory::active()->get();
 
         return view('admin.category.index', compact(
             'Categories',
             'businessCategories',
-            'sortBy', 'sortOrder'
+            'sortBy',
+            'sortOrder',
+            'businessCategoryId'
         )); 
     }
     /**
@@ -70,6 +81,7 @@ class CategoryController extends Controller
                 'name'                  => $request->name, 
                 'media_id'              => $thumbnail->id ?? null,
                 'status'                => true,
+                'sort_order'            => (Category::withoutGlobalScope('sorted')->max('sort_order') ?? 0) + 1,
             ]);
             return response()->json(['message' => 'New Category Created Successfully']);
         }catch (\Exception $e) { 
@@ -129,7 +141,31 @@ class CategoryController extends Controller
         $category->update([
             'status' => ! $category->status
         ]);
-
         return response()->json(['success' => true]);
+    }
+
+    public function reorder(Request $request)
+    {
+        $request->validate(['ids' => 'required|array', 'ids.*' => 'integer', 'base' => 'nullable|integer|min:1']);
+        $base = (int) ($request->input('base') ?: 1);
+        foreach ($request->ids as $order => $id) {
+            Category::withoutGlobalScope('sorted')->where('id', $id)->update(['sort_order' => $base + $order]);
+        }
+        return response()->json(['message' => 'Order saved']);
+    }
+
+    public function reorderAlphabetic()
+    {
+        $ids = Category::withoutGlobalScope('sorted')
+            ->orderBy('name', 'asc')
+            ->pluck('id');
+
+        foreach ($ids as $order => $id) {
+            Category::withoutGlobalScope('sorted')
+                ->where('id', $id)
+                ->update(['sort_order' => $order + 1]);
+        }
+
+        return response()->json(['message' => 'Alphabetic order saved']);
     }
 }

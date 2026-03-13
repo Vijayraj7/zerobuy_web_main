@@ -4,7 +4,10 @@
 
 <div class="d-flex justify-content-between align-items-center px-3 mb-3">
     <h4>{{ __('Business Category List') }}</h4> 
-    <button class="btn btn-primary" id="addBusinessCategoryBtn"><i class="fa fa-plus"></i> Add Business Category </button>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-dark" id="reorderBusinessAlphabetBtn"><i class="fa fa-sort-alpha-asc"></i> Reorder A-Z</button>
+        <button class="btn btn-primary" id="addBusinessCategoryBtn"><i class="fa fa-plus"></i> Add Business Category </button>
+    </div>
 </div>
 
 <div class="container-fluid">
@@ -28,13 +31,14 @@
                             <th>{!! sortLink('Business Category', 'name') !!}</th> 
                             <th>Product Count</th>
                             <th>Status</th>
+                            <th>Move</th>
                             <th class="text-center">Action</th>
                         </tr>
                     </thead>
 
-                    <tbody>
+                    <tbody id="sortable-business-categories">
                         @forelse ($categories as $category)
-                        <tr>
+                        <tr data-id="{{ $category->id }}" data-order="{{ $category->sort_order }}">
                             <td>{{ $loop->iteration }}</td>
                             <td><img src="{{ $category->thumbnail }}" width="50"></td>
                             <td>{{ $category->name }}</td>
@@ -46,6 +50,7 @@
                                     <span class="slider round"></span>
                                 </label>
                             </td>
+                            <td class="drag-handle" style="cursor: grab;"><i class="fa fa-bars"></i></td>
                             <!-- Action -->
                             <td class="text-center"> 
                                 <a href="{{ route('admin.product.index', ['approve' => 'true', 'business_category' => $category->id]) }}"
@@ -107,6 +112,7 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('assets/scripts/Sortable.min.js') }}"></script>
 <script>
     // Search
     let timer;
@@ -210,6 +216,61 @@
             $('#previewProfile').attr('src', e.target.result);
         };
         reader.readAsDataURL(file);
+    });
+
+    const sortableBusinessBody = document.getElementById('sortable-business-categories');
+    if (sortableBusinessBody && typeof Sortable !== 'undefined') {
+        new Sortable(sortableBusinessBody, {
+            handle: '.drag-handle',
+            animation: 150,
+            onEnd: function () {
+                const rows = Array.from(sortableBusinessBody.querySelectorAll('tr[data-id]'));
+                const ids = rows.map(row => Number(row.dataset.id));
+                const orders = rows.map(row => Number(row.dataset.order || 0)).filter(order => order > 0);
+                const base = orders.length ? Math.min(...orders) : 1;
+
+                fetch("{{ route('admin.business-category.reorder') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ ids, base })
+                }).then(() => {
+                    Toast.fire({ icon: 'success', title: 'Order saved' });
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 700);
+                });
+            }
+        });
+    }
+
+    $('#reorderBusinessAlphabetBtn').on('click', function () {
+        Swal.fire({
+            title: 'Apply Alphabetic Order?',
+            text: 'This will reorder current business categories list from A to Z.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, reorder',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            fetch("{{ route('admin.business-category.reorder-alphabetic') }}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            }).then(() => {
+                Toast.fire({ icon: 'success', title: 'Reordered A-Z' });
+                setTimeout(() => {
+                    window.location.reload();
+                }, 700);
+            });
+        });
     });
 </script>
 @endpush

@@ -21,6 +21,11 @@ class ChildCategory extends Model
         'status'
     ];
 
+    protected static function booted(): void
+    {
+           static::addGlobalScope('sorted', fn ($query) => $query->orderBy('child_categories.sort_order', 'asc'));
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', 1);

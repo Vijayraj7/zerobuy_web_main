@@ -4,16 +4,43 @@
 
 <div class="d-flex align-items-center justify-content-between px-3">
     <h4>{{ __('Child Categories') }}</h4>
-    @hasPermission('admin.child-category.create')
-    <button class="btn btn-primary" id="addChildCategoryBtn"><i class="fa fa-plus"></i> Add Child Category</button>
-    @endhasPermission
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-dark" id="reorderChildCategoryAlphabetBtn"><i class="fa fa-sort-alpha-asc"></i> Reorder A-Z</button>
+        @hasPermission('admin.child-category.create')
+        <button class="btn btn-primary" id="addChildCategoryBtn"><i class="fa fa-plus"></i> Add Child Category</button>
+        @endhasPermission
+    </div>
 </div>
 
 <div class="container-fluid mt-3">
     <div class="card">
         <div class="card-body"> 
             <div class="row mb-3 g-2">
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <select id="filter_business_category_id" class="form-control">
+                        <option value="">All Business Categories</option>
+                        @foreach($businessCategories as $bc)
+                            <option value="{{ $bc->id }}" {{ (string) request('business_category_id') === (string) $bc->id ? 'selected' : '' }}>{{ $bc->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select id="filter_category_id" class="form-control">
+                        <option value="">All Main Categories</option>
+                        @foreach($categories as $cat)
+                            <option value="{{ $cat->id }}" {{ (string) request('category_id') === (string) $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select id="filter_sub_category_id" class="form-control">
+                        <option value="">All Sub Categories</option>
+                        @foreach($subCategories as $sub)
+                            <option value="{{ $sub->id }}" {{ (string) request('sub_category_id') === (string) $sub->id ? 'selected' : '' }}>{{ $sub->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <input type="text" id="search" class="form-control" placeholder="Search Business/Main/Sub/Child Categories" value="{{ request('search') }}">
                 </div>
                 <div class="col-md-2">
@@ -40,15 +67,16 @@
                             @hasPermission('admin.child-category.toggle')
                             <th>Status</th>
                             @endhasPermission
+                            <th>Move</th>
                             @hasPermission('admin.child-category.edit')
                             <th class="text-center">Action</th>
                             @endhasPermission
                         </tr>
                     </thead>
 
-                    <tbody>
+                    <tbody id="sortable-child-categories">
                         @forelse($childCategories as $key => $childCategory)
-                            <tr>
+                            <tr data-id="{{ $childCategory->id }}" data-order="{{ $childCategory->sort_order }}">
                                 <td class="text-center">{{ $childCategories->firstItem() + $key }}</td>
                                 <td><img src="{{ $childCategory->thumbnail }}" width="50"></td>
                                 <td>{{ $childCategory->businessCategory?->name ?? 'N/A' }}</td>
@@ -64,6 +92,7 @@
                                     </label>
                                 </td>
                                 @endhasPermission
+                                <td class="drag-handle" style="cursor: grab;"><i class="fa fa-bars"></i></td>
                                 @hasPermission('admin.child-category.edit')
                                 <td class="text-center"> 
                                     <a href="{{ route('admin.product.index', ['approve' => 'true', 'business_category' => $childCategory->business_category_id, 'category' => $childCategory->category_id, 'sub_category' => $childCategory->sub_category_id, 'child_category' => $childCategory->id]) }}"
@@ -141,18 +170,93 @@
 @endsection
 
 @push('scripts') 
+<script src="{{ asset('assets/scripts/Sortable.min.js') }}"></script>
 <script>
+    const indexRoute = "{{ route('admin.child-category.index') }}";
+
+    function applyListFilters() {
+        const params = new URLSearchParams(window.location.search);
+        const search = $('#search').val().trim();
+        const businessId = $('#filter_business_category_id').val();
+        const categoryId = $('#filter_category_id').val();
+        const subCategoryId = $('#filter_sub_category_id').val();
+
+        if (search) {
+            params.set('search', search);
+        } else {
+            params.delete('search');
+        }
+
+        if (businessId) {
+            params.set('business_category_id', businessId);
+        } else {
+            params.delete('business_category_id');
+            params.delete('category_id');
+            params.delete('sub_category_id');
+        }
+
+        if (categoryId && businessId) {
+            params.set('category_id', categoryId);
+        } else {
+            params.delete('category_id');
+            params.delete('sub_category_id');
+        }
+
+        if (subCategoryId && categoryId) {
+            params.set('sub_category_id', subCategoryId);
+        } else {
+            params.delete('sub_category_id');
+        }
+
+        window.location = `${indexRoute}?${params.toString()}`;
+    }
+
     // Search
     let timer;
     $('#search').on('keyup', function () {
         clearTimeout(timer);
         timer = setTimeout(() => {
-            let value = $(this).val();
-            window.location = `?search=${value}`;
+            applyListFilters();
         }, 500);
     });
+    $('#filter_business_category_id').on('change', function () {
+        const businessId = this.value;
+        const categorySelect = $('#filter_category_id');
+        const subCategorySelect = $('#filter_sub_category_id');
+
+        categorySelect.html('<option value="">All Main Categories</option>');
+        subCategorySelect.html('<option value="">All Sub Categories</option>');
+
+        if (!businessId) {
+            applyListFilters();
+            return;
+        }
+
+        $.get(`/admin/get-categories/${businessId}`, res => {
+            res.forEach(item => categorySelect.append(`<option value="${item.id}">${item.name}</option>`));
+            applyListFilters();
+        });
+    });
+
+    $('#filter_category_id').on('change', function () {
+        const categoryId = this.value;
+        const subCategorySelect = $('#filter_sub_category_id');
+        subCategorySelect.html('<option value="">All Sub Categories</option>');
+
+        if (!categoryId) {
+            applyListFilters();
+            return;
+        }
+
+        $.get(`/admin/get-subcategories/${categoryId}`, res => {
+            res.forEach(item => subCategorySelect.append(`<option value="${item.id}">${item.name}</option>`));
+            applyListFilters();
+        });
+    });
+
+    $('#filter_sub_category_id').on('change', applyListFilters);
     $('#resetSearch').on('click', function () {
-        window.location = "{{ route('admin.child-category.index') }}";
+        window.location = indexRoute;
     });
 
     // Add/Edit child-category
@@ -294,6 +398,61 @@
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 }
+            });
+        });
+    });
+
+    const sortableChildBody = document.getElementById('sortable-child-categories');
+    if (sortableChildBody && typeof Sortable !== 'undefined') {
+        new Sortable(sortableChildBody, {
+            handle: '.drag-handle',
+            animation: 150,
+            onEnd: function () {
+                const rows = Array.from(sortableChildBody.querySelectorAll('tr[data-id]'));
+                const ids = rows.map(row => Number(row.dataset.id));
+                const orders = rows.map(row => Number(row.dataset.order || 0)).filter(order => order > 0);
+                const base = orders.length ? Math.min(...orders) : 1;
+
+                fetch("{{ route('admin.child-category.reorder') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ ids, base })
+                }).then(() => {
+                    Toast.fire({ icon: 'success', title: 'Order saved' });
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 700);
+                });
+            }
+        });
+    }
+
+    $('#reorderChildCategoryAlphabetBtn').on('click', function () {
+        Swal.fire({
+            title: 'Apply Alphabetic Order?',
+            text: 'This will reorder current child category list from A to Z.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, reorder',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            fetch("{{ route('admin.child-category.reorder-alphabetic') }}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            }).then(() => {
+                Toast.fire({ icon: 'success', title: 'Reordered A-Z' });
+                setTimeout(() => {
+                    window.location.reload();
+                }, 700);
             });
         });
     });

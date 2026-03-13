@@ -13,11 +13,11 @@ class BusinessCategoryController extends Controller
 {
     public function index(Request $request)
     {
-        $sortBy    = $request->input('sort_by', 'id');
-        $sortOrder = $request->input('sort_order', 'desc');
+        $sortBy    = $request->input('sort_by');
+        $sortOrder = $request->input('sort_order', 'asc');
         $allowedSortFields = ['id', 'name', 'status'];
-        if (!in_array($sortBy, $allowedSortFields)) {
-            $sortBy = 'id';
+        if ($sortBy && !in_array($sortBy, $allowedSortFields)) {
+            $sortBy = null;
         }
 
         $query = BusinessCategory::withCount([
@@ -31,8 +31,9 @@ class BusinessCategoryController extends Controller
             $query->where('name', 'like', "%{$search}%");
         }
 
-        // $categories = $query->paginate(50); 
-        $query->orderBy($sortBy, $sortOrder);
+        if ($sortBy) {
+            $query->orderBy($sortBy, $sortOrder);
+        }
         $categories = $query->paginate(50)->withQueryString();
 
         return view('admin.business-category.index', compact('categories','sortBy', 'sortOrder'));  
@@ -53,6 +54,7 @@ class BusinessCategoryController extends Controller
             'slug'          => Str::slug($request->name, '-'),
             'media_id'      => $thumbnail->id ?? null,
             'status'        => 1,
+            'sort_order'    => (BusinessCategory::withoutGlobalScope('sorted')->max('sort_order') ?? 0) + 1,
         ]);
         return response()->json(['message' => 'New Business category created successfully']); 
     }
@@ -94,7 +96,31 @@ class BusinessCategoryController extends Controller
         $businessCategory->update([
             'status' => ! $businessCategory->status
         ]);
-
         return response()->json(['success' => true]);
+    }
+
+    public function reorder(Request $request)
+    {
+        $request->validate(['ids' => 'required|array', 'ids.*' => 'integer', 'base' => 'nullable|integer|min:1']);
+        $base = (int) ($request->input('base') ?: 1);
+        foreach ($request->ids as $order => $id) {
+            BusinessCategory::withoutGlobalScope('sorted')->where('id', $id)->update(['sort_order' => $base + $order]);
+        }
+        return response()->json(['message' => 'Order saved']);
+    }
+
+    public function reorderAlphabetic()
+    {
+        $ids = BusinessCategory::withoutGlobalScope('sorted')
+            ->orderBy('name', 'asc')
+            ->pluck('id');
+
+        foreach ($ids as $order => $id) {
+            BusinessCategory::withoutGlobalScope('sorted')
+                ->where('id', $id)
+                ->update(['sort_order' => $order + 1]);
+        }
+
+        return response()->json(['message' => 'Alphabetic order saved']);
     }
 }

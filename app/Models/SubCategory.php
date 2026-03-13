@@ -15,6 +15,11 @@ class SubCategory extends Model
 
     protected $guarded = ['id'];
 
+    protected static function booted(): void
+    {
+           static::addGlobalScope('sorted', fn ($query) => $query->orderBy('sub_categories.sort_order', 'asc'));
+    }
+
     public function translations(): HasMany
     {
         return $this->hasMany(TranslateUtility::class);

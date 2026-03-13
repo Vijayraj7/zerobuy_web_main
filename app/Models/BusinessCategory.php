@@ -13,7 +13,12 @@ use Illuminate\Support\Facades\Storage;
 class BusinessCategory extends Model
 {
     use HasFactory;
-    protected $fillable = ['name', 'slug', 'status', 'media_id'];
+    protected $fillable = ['name', 'slug', 'status', 'media_id', 'sort_order'];
+
+    protected static function booted(): void
+    {
+           static::addGlobalScope('sorted', fn ($query) => $query->orderBy('sort_order', 'asc'));
+    }
 
     public function scopeActive(Builder $query)
     {

@@ -15,7 +15,7 @@
                 <h5 class="text-white mt-2">Active Subscription Stores</h5> 
                 <div class="text-white">{{ $activeCount }}</div>
             </a> 
-            <a class="btn btn-warning"> 
+            <a class="btn btn-danger"> 
                 <h5 class="text-white mt-2">Expired Subscription Stores</h5>
                 <div class="text-white">{{ $expiredCount }}</div>
             </a>
@@ -85,7 +85,7 @@ $(function () {
         columns: [
             { data: 'DT_RowIndex', orderable:false, searchable:false },
             { data: 'activation_date' },
-            { data: 'shop_id', name: 'shop_id' },
+            { data: 'shop_code', name: 'shop.shop_code' },
             { data: 'shop_name', name: 'shop.name' },
             { data: 'subscription_plan_name', name: 'plan.name' },
             { data: 'plan_validity', searchable:false },

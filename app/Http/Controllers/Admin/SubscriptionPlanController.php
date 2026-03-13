@@ -298,7 +298,7 @@ class SubscriptionPlanController extends Controller
                         ->from('shop_subscriptions')
                         ->groupBy('shop_id');
                 })
-                ->with(['shop:id,name', 'plan:id,name,duration']);
+                ->with(['shop:id,name,shop_code', 'plan:id,name,duration']);
 
             /** STATUS FILTER */
             $now = Carbon::now();
@@ -323,9 +323,9 @@ class SubscriptionPlanController extends Controller
                 )
 
                 ->addColumn(
-                    'shop_id',
+                    'shop_code',
                     fn($row) =>
-                    'STR0' . $row->shop_id
+                    ($row->shop->shop_code ?? '-')
                 )
 
                 ->addColumn(

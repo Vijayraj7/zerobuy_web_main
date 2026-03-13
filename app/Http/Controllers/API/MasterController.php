@@ -124,6 +124,7 @@ class MasterController extends Controller
             'app_store_link' => $generaleSetting?->app_store_url ?? null,
             'payment_gateways' => PaymentGatewayResource::collection($paymentGateways),
             'multi_vendor' => (bool) ($shopType == 'multi' ? true : false),
+            'shop_register' => (bool) ($generaleSetting?->shop_register ?? false),
             'mobile' => $generaleSetting?->footer_phone ?? '+880123456789',
             'address' => $generaleSetting?->address ?? 'Dhaka, Bangladesh',
             'web_show_footer' => (bool) ($generaleSetting?->show_footer ?? true),

@@ -247,6 +247,8 @@ Route::name('admin.')->group(function () {
         Route::controller(BusinessCategoryController::class)->group(function () {
             Route::get('/business-category', 'index')->name('business-category.index');
             Route::post('/business-category/store', 'store')->name('business-category.store');
+            Route::post('/business-category/reorder', 'reorder')->name('business-category.reorder');
+            Route::post('/business-category/reorder-alphabetic', 'reorderAlphabetic')->name('business-category.reorder-alphabetic');
             Route::get('/business-category/{businessCategory}/edit', 'edit')->name('business-category.edit');
             Route::put('/business-category/{businessCategory}/update', 'update')->name('business-category.update');
             Route::post('/business-category/{businessCategory}/toggle', 'statusToggle')->name('business-category.toggle');
@@ -257,6 +259,8 @@ Route::name('admin.')->group(function () {
             Route::get('/categories', 'index')->name('category.index');
             Route::get('/category/create', 'create')->name('category.create');
             Route::post('/category/store', 'store')->name('category.store');
+            Route::post('/category/reorder', 'reorder')->name('category.reorder');
+            Route::post('/category/reorder-alphabetic', 'reorderAlphabetic')->name('category.reorder-alphabetic');
             // Route::get('/category/show', 'show')->name('category.show');
             Route::get('/category/{category}/edit', 'edit')->name('category.edit');
             Route::put('/category/{category}/update', 'update')->name('category.update');
@@ -270,6 +274,8 @@ Route::name('admin.')->group(function () {
             Route::get('/subcategory', 'index')->name('subcategory.index');
             Route::get('/subcategory/create', 'create')->name('subcategory.create');
             Route::post('/subcategory/store', 'store')->name('subcategory.store');
+            Route::post('/subcategory/reorder', 'reorder')->name('subcategory.reorder');
+            Route::post('/subcategory/reorder-alphabetic', 'reorderAlphabetic')->name('subcategory.reorder-alphabetic');
             Route::get('/subcategory/{subCategory}/edit', 'edit')->name('subcategory.edit');
             Route::put('/subcategory/{subCategory}/update', 'update')->name('subcategory.update');
             Route::delete('/subcategory/{subCategory}/destroy', 'destroy')->name('subcategory.destroy');
@@ -281,6 +287,8 @@ Route::name('admin.')->group(function () {
             Route::get('/child-category', 'index')->name('child-category.index');
             Route::get('/child-category/create', 'create')->name('child-category.create');
             Route::post('/child-category/store', 'store')->name('child-category.store');
+            Route::post('/child-category/reorder', 'reorder')->name('child-category.reorder');
+            Route::post('/child-category/reorder-alphabetic', 'reorderAlphabetic')->name('child-category.reorder-alphabetic');
             Route::get('/child-category/{childCategory}/edit', 'edit')->name('child-category.edit');
             Route::put('/child-category/{childCategory}/update', 'update')->name('child-category.update');
             Route::delete('/child-category/{childCategory}/destroy', 'destroy')->name('child-category.destroy');

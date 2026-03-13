@@ -15,8 +15,11 @@ class ChildCategoryController extends Controller
 {
     public function index(Request $request)
     {
-        $sortBy    = $request->input('sort_by', 'id');
-        $sortOrder = $request->input('sort_order', 'desc');
+        $sortBy    = $request->input('sort_by');
+        $sortOrder = $request->input('sort_order', 'asc');
+        $businessCategoryId = $request->input('business_category_id');
+        $categoryId = $request->input('category_id');
+        $subCategoryId = $request->input('sub_category_id');
 
         $query = ChildCategory::with([
             'businessCategory',
@@ -25,28 +28,57 @@ class ChildCategoryController extends Controller
         ])->withCount('products');
         // ->latest('id');
 
+        if ($businessCategoryId) {
+            $query->where('business_category_id', $businessCategoryId);
+        }
+
+        if ($categoryId) {
+            $query->where('category_id', $categoryId);
+        }
+
+        if ($subCategoryId) {
+            $query->where('sub_category_id', $subCategoryId);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where('name', 'like', "%{$search}%")
-            ->orWhereHas('subCategory', function ($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                ->orWhereHas('category', function ($q2) use ($search) {
-                    $q2->where('name', 'like', "%{$search}%")
-                    ->orWhereHas('businessCategory', function ($q2) use ($search) {
-                        $q2->where('name', 'like', "%{$search}%");
+                    ->orWhereHas('subCategory', function ($q2) use ($search) {
+                        $q2->where('name', 'like', "%{$search}%")
+                            ->orWhereHas('category', function ($q3) use ($search) {
+                                $q3->where('name', 'like', "%{$search}%")
+                                    ->orWhereHas('businessCategory', function ($q4) use ($search) {
+                                        $q4->where('name', 'like', "%{$search}%");
+                                    });
+                            });
                     });
-                }); 
             });
         } 
 
-        $childCategories = $query->sortByField($sortBy, $sortOrder)->paginate(50)->withQueryString();
+        if ($sortBy) {
+            $query->sortByField($sortBy, $sortOrder);
+        }
+        $childCategories = $query->paginate(50)->withQueryString();
 
         $businessCategories = BusinessCategory::active()->get();
+        $categories = $businessCategoryId
+            ? Category::active()->where('business_category_id', $businessCategoryId)->get(['id', 'name'])
+            : collect();
+        $subCategories = $categoryId
+            ? SubCategory::isActive()->where('category_id', $categoryId)->get(['id', 'name'])
+            : collect();
 
         return view('admin.child-category.index', compact(
             'childCategories',
             'businessCategories', 
-            'sortBy', 'sortOrder'
+            'categories',
+            'subCategories',
+            'sortBy',
+            'sortOrder',
+            'businessCategoryId',
+            'categoryId',
+            'subCategoryId'
         ));
     }
 
@@ -76,6 +108,7 @@ class ChildCategoryController extends Controller
                 'slug'                  => Str::slug($request->name, '-'),
                 'media_id'              => $thumbnail->id ?? null,
                 'status'                => true,
+                'sort_order'            => (ChildCategory::withoutGlobalScope('sorted')->max('sort_order') ?? 0) + 1,
             ]);
             return response()->json(['message' => 'New Child Category Created Successfully']);
         }catch (\Exception $e) { 
@@ -135,7 +168,31 @@ class ChildCategoryController extends Controller
         $childCategory->update([
             'status' => ! $childCategory->status
         ]);
-
         return response()->json(['success' => true]);
+    }
+
+    public function reorder(Request $request)
+    {
+        $request->validate(['ids' => 'required|array', 'ids.*' => 'integer', 'base' => 'nullable|integer|min:1']);
+        $base = (int) ($request->input('base') ?: 1);
+        foreach ($request->ids as $order => $id) {
+            ChildCategory::withoutGlobalScope('sorted')->where('id', $id)->update(['sort_order' => $base + $order]);
+        }
+        return response()->json(['message' => 'Order saved']);
+    }
+
+    public function reorderAlphabetic()
+    {
+        $ids = ChildCategory::withoutGlobalScope('sorted')
+            ->orderBy('name', 'asc')
+            ->pluck('id');
+
+        foreach ($ids as $order => $id) {
+            ChildCategory::withoutGlobalScope('sorted')
+                ->where('id', $id)
+                ->update(['sort_order' => $order + 1]);
+        }
+
+        return response()->json(['message' => 'Alphabetic order saved']);
     }
 }

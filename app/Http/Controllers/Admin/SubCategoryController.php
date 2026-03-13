@@ -17,8 +17,10 @@ class SubCategoryController extends Controller
      */
     public function index(Request $request)
     {
-        $sortBy    = $request->input('sort_by', 'id');
-        $sortOrder = $request->input('sort_order', 'desc');
+        $sortBy    = $request->input('sort_by');
+        $sortOrder = $request->input('sort_order', 'asc');
+        $businessCategoryId = $request->input('business_category_id');
+        $categoryId = $request->input('category_id');
 
         $query = SubCategory::withCount([
             'products' 
@@ -27,25 +29,44 @@ class SubCategoryController extends Controller
             'category'
         ]);
 
+        if ($businessCategoryId) {
+            $query->where('business_category_id', $businessCategoryId);
+        }
+
+        if ($categoryId) {
+            $query->where('category_id', $categoryId);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where('name', 'like', "%{$search}%")
-            ->orWhereHas('category', function ($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                ->orWhereHas('businessCategory', function ($q2) use ($search) {
-                    $q2->where('name', 'like', "%{$search}%");
-                }); 
+                    ->orWhereHas('category', function ($q2) use ($search) {
+                        $q2->where('name', 'like', "%{$search}%")
+                            ->orWhereHas('businessCategory', function ($q3) use ($search) {
+                                $q3->where('name', 'like', "%{$search}%");
+                            });
+                    });
             });
         }
-        // $subCategories = $query->paginate(50);
-        $subCategories = $query->sortByField($sortBy, $sortOrder)->paginate(50)->withQueryString();
+        if ($sortBy) {
+            $query->sortByField($sortBy, $sortOrder);
+        }
+        $subCategories = $query->paginate(50)->withQueryString();
 
         $businessCategories = BusinessCategory::active()->get();
+        $categories = $businessCategoryId
+            ? Category::active()->where('business_category_id', $businessCategoryId)->get(['id', 'name'])
+            : collect();
 
         return view('admin.sub-category.index', compact(
             'subCategories',
             'businessCategories',
-            'sortBy', 'sortOrder'
+            'categories',
+            'sortBy',
+            'sortOrder',
+            'businessCategoryId',
+            'categoryId'
         ));
     }
 
@@ -76,6 +97,7 @@ class SubCategoryController extends Controller
                 'slug'                  => Str::slug($request->name, '-'),
                 'media_id'              => $thumbnail->id ?? null,
                 'is_active'             => true,
+                'sort_order'            => (SubCategory::withoutGlobalScope('sorted')->max('sort_order') ?? 0) + 1,
             ]);
             return response()->json(['message' => 'New Sub Category Created Successfully']);
         }catch (\Exception $e) { 
@@ -131,7 +153,31 @@ class SubCategoryController extends Controller
         $subCategory->update([
             'is_active' => ! $subCategory->is_active
         ]);
-
         return response()->json(['success' => true]);
+    }
+
+    public function reorder(Request $request)
+    {
+        $request->validate(['ids' => 'required|array', 'ids.*' => 'integer', 'base' => 'nullable|integer|min:1']);
+        $base = (int) ($request->input('base') ?: 1);
+        foreach ($request->ids as $order => $id) {
+            SubCategory::withoutGlobalScope('sorted')->where('id', $id)->update(['sort_order' => $base + $order]);
+        }
+        return response()->json(['message' => 'Order saved']);
+    }
+
+    public function reorderAlphabetic()
+    {
+        $ids = SubCategory::withoutGlobalScope('sorted')
+            ->orderBy('name', 'asc')
+            ->pluck('id');
+
+        foreach ($ids as $order => $id) {
+            SubCategory::withoutGlobalScope('sorted')
+                ->where('id', $id)
+                ->update(['sort_order' => $order + 1]);
+        }
+
+        return response()->json(['message' => 'Alphabetic order saved']);
     }
 }

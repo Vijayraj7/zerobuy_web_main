@@ -17,6 +17,11 @@ class Category extends Model
     protected $guarded = ['id'];
     protected $appends = ['thumbnail'];
 
+    protected static function booted(): void
+    {
+           static::addGlobalScope('sorted', fn ($query) => $query->orderBy('categories.sort_order', 'asc'));
+    }
+
     public function translations(): HasMany
     {
         return $this->hasMany(TranslateUtility::class);
