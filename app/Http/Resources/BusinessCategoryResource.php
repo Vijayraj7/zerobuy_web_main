@@ -21,7 +21,9 @@ class BusinessCategoryResource extends JsonResource
             'id' => $this->id ?? null,
             'name' => ($this->name ?? null),
             'thumbnail' => $this->thumbnail ?? null,
-            'categories' => CategoryResource::collection($this->categories ?? []),
+            'categories' => CategoryResource::collection(
+                ($this->categories ?? collect())->where('status', 1)->values()
+            ),
         ];
     }
 }

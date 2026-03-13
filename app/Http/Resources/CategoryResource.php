@@ -21,7 +21,9 @@ class CategoryResource extends JsonResource
             'id' => $this->id ?? null,
             'name' => $translation ? $translation->name : ($this->name ?? null),
             'thumbnail' => $this->thumbnail ?? null,
-            'sub_categories' => SubCategoryResource::collection($this->subCategories ?? []),
+            'sub_categories' => SubCategoryResource::collection(
+                ($this->subCategories ?? collect())->where('is_active', 1)->values()
+            ),
         ];
     }
 }
