@@ -21,10 +21,10 @@ class BusinessCategoryController extends Controller
         }
 
         $query = BusinessCategory::withCount([
-            'categories as category_products_count' => function ($q) {
-                $q->join('product_categories', 'categories.id', '=', 'product_categories.category_id');
-            } 
-        ]);
+                'categories as category_products_count' => function ($q) {
+                    $q->join('product_categories', 'categories.id', '=', 'product_categories.category_id');
+                }
+            ]);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -122,5 +122,21 @@ class BusinessCategoryController extends Controller
         }
 
         return response()->json(['message' => 'Alphabetic order saved']);
+    }
+
+    public function destroy(BusinessCategory $businessCategory)
+    {
+        $hasProducts = $businessCategory->categories()->whereHas('products')->exists();
+
+        if ($hasProducts) {
+            return back()->with('error', 'Cannot delete this business category because products are linked to it.');
+        }
+
+        try {
+            $businessCategory->delete();
+            return back()->withSuccess('Business category deleted successfully.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Unable to delete this business category right now.');
+        }
     }
 }

@@ -195,4 +195,18 @@ class ChildCategoryController extends Controller
 
         return response()->json(['message' => 'Alphabetic order saved']);
     }
+
+    public function destroy(ChildCategory $childCategory)
+    {
+        if ($childCategory->products()->exists()) {
+            return back()->with('error', 'Cannot delete this child category because products are linked to it.');
+        }
+
+        try {
+            $childCategory->delete();
+            return back()->withSuccess('Child category deleted successfully.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Unable to delete this child category right now.');
+        }
+    }
 }

@@ -180,4 +180,18 @@ class SubCategoryController extends Controller
 
         return response()->json(['message' => 'Alphabetic order saved']);
     }
+
+    public function destroy(SubCategory $subCategory)
+    {
+        if ($subCategory->products()->exists()) {
+            return back()->with('error', 'Cannot delete this sub category because products are linked to it.');
+        }
+
+        try {
+            $subCategory->delete();
+            return back()->withSuccess('Sub category deleted successfully.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Unable to delete this sub category right now.');
+        }
+    }
 }

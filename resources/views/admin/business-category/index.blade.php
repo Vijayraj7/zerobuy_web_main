@@ -58,6 +58,22 @@
                                     <i class="fa fa-eye"></i>
                                 </a>
                                 <a href="javascript:;" class="btn btn-outline-primary editBusinessCategoryButton" data-id="{{$category->id}}"><i class="fa fa-edit"></i></a>
+                                @hasPermission('admin.business-category.destroy')
+                                    @if((int) $category->category_products_count === 0)
+                                        <form action="{{ route('admin.business-category.destroy', $category->id) }}" method="POST" class="d-inline"
+                                            onsubmit="return confirm('Delete this business category?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-outline-danger" title="Delete">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <button type="button" class="btn btn-outline-danger" title="Cannot delete, products are linked" disabled>
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    @endif
+                                @endhasPermission
                             </td>
                         </tr>
                         @empty
