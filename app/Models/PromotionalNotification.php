@@ -22,6 +22,7 @@ class PromotionalNotification extends Model
         'product_id',
         'store_id',
         'shop_id',
+        'seller_audience',
         'media_id',
         'message',
         'last_sent_at',

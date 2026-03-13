@@ -88,7 +88,18 @@
                                         <img src="{{ $noti->thumbnail }}" class="w-100 rounded">
                                         <div class="mt-2">
                                             <div class="small">
-                                                Shop: <b>{{ $noti->shop?->name ?? 'N/A' }}</b>
+                                                Send To:
+                                                <b>
+                                                    @if (($noti->seller_audience ?? ($noti->shop_id ? 'shop' : 'all')) === 'shop')
+                                                        {{ $noti->shop?->name ?? 'N/A' }}
+                                                    @elseif (($noti->seller_audience ?? 'all') === 'active')
+                                                        Active Sellers
+                                                    @elseif (($noti->seller_audience ?? 'all') === 'inactive')
+                                                        Non Active Sellers
+                                                    @else
+                                                        All Sellers
+                                                    @endif
+                                                </b>
                                             </div>
 
                                             @if ($noti->message)
@@ -101,8 +112,9 @@
                                         <div class="d-flex justify-content-center gap-2 mt-2">
                                             <button type="button" class="btn btn-success btn-edit-seller"
                                                 data-id="{{ $noti->id }}"
-                                                data-business-category="{{ $noti->business_category_id }}"
+                                                data-business-category="{{ $noti->business_category_id ?? '' }}"
                                                 data-shop-id="{{ $noti->shop_id }}"
+                                                data-seller-audience="{{ $noti->seller_audience ?? ($noti->shop_id ? 'shop' : 'all') }}"
                                                 data-shop-name="{{ $noti->shop?->name ?? 'N/A' }}"
                                                 data-message="{{ $noti->message }}"
                                                 data-thumbnail="{{ $noti->thumbnail }}">
@@ -215,8 +227,8 @@
                         <div class="mb-3">
                             <div class="mb-3">
                                 <label class="form-label">Business Category</label>
-                                <select name="seller_business_category_id" class="form-control select2Seller" required>
-                                    <option value="">--Main Notification Category--</option>
+                                <select name="seller_business_category_id" class="form-control select2Seller">
+                                    <option value="">All Business Categories</option>
                                     @foreach ($businessCategories as $bc)
                                         <option value="{{ $bc->id }}">{{ $bc->name }}</option>
                                     @endforeach
@@ -225,15 +237,20 @@
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label">Send To</label>
+                            <select name="seller_audience" id="seller_audience" class="form-control select2Seller">
+                                <option value="all">All Sellers</option>
+                                <option value="active">Active Sellers</option>
+                                <option value="inactive">Non Active Sellers</option>
+                                <option value="shop">Specific Seller Store</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
                             <label class="form-label">Store / Seller (Shop)</label>
-                            <div class="d-flex gap-2">
-                                <select name="shop_id" id="seller_shop_id" class="form-control select2Seller" style="flex: 1;">
-                                    <option>All Sellers</option>
-                                </select>
-                                <button type="button" class="btn btn-secondary" id="selectAllSellers">
-                                    <i class="fa fa-users"></i> All Sellers
-                                </button>
-                            </div>
+                            <select name="shop_id" id="seller_shop_id" class="form-control select2Seller" style="width: 100%;">
+                                <option value="">Select Seller Store</option>
+                            </select>
                         </div>
 
                         <div class="mb-3">
@@ -384,6 +401,22 @@
                 width: '100%'
             });
 
+            function syncSellerAudienceState() {
+                const audience = $('#seller_audience').val();
+                const shopDropdown = $('#seller_shop_id');
+                const shouldEnableShop = audience === 'shop';
+
+                if (!shouldEnableShop) {
+                    shopDropdown.val(null).trigger('change');
+                }
+
+                shopDropdown.prop('disabled', !shouldEnableShop);
+            }
+
+            $('#seller_audience').on('change', function() {
+                syncSellerAudienceState();
+            });
+
             /* ========= ADD SELLER NOTIFICATION ========= */
             $('button[data-bs-target="#sellerNotificationModal"]').on('click', function() {
                 $('#sellerNotificationForm')[0].reset();
@@ -394,9 +427,9 @@
                     "{{ route('admin.seller.notification.store') }}");
                 $('#seller_notification_banner_preview').attr('src',
                     'https://placehold.co/2000x500/f1f5f9/png');
-                $('#selectAllSellers').removeClass('btn-success').addClass('btn-secondary');
-                $('#selectAllSellers').html('<i class="fa fa-users"></i> All Sellers');
-                $('#seller_shop_id').prop('disabled', false);
+                $('#seller_audience').val('all').trigger('change');
+                $('#seller_shop_id').empty().append(new Option('Select Seller Store', '', false, false)).trigger('change');
+                syncSellerAudienceState();
             });
 
             /* ========= EDIT SELLER NOTIFICATION ========= */
@@ -404,6 +437,7 @@
                 const id = $(this).data('id');
                 const businessCategory = $(this).data('business-category');
                 const shopId = $(this).data('shop-id');
+                const sellerAudience = $(this).data('seller-audience') || 'all';
                 const shopName = $(this).data('shop-name');
                 const message = $(this).data('message');
                 const thumbnail = $(this).data('thumbnail');
@@ -413,27 +447,24 @@
                 $('#sellerModalTitle').text('Edit Seller Notification');
                 $('#sellerNotificationForm').attr('action', `/admin/seller-notification/${id}/update`);
 
-                $('select[name="seller_business_category_id"]').val(businessCategory).trigger('change');
+                $('select[name="seller_business_category_id"]').val(businessCategory || '').trigger('change');
+                $('#seller_audience').val(sellerAudience).trigger('change');
                 $('#seller_message').val(message);
                 $('#seller_notification_banner_preview').attr('src', thumbnail);
 
                 // Load and set shop
-                if (shopId) {
+                if (sellerAudience === 'shop' && shopId) {
                     $('#seller_shop_id').empty()
-                        .append(new Option('All Sellers', '', false, false))
+                        .append(new Option('Select Seller Store', '', false, false))
                         .append(new Option(shopName, shopId, true, true))
                         .trigger('change');
-                    $('#seller_shop_id').prop('disabled', false);
-                    $('#selectAllSellers').removeClass('btn-success').addClass('btn-secondary');
-                    $('#selectAllSellers').html('<i class="fa fa-users"></i> All Sellers');
                 } else {
                     $('#seller_shop_id').empty()
-                        .append(new Option('All Sellers', '', true, true))
+                        .append(new Option('Select Seller Store', '', false, false))
                         .trigger('change');
-                    $('#seller_shop_id').prop('disabled', true);
-                    $('#selectAllSellers').removeClass('btn-secondary').addClass('btn-success');
-                    $('#selectAllSellers').html('<i class="fa fa-check"></i> All Sellers');
                 }
+
+                syncSellerAudienceState();
 
                 $('#sellerNotificationModal').modal('show');
             });
@@ -448,11 +479,10 @@
                     "{{ route('admin.seller.notification.store') }}");
                 $('#seller_notification_banner_preview').attr('src',
                     'https://placehold.co/2000x500/f1f5f9/png');
-                $('#seller_shop_id').empty().append(new Option('All Sellers', '', false, false)).trigger(
+                $('#seller_audience').val('all').trigger('change');
+                $('#seller_shop_id').empty().append(new Option('Select Seller Store', '', false, false)).trigger(
                     'change');
-                $('#selectAllSellers').removeClass('btn-success').addClass('btn-secondary');
-                $('#selectAllSellers').html('<i class="fa fa-users"></i> All Sellers');
-                $('#seller_shop_id').prop('disabled', false);
+                syncSellerAudienceState();
             });
 
             $('#seller_shop_id').select2({
@@ -477,25 +507,6 @@
                             }))
                         };
                     }
-                }
-            });
-
-            /* ========= SELECT ALL SELLERS BUTTON ========= */
-            $('#selectAllSellers').on('click', function() {
-                let $btn = $(this);
-                let $dropdown = $('#seller_shop_id');
-                
-                if ($btn.hasClass('btn-success')) {
-                    // Uncheck - enable dropdown
-                    $btn.removeClass('btn-success').addClass('btn-secondary');
-                    $btn.html('<i class="fa fa-users"></i> All Sellers');
-                    $dropdown.prop('disabled', false);
-                } else {
-                    // Check - disable dropdown and set to null
-                    $btn.removeClass('btn-secondary').addClass('btn-success');
-                    $btn.html('<i class="fa fa-check"></i> All Sellers');
-                    $dropdown.val(null).trigger('change');
-                    $dropdown.prop('disabled', true);
                 }
             });
 

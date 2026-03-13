@@ -22,6 +22,7 @@ use App\Models\Payment;
 use App\Models\Shop;
 use App\Models\User;
 use App\Services\NotificationServices;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class OrderRepository extends Repository
@@ -266,6 +267,13 @@ class OrderRepository extends Repository
                 ]);
             }
 
+            self::dispatchOrderNotificationsAfterResponse(
+                order: $order,
+                title: 'Order Received',
+                message: 'Order amount: Rs '.$order->payable_amount.' Order id: '.$order->prefix.$order->order_code,
+                customerEmail: $resolvedUser?->email,
+            );
+
         }
 
         $payment->update([
@@ -353,7 +361,7 @@ class OrderRepository extends Repository
 
     private static function resolveOrderUser($request): ?User
     {
-        $authUser = auth()->user();
+        $authUser = Auth::user();
         if ($authUser instanceof User) {
             return $authUser;
         }
@@ -554,7 +562,7 @@ class OrderRepository extends Repository
             ]);
         }
 
-        $user = auth()->user();
+        $user = Auth::user();
         self::dispatchOrderNotificationsAfterResponse(
             order: $newOrder,
             title: 'Order Received',
@@ -639,7 +647,7 @@ class OrderRepository extends Repository
      */
     public static function getAppliedCouponOrders($coupon)
     {
-        return auth()->user()->customer?->orders()?->where('coupon_id', $coupon->id)->get();
+        return Auth::user()->customer?->orders()?->where('coupon_id', $coupon->id)->get();
     }
 
     /**
@@ -729,7 +737,7 @@ class OrderRepository extends Repository
      */
     public static function OrderStatusUpdateFromRider(Order $order, $driverOrder, $orderStatus)
     {
-        if ($orderStatus == OrderStatus::PROCESSING->value) {
+        if ($orderStatus == 'Processing') {
             $driverOrder->update(['is_accept' => true]);
         }
 
@@ -737,10 +745,10 @@ class OrderRepository extends Repository
             'order_status' => ($orderStatus == 'deliveredAndPaid') ? OrderStatus::DELIVERED->value : $orderStatus,
         ]);
 
-        if ($orderStatus == OrderStatus::PICKUP->value) {
+        if ($orderStatus == 'Pickup') {
             $order->update([
                 'pick_date' => now(),
-                'order_status' => OrderStatus::ON_THE_WAY->value,
+                'order_status' => OrderStatus::SHIPPED->value,
             ]);
         }
 

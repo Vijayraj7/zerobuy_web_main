@@ -9,12 +9,45 @@ use App\Models\SubCategory;
 use App\Models\ChildCategory;
 use App\Models\Product;
 use App\Models\Shop;
+use App\Models\DeviceKey;
 use App\Models\PromotionalNotification;
 use App\Repositories\MediaRepository;
 use App\Services\NotificationServices;
 
 class SellerUserNotificationController extends Controller
 {
+    private const SELLER_AUDIENCE_ALL = 'all';
+    private const SELLER_AUDIENCE_ACTIVE = 'active';
+    private const SELLER_AUDIENCE_INACTIVE = 'inactive';
+    private const SELLER_AUDIENCE_SHOP = 'shop';
+
+    private function normalizeNullableId(mixed $value): ?int
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $normalized = trim((string) $value);
+
+        if ($normalized === '' || strcasecmp($normalized, 'All Sellers') === 0) {
+            return null;
+        }
+
+        return is_numeric($normalized) ? (int) $normalized : null;
+    }
+
+    private function normalizeSellerAudience(?string $value): string
+    {
+        $audience = strtolower(trim((string) $value));
+
+        return in_array($audience, [
+            self::SELLER_AUDIENCE_ALL,
+            self::SELLER_AUDIENCE_ACTIVE,
+            self::SELLER_AUDIENCE_INACTIVE,
+            self::SELLER_AUDIENCE_SHOP,
+        ], true) ? $audience : self::SELLER_AUDIENCE_ALL;
+    }
+
     private function sendToAllUsers($noti)
     {
         $topic = 'topic_customers';
@@ -37,21 +70,50 @@ class SellerUserNotificationController extends Controller
         return true;
     }
 
-    private function sendToSeller($shopId, $noti)
+    private function sendToSeller(?int $shopId, $noti)
     {
-        NotificationServices::sendNotificationToTopic(
-            '',
-            $shopId == null ? 'topic_sellers' :   'topic_sellers_' . $shopId,
-            $noti->message,
-            [
-                'id' => (string) $noti->id,
-                'notification_option_type' => $noti->notification_option_type,
-                'notification_option_link' => (string) $noti->notification_option_link,
-                'image' => $noti->media->src_url ?? '',
-                'business_category_id' => (string) $noti->business_category_id,
-            ],
-            $noti->media->src_url ?? null
+        $sellerAudience = $this->normalizeSellerAudience($noti->seller_audience);
+
+        $shops = Shop::query()
+            ->when($noti->business_category_id, function ($query) use ($noti) {
+                $query->whereHas('businessCategories', function ($businessCategoryQuery) use ($noti) {
+                    $businessCategoryQuery->where('business_category_id', $noti->business_category_id);
+                });
+            })
+            ->when($sellerAudience === self::SELLER_AUDIENCE_ACTIVE, function ($query) {
+                $query->where('status', 1);
+            })
+            ->when($sellerAudience === self::SELLER_AUDIENCE_INACTIVE, function ($query) {
+                $query->where('status', 0);
+            })
+            ->when($sellerAudience === self::SELLER_AUDIENCE_SHOP && $shopId, function ($query) use ($shopId) {
+                $query->whereKey($shopId);
+            });
+
+        $userIds = $shops->pluck('user_id')->filter()->unique()->values();
+
+        if ($userIds->isEmpty()) {
+            return true;
+        }
+
+        $tokens = DeviceKey::query()
+            ->whereIn('user_id', $userIds)
+            ->pluck('key')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($tokens)) {
+            return true;
+        }
+
+        NotificationServices::sendNotification(
+            $noti->message ?? '',
+            $tokens,
+            null
         );
+
         return true;
     }
 
@@ -138,17 +200,26 @@ class SellerUserNotificationController extends Controller
     public function storeSeller(Request $request)
     {
         $request->validate([
-            'seller_business_category_id' => 'required',
+            'seller_business_category_id' => 'nullable',
+            'seller_audience' => 'required|in:all,active,inactive,shop',
             'shop_id' => 'nullable',
             'notification_banner' => 'required|image',
             'message' => 'nullable|string',
         ]);
+
+        $businessCategoryId = $this->normalizeNullableId($request->seller_business_category_id);
+        $sellerAudience = $this->normalizeSellerAudience($request->seller_audience);
+        $shopId = $sellerAudience === self::SELLER_AUDIENCE_SHOP
+            ? $this->normalizeNullableId($request->shop_id)
+            : null;
+
         $thumbnail = MediaRepository::storeByRequest($request->notification_banner, 'banners', 'thumbnail', 'image');
 
         $noti = PromotionalNotification::create([
             'send_to' => 'seller',
-            'business_category_id' => $request->seller_business_category_id,
-            'shop_id' => $request->shop_id,
+            'business_category_id' => $businessCategoryId,
+            'shop_id' => $shopId,
+            'seller_audience' => $sellerAudience,
             'media_id' => $thumbnail->id,
             'message' => $request->message,
             'last_sent_at' => now(),
@@ -163,11 +234,18 @@ class SellerUserNotificationController extends Controller
     public function updateSeller(Request $request, $id)
     {
         $request->validate([
-            'seller_business_category_id' => 'required',
+            'seller_business_category_id' => 'nullable',
+            'seller_audience' => 'required|in:all,active,inactive,shop',
             'shop_id' => 'nullable',
             'notification_banner' => 'nullable|image',
             'message' => 'nullable|string',
         ]);
+
+        $businessCategoryId = $this->normalizeNullableId($request->seller_business_category_id);
+        $sellerAudience = $this->normalizeSellerAudience($request->seller_audience);
+        $shopId = $sellerAudience === self::SELLER_AUDIENCE_SHOP
+            ? $this->normalizeNullableId($request->shop_id)
+            : null;
 
         $noti = PromotionalNotification::findOrFail($id);
 
@@ -177,8 +255,9 @@ class SellerUserNotificationController extends Controller
         }
 
         $noti->update([
-            'business_category_id' => $request->seller_business_category_id,
-            'shop_id' => $request->shop_id,
+            'business_category_id' => $businessCategoryId,
+            'shop_id' => $shopId,
+            'seller_audience' => $sellerAudience,
             'message' => $request->message,
         ]);
 

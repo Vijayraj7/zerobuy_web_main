@@ -18,6 +18,7 @@ use App\Models\Shop;
 use App\Models\VerifyManage;
 use App\Repositories\OrderRepository;
 use App\Services\Delivery\ShiprocketOrderSyncService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -46,7 +47,7 @@ class OrderController extends Controller
         $perPage = $request->per_page;
         $skip = ($page * $perPage) - $perPage;
 
-        $customer = auth()->user()->customer;
+        $customer = Auth::user()->customer;
 
         $orders = $customer->orders()->when($orderStatus, function ($query) use ($orderStatus) {
             if ($orderStatus === OrderStatus::CANCELLED->value || $orderStatus === OrderStatus::CANCELLED_BY_CUSTOMER->value) {
@@ -120,7 +121,7 @@ class OrderController extends Controller
         // ], 500);
 
         $isBuyNow = $request->is_buy_now ?? false;
-        $user = auth()->user();
+        $user = Auth::user();
         // $rshop = generaleSetting('shop',$user);
 
         $verifyManage = Cache::rememberForever('verify_manage', function () {
@@ -392,7 +393,7 @@ class OrderController extends Controller
                         throw new \RuntimeException('Payment session expired. Please place order again.');
                     }
 
-                    $authUser = auth()->user();
+                    $authUser = Auth::user();
                     if (! $authUser || ((int) ($intent['user_id'] ?? 0) !== (int) $authUser->id)) {
                         throw new \RuntimeException('Invalid payment session user.');
                     }
@@ -489,7 +490,7 @@ class OrderController extends Controller
             return $this->json('Payment session expired. Please place order again.', [], 422);
         }
 
-        $authUser = auth()->user();
+        $authUser = Auth::user();
         if (! $authUser) {
             return $this->json('Invalid payment session user.', [], 422);
         }
@@ -982,7 +983,7 @@ class OrderController extends Controller
             'order_id' => 'required|exists:orders,id',
         ]);
 
-        $user = auth()->user();
+        $user = Auth::user();
 
         $verifyManage = Cache::rememberForever('verify_manage', function () {
             return VerifyManage::first();
@@ -1077,7 +1078,7 @@ class OrderController extends Controller
             return $this->json('Please provide order_id or order_code', [], 422);
         }
 
-        $customer = auth()->user()?->customer;
+        $customer = Auth::user()?->customer;
 
         // Find the order by id or code for the authenticated customer.
         $orderQuery = Order::with([
@@ -1411,7 +1412,7 @@ class OrderController extends Controller
 
     public function payment(Order $order, $paymentMethod = null)
     {
-        $authUser = auth()->user();
+        $authUser = Auth::user();
         if (! $authUser || (int) ($authUser->customer?->id ?? 0) !== (int) $order->customer_id) {
             return $this->json('Unauthorized order payment request.', [], 403);
         }

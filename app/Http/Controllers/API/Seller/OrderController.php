@@ -44,7 +44,22 @@ class OrderController extends Controller
 
         $filterType = $request->filter_type ?? null;
 
-        $orderStatus = $request->order_status ?? null;
+        $orderStatus = strtolower((string) ($request->order_status ?? ''));
+        $orderStatusEnumMap = collect(OrderStatus::cases())
+            ->mapWithKeys(fn (OrderStatus $status) => [strtolower($status->name) => $status->value])
+            ->toArray();
+
+        // Keep backwards compatibility for older app clients that still send
+        // aggregate pseudo-status keys.
+        $legacyStatusMap = [
+            'cancel' => strtolower(OrderStatus::CANCELLED->name),
+            'accepted' => strtolower(OrderStatus::CONFIRM->name),
+        ];
+
+        if (isset($legacyStatusMap[$orderStatus])) {
+            $orderStatus = $legacyStatusMap[$orderStatus];
+        }
+
         $shop = generaleSetting('shop');
 
         $orders = $shop->orders()->when($search, function ($query) use ($search) {
@@ -85,20 +100,8 @@ class OrderController extends Controller
             return $query->where(function ($query) {
                 $query->whereYear('created_at', Carbon::now()->subYear()->year)->orWhereYear('updated_at', Carbon::now()->subYear()->year);
             });
-        })->when($orderStatus == 'pending', function ($query) {
-            return $query->where('order_status', OrderStatus::PENDING->value);
-        })->when($orderStatus == 'confirm', function ($query) {
-            return $query->where('order_status', OrderStatus::CONFIRM->value);
-        })->when($orderStatus == 'to_pickup', function ($query) {
-            return $query->whereHas('driverOrder')->where(function ($query) {
-                $query->where('order_status', OrderStatus::CONFIRM->value)->orWhere('order_status', OrderStatus::PENDING->value);
-            });
-        })->when($orderStatus == 'to_delivery', function ($query) {
-            return $query->where(function ($query) {
-                $query->where('order_status', OrderStatus::SHIPPED->value)->orWhere('order_status', OrderStatus::CONFIRM->value);
-            });
-        })->when($orderStatus == 'delivered', function ($query) {
-            return $query->where('order_status', OrderStatus::DELIVERED->value);
+        })->when($orderStatus !== '' && $orderStatus !== 'all' && isset($orderStatusEnumMap[$orderStatus]), function ($query) use ($orderStatus, $orderStatusEnumMap) {
+            return $query->where('order_status', $orderStatusEnumMap[$orderStatus]);
         });
 
         $total = $orders->count();
@@ -139,32 +142,12 @@ class OrderController extends Controller
         //     return $query->where('order_status', OrderStatus::DELIVERED->value);
         // })->count();
 
-        $statuses = $shop->orders()
-            ->selectRaw('
-                COUNT(CASE WHEN order_status = ? THEN 1 END) as pending,
-                COUNT(CASE WHEN order_status = ? THEN 1 END) as confirm,
-                COUNT(CASE WHEN order_status IN (?, ?) AND EXISTS (
-                    SELECT 1 FROM driver_orders WHERE driver_orders.order_id = orders.id
-                ) THEN 1 END) as toPickup,
-                COUNT(CASE WHEN order_status IN (?, ?) THEN 1 END) as toDelivery,
-                COUNT(CASE WHEN order_status = ? THEN 1 END) as delivered
-            ', [
-                OrderStatus::PENDING->value,
-                OrderStatus::CONFIRM->value,
-                OrderStatus::CONFIRM->value,
-                OrderStatus::PENDING->value,
-                OrderStatus::CONFIRM->value,
-                OrderStatus::SHIPPED->value,
-                OrderStatus::DELIVERED->value,
-            ])->first();
+        $statusCounts = $shop->orders()
+            ->selectRaw('order_status, COUNT(*) as total')
+            ->groupBy('order_status')
+            ->pluck('total', 'order_status');
 
-        $pending = (int)$statuses->pending;
-        $confirm = (int)$statuses->confirm;
-        $toPickup = (int)$statuses->toPickup;
-        $toDelivery = (int)$statuses->toDelivery;
-        $delivered = (int)$statuses->delivered;
-
-        $totalOrders = $shop->orders->count();
+        $totalOrders = (int) $shop->orders()->count();
 
         $statusArray = [
             (object) [
@@ -172,32 +155,15 @@ class OrderController extends Controller
                 'value' => $totalOrders,
                 'status' => 'all',
             ],
-            (object) [
-                'name' => 'Pending',
-                'value' => $pending,
-                'status' => 'pending',
-            ],
-            (object) [
-                'name' => 'Confirm',
-                'value' => $confirm,
-                'status' => 'confirm',
-            ],
-            (object) [
-                'name' => 'To Pickup',
-                'value' => $toPickup,
-                'status' => 'to_pickup',
-            ],
-            (object) [
-                'name' => 'To Delivery',
-                'value' => $toDelivery,
-                'status' => 'to_delivery',
-            ],
-            (object) [
-                'name' => 'Delivered',
-                'value' => $delivered,
-                'status' => 'delivered',
-            ],
         ];
+
+        foreach (OrderStatus::cases() as $statusCase) {
+            $statusArray[] = (object) [
+                'name' => $statusCase->value,
+                'value' => (int) ($statusCounts[$statusCase->value] ?? 0),
+                'status' => strtolower($statusCase->name),
+            ];
+        }
 
         return $this->json('all order list', [
             'total_items' => $total,
