@@ -250,7 +250,7 @@
 
                                     <div class="col-md-6 col-lg-6 col-xl-6">
                                         <div class="dashboard-box item-4">
-                                            <h2 class="count">{{ showCurrency($shop->user?->wallet?->balance) }}</h2>
+                                            <h2 class="count">{{ showCurrency($shop->wallet?->balance) }}</h2>
                                             <h3 class="title">{{ __('Seller Wallet Balance') }}</h3>
                                             <div class="icon">
                                                 <img src="{{ asset('assets/icons-admin/wallet.svg') }}" alt="icon" loading="lazy" />
@@ -260,7 +260,7 @@
 
                                     <div class="col-md-6 col-lg-6 col-xl-6">
                                         <div class="dashboard-box item-4">
-                                            <h2 class="count">{{ showCurrency($shop->user?->adWallet?->balance) }}</h2>
+                                            <h2 class="count">{{ showCurrency($shop->adwallet?->balance) }}</h2>
                                             <h3 class="title">{{ __('Ads Wallet Balance') }}</h3>
                                             <div class="icon">
                                                 <img src="{{ asset('assets/icons-admin/wallet.svg') }}" alt="icon" loading="lazy" />
@@ -345,9 +345,15 @@
                                                         @case('amount_based') {{ __('Amount Based') }} @break
                                                         @case('state_wise') {{ __('State Wise') }} @break
                                                         @case('manual') {{ __('Manual') }} @break
+                                                        @case('provider_api') {{ __('Provider API') }} @break
                                                         @default {{ __('N/A') }}
                                                     @endswitch
                                                 </span>
+                                                @if($deliverySetting->delivery_mode === 'provider_api' && $deliverySetting->delivery_provider)
+                                                    <span class="badge badge-success clear-badge-font">
+                                                        <i class="fa fa-truck me-1"></i>{{ ucfirst($deliverySetting->delivery_provider) }}
+                                                    </span>
+                                                @endif
                                             </h4>
                                         @else
                                             <p class="text-muted mb-0">{{ __('No delivery mode configured') }}</p>

@@ -751,7 +751,7 @@ class OrderController extends Controller
 
         $commission = 0;
 
-        if ($generaleSetting?->commission_charge != 'monthly') {
+        if ($generaleSetting?->business_based_on == 'commission' && $generaleSetting?->commission_charge != 'monthly') {
 
             if ($generaleSetting?->commission_type != 'fixed') {
                 $commission = $order->total_amount * $generaleSetting->commission / 100;
@@ -767,10 +767,12 @@ class OrderController extends Controller
             'admin_commission' => $commission,
         ]);
 
-        $wallet = $order->shop->user->wallet;
+        if ($generaleSetting?->business_based_on == 'commission' && $generaleSetting?->commission_charge != 'monthly') {
+            $wallet = $order->shop->user->wallet;
 
-        WalletRepository::updateByRequest($wallet, $order->payable_amount, 'credit');
+            WalletRepository::updateByRequest($wallet, $order->payable_amount, 'credit');
 
-        TransactionRepository::storeByRequest($wallet, $commission, 'debit', true, true, 'admin commission', 'order', $order->id, null);
+            TransactionRepository::storeByRequest($wallet, $commission, 'debit', true, true, 'admin commission', 'order', $order->id, null);
+        }
     }
 }
