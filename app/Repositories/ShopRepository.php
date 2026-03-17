@@ -12,6 +12,7 @@ use App\Models\DeliverySetting;
 use App\Models\DeliveryStateCharge;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -212,11 +213,39 @@ class ShopRepository extends Repository
         $state = State::find($request->state_id);
         $district = District::findOrFail($request->district_id);
 
-        // Update user only if fields provided
-        // if ($request->filled(['first_name', 'email', 'password'])) {
-        //     UserRepository::updateByRequest($request, $shop->user);
-        // }
-        // UserRepository::updateByRequest($request, $shop->user);
+        // Update linked shop user fields from the same form payload.
+        if ($shop->user) {
+            $profileMedia = $shop->user->media;
+            if ($request->hasFile('profile_photo')) {
+                if ($profileMedia) {
+                    $profileMedia = MediaRepository::updateByRequest(
+                        $request->profile_photo,
+                        'users/profile',
+                        'image',
+                        $profileMedia
+                    );
+                } else {
+                    $profileMedia = MediaRepository::storeByRequest(
+                        $request->profile_photo,
+                        'users/profile',
+                        'image'
+                    );
+                }
+            }
+
+            $userPayload = [
+                'name' => $request->first_name ?? $shop->user->name,
+                'phone' => $request->phone ?? $shop->user->phone,
+                'email' => $request->filled('email') ? $request->email : $shop->user->email,
+                'media_id' => $profileMedia ? $profileMedia->id : $shop->user->media_id,
+            ];
+
+            if ($request->filled('password')) {
+                $userPayload['password'] = Hash::make($request->password);
+            }
+
+            $shop->user->update($userPayload);
+        }
 
         // Only update images if files uploaded
         $thumbnail = $request->hasFile('shop_logo') ? self::updateLogo($shop, $request) : $shop->mediaLogo;

@@ -85,6 +85,7 @@ class ProductController extends Controller
             $query = Product::with('shop')
             ->withCount([
                 'variants',
+                'bulkItems',
                 'orderItems as total_sale_count'
             ])
             ->when($status == '1', function ($q) {
@@ -147,11 +148,22 @@ class ProductController extends Controller
                 ->addColumn('thumbnail', function ($row) {
                     return '<img src="'.$row->thumbnail.'" width="50">';
                 })
-                ->addColumn('quantity', fn($row) => $row->quantity ?? 0 ) 
+                ->addColumn('quantity', function ($row) {
+                    $quantity = (int) ($row->quantity ?? 0);
+                    $minOrderQty = (int) ($row->min_order_quantity ?? 0);
+                    $hasOptions = (int) ($row->variants_or_bulk_items_count ?? 0) > 0;
+                    $isLowStock = ($quantity < $minOrderQty) && ! $hasOptions;
+
+                    if ($isLowStock) {
+                        return '<span class="text-danger fw-bold">' . $quantity . '</span>';
+                    }
+
+                    return (string) $quantity;
+                })
                 ->addColumn('mrp', fn($row) => showCurrency($row->price)) 
                 ->addColumn('selling_price', fn($row) => showCurrency($row->discount_price))
                 ->addColumn('total_sale_count', fn($row) => $row->total_sale_count ?? 0 )
-                ->addColumn('variants_count', fn($row) => $row->variants_count ?? 0 )  
+                ->addColumn('variants_count', fn($row) => $row->variants_or_bulk_items_count)
                 // ->addColumn('status', function ($row) {
                 //     return '
                 //     <label class="switch">
@@ -216,7 +228,7 @@ class ProductController extends Controller
                 //         : '';
                 // })
 
-                ->rawColumns(['thumbnail', 'shop', 'status', 'action'])
+                ->rawColumns(['thumbnail', 'shop', 'quantity', 'status', 'action'])
                 ->make(true);
         }
 

@@ -40,6 +40,7 @@ class AnalyticsController extends Controller
         $deliveredQuery = (clone $ordersQuery)->where('order_status', OrderStatus::DELIVERED->value);
 
         $revenue = (float) $deliveredQuery->sum('total_amount');
+        $deliveredDeliveryCharge = (float) (clone $deliveredQuery)->sum('delivery_charge');
         $deliveredCount = (int) $deliveredQuery->count();
         $ordersCount = (int) $ordersQuery->count();
         $aov = $deliveredCount > 0 ? $revenue / $deliveredCount : 0;
@@ -183,6 +184,7 @@ class AnalyticsController extends Controller
             'endDate' => $endDate,
             'stats' => [
                 'revenue' => $revenue,
+                'delivery_charge' => $deliveredDeliveryCharge,
                 'orders' => $ordersCount,
                 'aov' => $aov,
                 'returns_amount' => $returnsAmount,
@@ -250,6 +252,7 @@ class AnalyticsController extends Controller
     {
         return [
             'revenue' => 0,
+            'delivery_charge' => 0,
             'orders' => 0,
             'aov' => 0,
             'returns_amount' => 0,

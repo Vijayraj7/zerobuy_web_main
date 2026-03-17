@@ -204,7 +204,9 @@ class AdvertismentController extends Controller
         if (!$wallet) {
             return view('shop.advertisement.transaction-list', [
                 'transactions' => collect(),
-                'message' => 'Wallet not found for this user.'
+                'message' => 'Wallet not found for this user.',
+                'totalRechargeAmount' => 0,
+                'totalAdsRunAmount' => 0,
             ]);
         }
 
@@ -213,9 +215,21 @@ class AdvertismentController extends Controller
             ->latest()
             ->get();
 
+        $totalRechargeAmount = (float) $transactions
+            ->where('type', 'credit')
+            ->where('purpose', 'Recharge')
+            ->sum('amount');
+
+        $totalAdsRunAmount = (float) $transactions
+            ->where('type', 'debit')
+            ->where('purpose', 'Ads Run')
+            ->sum('amount');
+
         return view('shop.advertisement.transaction-list', [
             'transactions' => $transactions,
-            'message' => null
+            'message' => null,
+            'totalRechargeAmount' => $totalRechargeAmount,
+            'totalAdsRunAmount' => $totalAdsRunAmount,
         ]);
     }
 

@@ -43,6 +43,10 @@
                             {{ $product->short_description }}
                         </p>
 
+                        <p class="mb-2 text-muted small">
+                            <strong>{{ __('Variants / Bulk Items') }}:</strong> {{ $product->variants_or_bulk_items_count }}
+                        </p>
+
                         <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mt-3">
                             <p class="card-text m-0 d-flex align-items-center gap-1">
                                 <strong>{{ showCurrency($product->price) }}</strong>

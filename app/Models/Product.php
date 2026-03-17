@@ -410,4 +410,30 @@ class Product extends Model
     {
         return 'PRD0' . $this->id;
     }
+
+    /**
+     * Return variants count when available; otherwise fallback to bulk items count.
+     */
+    public function variantsOrBulkItemsCount(): Attribute
+    {
+        return new Attribute(
+            get: function () {
+                $variantsCount = $this->getAttribute('variants_count');
+                if ($variantsCount === null) {
+                    $variantsCount = $this->relationLoaded('variants')
+                        ? $this->variants->count()
+                        : $this->variants()->count();
+                }
+
+                $bulkItemsCount = $this->getAttribute('bulk_items_count');
+                if ($bulkItemsCount === null) {
+                    $bulkItemsCount = $this->relationLoaded('bulkItems')
+                        ? $this->bulkItems->count()
+                        : $this->bulkItems()->count();
+                }
+
+                return (int) $variantsCount > 0 ? (int) $variantsCount : (int) $bulkItemsCount;
+            }
+        );
+    }
 }

@@ -534,6 +534,7 @@ class ShopController extends Controller
             $query = Product::query()
                 ->withCount([
                     'variants',
+                    'bulkItems',
                     'orderItems as total_sale_count' // 👈 alias
                 ])
                 ->where('shop_id', $shop->id);
@@ -579,6 +580,18 @@ class ShopController extends Controller
                     $img = $row->thumbnail ?? asset('images/no-image.png');
                     return '<img src="'.$img.'" width="50">';
                 })  
+                ->addColumn('quantity', function ($row) {
+                    $quantity = (int) ($row->quantity ?? 0);
+                    $minOrderQty = (int) ($row->min_order_quantity ?? 0);
+                    $hasOptions = (int) ($row->variants_or_bulk_items_count ?? 0) > 0;
+                    $isLowStock = ($quantity < $minOrderQty) && ! $hasOptions;
+
+                    if ($isLowStock) {
+                        return '<span class="text-danger fw-bold">' . $quantity . '</span>';
+                    }
+
+                    return (string) $quantity;
+                })
                 ->addColumn('status_badge', function ($row) {
                     return $row->is_active
                         ? '<span class="badge bg-success">Active</span>'
@@ -595,7 +608,10 @@ class ShopController extends Controller
                     ';
                 })
 
-                ->rawColumns(['product_image', 'status_badge', 'actions'])
+                ->addColumn('variants_count', function ($row) {
+                    return $row->variants_or_bulk_items_count;
+                })
+                ->rawColumns(['product_image', 'quantity', 'status_badge', 'actions'])
                 ->toJson();
         }
 

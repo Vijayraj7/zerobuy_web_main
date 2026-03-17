@@ -62,8 +62,6 @@ class ProfileController extends Controller
         /** @var \App\Models\Shop $shop */
         $shop = generaleSetting('shop');
 
-        dd($request->all());
-
         ShopRepository::updateByRequest($shop, $request);
 
         return to_route('shop.profile.index')->withSuccess(__('Profile updated successfully'));

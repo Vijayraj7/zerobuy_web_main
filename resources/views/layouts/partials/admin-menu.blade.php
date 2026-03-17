@@ -698,16 +698,34 @@
 
 
 <!------------------------------ Analytics ------------------------------>
-@hasPermission('admin.analytics.index')
+@hasPermission(['admin.analytics.index', 'shop.analytics.index'])
     <li>
-        <a href="{{ route('admin.analytics.index') }}"
-            class="menu {{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}">
+        <a class="menu {{ request()->routeIs('admin.analytics.*', 'shop.analytics.*') ? 'active' : '' }}"
+            data-bs-toggle="collapse" href="#analyticsMenu">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/chart-trend-up.svg') }}" alt="icon"
                     loading="lazy" />
                 {{ __('Analytics') }}
             </span>
+            <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.analytics.*', 'shop.analytics.*') ? 'show' : '' }}"
+            id="analyticsMenu">
+            <div class="listBar">
+                @hasPermission('admin.analytics.index')
+                    <a href="{{ route('admin.analytics.index') }}"
+                        class="subMenu hasCount {{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}">
+                        {{ __('Admin Analytics') }}
+                    </a>
+                @endhasPermission
+                @hasPermission('shop.analytics.index')
+                    <a href="{{ route('shop.analytics.index') }}"
+                        class="subMenu hasCount {{ request()->routeIs('shop.analytics.*') ? 'active' : '' }}">
+                        {{ __('My Shop Analytics') }}
+                    </a>
+                @endhasPermission
+            </div>
+        </div>
     </li>
 @endhasPermission
 <!------------------------------ End Analytics ------------------------------>

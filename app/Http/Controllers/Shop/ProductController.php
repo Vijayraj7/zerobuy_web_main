@@ -19,7 +19,9 @@ use App\Repositories\FlashSaleRepository;
 use Illuminate\Support\Facades\Validator;
 use App\Repositories\NotificationRepository;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Yajra\DataTables\Facades\DataTables;
 
 class ProductController extends Controller
 {
@@ -28,38 +30,111 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        // get category, brand, color and search from request
+        // get category, sorting and search from request
         $category = $request->category;
-        $brand = $request->brand;
-        $color = $request->color;
-        $search = $request->search;
+        $priceSort = $request->price_sort;
+        $quantitySort = $request->quantity_sort;
+        $search = $request->input('product_search');
 
-        $rootShop = generaleSetting('rootShop');
+        if (blank($search)) {
+            $search = data_get($request->input('search'), 'value', $request->input('search'));
+        }
+
         $shop = generaleSetting('shop');
 
-        // filter products based on category, brand, color and search
-        $products = $shop?->products()->with(['variants', 'orderItems'])->when($brand, function ($query) use ($brand) {
-            return $query->where('brand_id', $brand);
-        })->when($category, function ($query) use ($category) {
+        // filter products based on category and search
+        $query = $shop?->products()->with(['orderItems'])
+        ->withCount(['variants', 'bulkItems', 'orderItems as total_sale_count'])
+        ->when($category, function ($query) use ($category) {
             return $query->whereHas('categories', function ($query) use ($category) {
                 return $query->where('category_id', $category);
             });
-        })->when($color, function ($query) use ($color) {
-            return $query->whereHas('colors', function ($query) use ($color) {
-                return $query->where('color_id', $color);
-            });
         })->when($search, function ($query) use ($search) {
             return $query->where('name', 'like', "%$search%");
-        })->latest()->paginate(20)->withQueryString();
+        });
 
-        // get brands, colors and categories
-        $brands = $rootShop?->brands()->get();
-        $colors = $rootShop?->colors()->get();
-        $categories = $rootShop?->categories()->get();
+        if ($priceSort === 'low_to_high') {
+            $query->orderBy('price', 'asc');
+        } elseif ($priceSort === 'high_to_low') {
+            $query->orderBy('price', 'desc');
+        }
+
+        if ($quantitySort === 'low_to_high') {
+            $query->orderBy('quantity', 'asc');
+        } elseif ($quantitySort === 'high_to_low') {
+            $query->orderBy('quantity', 'desc');
+        }
+
+        if (blank($priceSort) && blank($quantitySort)) {
+            $query->latest();
+        } else {
+            $query->latest('id');
+        }
+        if ($request->ajax()) {
+            return DataTables::of($query)
+                ->addIndexColumn()
+                ->addColumn('created_date', fn($row) => $row->created_at?->format('d-m-Y | h:i A') ?? '-')
+                ->addColumn('product_code', fn($row) => '#'.($row->product_code ?? '-'))
+                ->addColumn('name', fn($row) => Str::limit($row->name, 50, '...'))
+                ->addColumn('thumbnail', function ($row) {
+                    return '<img src="'.$row->thumbnail.'" width="40" height="40" class="rounded" loading="lazy">';
+                })
+                ->addColumn('quantity', function ($row) {
+                    $quantity = (int) ($row->quantity ?? 0);
+                    $minOrderQty = (int) ($row->min_order_quantity ?? 0);
+                    $hasOptions = (int) ($row->variants_or_bulk_items_count ?? 0) > 0;
+                    $isLowStock = ($quantity < $minOrderQty) && ! $hasOptions;
+
+                    if ($isLowStock) {
+                        return '<span class="text-danger fw-bold">' . $quantity . '</span>';
+                    }
+
+                    return (string) $quantity;
+                })
+                ->addColumn('mrp', fn($row) => showCurrency($row->price))
+                ->addColumn('selling_price', fn($row) => showCurrency($row->discount_price))
+                ->addColumn('total_sale_count', fn($row) => $row->total_sale_count ?? 0)
+                ->addColumn('variants_count', fn($row) => $row->variants_or_bulk_items_count)
+                ->addColumn('status', function ($row) {
+                    $checked = $row->is_active ? 'checked' : '';
+                    $disabled = $row->disabled_by_admin ? 'disabled' : '';
+                    $title = $row->disabled_by_admin ? 'Disabled by admin' : 'Update product status';
+                    $badge = $row->disabled_by_admin
+                        ? '<span class="badge bg-danger mt-1">Disabled by Admin</span>'
+                        : '';
+
+                    return '<label class="switch mb-0" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="'.$title.'">'
+                        .'<a href="'.route('shop.product.toggle', $row->id).'">'
+                        .'<input data-bs-title="'.$title.'" type="checkbox" '.$checked.' '.$disabled.'>'
+                        .'<span class="slider round"></span>'
+                        .'</a>'
+                        .'</label>'
+                        .$badge;
+                })
+                ->addColumn('action', function ($row) {
+                    $view = '<a href="'.route('shop.product.show', $row->id).'" class="svg-bg btn-outline-primary circleIcon btn-sm" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="View Product">'
+                        .'<img src="'.asset('assets/icons-admin/eye.svg').'" alt="icon" loading="lazy" />'
+                        .'</a>';
+
+                    $edit = '<a href="'.route('shop.product.edit', $row->id).'" class="btn-outline-info circleIcon btn-sm" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Edit Product">'
+                        .'<img src="'.asset('assets/icons-admin/edit.svg').'" alt="icon" loading="lazy" />'
+                        .'</a>';
+
+                    return '<div class="d-flex justify-content-center gap-1">'.$view.$edit.'</div>';
+                })
+                ->rawColumns(['thumbnail', 'quantity', 'status', 'action'])
+                ->make(true);
+        }
+
+        $products = $query->paginate(20)->withQueryString();
+
+        // categories scoped to the shop's selected business categories
+        $businessCategoryIds = $shop?->businessCategories()->pluck('business_categories.id') ?? collect();
+        $categories = Category::whereIn('business_category_id', $businessCategoryIds)->get();
 
         $flashSale = FlashSaleRepository::getIncoming();
 
-        return view('shop.product.index', compact('products', 'brands', 'colors', 'categories', 'flashSale'));
+        return view('shop.product.index', compact('products', 'categories', 'flashSale'));
     }
 
     /**

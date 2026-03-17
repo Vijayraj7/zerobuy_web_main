@@ -20,7 +20,7 @@
             </div>
             @hasPermission('shop.product.create')
                 <a href="{{ route('shop.product.create') }}" class="btn py-2 btn-primary d-flex align-items-center">
-                    <i class="fa fa-plus-circle"></i>
+                    <i class="fa fa-plus-circle me-2"></i>
                     {{ __('Add Product') }}
                 </a>
             @endhasPermission
@@ -80,9 +80,9 @@
                         </div>
                         <div class="modal-body">
                             <div>
-                                <x-select label="Category" name="category" placeholder="Select Category">
+                                <x-select label="Main Category" name="category" placeholder="Select Main Category">
                                     <option value="">
-                                        {{ __('Select Category') }}
+                                        Main Category
                                     </option>
                                     @foreach ($categories as $category)
                                         <option value="{{ $category->id }}"
@@ -95,30 +95,33 @@
                             </div>
 
                             <div class="mt-3">
-                                <x-select label="Brand" name="brand" placeholder="All Brand">
+                                <x-select label="Price Sorting" name="price_sort" placeholder="Select Price Sorting">
                                     <option value="">
-                                        {{ __('All Brand') }}
+                                        {{ __('Default') }}
                                     </option>
-                                    @foreach ($brands as $brand)
-                                        <option value="{{ $brand->id }}"
-                                            {{ request('brand') == $brand->id ? 'selected' : '' }}>
-                                            {{ $brand->name }}
-                                        </option>
-                                    @endforeach
+                                    <option value="low_to_high" {{ request('price_sort') == 'low_to_high' ? 'selected' : '' }}>
+                                        Low to High
+                                    </option>
+                                    <option value="high_to_low"
+                                        {{ request('price_sort') == 'high_to_low' ? 'selected' : '' }}>
+                                        High to Low
+                                    </option>
                                 </x-select>
                             </div>
 
                             <div class="mt-3">
-                                <x-select label="Color" name="color" placeholder="All Color">
+                                <x-select label="Quantity Sorting" name="quantity_sort" placeholder="Select Quantity Sorting">
                                     <option value="">
-                                        {{ __('All Color') }}
+                                        {{ __('Default') }}
                                     </option>
-                                    @foreach ($colors as $color)
-                                        <option value="{{ $color->id }}"
-                                            {{ request('color') == $color->id ? 'selected' : '' }}>
-                                            {{ $color->name }}
-                                        </option>
-                                    @endforeach
+                                    <option value="low_to_high"
+                                        {{ request('quantity_sort') == 'low_to_high' ? 'selected' : '' }}>
+                                        Low Quantity
+                                    </option>
+                                    <option value="high_to_low"
+                                        {{ request('quantity_sort') == 'high_to_low' ? 'selected' : '' }}>
+                                        High Quantity
+                                    </option>
                                 </x-select>
                             </div>
                         </div>
@@ -149,6 +152,9 @@
                     <div class="input-group" style="max-width: 400px">
                         <input type="text" name="search" class="form-control"
                             placeholder="{{ __('Search by product name') }}" value="{{ request('search') }}">
+                        <input type="hidden" name="category" value="{{ request('category') }}">
+                        <input type="hidden" name="price_sort" value="{{ request('price_sort') }}">
+                        <input type="hidden" name="quantity_sort" value="{{ request('quantity_sort') }}">
                         <input type="hidden" name="view_type" value="{{ $viewType }}">
                         <button type="submit" class="input-group-text btn btn-primary">
                             <i class="fa fa-search"></i> {{ __('Search') }}
@@ -164,9 +170,11 @@
             </div>
         </div>
 
-        <div class="my-3">
-            {{ $products->links() }}
-        </div>
+        @if ($viewType !== 'list')
+            <div class="my-3">
+                {{ $products->links() }}
+            </div>
+        @endif
 
     </div>
 @endsection
@@ -178,6 +186,38 @@
                 const url = new URL(window.location.href);
                 url.searchParams.delete('view_type');
                 window.history.replaceState({}, document.title, url.toString());
+            }
+
+            if (viewType === 'list' && $('#shopProductTable').length) {
+                $('#shopProductTable').DataTable({
+                    processing: true,
+                    serverSide: true,
+                    responsive: true,
+                    ajax: {
+                        url: "{{ route('shop.product.index') }}",
+                        data: function(d) {
+                            d.view_type = 'list';
+                            d.product_search = "{{ request('search') }}";
+                            d.category = "{{ request('category') }}";
+                            d.price_sort = "{{ request('price_sort') }}";
+                            d.quantity_sort = "{{ request('quantity_sort') }}";
+                        }
+                    },
+                    columns: [
+                        { data: 'DT_RowIndex', orderable: false, searchable: false },
+                        { data: 'created_date', name: 'created_at' },
+                        { data: 'product_code', name: 'product_code' },
+                        { data: 'name', name: 'name' },
+                        { data: 'thumbnail', orderable: false, searchable: false },
+                        { data: 'quantity', name: 'quantity' },
+                        { data: 'mrp', name: 'price' },
+                        { data: 'selling_price', name: 'discount_price' },
+                        { data: 'total_sale_count', name: 'total_sale_count' },
+                        { data: 'variants_count', orderable: false, searchable: false },
+                        { data: 'status', orderable: false, searchable: false },
+                        { data: 'action', orderable: false, searchable: false },
+                    ]
+                });
             }
         })();
 

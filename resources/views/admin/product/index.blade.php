@@ -129,7 +129,7 @@
                                 <th>MRP</th>
                                 <th>Selling Price</th>
                                 <th>Total Sales</th>
-                                <th>Variants</th>
+                                <th>Variants / Bulk Items</th>
                                 <th>Status</th>
                                 <th>Action</th>
                             </tr>

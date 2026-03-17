@@ -284,7 +284,7 @@
 
 
 <!------------------------------ Withdrawal Management ------------------------------>
-@if (!auth()->user()->hasRole('root'))
+@if (!auth()->user()->hasRole('root') && (($generaleSetting?->business_based_on ?? null) === 'commission'))
     @hasPermission('shop.withdraw.index') 
         <li>
             <a class="menu {{ $request->routeIs('shop.withdraw.*') ? 'active' : '' }}" href="{{ route('shop.withdraw.index') }}">

@@ -54,7 +54,7 @@
                             <th>{{ __('MRP') }}</th>
                             <th>{{ __('Sale Amount') }}</th>
                             <th>{{ __('Total Sale') }}</th> <!-- sale count -->
-                            <th>{{ __('Variant') }}</th>    <!-- variant count -->
+                            <th>{{ __('Variants / Bulk Items') }}</th>
                             <th>{{ __('Status') }}</th>
                             <th>{{ __('Action') }}</th>
                         </tr>

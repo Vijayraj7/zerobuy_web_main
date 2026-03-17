@@ -232,6 +232,7 @@
                 <h6>{{ __('Revenue') }}</h6>
                 <div class="stat-value">{{ showCurrency(number_format($stats['revenue'], 2, '.', '')) }}</div>
                 <div class="stat-meta">{{ __('Delivered orders only') }}</div>
+                <div class="stat-meta">{{ __('Delivery Charge Collected') }}: {{ showCurrency(number_format($stats['delivery_charge'], 2, '.', '')) }}</div>
             </div>
             <div class="stat-card stat-orders fade-delay-2">
                 <h6>{{ __('Orders') }}</h6>
