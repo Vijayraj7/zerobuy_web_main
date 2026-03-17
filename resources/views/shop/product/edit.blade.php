@@ -3074,6 +3074,35 @@
             return errors;
         }
 
+        function restoreSubmitButtons() {
+            form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach((btn) => {
+                btn.disabled = false;
+                btn.classList.remove('disabled', 'loading', 'btn-loading');
+                btn.removeAttribute('aria-busy');
+                btn.removeAttribute('data-kt-indicator');
+
+                if (btn.tagName === 'BUTTON') {
+                    const originalHtml = btn.dataset.originalHtml;
+                    if (originalHtml) {
+                        btn.innerHTML = originalHtml;
+                    }
+                } else if (btn.tagName === 'INPUT') {
+                    const originalValue = btn.dataset.originalValue;
+                    if (originalValue) {
+                        btn.value = originalValue;
+                    }
+                }
+            });
+        }
+
+        form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach((btn) => {
+            if (btn.tagName === 'BUTTON') {
+                btn.dataset.originalHtml = btn.innerHTML;
+            } else if (btn.tagName === 'INPUT') {
+                btn.dataset.originalValue = btn.value;
+            }
+        });
+
         form.addEventListener('submit', function(e) {
             clearClientErrors();
             const errors = validateProductForm();
@@ -3081,6 +3110,10 @@
             if (!fields.length) return;
 
             e.preventDefault();
+            e.stopImmediatePropagation();
+            restoreSubmitButtons();
+            // Some global handlers mutate submit buttons after this handler; restore again on next tick.
+            setTimeout(restoreSubmitButtons, 0);
             showErrors(errors);
 
             const firstField = fields[0];
