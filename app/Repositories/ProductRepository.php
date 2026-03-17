@@ -74,6 +74,18 @@ class ProductRepository extends Repository
     {
         $thumbnail = MediaRepository::storeByRequest($request->thumbnail, 'products', 'thumbnail');
 
+        $mainCategoryId = $request->main_category ?? $request->category;
+        $subCategoryIds = $request->sub_categories ?? $request->sub_category ?? [];
+        $childCategoryIds = $request->child_categories ?? $request->child_category ?? [];
+
+        if (! is_array($subCategoryIds)) {
+            $subCategoryIds = [$subCategoryIds];
+        }
+
+        if (! is_array($childCategoryIds)) {
+            $childCategoryIds = [$childCategoryIds];
+        }
+
         $shop = generaleSetting('shop');
         $generaleSetting = generaleSetting('setting');
         $approve = $generaleSetting?->new_product_approval ? false : true;
@@ -106,12 +118,13 @@ class ProductRepository extends Repository
             'shop_id' => $shop?->id,
             'name' => $request->name,
             'description' => $description,
+            'condition_status' => $request->condition_status ?? 'New',
             'product_code' => $productCode,
             'short_description' => $request->short_description,
             'brand_id' => $request->brand,
             'unit_id' => $request->unit,
-            'price' => $request->price,
-            'discount_price' => $request->discount_price,
+            'price' => $request->price ?? $request->mrp,
+            'discount_price' => $request->discount_price ?? $request->selling_price,
             // 'details' => $details,
             'quantity' => $request->quantity ?? 0,
             'min_order_quantity' => $request->min_order_quantity ?? 1,
@@ -127,7 +140,7 @@ class ProductRepository extends Repository
             'is_approve' => $isAdmin ? true : $approve,
             'video_id' => $videoMedia ? $videoMedia->id : null,
             'meta_title' => $request->meta_title,
-            'tax_percentage' => $request->gst ?? 0,
+            'tax_percentage' => $request->tax_percentage ?? $request->gst ?? 0,
             'return_period' => $request->return_period ?? 0,
             'meta_description' => $request->meta_description,
             'meta_keywords' => $keywords ? Str::limit($keywords, 200, '') : null,
@@ -254,9 +267,9 @@ class ProductRepository extends Repository
         }
 
 
-        $product->categories()->sync($request->category ?? []);
-        $product->subcategories()->sync($request->sub_category ?? []);
-        $product->childCategories()->sync($request->child_category ?? []);
+        $product->categories()->sync($mainCategoryId ? [$mainCategoryId] : []);
+        $product->subcategories()->sync($subCategoryIds);
+        $product->childCategories()->sync($childCategoryIds);
 
         if ($request->is('api/*')) {
             if ($request->size && is_array($request->size)) {
@@ -287,6 +300,18 @@ class ProductRepository extends Repository
      */
     public static function updateByRequest(ProductRequest $request, Product $product): Product
     {
+        $mainCategoryId = $request->main_category ?? $request->category;
+        $subCategoryIds = $request->sub_categories ?? $request->sub_category ?? [];
+        $childCategoryIds = $request->child_categories ?? $request->child_category ?? [];
+
+        if (! is_array($subCategoryIds)) {
+            $subCategoryIds = [$subCategoryIds];
+        }
+
+        if (! is_array($childCategoryIds)) {
+            $childCategoryIds = [$childCategoryIds];
+        }
+
         $thumbnail = $product->media;
         if ($request->hasFile('thumbnail') && $thumbnail) {
             $thumbnail = MediaRepository::updateByRequest(
@@ -340,14 +365,14 @@ class ProductRepository extends Repository
             'short_description' => $request->short_description,
             'brand_id' => $request->brand ?? null,
             'unit_id' => $request->unit ?? null,
-            'price' => $request->price,
-            'discount_price' => $request->discount_price,
+            'price' => $request->price ?? $request->mrp,
+            'discount_price' => $request->discount_price ?? $request->selling_price,
             // 'details' => $details,
             'quantity' => $request->quantity ?? 0,
             'min_order_quantity' => $request->min_order_quantity ?? 1,
             'media_id' => $thumbnail ? $thumbnail->id : null,
             // 'code' => $request->code,
-            'tax_percentage' => $request->gst ?? 0,
+            'tax_percentage' => $request->tax_percentage ?? $request->gst ?? 0,
             'return_period' => $request->return_period ?? 0,
             'condition_status' => $request->condition_status ?? 'New',
             'buy_price' => $request->buy_price ?? 0,
@@ -519,9 +544,9 @@ class ProductRepository extends Repository
 
 
 
-        $product->categories()->sync($request->category ?? []);
-        $product->subcategories()->sync($request->sub_category ?? []);
-        $product->childCategories()->sync($request->child_category ?? []);
+        $product->categories()->sync($mainCategoryId ? [$mainCategoryId] : []);
+        $product->subcategories()->sync($subCategoryIds);
+        $product->childCategories()->sync($childCategoryIds);
 
         $product->sizes()->detach();
         if ($request->is('api/*')) {
@@ -1117,13 +1142,14 @@ class ProductRepository extends Repository
             /** -----------------------------
              * 1. Thumbnail (optional)
              * ----------------------------- */
+            $newThumbnailId = $product->media_id;
             if ($request->hasFile('thumbnail')) {
                 $thumbnail = MediaRepository::storeByRequest(
                     $request->thumbnail,
                     'products',
                     'thumbnail'
                 );
-                $product->media_id = $thumbnail->id;
+                $newThumbnailId = $thumbnail->id;
             }
 
             if ($product->product_code == null || $product->product_code == '') {
@@ -1151,6 +1177,7 @@ class ProductRepository extends Repository
                 'width'              => $data['width'] ?? null,
                 'height'             => $data['height'] ?? null,
                 'tax_percentage'     => $data['tax_percentage'] ?? null,
+                'media_id'           => $newThumbnailId,
                 'meta_title'         => $data['meta_title'] ?? null,
                 'meta_description'   => $data['meta_description'] ?? null,
                 'meta_keywords'      => $keywords,
