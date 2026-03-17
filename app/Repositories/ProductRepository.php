@@ -540,11 +540,7 @@ class ProductRepository extends Repository
         if ($request->is('api/*')) {
             self::updateAdditionThumbnails($request->previousThumbnail, $product);
         } else {
-            foreach ($request->additionThumbnail ?? [] as $additionThumbnail) {
-                $thumbnail = MediaRepository::storeByRequest($additionThumbnail, 'products', 'thumbnail', 'image');
-                $product->medias()->attach($thumbnail->id);
-            }
-
+            self::syncAdditionalThumbnailsForWeb($request, $product);
             self::updatePreviousThumbnail($request->previousThumbnail);
         }
 
@@ -873,6 +869,52 @@ class ProductRepository extends Repository
             }
 
             $media->delete();
+        }
+    }
+
+    /**
+     * Sync additional thumbnails for web forms by keeping only retained IDs and newly uploaded files.
+     */
+    private static function syncAdditionalThumbnailsForWeb(Request $request, Product $product): void
+    {
+        $currentMediaIds = $product->medias()->pluck('media.id')->map(fn ($id) => (int) $id)->all();
+
+        $retainedMediaIds = array_unique(array_map('intval', (array) $request->input('retained_additional_media_ids', [])));
+        $retainedMediaIds = array_values(array_filter($retainedMediaIds, fn ($id) => $id > 0 && in_array($id, $currentMediaIds, true)));
+
+        $newMediaIds = [];
+        $newAdditionalImages = $request->file('additional_images', []);
+        if (! is_array($newAdditionalImages)) {
+            $newAdditionalImages = $newAdditionalImages ? [$newAdditionalImages] : [];
+        }
+
+        foreach ($newAdditionalImages as $additionalImageFile) {
+            if (! $additionalImageFile) {
+                continue;
+            }
+
+            $media = MediaRepository::storeByRequest($additionalImageFile, 'products', 'thumbnail', 'image');
+            if ($media && $media->id) {
+                $newMediaIds[] = (int) $media->id;
+            }
+        }
+
+        $targetMediaIds = array_values(array_unique(array_merge($retainedMediaIds, $newMediaIds)));
+        $removedMediaIds = array_values(array_diff($currentMediaIds, $retainedMediaIds));
+
+        $product->medias()->sync($targetMediaIds);
+
+        if (! empty($removedMediaIds)) {
+            $removedMedias = \App\Models\Media::whereIn('id', $removedMediaIds)->get();
+            foreach ($removedMedias as $media) {
+                if (!empty($media->src) && Storage::disk('public')->exists($media->src)) {
+                    Storage::disk('public')->delete($media->src);
+                } elseif (!empty($media->src) && Storage::exists($media->src)) {
+                    Storage::delete($media->src);
+                }
+
+                $media->delete();
+            }
         }
     }
 
@@ -1357,15 +1399,7 @@ class ProductRepository extends Repository
             /** -----------------------------
              * 10. Additional Images
              * ----------------------------- */
-            foreach ($request->file('additional_images', []) as $img) {
-                $media = MediaRepository::storeByRequest(
-                    $img,
-                    'products',
-                    'thumbnail',
-                    'image'
-                );
-                $product->medias()->attach($media->id);
-            }
+            self::syncAdditionalThumbnailsForWeb($request, $product);
 
             DB::commit();
             return $product;

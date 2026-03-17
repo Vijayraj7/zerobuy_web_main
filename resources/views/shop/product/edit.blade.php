@@ -481,33 +481,30 @@
                                     onclick="document.getElementById ('additionalInput').click()"><i
                                         class="fa fa-upload"></i> Choose Images</button>
                                 <div id="additionalContainer" class="d-flex flex-wrap gap-3 mt-3">
+                                    @if ($isEdit)
+                                        @foreach ($product->medias as $media)
+                                            @php
+                                                $source = asset('default/upload.png');
+                                                if (!empty($media->src) && filter_var($media->src, FILTER_VALIDATE_URL)) {
+                                                    $source = $media->src;
+                                                } elseif (Storage::disk('public')->exists($media->src)) {
+                                                    $source = Storage::disk('public')->url($media->src);
+                                                } elseif (Storage::exists($media->src)) {
+                                                    $source = Storage::url($media->src);
+                                                }
+                                            @endphp
+                                            <div class="position-relative additional-image-card" style="width: 120px; height: 120px;"
+                                                data-existing="1" data-media-id="{{ (int) $media->id }}">
+                                                <img src="{{ $source }}" class="w-100 h-100 rounded border">
+                                                <input type="hidden" name="retained_additional_media_ids[]"
+                                                    value="{{ (int) $media->id }}">
+                                                <button type="button"
+                                                    class="btn btn-sm btn-danger position-absolute top-0 end-0"
+                                                    onclick="removeAdditionalImageCard(this.closest('.additional-image-card'))">×</button>
+                                            </div>
+                                        @endforeach
+                                    @endif
                                 </div>
-                                @if ($isEdit)
-                                    <script>
-                                        function handleAdditionalImages(src) {
-                                            const container = document.getElementById('additionalContainer');
-                                            const div = document.createElement('div');
-                                            div.style.width = '120px';
-                                            div.style.height = '120px';
-                                            div.classList.add('position-relative');
-                                            div.innerHTML =
-                                                `<img src="${src}" class="w-100 h-100 rounded border">
-                    <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" onclick="this.parentElement.remove()">×</button>`;
-                                            container.appendChild(div);
-                                        }
-                                    </script>
-                                    @foreach ($product->medias as $media)
-                                        @php
-                                            $source = asset('default/upload.png');
-                                            if (Storage::exists($media->src)) {
-                                                $source = Storage::url($media->src);
-                                            }
-                                        @endphp
-                                        <script>
-                                            handleAdditionalImages('{{ $source }}')
-                                        </script>
-                                    @endforeach
-                                @endif
                             </div>
                         </div>
                     </div>
@@ -1054,23 +1051,89 @@
     }
 
     // Additional images
-    function handleAddImages(event) {
-        const files = event.target.files;
+    let selectedAdditionalImageFiles = [];
+
+    function syncAdditionalInputFiles() {
+        const input = document.getElementById('additionalInput');
+        if (!input) return;
+
+        const dataTransfer = new DataTransfer();
+        selectedAdditionalImageFiles.forEach((item) => {
+            dataTransfer.items.add(item.file);
+        });
+        input.files = dataTransfer.files;
+    }
+
+    function removeAdditionalImageCard(card) {
+        if (!card) return;
+
+        const isExisting = card.dataset.existing === '1';
+        if (!isExisting) {
+            const token = card.dataset.fileToken;
+            selectedAdditionalImageFiles = selectedAdditionalImageFiles.filter((item) => item.token !== token);
+            syncAdditionalInputFiles();
+        }
+
+        card.remove();
+    }
+
+    function createAdditionalImageCard(src, options = {}) {
+        const {
+            isExisting = false,
+                mediaId = null,
+                fileToken = null,
+        } = options;
+
         const container = document.getElementById('additionalContainer');
-        [...files].forEach((file) => {
+        if (!container) return;
+
+        const card = document.createElement('div');
+        card.style.width = '120px';
+        card.style.height = '120px';
+        card.classList.add('position-relative', 'additional-image-card');
+        card.dataset.existing = isExisting ? '1' : '0';
+
+        if (fileToken) {
+            card.dataset.fileToken = fileToken;
+        }
+
+        if (isExisting && mediaId) {
+            card.dataset.mediaId = String(mediaId);
+        }
+
+        const retainInput = isExisting && mediaId ?
+            `<input type="hidden" name="retained_additional_media_ids[]" value="${mediaId}">` :
+            '';
+
+        card.innerHTML =
+            `<img src="${src}" class="w-100 h-100 rounded border">
+            ${retainInput}
+            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" onclick="removeAdditionalImageCard(this.closest('.additional-image-card'))">×</button>`;
+
+        container.appendChild(card);
+    }
+
+    function handleAddImages(event) {
+        const files = Array.from(event.target.files || []);
+
+        files.forEach((file) => {
+            const fileToken = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+            selectedAdditionalImageFiles.push({
+                token: fileToken,
+                file,
+            });
+
             const reader = new FileReader();
             reader.onload = function(e) {
-                const div = document.createElement('div');
-                div.style.width = '120px';
-                div.style.height = '120px';
-                div.classList.add('position-relative');
-                div.innerHTML =
-                    `<img src="${e.target.result}" class="w-100 h-100 rounded border">
-                    <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" onclick="this.parentElement.remove()">×</button>`;
-                container.appendChild(div);
+                createAdditionalImageCard(e.target.result, {
+                    isExisting: false,
+                    fileToken,
+                });
             };
             reader.readAsDataURL(file);
         });
+
+        syncAdditionalInputFiles();
     }
 
     // Color code

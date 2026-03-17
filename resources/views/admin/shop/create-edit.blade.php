@@ -1842,9 +1842,30 @@
                 termsModal = new bootstrap.Modal(termsModalEl);
             }
 
+            const $ajaxSubmitBtn = $('#ajaxSubmitBtn');
+            const submitBtnDefaultHtml = $ajaxSubmitBtn.html();
+
+            function setAjaxSubmitLoading(isLoading) {
+                if (!$ajaxSubmitBtn.length) {
+                    return;
+                }
+
+                if (isLoading) {
+                    $ajaxSubmitBtn.prop('disabled', true);
+                    $ajaxSubmitBtn.html(
+                        '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...'
+                    );
+                    return;
+                }
+
+                $ajaxSubmitBtn.prop('disabled', false);
+                $ajaxSubmitBtn.html(submitBtnDefaultHtml);
+            }
+
             if (!IS_PUBLIC) {
                 $('#ajaxSubmitBtn').on('click', function() {
                     clearErrors();
+                    setAjaxSubmitLoading(true);
                     const clientErrors = validateShopFormClient();
                     if (Object.keys(clientErrors).length) {
                         showErrors(clientErrors);
@@ -1858,6 +1879,7 @@
                         $('html, body').animate({
                             scrollTop: $('#formErrorBox').offset().top - 100
                         }, 300);
+                        setAjaxSubmitLoading(false);
                         return;
                     }
 
@@ -1885,6 +1907,7 @@
                             }
                             if (!IS_EDIT && res.status ===
                                 'terms_required') { //CREATE MODE → show terms modal
+                                setAjaxSubmitLoading(false);
                                 termsModal.show();
                                 return;
                             }
@@ -1892,12 +1915,16 @@
                                 setTimeout(() => {
                                     window.location.href = res.redirect;
                                 }, 1200);
+                                return;
                             }
+
+                            setAjaxSubmitLoading(false);
                         },
                         error: function(xhr) {
                             if (xhr.status === 422) {
                                 showErrors(xhr.responseJSON.errors);
                             }
+                            setAjaxSubmitLoading(false);
                         }
                     });
                 });
@@ -1905,6 +1932,7 @@
                 $('#agreeAndSubmit').on('click', function() {
                     if (!$('#agreeTerms').is(':checked')) {
                         $('#termsError').removeClass('d-none');
+                        setAjaxSubmitLoading(false);
                         return;
                     }
                     $('#termsError').addClass('d-none');

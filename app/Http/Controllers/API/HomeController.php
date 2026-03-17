@@ -61,7 +61,7 @@ class HomeController extends Controller
             //     return $product->where('is_active', true);
             // })
             // ->withCount('products')->orderByDesc('products_count')
-            ->take(10)->get();
+            ->get();
 
 
 
