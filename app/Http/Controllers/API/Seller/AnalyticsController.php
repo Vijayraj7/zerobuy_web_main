@@ -108,6 +108,41 @@ class AnalyticsController extends Controller
         ]);
     }
 
+    public function topRatedProducts(Request $request)
+    {
+        $shop = generaleSetting('shop');
+        $limit = (int) ($request->limit ?? 10);
+
+        $products = Product::with('media')
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating')
+            ->where('shop_id', $shop->id)
+            ->having('reviews_count', '>', 0)
+            ->orderByDesc('reviews_avg_rating')
+            ->orderByDesc('reviews_count')
+            ->limit($limit)
+            ->get();
+
+        $result = $products->map(function ($product) {
+            $price = $product->discount_price ?? $product->price ?? 0;
+            $mrp = $product->price ?? 0;
+
+            return [
+                'id' => $product->id,
+                'name' => $product->name ?? '',
+                'image_url' => $product->thumbnail ?? asset('default/default.jpg'),
+                'price' => (float) $price,
+                'mrp' => (float) $mrp,
+                'average_rating' => round((float) ($product->reviews_avg_rating ?? 0), 1),
+                'total_reviews' => (int) ($product->reviews_count ?? 0),
+            ];
+        })->values();
+
+        return $this->json('Top rated products', [
+            'products' => $result,
+        ]);
+    }
+
     public function topCustomers(Request $request)
     {
         $shop = generaleSetting('shop');

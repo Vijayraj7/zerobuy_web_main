@@ -208,6 +208,7 @@ Route::prefix('/seller')->group(function () {
         Route::get('/analytics/summary', [SellerAnalyticsController::class, 'summary']);
         Route::get('/analytics/top-products', [SellerAnalyticsController::class, 'topProducts']);
         Route::get('/analytics/top-customers', [SellerAnalyticsController::class, 'topCustomers']);
+        Route::get('/analytics/top-rated-products', [SellerAnalyticsController::class, 'topRatedProducts']);
 
 
         // logout
