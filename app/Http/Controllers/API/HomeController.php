@@ -161,7 +161,7 @@ class HomeController extends Controller
         $sponsoredShops = collect([]);
 
         if ($generaleSetting?->shop_type != 'single') {
-            $shops = ShopRepository::query()->isActive()
+            $shops = ShopRepository::query()->isActive()->where('is_branded', true)
                 ->when(!empty($businesscategorIds), function ($q) use ($businesscategorIds) {
                     $q->whereHas('businessCategories', function ($qc) use ($businesscategorIds) {
                         $qc->whereIn('business_categories.id', $businesscategorIds);
