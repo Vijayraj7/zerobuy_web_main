@@ -15,7 +15,8 @@
                 <thead>
                     <tr>
                         <th>Date</th>
-                        <th>Transaction ID</th>
+                        <th>Ad Transaction ID</th>
+                        <th>Reference ID</th>
                         <th>Amount</th>
                         <th>Type</th>
                         <th>Purpose</th>
@@ -24,14 +25,14 @@
                 <tbody>
                     @if(isset($message))
                         <tr>
-                            <td colspan="5" class="text-center text-danger">
+                            <td colspan="6" class="text-center text-danger">
                                 {{ $message }}
                             </td>
                         </tr>
 
                     @elseif($transactions->isEmpty())
                         <tr>
-                            <td colspan="5" class="text-center text-muted">
+                            <td colspan="6" class="text-center text-muted">
                                 No advertisement transactions found.
                             </td>
                         </tr>
@@ -39,7 +40,8 @@
                     @else
                         @foreach($transactions as $txn)
                             <tr>
-                                <td>{{ $txn->created_at->format('d-m-Y') }}</td>
+                                <td>{{ $txn->created_at->format('d-m-Y | h:i A') }}</td>
+                                <td>{{ $txn->ad_transaction_id ?? '-' }}</td>
                                 <td>{{ $txn->transaction_id ?? '-' }}</td>
                                 <td>₹{{ $txn->amount }}</td>
                                 <td>{{ ucfirst($txn->type) }}</td>

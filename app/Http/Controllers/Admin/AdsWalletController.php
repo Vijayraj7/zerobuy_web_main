@@ -9,7 +9,6 @@ use App\Models\AdWallet;
 use App\Models\AdTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use DataTables;
 
 class AdsWalletController extends Controller
@@ -112,7 +111,7 @@ class AdsWalletController extends Controller
     public function recharge(Request $request)
     {
         $request->validate([
-            'wallet_id' => 'required|exists:wallets,id',
+            'wallet_id' => 'required|exists:ad_wallets,id',
             'amount'    => 'required|numeric|min:1',
             'type'      => 'required|in:credit,debit'
         ]);
@@ -138,7 +137,6 @@ class AdsWalletController extends Controller
                 'amount'         => $request->amount,
                 'type'           => $request->type, // credit / debit
                 'is_commission'  => 0,
-                'transaction_id' => 'TXN-' . strtoupper(Str::random(10)),
                 'purpose'        => $request->type === 'credit'
                     ? 'Wallet Recharge by Admin'
                     : 'Wallet Adjustment by Admin',
@@ -168,6 +166,18 @@ class AdsWalletController extends Controller
                     'date',
                     fn($t) =>
                     optional($t->created_at)->format('d-m-Y h:i A') ?? '—'
+                )
+
+                ->addColumn(
+                    'ad_transaction_id',
+                    fn($t) =>
+                    $t->ad_transaction_id ?? '—'
+                )
+
+                ->addColumn(
+                    'reference_id',
+                    fn($t) =>
+                    $t->transaction_id ?? '—'
                 )
 
                 ->addColumn(

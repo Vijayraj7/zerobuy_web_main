@@ -136,6 +136,7 @@ Route::get('/category-products', [ProductController::class, 'index']);
 Route::controller(ProductController::class)->group(function () {
     Route::get('/products', 'index');
     Route::get('/product-details', 'show');
+    Route::post('/product/ad-view', 'incrementAdView');
 });
 
 // search suggestions route
@@ -159,6 +160,7 @@ Route::controller(ShopController::class)->group(function () {
     Route::get('/shop-categories', 'shopCategory');
     Route::get('/shops/top', 'topShops');
     Route::get('/shops/popular-products', 'popularProducts');
+    Route::post('/shop/ad-view', 'incrementAdView');
     Route::get('/shops/{shop}', 'show');
 });
 

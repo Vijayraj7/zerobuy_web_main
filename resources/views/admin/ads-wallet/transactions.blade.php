@@ -21,7 +21,8 @@
                         <tr>
                             <th>#</th>
                             <th>Date</th>
-                            <th>Transaction ID</th>
+                            <th>Ad Transaction ID</th>
+                            <th>Reference ID</th>
                             <th>Purpose</th>
                             <th>Amount</th>
                             <th>Status</th>
@@ -48,7 +49,8 @@ $(function () {
         columns: [
             { data: 'DT_RowIndex', orderable:false, searchable:false },
             { data: 'date', name:'created_at' },
-            { data: 'transaction_id', name:'transaction_id' },
+            { data: 'ad_transaction_id', name:'ad_transaction_id' },
+            { data: 'reference_id', name:'transaction_id' },
             { data: 'purpose', name:'purpose' },
             { data: 'amount', orderable:false },
             { data: 'status', orderable:false, searchable:false }

@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use App\Models\Advertisement;
 use App\Models\Product;
 // use App\Models\Wallet;
-use App\Models\Transaction;
 use App\Models\AdvertisementSetting;
 use App\Models\Shop;
 use Carbon\Carbon;
@@ -161,7 +160,7 @@ class AdvertismentController extends Controller
             $wallet->decrement('balance', $total);
 
             AdTransaction::create([
-                'wallet_id' => $wallet->id,
+                'ad_wallet_id' => $wallet->id,
                 'amount' => $total,
                 'type' => 'debit',
                 'purpose' => 'Ads Run',
@@ -205,8 +204,7 @@ class AdvertismentController extends Controller
             ]);
         }
 
-        $transactions = Transaction::where('wallet_id', $wallet->id)
-            ->where('purpose', 'Ads Run')
+        $transactions = AdTransaction::where('ad_wallet_id', $wallet->id)
             ->latest()
             ->get();
 

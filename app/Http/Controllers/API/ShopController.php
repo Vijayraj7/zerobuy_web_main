@@ -7,6 +7,7 @@ use App\Http\Resources\CategoryResource;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\ShopDetailsResource;
 use App\Http\Resources\ShopResource;
+use App\Models\Advertisement;
 use App\Models\Category;
 use App\Models\Shop;
 use App\Repositories\ProductRepository;
@@ -143,6 +144,28 @@ class ShopController extends Controller
 
         return $this->json('popular products', [
             'products' => ProductResource::collection($products),
+        ]);
+    }
+
+    /**
+     * Increment ad view count for active store advertisements.
+     */
+    public function incrementAdView(Request $request)
+    {
+        $request->validate([
+            'shop_id' => 'required|exists:shops,id',
+        ]);
+
+        $incremented = Advertisement::query()
+            ->where('shop_id', $request->shop_id)
+            ->where('ads_type', 'store')
+            ->where('status', 'active')
+            ->active()
+            ->increment('total_views');
+
+        return $this->json('store ad view tracked', [
+            'shop_id' => (int) $request->shop_id,
+            'updated_rows' => (int) $incremented,
         ]);
     }
 }

@@ -11,6 +11,7 @@ use App\Http\Resources\ProductDetailsResource;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\ReviewResource;
 use App\Http\Resources\SizeResource;
+use App\Models\Advertisement;
 use App\Models\FlashSale;
 use App\Repositories\ProductRepository;
 use App\Repositories\ReviewRepository;
@@ -216,6 +217,28 @@ class ProductController extends Controller
             'product' => ProductDetailsResource::make($product),
             'related_products' => ProductResource::collection($relatedProducts),
             'popular_products' => ProductResource::collection($popularProducts),
+        ]);
+    }
+
+    /**
+     * Increment ad view count for active product advertisements.
+     */
+    public function incrementAdView(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+        ]);
+
+        $incremented = Advertisement::query()
+            ->where('product_id', $request->product_id)
+            ->where('ads_type', 'product')
+            ->where('status', 'active')
+            ->active()
+            ->increment('total_views');
+
+        return $this->json('ad view tracked', [
+            'product_id' => (int) $request->product_id,
+            'updated_rows' => (int) $incremented,
         ]);
     }
 
