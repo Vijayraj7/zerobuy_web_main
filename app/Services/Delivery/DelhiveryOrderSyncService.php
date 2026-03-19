@@ -4,6 +4,8 @@ namespace App\Services\Delivery;
 
 use App\Enums\PaymentMethod;
 use App\Models\Order;
+use App\Enums\OrderStatus;
+use App\Models\OrderStatusTimeline;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -413,6 +415,144 @@ class DelhiveryOrderSyncService
         $this->saveAttemptJson('latest_pickup_request_response.json', $order, $data);
     }
 
+    public function refreshCurrentStatus(Order $order): bool
+    {
+        $order->loadMissing(['shop.deliverySetting']);
+
+        $setting = $order->shop?->deliverySetting;
+
+        if (!$setting || $setting->delivery_mode !== 'provider_api' || $setting->delivery_provider !== 'delhivery') {
+            return false;
+        }
+
+        $apiToken = $this->normalizeApiToken((string) ($setting->provider_api_key ?? ''));
+        if ($apiToken === '') {
+            return false;
+        }
+
+        $waybill = trim((string) ($order->provider_awb_code ?? $order->provider_shipment_id ?? ''));
+        if ($waybill === '') {
+            return false;
+        }
+
+        $delhiveryBaseUrl = rtrim((string) (data_get(config('services'), 'delhivery.base_url', 'https://track.delhivery.com') ?: 'https://track.delhivery.com'), '/');
+        $trackEndpoint = $delhiveryBaseUrl . '/api/v1/packages/json/';
+
+        try {
+            $response = Http::timeout(25)
+                ->acceptJson()
+                ->withHeaders([
+                    'Authorization' => 'Token ' . $apiToken,
+                    'Token' => $apiToken,
+                ])
+                ->get($trackEndpoint, ['waybill' => $waybill]);
+
+            $this->saveAttemptJson('latest_status_refresh_response.json', $order, [
+                'endpoint' => $trackEndpoint,
+                'waybill' => $waybill,
+                'response' => [
+                    'status' => $response->status(),
+                    'successful' => $response->successful(),
+                    'body' => $response->json() ?? $response->body(),
+                ],
+            ]);
+
+            if (!$response->successful()) {
+                Log::warning('Delhivery status refresh failed', [
+                    'order_id' => $order->id,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+                return false;
+            }
+
+            $shipmentData = $response->json('ShipmentData.0.Shipment') ?? $response->json('ShipmentData.0');
+            $providerStatus = data_get($shipmentData, 'Status.Status')
+                ?? data_get($shipmentData, 'Status')
+                ?? $response->json('ShipmentData.0.Shipment.Status.Status')
+                ?? null;
+
+            $mappedStatus = $this->mapDelhiveryStatusToOrderStatus($providerStatus);
+
+            if (!$mappedStatus) {
+                return false;
+            }
+
+            if (!in_array($mappedStatus->value, [
+                OrderStatus::CANCELLED->value,
+                OrderStatus::SHIPPED->value,
+                OrderStatus::DELIVERED->value,
+            ], true)) {
+                return false;
+            }
+
+            // Build track URL if not already set
+            $trackUrl = null;
+            if ($mappedStatus->value === OrderStatus::SHIPPED->value || $mappedStatus->value === OrderStatus::DELIVERED->value) {
+                $trackUrl = 'https://www.delhivery.com/track/package/' . $waybill;
+            }
+
+            $updateData = ['order_status' => $mappedStatus->value];
+            if (!empty($trackUrl) && $trackUrl !== $order->track_url) {
+                $updateData['track_url'] = (string) $trackUrl;
+            }
+
+            if ($order->order_status?->value !== $mappedStatus->value || (isset($updateData['track_url']) && $updateData['track_url'] !== $order->track_url)) {
+                $order->update($updateData)->refresh();
+            }
+
+            OrderStatusTimeline::updateOrCreate(
+                ['order_id' => $order->id, 'status' => $mappedStatus->value],
+                ['changed_at' => now()]
+            );
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('Delhivery status refresh exception', [
+                'order_id' => $order->id,
+                'message' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    private function mapDelhiveryStatusToOrderStatus(?string $status): ?OrderStatus
+    {
+        if (!$status) {
+            return null;
+        }
+
+        $normalized = strtoupper(trim((string) $status));
+        $normalized = str_replace(['-', ' '], '_', $normalized);
+
+        if (str_contains($normalized, 'DELIVERED') && !str_contains($normalized, 'RTO')) {
+            return OrderStatus::DELIVERED;
+        }
+
+        if (
+            str_contains($normalized, 'RTO') ||
+            str_contains($normalized, 'CANCEL') ||
+            str_contains($normalized, 'LOST') ||
+            str_contains($normalized, 'RETURN')
+        ) {
+            return OrderStatus::CANCELLED;
+        }
+
+        if (
+            str_contains($normalized, 'IN_TRANSIT') ||
+            str_contains($normalized, 'DISPATCHED') ||
+            str_contains($normalized, 'OUT_FOR_DELIVERY') ||
+            str_contains($normalized, 'PICKED') ||
+            str_contains($normalized, 'MANIFESTED') ||
+            str_contains($normalized, 'TRANSIT') ||
+            str_contains($normalized, 'SHIPPED')
+        ) {
+            return OrderStatus::SHIPPED;
+        }
+
+        return null;
+    }
+
     private function saveAttemptJson(string $fileName, Order $order, array $data): void
     {
         $this->writeDebugJson($fileName, [
@@ -511,4 +651,5 @@ class DelhiveryOrderSyncService
             'height_cm' => !empty($heightValues) ? max($heightValues) : null,
         ];
     }
+
 }

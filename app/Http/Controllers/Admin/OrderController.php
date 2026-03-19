@@ -13,6 +13,7 @@ use App\Models\OrderStatusTimeline;
 use App\Models\User;
 use App\Repositories\NotificationRepository;
 use App\Repositories\OrderRepository;
+use App\Services\Delivery\OrderDeliveryStatusRefreshService;
 use App\Services\NotificationServices;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -165,6 +166,24 @@ class OrderController extends Controller
 
         $order = Order::whereId($orderId)->firstOrFail()->load('address.stateData', 'address.districtData', 'shop.deliverySetting');
 
+        // Refresh delivery status from provider API if not in a terminal state (throttled, non-blocking)
+        $terminalStatuses = [
+            OrderStatus::DELIVERED->value,
+            OrderStatus::CANCELLED->value,
+            OrderStatus::CANCELLED_BY_CUSTOMER->value,
+        ];
+
+        if (!in_array((string)($order->order_status?->value ?? ''), $terminalStatuses, true)) {
+            try {
+                app(OrderDeliveryStatusRefreshService::class)->refreshIfEligible($order);
+                $order->refresh();
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Order delivery status refresh failed on admin order details fetch', [
+                    'order_id' => $order->id,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
 
         $orderStatus = OrderStatus::cases();
 

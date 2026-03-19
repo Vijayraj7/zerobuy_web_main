@@ -16,6 +16,7 @@ use App\Repositories\OrderRepository;
 use App\Repositories\TransactionRepository;
 use App\Repositories\WalletRepository;
 use App\Services\Delivery\DelhiveryOrderSyncService;
+use App\Services\Delivery\OrderDeliveryStatusRefreshService;
 use App\Services\Delivery\ShiprocketOrderSyncService;
 use App\Services\NotificationServices;
 use Carbon\Carbon;
@@ -91,10 +92,26 @@ class OrderController extends Controller
      */
     public function show($orderId)
     {
-        // $order = Order::whereId($orderId)->firstOrFail(); 
-
         $order = Order::whereId($orderId)->firstOrFail()->load('address.stateData', 'address.districtData', 'shop.deliverySetting');
 
+        // Refresh delivery status from provider API if not in a terminal state (throttled, non-blocking)
+        $terminalStatuses = [
+            OrderStatus::DELIVERED->value,
+            OrderStatus::CANCELLED->value,
+            OrderStatus::CANCELLED_BY_CUSTOMER->value,
+        ];
+
+        if (!in_array((string)($order->order_status?->value ?? ''), $terminalStatuses, true)) {
+            try {
+                app(OrderDeliveryStatusRefreshService::class)->refreshIfEligible($order);
+                $order->refresh();
+            } catch (\Throwable $e) {
+                Log::warning('Order delivery status refresh failed on shop order details fetch', [
+                    'order_id' => $order->id,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
 
         $orderStatus = OrderStatus::cases();
 
@@ -128,7 +145,22 @@ class OrderController extends Controller
             $hasProviderShipmentId = !empty($order->provider_shipment_id) || !empty($order->shiprocket_shipment_id);
             $hasProviderAwb = !empty($order->provider_awb_code) || !empty($order->shiprocket_awb_code);
 
-            if ($hasProviderAwb) {
+            // Show actual delivery status from API if available, otherwise show creation status
+            $orderStatusValue = (string) ($order->order_status?->value ?? '');
+            
+            if (in_array($orderStatusValue, [OrderStatus::DELIVERED->value, OrderStatus::SHIPPED->value, OrderStatus::CANCELLED->value], true)) {
+                // Show actual delivery status from the provider API
+                $apiProviderStatus = strtolower(str_replace(' ', '_', $orderStatusValue));
+                $apiProviderStatusLabel = $orderStatusValue;
+                
+                if ($orderStatusValue === OrderStatus::DELIVERED->value) {
+                    $apiProviderStatusClass = 'success';
+                } elseif ($orderStatusValue === OrderStatus::SHIPPED->value) {
+                    $apiProviderStatusClass = 'info';
+                } else { // CANCELLED
+                    $apiProviderStatusClass = 'danger';
+                }
+            } elseif ($hasProviderAwb) {
                 $apiProviderStatus = 'awb_generated';
                 $apiProviderStatusLabel = 'AWB Generated';
                 $apiProviderStatusClass = 'success';
@@ -153,6 +185,11 @@ class OrderController extends Controller
             && in_array($retryShipProvider, ['shiprocket', 'delhivery'], true)
             && !$isProviderOrderCreated;
 
+        $showCreateShipmentButton =
+            in_array($retryShipProvider, ['shiprocket', 'delhivery'], true)
+            && !in_array($order->order_status->value, ['Delivered', 'Cancelled'], true)
+            && !$isProviderOrderCreated;
+
         $showConfirmShipButton =
             $order->order_status?->value === OrderStatus::PENDING->value
             && $isApiProviderOrder;
@@ -163,6 +200,7 @@ class OrderController extends Controller
             'riders',
             'isManualDelivery',
             'showRetryShipButton',
+            'showCreateShipmentButton',
             'showConfirmShipButton',
             'retryShipProvider',
             'apiProviderStatus',

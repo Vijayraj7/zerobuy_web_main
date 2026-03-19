@@ -314,13 +314,6 @@
                     </div>
                 </div>
 
-                @php
-                    $showCreateShipmentButton =
-                        in_array($retryShipProvider, ['shiprocket', 'delhivery'], true)
-                        && !in_array($order->order_status->value, ['Delivered', 'Cancelled'], true)
-                        && !in_array($apiProviderStatus, ['shipment_created', 'awb_generated'], true);
-                @endphp
-
                 @if ($showCreateShipmentButton)
                     @hasPermission(['shop.order.status.change'])
                         <div class="p-3 border-bottom">

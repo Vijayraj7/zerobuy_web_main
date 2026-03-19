@@ -7,6 +7,7 @@ use App\Enums\PaymentMethod;
 use App\Models\Order;
 use App\Models\OrderStatusTimeline;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -152,6 +153,12 @@ class ShiprocketOrderSyncService
                 ->withToken($token)
                 ->post($baseUrl . '/orders/create/adhoc', $payload);
 
+            $this->writeLatestOrderCreateResponse($response, [
+                'order_id' => $order->id,
+                'order_code' => $order->prefix . $order->order_code,
+                'retry' => false,
+            ]);
+
             if ($response->status() === 401) {
                 Cache::forget($tokenCacheKey);
                 $this->lastSyncError = 'Shiprocket token is unauthorized or expired.';
@@ -202,6 +209,13 @@ class ShiprocketOrderSyncService
                         ->acceptJson()
                         ->withToken($token)
                         ->post($baseUrl . '/orders/create/adhoc', $payload);
+
+                    $this->writeLatestOrderCreateResponse($retryResponse, [
+                        'order_id' => $order->id,
+                        'order_code' => $order->prefix . $order->order_code,
+                        'retry' => true,
+                        'pickup_location' => $payload['pickup_location'] ?? null,
+                    ]);
 
                     if ($retryResponse->successful()) {
                         $response = $retryResponse;
@@ -662,6 +676,13 @@ class ShiprocketOrderSyncService
                     ->withToken($token)
                     ->get($baseUrl . '/orders/show/' . $shiprocketOrderId);
 
+                $this->writeLatestStatusRefreshResponse($orderResponse, [
+                    'order_id' => $order->id,
+                    'order_code' => $order->prefix . $order->order_code,
+                    'source' => 'orders_show',
+                    'shiprocket_order_id' => $shiprocketOrderId,
+                ]);
+
                 if ($orderResponse->status() === 401) {
                     Cache::forget($tokenCacheKey);
                     return false;
@@ -681,6 +702,13 @@ class ShiprocketOrderSyncService
                     ->acceptJson()
                     ->withToken($token)
                     ->get($baseUrl . '/courier/track/shipment/' . $shipmentId);
+
+                $this->writeLatestStatusRefreshResponse($trackResponse, [
+                    'order_id' => $order->id,
+                    'order_code' => $order->prefix . $order->order_code,
+                    'source' => 'courier_track',
+                    'shipment_id' => $shipmentId,
+                ]);
 
                 if ($trackResponse->status() === 401) {
                     Cache::forget($tokenCacheKey);
@@ -711,10 +739,26 @@ class ShiprocketOrderSyncService
                 return false;
             }
 
-            if ($order->order_status?->value !== $mappedStatus->value) {
-                $order->update([
-                    'order_status' => $mappedStatus->value,
-                ]);
+            // Extract track URL from the API response if available
+            $trackUrl = null;
+            if ($shiprocketOrderId !== '' && isset($orderResponse)) {
+                $trackUrl = $orderResponse->json('data.track_url')
+                    ?? $orderResponse->json('data.shipment_details.track_url')
+                    ?? $orderResponse->json('track_url');
+            } elseif ($shipmentId !== '' && isset($trackResponse)) {
+                $trackUrl = $trackResponse->json('track_url')
+                    ?? $trackResponse->json('data.track_url')
+                    ?? $trackResponse->json('tracking_data.track_url')
+                    ?? $trackResponse->json('data.tracking_data.track_url');
+            }
+
+            $updateData = ['order_status' => $mappedStatus->value];
+            if (!empty($trackUrl) && $trackUrl !== $order->track_url) {
+                $updateData['track_url'] = (string) $trackUrl;
+            }
+
+            if ($order->order_status?->value !== $mappedStatus->value || $updateData['track_url'] !== $order->track_url) {
+                $order->update($updateData);
             }
 
             OrderStatusTimeline::updateOrCreate(
@@ -758,6 +802,7 @@ class ShiprocketOrderSyncService
             || str_contains($normalized, 'IN_TRANSIT')
             || str_contains($normalized, 'OUT_FOR_DELIVERY')
             || str_contains($normalized, 'PICKED')
+            || str_contains($normalized, 'PICKUP')
             || str_contains($normalized, 'MANIFEST')
             || str_contains($normalized, 'AWB')
             || str_contains($normalized, 'DISPATCH')) {
@@ -780,6 +825,54 @@ class ShiprocketOrderSyncService
         }
 
         return null;
+    }
+
+    private function writeLatestStatusRefreshResponse($response, array $requestMeta = []): void
+    {
+        try {
+            $filePath = public_path('shiprocket/latest_status_refresh_response.json');
+            File::ensureDirectoryExists(dirname($filePath));
+
+            $data = [
+                'captured_at' => now()->toDateTimeString(),
+                'request' => $requestMeta,
+                'response' => [
+                    'status' => $response->status(),
+                    'successful' => $response->successful(),
+                    'body' => $response->json() ?? $response->body(),
+                ],
+            ];
+
+            File::put($filePath, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        } catch (\Throwable $e) {
+            Log::warning('Failed to write latest shiprocket status refresh response json', [
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function writeLatestOrderCreateResponse($response, array $requestMeta = []): void
+    {
+        try {
+            $filePath = public_path('shiprocket/latest_order_create_response.json');
+            File::ensureDirectoryExists(dirname($filePath));
+
+            $data = [
+                'captured_at' => now()->toDateTimeString(),
+                'request' => $requestMeta,
+                'response' => [
+                    'status' => $response->status(),
+                    'successful' => $response->successful(),
+                    'body' => $response->json() ?? $response->body(),
+                ],
+            ];
+
+            File::put($filePath, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        } catch (\Throwable $e) {
+            Log::warning('Failed to write latest shiprocket order create response json', [
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 
     private function resolveOrderPackageMetrics(Order $order): array

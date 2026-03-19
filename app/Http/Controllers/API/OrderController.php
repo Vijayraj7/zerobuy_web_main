@@ -17,7 +17,7 @@ use App\Models\Product;
 use App\Models\Shop;
 use App\Models\VerifyManage;
 use App\Repositories\OrderRepository;
-use App\Services\Delivery\ShiprocketOrderSyncService;
+use App\Services\Delivery\OrderDeliveryStatusRefreshService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -68,19 +68,30 @@ class OrderController extends Controller
             return $query->skip($skip)->take($perPage);
         })->get();
 
-        $shiprocketSyncService = app(ShiprocketOrderSyncService::class);
+        // Terminal statuses - don't refresh these
+        $terminalStatuses = [
+            OrderStatus::DELIVERED->value,
+            OrderStatus::CANCELLED->value,
+            OrderStatus::CANCELLED_BY_CUSTOMER->value,
+            self::LEGACY_CANCELLED_BY_CUSTOMER,
+        ];
+
+        $refreshService = app(OrderDeliveryStatusRefreshService::class);
         foreach ($orders as $orderItem) {
-            if ((filled($orderItem->shiprocket_order_id) || filled($orderItem->shiprocket_shipment_id)) && blank($orderItem->shiprocket_awb_code)) {
-                try {
-                    if ($shiprocketSyncService->refreshAwbAndTrackUrl($orderItem)) {
-                        $orderItem->refresh();
-                    }
-                } catch (\Throwable $e) {
-                    Log::warning('Shiprocket AWB refresh failed on customer order list fetch (API)', [
-                        'order_id' => $orderItem->id,
-                        'message' => $e->getMessage(),
-                    ]);
-                }
+            // Skip refresh if order is in terminal state
+            if (in_array((string)($orderItem->order_status?->value ?? ''), $terminalStatuses, true)) {
+                continue;
+            }
+
+            // Refresh status for both Shiprocket and Delhivery using unified service
+            try {
+                $refreshService->refreshIfEligible($orderItem);
+                $orderItem->refresh();
+            } catch (\Throwable $e) {
+                Log::warning('Order delivery status refresh failed on customer order list fetch (API)', [
+                    'order_id' => $orderItem->id,
+                    'message' => $e->getMessage(),
+                ]);
             }
         }
 
@@ -1108,28 +1119,20 @@ class OrderController extends Controller
             $order->load('payments');
         }
 
-        if ($order && (filled($order->shiprocket_order_id) || filled($order->shiprocket_shipment_id)) && blank($order->shiprocket_awb_code)) {
-            try {
-                $service = app(ShiprocketOrderSyncService::class);
-                if ($service->refreshAwbAndTrackUrl($order)) {
-                    $order->refresh();
-                }
-            } catch (\Throwable $e) {
-                Log::warning('Shiprocket AWB refresh failed on customer order details fetch (API)', [
-                    'order_id' => $order?->id,
-                    'message' => $e->getMessage(),
-                ]);
-            }
-        }
+        // Refresh delivery status from provider API if not in a terminal state (throttled, non-blocking)
+        $terminalStatuses = [
+            OrderStatus::DELIVERED->value,
+            OrderStatus::CANCELLED->value,
+            OrderStatus::CANCELLED_BY_CUSTOMER->value,
+            self::LEGACY_CANCELLED_BY_CUSTOMER,
+        ];
 
-        if ($order && (filled($order->shiprocket_order_id) || filled($order->shiprocket_shipment_id))) {
+        if ($order && !in_array((string)($order->order_status?->value ?? ''), $terminalStatuses, true)) {
             try {
-                $service = app(ShiprocketOrderSyncService::class);
-                if ($service->refreshCurrentStatus($order)) {
-                    $order->refresh();
-                }
+                app(OrderDeliveryStatusRefreshService::class)->refreshIfEligible($order);
+                $order->refresh();
             } catch (\Throwable $e) {
-                Log::warning('Shiprocket status refresh failed on customer order details fetch (API)', [
+                Log::warning('Order delivery status refresh failed on customer order details fetch (API)', [
                     'order_id' => $order?->id,
                     'message' => $e->getMessage(),
                 ]);

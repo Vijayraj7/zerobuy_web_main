@@ -1,7 +1,11 @@
 {
-    "captured_at": "2026-03-12 17:04:38",
-    "order_id": 126,
-    "order_code": "ORDQNG7COD1IM",
-    "outcome": "skipped",
-    "reason": "invalid_or_missing_delhivery_provider_setting"
+    "captured_at": "2026-03-19 16:30:40",
+    "order_id": 136,
+    "order_code": "ORDJ30SVI68W5",
+    "outcome": "success",
+    "result": {
+        "upload_wbn": "UPL5722524351881891537",
+        "waybill": "20139210000383",
+        "track_url": "https://www.delhivery.com/track/package/20139210000383"
+    }
 }
