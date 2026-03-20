@@ -40,7 +40,7 @@ class SellerOrderResource extends JsonResource
         $paymentMethodValue = strtolower(trim((string) ($this->payment_method?->value ?? $this->payment_method)));
         $isCashOrder = in_array($paymentMethodValue, ['cash', 'cash payment'], true);
 
-        $retryShipProvider = strtolower(trim((string) ($this->api_provider ?: $this->shop?->deliverySetting?->delivery_provider ?: '')));
+        $retryShipProvider = strtolower(trim((string) (($this->shop?->deliverySetting?->delivery_api_enabled ? ($this->api_provider ?: $this->shop?->deliverySetting?->delivery_provider) : '') ?: '')));
         $hasProviderOrderId = ! empty($this->provider_order_id) || ! empty($this->shiprocket_order_id);
         $hasProviderShipmentId = ! empty($this->provider_shipment_id) || ! empty($this->shiprocket_shipment_id);
         $hasProviderAwb = ! empty($this->provider_awb_code) || ! empty($this->shiprocket_awb_code);
@@ -66,8 +66,7 @@ class SellerOrderResource extends JsonResource
         $isManualDelivery = ($this->shop?->deliverySetting?->delivery_mode ?? null) === 'manual';
         $isTrackingUpdateLocked = in_array($this->order_status?->value, [OrderStatus::DELIVERED->value, OrderStatus::CANCELLED->value], true);
         $isApiProviderOrder =
-            (($this->shop?->deliverySetting?->delivery_mode ?? null) === 'provider_api' && in_array($retryShipProvider, ['shiprocket', 'delhivery'], true))
-            || in_array($retryShipProvider, ['shiprocket', 'delhivery'], true);
+            in_array($retryShipProvider, ['shiprocket', 'delhivery'], true);
 
         $isProviderOrderCreated = false;
         if ($retryShipProvider === 'shiprocket') {

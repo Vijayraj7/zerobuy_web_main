@@ -170,24 +170,102 @@
                             data-bs-toggle="dropdown" aria-expanded="false">
                             {{ $order->order_status->value }}
                         </a>
-                        @if($order->order_status->value != 'Delivered' && $order->order_status->value != 'Cancelled')
-                            @hasPermission(['admin.order.status.change'])
-                                <ul class="dropdown-menu order-status">
-                                    @foreach ($orderStatus as $status)
-                                        <li>
-                                            <a class="dropdown-item @if(in_array($status->value, ['Delivered','Cancelled'])) OrderStatusConfirm @endif"
-                                                href="{{ route('admin.order.status.change', $order->id) }}?status={{ $status->value }}">
-                                                {{ __($status->value) }}
-                                            </a>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            @endhasPermission
-                         @endif
+                        @hasPermission(['admin.order.status.change'])
+                            <ul class="dropdown-menu order-status">
+                                @foreach ($orderStatus as $status)
+                                    <li>
+                                        <a class="dropdown-item @if(in_array($status->value, ['Delivered','Cancelled'])) OrderStatusConfirm @endif"
+                                            href="{{ route('admin.order.status.change', $order->id) }}?status={{ $status->value }}">
+                                            {{ __($status->value) }}
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endhasPermission
                     </div>
                 </div>
 
-                <!-- <div class="border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 p-3">
+                <!-- Shipment Details Section -->
+                @php
+                    $shipmentProvider = strtolower(trim((string) ($order->api_provider ?: $retryShipProvider ?: $order->shop?->deliverySetting?->delivery_provider ?: '')));
+                    if (empty($shipmentProvider) && (!empty($order->shiprocket_shipment_id) || !empty($order->shiprocket_order_id))) {
+                        $shipmentProvider = 'shiprocket';
+                    }
+                    $shipmentOrderId = $order->provider_order_id ?: $order->shiprocket_order_id;
+                    $shipmentAwb = $order->provider_awb_code ?: $order->shiprocket_awb_code;
+                    $shipmentTrackUrl = $order->track_url;
+                    if (empty($shipmentTrackUrl) && !empty($shipmentAwb) && $shipmentProvider === 'shiprocket') {
+                        $shipmentTrackUrl = 'https://shiprocket.co/tracking/' . $shipmentAwb;
+                    }
+                    $hasShipmentDetails =
+                        !empty($shipmentOrderId)
+                        || !empty($order->provider_shipment_id)
+                        || !empty($order->shiprocket_shipment_id)
+                        || !empty($shipmentAwb)
+                        || !empty($shipmentTrackUrl)
+                        || !empty($shipmentProvider);
+                @endphp
+                @if ($hasShipmentDetails)
+                    <div class="p-3 border-bottom">
+                        <h6 class="fz-14 mb-3">{{ __('Shipment Details') }}</h6>
+                        @if (!empty($shipmentProvider))
+                            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                <span class="text-color">{{ __('Delivery Provider') }}:</span>
+                                <span class="fw-medium">{{ ucfirst($shipmentProvider) }}</span>
+                            </div>
+                        @endif
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                            <span class="text-color">{{ __('Order Code') }}:</span>
+                            <span class="fw-medium">{{ $order->prefix . $order->order_code }}</span>
+                        </div>
+                        @if (!empty($order->provider_current_status) || !empty($apiProviderStatusLabel))
+                            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                <span class="text-color">{{ __('Provider Status') }}:</span>
+                                <span class="fw-medium">
+                                    @if (!empty($order->provider_current_status))
+                                        <span class="badge bg-{{ $apiProviderStatusClass }}">{{ strtoupper($order->provider_current_status) }}</span>
+                                    @else
+                                        <span class="badge bg-{{ $apiProviderStatusClass }}">{{ __($apiProviderStatusLabel) }}</span>
+                                    @endif
+                                </span>
+                            </div>
+                        @endif
+                        @if (!empty($order->provider_shipment_id))
+                            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                <span class="text-color">{{ __('Shipment ID') }}:</span>
+                                <span class="fw-medium">{{ $order->provider_shipment_id }}</span>
+                            </div>
+                        @endif
+                        @if (!empty($shipmentAwb))
+                            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                <span class="text-color">{{ __('AWB Code') }}:</span>
+                                <span class="fw-medium">{{ $shipmentAwb }}</span>
+                            </div>
+                        @endif
+                        @if (!empty($shipmentTrackUrl))
+                            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                <span class="text-color">{{ __('Tracking URL') }}:</span>
+                                <a href="{{ $shipmentTrackUrl }}" target="_blank" class="fw-medium text-primary small">
+                                    {{ __('View Tracking') }} →
+                                </a>
+                            </div>
+                        @endif
+                        @if (!empty($order->pickup_date))
+                            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                <span class="text-color">{{ __('Pickup Date') }}:</span>
+                                <span class="fw-medium">{{ $order->pickup_date ? \Carbon\Carbon::parse($order->pickup_date)->format('M d, Y | h:i A') : '-' }}</span>
+                            </div>
+                        @endif
+                        @if (!empty($order->delivery_date))
+                            <div class="d-flex align-items-center justify-content-between gap-2">
+                                <span class="text-color">{{ __('Delivery Date') }}:</span>
+                                <span class="fw-medium">{{ $order->delivery_date ? \Carbon\Carbon::parse($order->delivery_date)->format('M d, Y | h:i A') : '-' }}</span>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
+                <div class="border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 p-3">
                     <div class="text-color">{{ __('Payment Status') }}</div>
                     <div class="d-flex align-items-center gap-1">
                         <span>{{ $order->payment_status }}</span>

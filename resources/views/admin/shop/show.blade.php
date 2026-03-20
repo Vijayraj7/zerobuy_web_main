@@ -345,11 +345,10 @@
                                                         @case('amount_based') {{ __('Amount Based') }} @break
                                                         @case('state_wise') {{ __('State Wise') }} @break
                                                         @case('manual') {{ __('Manual') }} @break
-                                                        @case('provider_api') {{ __('Provider API') }} @break
                                                         @default {{ __('N/A') }}
                                                     @endswitch
                                                 </span>
-                                                @if($deliverySetting->delivery_mode === 'provider_api' && $deliverySetting->delivery_provider)
+                                                   @if($deliverySetting->delivery_api_enabled && $deliverySetting->delivery_provider)
                                                     <span class="badge badge-success clear-badge-font">
                                                         <i class="fa fa-truck me-1"></i>{{ ucfirst($deliverySetting->delivery_provider) }}
                                                     </span>

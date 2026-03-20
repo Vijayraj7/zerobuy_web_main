@@ -28,6 +28,10 @@ class ShiprocketDeliveryProvider implements DeliveryRateProviderInterface
 
     public function getCharge(float $totalAmount, $shop, ?int $stateId, DeliverySetting $setting): ?float
     {
+        if (!$setting->delivery_api_enabled) {
+            return null;
+        }
+
         $pickupPostcode = trim((string) ($shop?->pincode ?? ''));
         $deliveryPostcode = $this->postcodeResolver->resolve($stateId);
 

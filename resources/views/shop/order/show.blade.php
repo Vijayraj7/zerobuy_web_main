@@ -278,6 +278,10 @@
 
                 @php
                     $isCashOrderForStatusAction = in_array($normalizedPaymentMethod ?? '', ['cash', 'cash payment'], true);
+                    $isDeliveryApiEnabled = (bool) ($order->shop?->deliverySetting?->delivery_api_enabled ?? false);
+                    $isAdminContext = request()->routeIs('admin.*');
+                    $statusChangePermission = $isAdminContext ? ['admin.order.status.change'] : ['shop.order.status.change'];
+                    $statusChangeRouteName = $isAdminContext ? 'admin.order.status.change' : 'shop.order.status.change';
                     $showReadyToPaymentButton =
                         ($order->order_status->value === 'Pending')
                         && !$isCashOrderForStatusAction;
@@ -285,36 +289,155 @@
 
                 <div class="px-3 py-12 d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom">
                     <div class="text-color">{{ __('Change Order Status') }}</div>
-                    <div class="dropdown">
-                        <a class="btn border text-start dropdown-toggle" href="#" role="button"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                            {{ $order->order_status->value }}
-                        </a>
-                        @if ($order->order_status->value != 'Delivered' && $order->order_status->value != 'Cancelled')
-                            @hasPermission(['shop.order.status.change'])
+                    @php
+                        // Show buttons based on order status and payment
+                        $isOnlinePayment = !in_array($normalizedPaymentMethod, ['cash', 'cash payment'], true);
+                        $isPaid = (bool) (($order->payments()->latest('payments.id')->first()?->is_paid) ?? false);
+                        $isPending = $order->order_status->value === 'Pending';
+                        $isPaymentSuccessful = $order->order_status->value === 'Payment Successful';
+                        $isConfirm = $order->order_status->value === 'Confirm';
+                        
+                        // Show Cancel/Confirm buttons only when Pending
+                        $showCancelConfirmButtons = $isPending && ($isOnlinePayment && $isPaid || !$isOnlinePayment);
+                    @endphp
+                    
+                    @if ($isAdminContext)
+                        <div class="dropdown">
+                            <a class="btn border text-start dropdown-toggle" href="#" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                {{ $order->order_status->value }}
+                            </a>
+                            @hasPermission($statusChangePermission)
                                 <ul class="dropdown-menu order-status">
                                     @foreach ($orderStatus as $status)
                                         @php
-                                            $isCashOrder = in_array($normalizedPaymentMethod, ['cash', 'cash payment'], true);
-                                            $isOnlineOnlyStatus = in_array($status->value, ['Ready to Payment', 'Payment Successful'], true);
-                                            $isSystemPaymentStatus = $status->value === 'Payment Successful';
+                                            $isShippedStatus = $status->value === 'Shipped';
                                         @endphp
-                                        @if (!($isCashOrder && $isOnlineOnlyStatus) && !$isSystemPaymentStatus)
                                         <li>
-                                            <a class="dropdown-item @if (in_array($status->value, ['Delivered', 'Cancelled'])) OrderStatusConfirm @endif"
-                                                href="{{ route('shop.order.status.change', $order->id) }}?status={{ $status->value }}">
+                                            <a class="dropdown-item @if (in_array($status->value, ['Delivered', 'Cancelled', 'Shipped'], true)) OrderStatusConfirm @endif @if ($isShippedStatus) js-status-shipped @endif"
+                                                href="{{ route($statusChangeRouteName, $order->id) }}?status={{ $status->value }}"
+                                                @if ($isShippedStatus)
+                                                    data-update-url="{{ route('shop.order.update-tracking', $order->id) }}"
+                                                    data-token="{{ csrf_token() }}"
+                                                @endif>
                                                 {{ __($status->value) }}
                                             </a>
                                         </li>
-                                        @endif
                                     @endforeach
                                 </ul>
                             @endhasPermission
+                        </div>
+                    @elseif (!$isDeliveryApiEnabled)
+                        @php
+                            $currentStatusValue = (string) $order->order_status->value;
+                            $manualNextStatuses = [];
+
+                            if ($currentStatusValue === 'Pending') {
+                                $manualNextStatuses = ['Confirm', 'Cancelled'];
+                            } elseif ($currentStatusValue === 'Payment Successful') {
+                                $manualNextStatuses = ['Confirm'];
+                            } elseif ($currentStatusValue === 'Confirm') {
+                                $manualNextStatuses = ['Shipped'];
+                            } elseif ($currentStatusValue === 'Shipped') {
+                                $manualNextStatuses = ['Delivered'];
+                            }
+
+                            $canManuallyChangeStatus = !empty($manualNextStatuses);
+                        @endphp
+
+                        @if ($canManuallyChangeStatus)
+                            <div class="dropdown">
+                                <a class="btn border text-start dropdown-toggle" href="#" role="button"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                    {{ $order->order_status->value }}
+                                </a>
+                                @hasPermission($statusChangePermission)
+                                    <ul class="dropdown-menu order-status">
+                                        @foreach ($manualNextStatuses as $nextStatus)
+                                            @php
+                                                $isShippedNextStatus = $nextStatus === 'Shipped';
+                                            @endphp
+                                            <li>
+                                                <a class="dropdown-item @if (in_array($nextStatus, ['Delivered', 'Cancelled', 'Shipped'], true)) OrderStatusConfirm @endif @if ($isShippedNextStatus) js-status-shipped @endif"
+                                                    href="{{ route($statusChangeRouteName, $order->id) }}?status={{ $nextStatus }}"
+                                                    @if ($isShippedNextStatus)
+                                                        data-update-url="{{ route('shop.order.update-tracking', $order->id) }}"
+                                                        data-token="{{ csrf_token() }}"
+                                                    @endif>
+                                                    {{ __($nextStatus) }}
+                                                </a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @endhasPermission
+                            </div>
+                        @else
+                            <div class="text-muted small">
+                                {{ $order->order_status->value }}
+                            </div>
                         @endif
-                    </div>
+                    @elseif ($showCancelConfirmButtons)
+                        <!-- Pending status: Show Cancel and Confirm buttons side by side -->
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('shop.order.status.change', $order->id) }}?status=Cancelled" 
+                               class="btn btn-danger btn-sm OrderStatusConfirm">
+                                {{ __('Cancel') }}
+                            </a>
+                            <a href="{{ route('shop.order.status.change', $order->id) }}?status=Confirm" 
+                               class="btn btn-success btn-sm OrderStatusConfirm">
+                                {{ __('Confirm') }}
+                            </a>
+                        </div>
+                    @elseif ($isPaymentSuccessful)
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('shop.order.status.change', $order->id) }}?status=Confirm"
+                               class="btn btn-success btn-sm OrderStatusConfirm">
+                                {{ __('Confirm') }}
+                            </a>
+                        </div>
+                    @elseif ($isConfirm)
+                        <!-- Confirm status: Show status only, Create Shipment is below -->
+                        <div class="text-muted small">
+                            {{ $order->order_status->value }}
+                        </div>
+                    @else
+                        <!-- Other statuses: Show dropdown -->
+                        <div class="dropdown">
+                            <a class="btn border text-start dropdown-toggle" href="#" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                {{ $order->order_status->value }}
+                            </a>
+                            @if ($order->order_status->value != 'Delivered' && $order->order_status->value != 'Cancelled')
+                                @hasPermission($statusChangePermission)
+                                    <ul class="dropdown-menu order-status">
+                                        @foreach ($orderStatus as $status)
+                                            @php
+                                                $isCashOrder = in_array($normalizedPaymentMethod, ['cash', 'cash payment'], true);
+                                                $isOnlineOnlyStatus = in_array($status->value, ['Ready to Payment', 'Payment Successful'], true);
+                                                $isSystemPaymentStatus = $status->value === 'Payment Successful';
+                                                $isShippedStatus = $status->value === 'Shipped';
+                                            @endphp
+                                            @if (!($isCashOrder && $isOnlineOnlyStatus) && !$isSystemPaymentStatus)
+                                            <li>
+                                                <a class="dropdown-item @if (in_array($status->value, ['Delivered', 'Cancelled', 'Shipped'])) OrderStatusConfirm @endif @if ($isShippedStatus) js-status-shipped @endif"
+                                                    href="{{ route($statusChangeRouteName, $order->id) }}?status={{ $status->value }}"
+                                                    @if ($isShippedStatus)
+                                                        data-update-url="{{ route('shop.order.update-tracking', $order->id) }}"
+                                                        data-token="{{ csrf_token() }}"
+                                                    @endif>
+                                                    {{ __($status->value) }}
+                                                </a>
+                                            </li>
+                                            @endif
+                                        @endforeach
+                                    </ul>
+                                @endhasPermission
+                            @endif
+                        </div>
+                    @endif
                 </div>
 
-                @if ($showCreateShipmentButton)
+                @if ($isDeliveryApiEnabled && $showCreateShipmentButton && $order->order_status->value === 'Confirm')
                     @hasPermission(['shop.order.status.change'])
                         <div class="p-3 border-bottom">
                             <form action="{{ route('shop.order.create-shipment', $order->id) }}" method="POST">
@@ -327,15 +450,15 @@
                     @endhasPermission
                 @endif
 
-                @if ($showCreateShipmentButton && $showReadyToPaymentButton)
-                    @hasPermission(['shop.order.status.change'])
-                        <div class="py-1 text-center">
-                            <small class="text-muted">Create Shipment to know the delivery charge then ready to payment.</small>
-                        </div>
-                    @endhasPermission
-                @endif
+                @php
+                    // Ready to Payment: show only when Pending, Online Payment, and NOT Paid
+                    $showReadyToPaymentButtonNew = 
+                        ($order->order_status->value === 'Pending') &&
+                        (!in_array($normalizedPaymentMethod, ['cash', 'cash payment'], true)) &&
+                        (!(($order->payments()->latest('payments.id')->first()?->is_paid) ?? false));
+                @endphp
 
-                @if ($showReadyToPaymentButton)
+                @if ($showReadyToPaymentButtonNew)
                     @hasPermission(['shop.order.status.change'])
                         <div class="p-3 border-bottom">
                             <button
@@ -343,7 +466,7 @@
                                 class="btn btn-warning btn-sm w-100 js-ready-to-payment"
                                 data-update-url="{{ route('shop.order.update-tracking', $order->id) }}"
                                 data-status-url="{{ route('shop.order.status.change', $order->id) }}?status={{ urlencode('Ready to Payment') }}"
-                                data-create-shipment-url="{{ $showCreateShipmentButton ? route('shop.order.create-shipment', $order->id) : '' }}"
+                                data-create-shipment-url=""
                                 data-current-charge="{{ (float) ($order->delivery_charge ?? 0) }}"
                                 data-token="{{ csrf_token() }}"
                             >
@@ -353,31 +476,89 @@
                     @endhasPermission
                 @endif
 
-                @if ($showConfirmShipButton && !$showReadyToPaymentButton)
+                @if ($showCreateShipmentButton && $showReadyToPaymentButtonNew)
                     @hasPermission(['shop.order.status.change'])
-                        <div class="p-3 border-bottom">
-                            <a href="{{ route('shop.order.status.change', $order->id) }}?status=Confirm" class="btn btn-success btn-sm w-100">
-                                {{ __('Confirm & Ship') }}
-                            </a>
+                        <div class="py-1 text-center">
+                            <small class="text-muted">Complete payment first to proceed with shipment.</small>
                         </div>
                     @endhasPermission
                 @endif
 
-                @if (!empty($retryShipProvider) && in_array($retryShipProvider, ['shiprocket', 'delhivery']))
+                <!-- Shipment Details Section -->
+                @php
+                    $shipmentProvider = strtolower(trim((string) ($order->api_provider ?: $retryShipProvider ?: $order->shop?->deliverySetting?->delivery_provider ?: '')));
+                    if (empty($shipmentProvider) && (!empty($order->shiprocket_shipment_id) || !empty($order->shiprocket_order_id))) {
+                        $shipmentProvider = 'shiprocket';
+                    }
+                    $shipmentOrderId = $order->provider_order_id ?: $order->shiprocket_order_id;
+                    $shipmentAwb = $order->provider_awb_code ?: $order->shiprocket_awb_code;
+                    $shipmentTrackUrl = $order->track_url;
+                    if (empty($shipmentTrackUrl) && !empty($shipmentAwb) && $shipmentProvider === 'shiprocket') {
+                        $shipmentTrackUrl = 'https://shiprocket.co/tracking/' . $shipmentAwb;
+                    }
+                    $hasShipmentDetails =
+                        !empty($shipmentOrderId)
+                        || !empty($order->provider_shipment_id)
+                        || !empty($order->shiprocket_shipment_id)
+                        || !empty($shipmentAwb)
+                        || !empty($shipmentTrackUrl)
+                        || !empty($shipmentProvider);
+                @endphp
+                @if ($isDeliveryApiEnabled && $hasShipmentDetails)
                     <div class="p-3 border-bottom">
-                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <div class="text-color">{{ __('API Provider') }}</div>
-                            <span class="fw-medium">{{ ucfirst($retryShipProvider) }}</span>
-                        </div>
-                        @if (!empty($apiProviderStatusLabel))
-                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-2">
-                                <div class="text-color">{{ __('Provider Current Status') }}</div>
-                                <span class="badge bg-{{ $apiProviderStatusClass }}">{{ __($apiProviderStatusLabel) }}</span>
+                        <h6 class="fz-14 mb-3">{{ __('Shipment Details') }}</h6>
+                        @if (!empty($shipmentProvider))
+                            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                <span class="text-color">{{ __('Delivery Provider') }}:</span>
+                                <span class="fw-medium">{{ ucfirst($shipmentProvider) }}</span>
                             </div>
                         @endif
-                        @if (!empty($apiProviderFailureReason))
-                            <div class="mt-2">
-                                <small class="text-danger">{{ __('Failure Reason') }}: {{ $apiProviderFailureReason }}</small>
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                            <span class="text-color">{{ __('Order Code') }}:</span>
+                            <span class="fw-medium">{{ $order->prefix . $order->order_code }}</span>
+                        </div>
+                        @if (!empty($order->provider_current_status) || !empty($apiProviderStatusLabel))
+                            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                <span class="text-color">{{ __('Provider Status') }}:</span>
+                                <span class="fw-medium">
+                                    @if (!empty($order->provider_current_status))
+                                        <span class="badge bg-{{ $apiProviderStatusClass }}">{{ strtoupper($order->provider_current_status) }}</span>
+                                    @else
+                                        <span class="badge bg-{{ $apiProviderStatusClass }}">{{ __($apiProviderStatusLabel) }}</span>
+                                    @endif
+                                </span>
+                            </div>
+                        @endif
+                        @if (!empty($order->provider_shipment_id))
+                            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                <span class="text-color">{{ __('Shipment ID') }}:</span>
+                                <span class="fw-medium">{{ $order->provider_shipment_id }}</span>
+                            </div>
+                        @endif
+                        @if (!empty($shipmentAwb))
+                            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                <span class="text-color">{{ __('AWB Code') }}:</span>
+                                <span class="fw-medium">{{ $shipmentAwb }}</span>
+                            </div>
+                        @endif
+                        @if (!empty($shipmentTrackUrl))
+                            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                <span class="text-color">{{ __('Tracking URL') }}:</span>
+                                <a href="{{ $shipmentTrackUrl }}" target="_blank" class="fw-medium text-primary small">
+                                    {{ __('View Tracking') }} →
+                                </a>
+                            </div>
+                        @endif
+                        @if (!empty($order->pickup_date))
+                            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                <span class="text-color">{{ __('Pickup Date') }}:</span>
+                                <span class="fw-medium">{{ $order->pickup_date ? \Carbon\Carbon::parse($order->pickup_date)->format('M d, Y | h:i A') : '-' }}</span>
+                            </div>
+                        @endif
+                        @if (!empty($order->delivery_date))
+                            <div class="d-flex align-items-center justify-content-between gap-2">
+                                <span class="text-color">{{ __('Delivery Date') }}:</span>
+                                <span class="fw-medium">{{ $order->delivery_date ? \Carbon\Carbon::parse($order->delivery_date)->format('M d, Y | h:i A') : '-' }}</span>
                             </div>
                         @endif
                     </div>
@@ -386,7 +567,17 @@
                 <div class="p-3 border-bottom">
                     <h6 class="fz-14 mb-3">{{ __('Update Tracking & Delivery Charge') }}</h6>
                     @php
-                        $isTrackingUpdateLocked = in_array($order->order_status->value, ['Delivered', 'Cancelled']);
+                        $isTrackingUpdateLocked = in_array($order->order_status->value, ['Ready to Payment', 'Payment Successful', 'Shipped', 'Delivered', 'Cancelled']);
+                        $isApiProviderEnabledForOrder = (bool) ($order->shop?->deliverySetting?->delivery_api_enabled ?? false);
+                        $hasPersistedTrackUrl = !empty(trim((string) $order->track_url));
+                        $isOnlinePaymentForChargeLock = !in_array(strtolower(trim((string) ($order->payment_method?->value ?? $order->payment_method))), ['cash', 'cash payment'], true);
+                        $isConfirmStatusForChargeLock = (string) $order->order_status->value === 'Confirm';
+                        $shouldShowTrackUrlField = !$isApiProviderEnabledForOrder || $hasPersistedTrackUrl;
+                        $isTrackUrlEditable = $shouldShowTrackUrlField && !$isTrackingUpdateLocked && !$hasPersistedTrackUrl;
+                        $isDeliveryChargeEditable = !$isTrackingUpdateLocked
+                            && ($isManualDelivery || (float) ($order->delivery_charge ?? 0) == 0)
+                            && !($isConfirmStatusForChargeLock && $isOnlinePaymentForChargeLock);
+                        $showUpdateButton = $isTrackUrlEditable || $isDeliveryChargeEditable;
                     @endphp
                     @if ($showRetryShipButton)
                         @hasPermission(['shop.order.status.change'])
@@ -400,16 +591,18 @@
                     @endif
                     <form action="{{ route('shop.order.update-tracking', $order->id) }}" method="POST">
                         @csrf
-                        <div class="mb-3">
-                            <label for="track_url" class="form-label small">{{ __('Track URL') }}</label>
-                            <input type="url" class="form-control form-control-sm" id="track_url" name="track_url" 
-                                value="{{ old('track_url', $order->track_url) }}" 
-                                placeholder="Enter track url here"
-                                {{ $isTrackingUpdateLocked ? 'disabled' : '' }}>
-                            @error('track_url')
-                                <small class="text-danger">{{ $message }}</small>
-                            @enderror
-                        </div>
+                        @if ($shouldShowTrackUrlField)
+                            <div class="mb-3">
+                                <label for="track_url" class="form-label small">{{ __('Track URL') }}</label>
+                                <input type="url" class="form-control form-control-sm" id="track_url" name="track_url" 
+                                    value="{{ old('track_url', $order->track_url) }}" 
+                                    placeholder="Enter track url here"
+                                    {{ $isTrackUrlEditable ? '' : 'disabled' }}>
+                                @error('track_url')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+                        @endif
                                 @if ($isManualDelivery || $order->delivery_charge == 0)
                                     <div class="mb-3">
                                         <label for="delivery_charge" class="form-label small">{{ __('Delivery Charge') }}</label>
@@ -417,7 +610,7 @@
                                             id="delivery_charge" name="delivery_charge" 
                                             value="{{ old('delivery_charge', $order->delivery_charge) }}"
                                             placeholder="0.00"
-                                            {{ $isTrackingUpdateLocked ? 'disabled' : '' }}>
+                                            {{ $isDeliveryChargeEditable ? '' : 'disabled' }}>
                                         @error('delivery_charge')
                                             <small class="text-danger">{{ $message }}</small>
                                         @enderror
@@ -428,9 +621,11 @@
                                         <div class="form-control form-control-sm bg-light">{{ $order->delivery_charge }}</div>
                                     </div>
                                 @endif
-                        <button type="submit" class="btn btn-primary btn-sm w-100" {{ $isTrackingUpdateLocked ? 'disabled' : '' }}>
-                            {{ __('Update') }}
-                        </button>
+                        @if ($showUpdateButton)
+                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                {{ __('Update') }}
+                            </button>
+                        @endif
                     </form>
                 </div>
 
@@ -594,11 +789,108 @@
 @push('scripts')
     <script>
         $(document).ready(function() {
+            const getStatusFromUrl = (url) => {
+                try {
+                    return new URL(url, window.location.origin).searchParams.get('status');
+                } catch (error) {
+                    const match = String(url || '').match(/[?&]status=([^&]+)/i);
+                    return match ? decodeURIComponent(match[1]) : null;
+                }
+            };
+
+            const handleShippedStatusChange = (button, statusUrl) => {
+                const updateUrl = button.data('update-url') || "{{ route('shop.order.update-tracking', $order->id) }}";
+                const csrfToken = button.data('token') || "{{ csrf_token() }}";
+
+                Swal.fire({
+                    title: 'Mark as Shipped',
+                    text: 'Tracking URL is required before changing status to Shipped.',
+                    input: 'url',
+                    inputPlaceholder: 'https://example.com/track/123',
+                    showCancelButton: true,
+                    confirmButtonText: 'Update & Continue',
+                    cancelButtonText: 'Cancel',
+                    preConfirm: (value) => {
+                        const trackUrl = String(value || '').trim();
+                        if (!trackUrl) {
+                            Swal.showValidationMessage('Track URL is required.');
+                            return false;
+                        }
+
+                        try {
+                            new URL(trackUrl);
+                        } catch (error) {
+                            Swal.showValidationMessage('Please enter a valid URL.');
+                            return false;
+                        }
+
+                        return trackUrl;
+                    }
+                }).then((result) => {
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    const trackUrl = result.value;
+
+                    Swal.fire({
+                        title: 'Updating track URL...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    fetch(updateUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: new URLSearchParams({
+                            _token: csrfToken,
+                            track_url: trackUrl,
+                            source: 'status_shipped'
+                        }).toString()
+                    })
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error('Failed to update tracking URL.');
+                        }
+
+                        window.location.href = statusUrl;
+                    })
+                    .catch((error) => {
+                        Swal.fire({
+                            title: 'Update Failed',
+                            text: error?.message || 'Unable to update tracking URL. Please try again.',
+                            icon: 'error'
+                        });
+                    });
+                });
+            };
+
+            $(document).on('click', '.js-status-shipped, .dropdown-menu a[href*="status=Shipped"]', function(e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+
+                const button = $(this);
+                const statusUrl = button.attr('href');
+                handleShippedStatusChange(button, statusUrl);
+            });
+
             $(".dropdown-menu").on("click", ".OrderStatusConfirm", function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
 
-                const url = $(this).attr("href");
+                const button = $(this);
+                const url = button.attr("href");
+                const statusParam = String(getStatusFromUrl(url) || '').toLowerCase();
+                if (statusParam === 'shipped') {
+                    handleShippedStatusChange(button, url);
+                    return;
+                }
+
                 const statusName = $(this).text().trim();
 
                 Swal.fire({

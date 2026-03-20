@@ -51,19 +51,6 @@ class DeliveryChargeCalculator
                     $deliveryCharge = $lastRule ? (float) $lastRule->charge : 0.00;
                 }
             }
-        } elseif ($setting->delivery_mode === 'provider_api') {
-            return 0;
-            // $provider = $this->providerManager->resolve($setting->delivery_provider);
-            // if (!$provider) {
-            //     return null;
-            // }
-
-            // $providerCharge = $provider->getCharge($totalAmount, $shop, $stateId, $setting);
-            // if ($providerCharge === null) {
-            //     return null;
-            // }
-
-            // $deliveryCharge = $providerCharge;
         }
 
         if (!in_array((string) $stateId, array_map('strval', $setting->selected_state_ids ?? []), true)) {

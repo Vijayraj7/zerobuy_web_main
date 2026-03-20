@@ -3,14 +3,10 @@
 namespace App\Services\Delivery;
 
 use App\Models\Order;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class OrderDeliveryStatusRefreshService
 {
-    // Minimum seconds between API status refreshes for the same order
-    private const THROTTLE_SECONDS = 300; // 5 minutes
-
     public function __construct(
         protected ShiprocketOrderSyncService $shiprocketService,
         protected DelhiveryOrderSyncService $delhiveryService,
@@ -19,8 +15,10 @@ class OrderDeliveryStatusRefreshService
 
     /**
      * Refresh the delivery status from the provider API for the given order.
-     * Only fires if the order is using a provider API, has already been created
-     * with the provider, and was not recently refreshed (throttle).
+     * Fires on every call as long as the order has a provider shipment record
+     * and is not in a terminal state (Delivered / Cancelled).
+     * The API toggle state is intentionally ignored here — if a shipment was
+     * already created with the provider we still need to track it.
      */
     public function refreshIfEligible(Order $order): void
     {
@@ -29,23 +27,30 @@ class OrderDeliveryStatusRefreshService
 
             $setting = $order->shop?->deliverySetting;
 
-            if (!$setting || $setting->delivery_mode !== 'provider_api') {
-                return;
-            }
+            // Detect provider from the order's own shipment data first, then fall back
+            // to the delivery setting (regardless of whether the toggle is ON or OFF).
+            $provider = strtolower(trim((string) ($order->api_provider ?: '')));
 
-            $provider = strtolower(trim((string) ($order->api_provider ?: $setting->delivery_provider ?: '')));
+            if (empty($provider)) {
+                // Legacy / fallback: detect from shiprocket-specific columns
+                if (!empty($order->shiprocket_order_id) || !empty($order->shiprocket_shipment_id)) {
+                    $provider = 'shiprocket';
+                } elseif ($setting && in_array(strtolower((string) ($setting->delivery_provider ?? '')), ['shiprocket', 'delhivery'], true)) {
+                    $provider = strtolower((string) $setting->delivery_provider);
+                }
+            }
 
             if (!in_array($provider, ['shiprocket', 'delhivery'], true)) {
                 return;
             }
 
-            // Only refresh for orders that are in a shippable/trackable state
+            // Skip terminal states — no point polling a completed/cancelled order
             $currentStatus = (string) ($order->order_status?->value ?? '');
             if (in_array($currentStatus, ['Pending', 'Cancelled', 'Delivered'], true)) {
                 return;
             }
 
-            // Ensure the shipment has actually been created with the provider
+            // Only refresh if a shipment has actually been created with the provider
             if ($provider === 'shiprocket') {
                 $hasProviderRecord = !empty($order->provider_order_id)
                     || !empty($order->shiprocket_order_id)
@@ -61,18 +66,27 @@ class OrderDeliveryStatusRefreshService
                 return;
             }
 
-            // Throttle: skip if refreshed within the last THROTTLE_SECONDS
-            $cacheKey = 'delivery_status_refresh.order.' . $order->id;
-            if (Cache::has($cacheKey)) {
-                return;
-            }
-
-            Cache::put($cacheKey, true, now()->addSeconds(self::THROTTLE_SECONDS));
-
             if ($provider === 'shiprocket') {
                 $this->shiprocketService->refreshCurrentStatus($order);
             } elseif ($provider === 'delhivery') {
                 $this->delhiveryService->refreshCurrentStatus($order);
+            }
+
+            // Persist track_url from AWB if the DB value is still empty.
+            // This works regardless of the API toggle state — no API call needed.
+            $order->refresh();
+            if (empty($order->track_url)) {
+                if ($provider === 'shiprocket') {
+                    $awb = $order->provider_awb_code ?: ($order->shiprocket_awb_code ?? null);
+                    if (!empty($awb)) {
+                        $order->update(['track_url' => 'https://shiprocket.co/tracking/' . $awb]);
+                    }
+                } elseif ($provider === 'delhivery') {
+                    $awb = $order->provider_awb_code;
+                    if (!empty($awb)) {
+                        $order->update(['track_url' => 'https://www.delhivery.com/track/package/' . $awb]);
+                    }
+                }
             }
         } catch (\Throwable $e) {
             Log::warning('OrderDeliveryStatusRefreshService exception', [

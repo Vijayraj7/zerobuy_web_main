@@ -75,9 +75,10 @@
                     <li class="nav-item"><a class="nav-link" data-step="2" href="#">Business Category</a></li>
                     <li class="nav-item"><a class="nav-link" data-step="3" href="#">Shipping Settings</a></li>
                     <li class="nav-item"><a class="nav-link" data-step="4" href="#">Delivery Charges</a></li>
-                    <li class="nav-item"><a class="nav-link" data-step="5" href="#">Payment Settings</a></li>
+                    <li class="nav-item"><a class="nav-link" data-step="5" href="#">Delivery API</a></li>
+                    <li class="nav-item"><a class="nav-link" data-step="6" href="#">Payment Settings</a></li>
                     @if (!$isEdit)
-                        <li class="nav-item"><a class="nav-link" data-step="6" href="#">Account Information</a></li>
+                        <li class="nav-item"><a class="nav-link" data-step="7" href="#">Account Information</a></li>
                     @endif
                 </ul>
 
@@ -355,6 +356,7 @@
                         </div>
                     </div>
                     <p class="text-danger mt-2" id="deliveryStateError"></p>
+
                     <div class="mt-5">
                         <button type="button" class="btn btn-secondary prev-btn" data-prev="2">&laquo;
                             Previous</button>
@@ -396,13 +398,6 @@
                                         {{ old('delivery_mode', $shop->deliverySetting->delivery_mode ?? '') === 'manual' ? 'checked' : '' }}>
                                     <label class="btn btn-outline-primary" for="delivery_manual">
                                         Manual
-                                    </label>
-
-                                    <input type="radio" class="btn-check" id="delivery_provider_api"
-                                        name="delivery_mode" value="provider_api"
-                                        {{ old('delivery_mode', $shop->deliverySetting->delivery_mode ?? '') === 'provider_api' ? 'checked' : '' }}>
-                                    <label class="btn btn-outline-primary" for="delivery_provider_api">
-                                        API Provider
                                     </label>
 
                                 </div>
@@ -550,54 +545,6 @@
                                 </div>
                             </div>
 
-                            <div id="provider_api_box" class="delivery-box d-none">
-                                <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label class="fw-bold mb-1 d-block">Delivery API Provider</label>
-                                        <select name="delivery_provider" class="form-control select-arrow">
-                                            <option value="">-- Select Provider --</option>
-                                            <option value="shiprocket"
-                                                {{ old('delivery_provider', $shop->deliverySetting->delivery_provider ?? '') === 'shiprocket' ? 'selected' : '' }}>
-                                                Shiprocket
-                                            </option>
-                                            <option value="delhivery"
-                                                {{ old('delivery_provider', $shop->deliverySetting->delivery_provider ?? '') === 'delhivery' ? 'selected' : '' }}>
-                                                Delhivery
-                                            </option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-4 mb-3 provider-key-wrap">
-                                        <label class="fw-bold mb-1 d-block" id="provider_api_key_label">Provider API
-                                            Key</label>
-                                        <div class="input-group">
-                                            <input type="password" class="form-control" name="provider_api_key"
-                                                id="provider_api_key"
-                                                value="{{ old('provider_api_key', $isEdit ? $shop->deliverySetting?->provider_api_key ?? '' : '') }}"
-                                                placeholder="Enter provider API key" autocomplete="off">
-                                            <button type="button" class="btn btn-outline-secondary toggle-secret-btn"
-                                                data-target="provider_api_key"
-                                                aria-label="Toggle provider API key visibility">
-                                                <i class="fa-solid fa-eye"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 mb-3 provider-secret-wrap">
-                                        <label class="fw-bold mb-1 d-block" id="provider_api_secret_label">Provider API
-                                            Secret</label>
-                                        <div class="input-group">
-                                            <input type="password" class="form-control" name="provider_api_secret"
-                                                id="provider_api_secret"
-                                                value="{{ old('provider_api_secret', $isEdit ? $shop->deliverySetting?->provider_api_secret ?? '' : '') }}"
-                                                placeholder="Enter provider API secret" autocomplete="new-password">
-                                            <button type="button" class="btn btn-outline-secondary toggle-secret-btn"
-                                                data-target="provider_api_secret"
-                                                aria-label="Toggle provider API secret visibility">
-                                                <i class="fa-solid fa-eye"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -610,8 +557,81 @@
                     </div>
                 </div>
 
-                <!-- STEP 5 - Payment Settings -->
+                <!-- STEP 5 - Delivery API -->
                 <div class="step-content step-5 mt-3" style="display:none;">
+                    <input type="hidden" name="delivery_api_enabled" value="0">
+                    <div class="card mt-4">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fa-solid fa-plug"></i> {{ __('Delivery API Provider') }}</h5>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" role="switch" id="delivery_api_enabled"
+                                    name="delivery_api_enabled" value="1"
+                                    {{ old('delivery_api_enabled', $shop->deliverySetting?->delivery_api_enabled ?? !empty($shop->deliverySetting?->delivery_provider)) ? 'checked' : '' }}>
+                                <label class="form-check-label ms-2" for="delivery_api_enabled">
+                                    {{ __('Turn On / Off') }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="fw-bold mb-1 d-block">{{ __('Select API Provider') }}</label>
+                                    <select name="delivery_provider" class="form-control select-arrow">
+                                        <option value="">-- Select Provider --</option>
+                                        <option value="shiprocket"
+                                            {{ old('delivery_provider', $shop->deliverySetting->delivery_provider ?? '') === 'shiprocket' ? 'selected' : '' }}>
+                                            Shiprocket
+                                        </option>
+                                        <option value="delhivery"
+                                            {{ old('delivery_provider', $shop->deliverySetting->delivery_provider ?? '') === 'delhivery' ? 'selected' : '' }}>
+                                            Delhivery
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3 provider-key-wrap" style="display:none;">
+                                    <label class="fw-bold mb-1 d-block" id="provider_api_key_label">Provider API Key</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" name="provider_api_key"
+                                            id="provider_api_key"
+                                            value="{{ old('provider_api_key', $isEdit ? $shop->deliverySetting?->provider_api_key ?? '' : '') }}"
+                                            placeholder="Enter provider API key" autocomplete="off">
+                                        <button type="button" class="btn btn-outline-secondary toggle-secret-btn"
+                                            data-target="provider_api_key"
+                                            aria-label="Toggle provider API key visibility">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3 provider-secret-wrap" style="display:none;">
+                                    <label class="fw-bold mb-1 d-block" id="provider_api_secret_label">Provider API Secret</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" name="provider_api_secret"
+                                            id="provider_api_secret"
+                                            value="{{ old('provider_api_secret', $isEdit ? $shop->deliverySetting?->provider_api_secret ?? '' : '') }}"
+                                            placeholder="Enter provider API secret" autocomplete="new-password">
+                                        <button type="button" class="btn btn-outline-secondary toggle-secret-btn"
+                                            data-target="provider_api_secret"
+                                            aria-label="Toggle provider API secret visibility">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5">
+                        <button type="button" class="btn btn-secondary prev-btn" data-prev="4">&laquo;
+                            Previous</button>
+                        <button type="button" class="btn btn-primary next-btn float-end" data-next="6">Next
+                            &raquo;</button>
+                    </div>
+                </div>
+
+                <p class="text-danger mt-2" id="deliveryApiError"></p>
+
+                <!-- STEP 6 - Payment Settings -->
+                <div class="step-content step-6 mt-3" style="display:none;">
                     <div class="card mt-4">
                         <div class="card-body">
                             <div class="d-flex gap-2 border-bottom pb-2">
@@ -724,18 +744,18 @@
                     </div>
 
                     <div class="mt-3">
-                        <button type="button" class="btn btn-secondary prev-btn" data-prev="4">&laquo;
+                        <button type="button" class="btn btn-secondary prev-btn" data-prev="5">&laquo;
                             Previous</button>
                         @if (!$isEdit)
-                            <button type="button" class="btn btn-primary next-btn float-end" data-next="6">Next
+                            <button type="button" class="btn btn-primary next-btn float-end" data-next="7">Next
                                 &raquo;</button>
                         @endif
                     </div>
                 </div>
 
 
-                <!-- STEP 6 - Account Information -->
-                <div class="step-content step-6 mt-3" style="display:none;">
+                <!-- STEP 7 - Account Information -->
+                <div class="step-content step-7 mt-3" style="display:none;">
                     <div class="card mt-4">
                         <div class="card-body">
                             <div class="d-flex gap-2 border-bottom pb-2">
@@ -762,7 +782,7 @@
                         <input type="hidden" name="terms_condition_status" id="terms_condition_status" value="0">
                     @endif
                     <div class="mt-3">
-                        <button type="button" class="btn btn-secondary prev-btn" data-prev="5">&laquo;
+                        <button type="button" class="btn btn-secondary prev-btn" data-prev="6">&laquo;
                             Previous</button>
                     </div>
                 </div>
@@ -973,7 +993,6 @@
             }
 
             function toggleDeliveryProviderCredentialFields() {
-                const mode = ($('input[name="delivery_mode"]:checked').val() || '').toString().trim().toLowerCase();
                 const provider = ($('select[name="delivery_provider"]').val() || '').toString().trim()
                     .toLowerCase();
 
@@ -983,7 +1002,7 @@
                 $('.provider-key-wrap').hide();
                 $('.provider-secret-wrap').hide();
 
-                if (mode !== 'provider_api') {
+                if (!provider) {
                     return;
                 }
 
@@ -1006,12 +1025,7 @@
                     return;
                 }
 
-                if (provider === 'shiprocket') {
-                    $('.provider-key-wrap').show();
-                    $('.provider-secret-wrap').show();
-                    return;
-                }
-
+                // shiprocket and any other provider: show both
                 $('.provider-key-wrap').show();
                 $('.provider-secret-wrap').show();
             }
@@ -1020,7 +1034,7 @@
             toggleDeliveryProviderCredentialFields();
             $(document).on('change', 'select[name="online_payment_provider"], input[name="online_payment_enabled"]',
                 toggleOnlinePaymentCredentialFields);
-            $(document).on('change', 'select[name="delivery_provider"], input[name="delivery_mode"]',
+            $(document).on('change', 'select[name="delivery_provider"], input[name="delivery_api_enabled"]',
                 toggleDeliveryProviderCredentialFields);
 
             $(document).on('click', '.toggle-secret-btn', function() {
@@ -1299,7 +1313,6 @@
                 let mode = $('input[name="delivery_mode"]:checked').val();
                 $('.delivery-box').addClass('d-none');
                 $('#' + mode + '_box').removeClass('d-none');
-                toggleDeliveryProviderCredentialFields();
             }
 
             toggleDeliveryBoxes();
@@ -1317,6 +1330,7 @@
                 $('#businessCategoryError').text('');
                 $('#deliveryStateError').text('');
                 $('#deliveryChargeError').text('');
+                $('#deliveryApiError').text('');
                 $('#paymentGatewayError').text('');
                 $('#termsError').addClass('d-none');
                 $('#formErrorBox').addClass('d-none');
@@ -1368,7 +1382,7 @@
             function getInitialStepFromUrl() {
                 const params = new URLSearchParams(window.location.search);
                 const stepParam = parseInt(params.get('step') || '1', 10);
-                const maxStep = IS_EDIT ? 5 : 6;
+                const maxStep = IS_EDIT ? 6 : 7;
 
                 if (Number.isNaN(stepParam) || stepParam < 1 || stepParam > maxStep) {
                     return 1;
@@ -1393,25 +1407,24 @@
                     store_since: 1,
                     return_policy: 1,
                     description: 1,
-                    cash_on_delivery_enabled: 5,
-                    online_payment_enabled: 5,
-                    online_payment_provider: 5,
-                    razorpay_key_id: 5,
-                    razorpay_key_secret: 5,
-                    cashfree_app_id: 5,
-                    cashfree_secret_key: 5,
+                    cash_on_delivery_enabled: 6,
+                    online_payment_enabled: 6,
+                    online_payment_provider: 6,
+                    razorpay_key_id: 6,
+                    razorpay_key_secret: 6,
+                    cashfree_app_id: 6,
+                    cashfree_secret_key: 6,
                     profile_photo: 1,
                     shop_logo: 1,
                     shop_banner: 1,
                     bussiness_categories_id: 2,
                     delivery_days: 3,
                     delivery_state_ids: 3,
-                    email: 6,
-                    password: 6,
-                    password_confirmation: 6,
-                    delivery_provider: 4,
-                    provider_api_key: 4,
-                    provider_api_secret: 4,
+                    delivery_api_enabled: 5,
+                    delivery_provider: 5,
+                    provider_api_key: 5,
+                    provider_api_secret: 5,
+                    email: 7,
                 };
 
                 if (field.startsWith('bussiness_categories_id')) return 2;
@@ -1611,12 +1624,6 @@
 
                 const deliveryMode = selectedRadioVal('delivery_mode');
 
-                if (deliveryMode === 'manual' && onlinePaymentEnabled) {
-                    addError(errors, 'delivery_mode',
-                        'Manual delivery mode cannot be used when online payment is enabled. Please change one of these settings.'
-                    );
-                }
-
                 if (deliveryMode === 'amount_based') {
                     const amountRuleCount = $('input[name^="amount_rules["][name$="[min_amount]"]').length;
                     if (amountRuleCount < 1) {
@@ -1657,26 +1664,32 @@
                     }
                 }
 
-                if (deliveryMode === 'provider_api') {
+                // Validate provider API fields only when API toggle is enabled
+                {
+                    const deliveryApiEnabled = $('input[name="delivery_api_enabled"]').is(':checked');
                     const deliveryProvider = textVal('delivery_provider');
                     const providerApiKey = textVal('provider_api_key');
                     const providerApiSecret = textVal('provider_api_secret');
                     const allowedProviders = ['shiprocket', 'delhivery'];
 
-                    if (!deliveryProvider) {
-                        addError(errors, 'delivery_provider', 'Please select a delivery API provider.');
-                    } else if (!allowedProviders.includes(deliveryProvider)) {
+                    if (deliveryApiEnabled && deliveryProvider && !allowedProviders.includes(deliveryProvider)) {
                         addError(errors, 'delivery_provider', 'Selected delivery API provider is invalid.');
                     }
 
-                    if (!providerApiKey && !HAS_PROVIDER_API_KEY) {
-                        addError(errors, 'provider_api_key',
-                            'The provider API key field is required for API delivery mode.');
+                    if (deliveryApiEnabled && !deliveryProvider) {
+                        addError(errors, 'delivery_provider', 'Please select a delivery API provider.');
                     }
 
-                    if (deliveryProvider === 'shiprocket' && !providerApiSecret && !HAS_PROVIDER_API_SECRET) {
-                        addError(errors, 'provider_api_secret',
-                            'The provider API secret field is required for API delivery mode.');
+                    if (deliveryApiEnabled && deliveryProvider) {
+                        if (!providerApiKey && !HAS_PROVIDER_API_KEY) {
+                            addError(errors, 'provider_api_key',
+                                'The provider API key field is required when an API provider is selected.');
+                        }
+
+                        if (deliveryProvider === 'shiprocket' && !providerApiSecret && !HAS_PROVIDER_API_SECRET) {
+                            addError(errors, 'provider_api_secret',
+                                'The provider API secret field is required for Shiprocket.');
+                        }
                     }
                 }
 
@@ -1794,10 +1807,13 @@
                     }
                     if (field === 'amount_rules' || field.startsWith('amount_rules.') || field ===
                         'state_charges' || field
-                        .startsWith('state_charges.') || field === 'delivery_mode' || field ===
-                        'delivery_provider' || field === 'provider_api_key' || field ===
-                        'provider_api_secret') {
+                        .startsWith('state_charges.') || field === 'delivery_mode') {
                         $('#deliveryChargeError').text(messages[0]);
+                        return;
+                    }
+                    if (field === 'delivery_api_enabled' || field === 'delivery_provider' || field === 'provider_api_key' || field ===
+                        'provider_api_secret') {
+                        $('#deliveryApiError').text(messages[0]);
                         return;
                     }
                     if (

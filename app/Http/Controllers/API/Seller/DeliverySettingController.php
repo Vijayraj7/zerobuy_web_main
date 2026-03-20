@@ -105,11 +105,12 @@ class DeliverySettingController extends Controller
         $validated = $request->validate([
             'delivery_mode' => [
                 'required',
-                Rule::in(['amount_based', 'state_wise', 'manual', 'provider_api']),
+                Rule::in(['amount_based', 'state_wise', 'manual']),
             ],
-            'delivery_provider' => ['nullable', 'required_if:delivery_mode,provider_api', Rule::in(['shiprocket', 'delhivery'])],
-            'provider_api_key' => ['nullable', 'required_if:delivery_mode,provider_api', 'string', 'max:255'],
-            'provider_api_secret' => ['nullable', 'required_if:delivery_provider,shiprocket', 'string', 'max:255'],
+            'delivery_api_enabled' => ['nullable', 'boolean'],
+            'delivery_provider' => ['nullable', Rule::in(['shiprocket', 'delhivery'])],
+            'provider_api_key' => ['nullable', 'string', 'max:255'],
+            'provider_api_secret' => ['nullable', 'string', 'max:255'],
             'update_when_shipped' => ['boolean'],
 
             'amount_rules' => ['array'],
@@ -143,28 +144,57 @@ class DeliverySettingController extends Controller
         ]);
 
         $shop = generaleSetting('shop');
+        $existingSetting = DeliverySetting::where('shop_id', $shop->id)->first();
+        $deliveryApiEnabled = array_key_exists('delivery_api_enabled', $validated)
+            ? !empty($validated['delivery_api_enabled'])
+            : (bool) ($existingSetting?->delivery_api_enabled ?? false);
 
-        if (($validated['delivery_mode'] ?? null) === 'manual' && (bool) ($shop->online_payment_enabled ?? false)) {
-            throw ValidationException::withMessages([
-                'delivery_mode' => __('Manual delivery mode cannot be selected when online payment is enabled.'),
-            ]);
+        if ($deliveryApiEnabled) {
+            $provider = strtolower(trim((string) (($validated['delivery_provider'] ?? null) ?? ($existingSetting?->delivery_provider ?? ''))));
+            $apiKey = trim((string) (($validated['provider_api_key'] ?? null) ?? ($existingSetting?->provider_api_key ?? '')));
+            $apiSecret = trim((string) (($validated['provider_api_secret'] ?? null) ?? ($existingSetting?->provider_api_secret ?? '')));
+
+            if ($provider === '') {
+                throw ValidationException::withMessages([
+                    'delivery_provider' => __('Please select a delivery API provider.'),
+                ]);
+            }
+
+            if ($apiKey === '') {
+                throw ValidationException::withMessages([
+                    'provider_api_key' => __('The provider API key field is required when an API provider is selected.'),
+                ]);
+            }
+
+            if ($provider === 'shiprocket' && $apiSecret === '') {
+                throw ValidationException::withMessages([
+                    'provider_api_secret' => __('The provider API secret field is required for Shiprocket.'),
+                ]);
+            }
         }
 
-        DB::transaction(function () use ($validated, $shop) {
+        DB::transaction(function () use ($validated, $shop, $existingSetting, $deliveryApiEnabled) {
+
+            $providerApiKey = isset($validated['provider_api_key']) && $validated['provider_api_key'] !== null
+                ? $validated['provider_api_key']
+                : ($existingSetting?->provider_api_key);
+
+            $providerApiSecret = isset($validated['provider_api_secret']) && $validated['provider_api_secret'] !== null
+                ? $validated['provider_api_secret']
+                : ($existingSetting?->provider_api_secret);
+
+            $deliveryProvider = isset($validated['delivery_provider']) && $validated['delivery_provider'] !== null
+                ? $validated['delivery_provider']
+                : ($existingSetting?->delivery_provider);
 
             $setting = DeliverySetting::updateOrCreate(
                 ['shop_id' => $shop->id],
                 [
                     'delivery_mode' => $validated['delivery_mode'],
-                    'delivery_provider' => $validated['delivery_mode'] === 'provider_api'
-                        ? ($validated['delivery_provider'] ?? null)
-                        : null,
-                    'provider_api_key' => $validated['delivery_mode'] === 'provider_api'
-                        ? ($validated['provider_api_key'] ?? null)
-                        : null,
-                    'provider_api_secret' => $validated['delivery_mode'] === 'provider_api'
-                        ? ($validated['provider_api_secret'] ?? null)
-                        : null,
+                    'delivery_api_enabled' => $deliveryApiEnabled,
+                    'delivery_provider' => $deliveryProvider ?: null,
+                    'provider_api_key' => $providerApiKey ?: null,
+                    'provider_api_secret' => $providerApiSecret ?: null,
                     'update_when_shipped' => $validated['update_when_shipped'] ?? false,
                 ]
             );

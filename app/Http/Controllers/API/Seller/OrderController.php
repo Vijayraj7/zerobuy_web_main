@@ -266,7 +266,7 @@ class OrderController extends Controller
             'order_status' => $orderStatus,
         ]);
 
-        $orderProvider = strtolower(trim((string) ($order->api_provider ?: $order->shop?->deliverySetting?->delivery_provider ?: '')));
+        $orderProvider = strtolower(trim((string) (($order->shop?->deliverySetting?->delivery_api_enabled ? ($order->api_provider ?: $order->shop?->deliverySetting?->delivery_provider) : '') ?: '')));
 
         if ($orderStatus === OrderStatus::CONFIRM->value && in_array($orderProvider, ['shiprocket', 'delhivery'], true)) {
             if ($order->api_provider !== $orderProvider) {
@@ -418,7 +418,7 @@ class OrderController extends Controller
             return $this->json('Shipment cannot be created for delivered or cancelled orders.', [], 422);
         }
 
-        $orderProvider = strtolower(trim((string) ($order->api_provider ?: $order->shop?->deliverySetting?->delivery_provider ?: '')));
+        $orderProvider = strtolower(trim((string) (($order->shop?->deliverySetting?->delivery_api_enabled ? ($order->api_provider ?: $order->shop?->deliverySetting?->delivery_provider) : '') ?: '')));
         if (! in_array($orderProvider, ['shiprocket', 'delhivery'], true)) {
             return $this->json('No supported API provider found for this order.', [], 422);
         }
@@ -492,7 +492,7 @@ class OrderController extends Controller
             return $this->json('Retry shipping is allowed only for confirmed orders.', [], 422);
         }
 
-        $orderProvider = strtolower(trim((string) ($order->api_provider ?: $order->shop?->deliverySetting?->delivery_provider ?: '')));
+        $orderProvider = strtolower(trim((string) (($order->shop?->deliverySetting?->delivery_api_enabled ? ($order->api_provider ?: $order->shop?->deliverySetting?->delivery_provider) : '') ?: '')));
         if (! in_array($orderProvider, ['shiprocket', 'delhivery'], true)) {
             return $this->json('No supported API provider found for this order.', [], 422);
         }

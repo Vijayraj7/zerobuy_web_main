@@ -194,7 +194,18 @@ class OrderController extends Controller
         $deliverySetting = $order->shop->deliverySetting;
         $isManualDelivery = $deliverySetting && $deliverySetting->delivery_mode === 'manual';
 
-        $retryShipProvider = strtolower(trim((string) ($order->api_provider ?: $deliverySetting?->delivery_provider ?: '')));
+        $retryShipProvider = strtolower(trim((string) ((($deliverySetting?->delivery_api_enabled) ? ($order->api_provider ?: $deliverySetting?->delivery_provider) : '') ?: '')));
+        
+        // For status display, also detect provider from existing shipment data even if API is disabled
+        $providerForStatus = $retryShipProvider;
+        if (empty($providerForStatus)) {
+            if (!empty($order->api_provider)) {
+                $providerForStatus = strtolower(trim((string) $order->api_provider));
+            } elseif (!empty($order->shiprocket_shipment_id) || !empty($order->shiprocket_order_id)) {
+                $providerForStatus = 'shiprocket';
+            }
+        }
+        
         $isProviderOrderCreated = false;
 
         $apiProviderStatus = null;
@@ -203,8 +214,7 @@ class OrderController extends Controller
         $apiProviderFailureReason = session('provider_ship_error');
 
         $isApiProviderOrder =
-            ($deliverySetting && $deliverySetting->delivery_mode === 'provider_api' && in_array($retryShipProvider, ['shiprocket', 'delhivery'], true))
-            || in_array($retryShipProvider, ['shiprocket', 'delhivery'], true);
+            in_array($retryShipProvider, ['shiprocket', 'delhivery'], true);
 
         if ($retryShipProvider === 'shiprocket') {
             $isProviderOrderCreated = !empty($order->provider_order_id) || !empty($order->shiprocket_order_id);
@@ -212,12 +222,29 @@ class OrderController extends Controller
             $isProviderOrderCreated = !empty($order->provider_order_id);
         }
 
-        if (in_array($retryShipProvider, ['shiprocket', 'delhivery'], true)) {
+        if (in_array($providerForStatus, ['shiprocket', 'delhivery'], true)) {
             $hasProviderOrderId = !empty($order->provider_order_id) || !empty($order->shiprocket_order_id);
             $hasProviderShipmentId = !empty($order->provider_shipment_id) || !empty($order->shiprocket_shipment_id);
             $hasProviderAwb = !empty($order->provider_awb_code) || !empty($order->shiprocket_awb_code);
 
-            if ($hasProviderAwb) {
+            // Show actual delivery status from API if available, otherwise show creation status
+            $orderStatusValue = (string) ($order->order_status?->value ?? '');
+            
+            if (in_array($orderStatusValue, [OrderStatus::DELIVERED->value, OrderStatus::SHIPPED->value, OrderStatus::CANCELLED->value, OrderStatus::CONFIRM->value], true)) {
+                // Show actual delivery status from the provider API
+                $apiProviderStatus = strtolower(str_replace(' ', '_', $orderStatusValue));
+                $apiProviderStatusLabel = $orderStatusValue;
+                
+                if ($orderStatusValue === OrderStatus::DELIVERED->value) {
+                    $apiProviderStatusClass = 'success';
+                } elseif ($orderStatusValue === OrderStatus::SHIPPED->value) {
+                    $apiProviderStatusClass = 'info';
+                } elseif ($orderStatusValue === OrderStatus::CANCELLED->value) {
+                    $apiProviderStatusClass = 'danger';
+                } else { // CONFIRM
+                    $apiProviderStatusClass = 'primary';
+                }
+            } elseif ($hasProviderAwb) {
                 $apiProviderStatus = 'awb_generated';
                 $apiProviderStatusLabel = 'AWB Generated';
                 $apiProviderStatusClass = 'success';
@@ -241,6 +268,11 @@ class OrderController extends Controller
             && in_array($retryShipProvider, ['shiprocket', 'delhivery'], true)
             && !$isProviderOrderCreated;
 
+        $showCreateShipmentButton =
+            in_array($retryShipProvider, ['shiprocket', 'delhivery'], true)
+            && !in_array($order->order_status->value, ['Delivered', 'Cancelled'], true)
+            && !$isProviderOrderCreated;
+
         $showConfirmShipButton =
             $order->order_status?->value === OrderStatus::PENDING->value
             && $isApiProviderOrder;
@@ -251,6 +283,7 @@ class OrderController extends Controller
             'riders',
             'isManualDelivery',
             'showRetryShipButton',
+            'showCreateShipmentButton',
             'showConfirmShipButton',
             'retryShipProvider',
             'apiProviderStatus',

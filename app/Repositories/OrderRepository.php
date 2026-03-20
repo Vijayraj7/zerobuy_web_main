@@ -318,10 +318,9 @@ class OrderRepository extends Repository
         ])->id;
 
         $deliverySetting = $shop->deliverySetting;
-        $apiProvider = null;
-        if ($deliverySetting && $deliverySetting->delivery_mode === 'provider_api') {
-            $apiProvider = $deliverySetting->delivery_provider ? strtolower((string) $deliverySetting->delivery_provider) : null;
-        }
+        $apiProvider = ($deliverySetting?->delivery_api_enabled && $deliverySetting?->delivery_provider)
+            ? strtolower((string) $deliverySetting->delivery_provider)
+            : null;
 
         $order = self::create([
             'shop_id' => $shop->id,

@@ -22,7 +22,7 @@ class ShiprocketOrderSyncService
 
         $setting = $order->shop?->deliverySetting;
 
-        if (!$setting || $setting->delivery_mode !== 'provider_api' || $setting->delivery_provider !== 'shiprocket') {
+        if (!$setting || !$setting->delivery_api_enabled || $setting->delivery_provider !== 'shiprocket') {
             $this->lastSyncError = 'Invalid or missing Shiprocket provider setting.';
             return false;
         }
@@ -192,7 +192,9 @@ class ShiprocketOrderSyncService
             $awbCode = $response->json('awb_code')
                 ?? $response->json('data.awb_code')
                 ?? $response->json('data.order_details.awb_code')
-                ?? $response->json('data.shipment_details.awb_code');
+                ?? $response->json('data.shipment_details.awb_code')
+                ?? $response->json('data.shipments.awb')
+                ?? $response->json('data.shipments.awb_code');
 
             $trackUrl = $response->json('track_url')
                 ?? $response->json('data.track_url')
@@ -237,7 +239,9 @@ class ShiprocketOrderSyncService
                         $awbCode = $response->json('awb_code')
                             ?? $response->json('data.awb_code')
                             ?? $response->json('data.order_details.awb_code')
-                            ?? $response->json('data.shipment_details.awb_code');
+                            ?? $response->json('data.shipment_details.awb_code')
+                            ?? $response->json('data.shipments.awb')
+                            ?? $response->json('data.shipments.awb_code');
 
                         $trackUrl = $response->json('track_url')
                             ?? $response->json('data.track_url')
@@ -256,6 +260,11 @@ class ShiprocketOrderSyncService
                 ]);
                 $this->lastSyncError = $this->extractShiprocketApiMessage($response) ?? 'Shiprocket response missing order id.';
                 return false;
+            }
+
+            // Auto-generate track URL from AWB if not provided by API
+            if (empty($trackUrl) && !empty($awbCode)) {
+                $trackUrl = 'https://shiprocket.co/tracking/' . $awbCode;
             }
 
             $order->update([
@@ -296,7 +305,7 @@ class ShiprocketOrderSyncService
 
         $setting = $order->shop?->deliverySetting;
 
-        if (!$setting || $setting->delivery_mode !== 'provider_api' || $setting->delivery_provider !== 'shiprocket') {
+        if (!$setting || !$setting->delivery_api_enabled || $setting->delivery_provider !== 'shiprocket') {
             return false;
         }
 
@@ -408,7 +417,7 @@ class ShiprocketOrderSyncService
 
         $setting = $order->shop?->deliverySetting;
 
-        if (!$setting || $setting->delivery_mode !== 'provider_api' || $setting->delivery_provider !== 'shiprocket') {
+        if (!$setting || !$setting->delivery_api_enabled || $setting->delivery_provider !== 'shiprocket') {
             return false;
         }
 
@@ -509,7 +518,7 @@ class ShiprocketOrderSyncService
 
         $setting = $order->shop?->deliverySetting;
 
-        if (!$setting || $setting->delivery_mode !== 'provider_api' || $setting->delivery_provider !== 'shiprocket') {
+        if (!$setting || !$setting->delivery_api_enabled || $setting->delivery_provider !== 'shiprocket') {
             return false;
         }
 
@@ -629,7 +638,7 @@ class ShiprocketOrderSyncService
 
         $setting = $order->shop?->deliverySetting;
 
-        if (!$setting || $setting->delivery_mode !== 'provider_api' || $setting->delivery_provider !== 'shiprocket') {
+        if (!$setting || !$setting->delivery_api_enabled || $setting->delivery_provider !== 'shiprocket') {
             return false;
         }
 
@@ -727,18 +736,6 @@ class ShiprocketOrderSyncService
 
             $mappedStatus = $this->mapProviderStatusToOrderStatus($providerStatus);
 
-            if (!$mappedStatus) {
-                return false;
-            }
-
-            if (!in_array($mappedStatus->value, [
-                OrderStatus::CANCELLED->value,
-                OrderStatus::SHIPPED->value,
-                OrderStatus::DELIVERED->value,
-            ], true)) {
-                return false;
-            }
-
             // Extract track URL from the API response if available
             $trackUrl = null;
             if ($shiprocketOrderId !== '' && isset($orderResponse)) {
@@ -751,30 +748,170 @@ class ShiprocketOrderSyncService
                     ?? $trackResponse->json('tracking_data.track_url')
                     ?? $trackResponse->json('data.tracking_data.track_url');
             }
+            
+            // Extract AWB code from API response (independently of track URL)
+            $awb = null;
+            if ($shiprocketOrderId !== '' && isset($orderResponse)) {
+                $awb = $orderResponse->json('data.shipment_details.awb_code')
+                    ?? $orderResponse->json('data.shipments.awb')
+                    ?? $orderResponse->json('data.shipments.awb_code')
+                    ?? $orderResponse->json('data.awb_code')
+                    ?? $orderResponse->json('awb_code');
+            } elseif ($shipmentId !== '' && isset($trackResponse)) {
+                $awb = $trackResponse->json('awb_code')
+                    ?? $trackResponse->json('data.awb_code')
+                    ?? $trackResponse->json('tracking_data.awb_code');
+            }
+            
+            // Also check existing order data if AWB not found in API response
+            if (empty($awb)) {
+                $awb = $order->provider_awb_code ?: $order->shiprocket_awb_code;
+            }
+            
+            // Auto-generate track URL from AWB if API didn't provide one
+            if (empty($trackUrl) && !empty($awb)) {
+                $trackUrl = 'https://shiprocket.co/tracking/' . $awb;
+            }
 
-            $updateData = ['order_status' => $mappedStatus->value];
+            $updateData = [];
+
+            $canUpdateOrderStatus = $mappedStatus && in_array($mappedStatus->value, [
+                OrderStatus::CANCELLED->value,
+                OrderStatus::SHIPPED->value,
+                OrderStatus::DELIVERED->value,
+            ], true);
+
+            if ($canUpdateOrderStatus && $order->order_status?->value !== $mappedStatus->value) {
+                $updateData['order_status'] = $mappedStatus->value;
+            }
+            
+            // Persist AWB code if available and different from existing
+            if (!empty($awb)) {
+                if ($awb !== $order->provider_awb_code) {
+                    $updateData['provider_awb_code'] = (string) $awb;
+                }
+                if ($awb !== $order->shiprocket_awb_code) {
+                    $updateData['shiprocket_awb_code'] = (string) $awb;
+                }
+            }
+            
             if (!empty($trackUrl) && $trackUrl !== $order->track_url) {
                 $updateData['track_url'] = (string) $trackUrl;
             }
+            if (!empty($providerStatus) && (string) $providerStatus !== (string) $order->provider_current_status) {
+                $updateData['provider_current_status'] = (string) $providerStatus;
+            }
 
-            if ($order->order_status?->value !== $mappedStatus->value || $updateData['track_url'] !== $order->track_url) {
+            if (!empty($updateData)) {
                 $order->update($updateData);
             }
 
-            OrderStatusTimeline::updateOrCreate(
-                [
-                    'order_id' => $order->id,
-                    'status' => $mappedStatus->value,
-                ],
-                [
-                    'changed_at' => now(),
-                ]
-            );
+            if ($canUpdateOrderStatus) {
+                OrderStatusTimeline::updateOrCreate(
+                    [
+                        'order_id' => $order->id,
+                        'status' => $mappedStatus->value,
+                    ],
+                    [
+                        'changed_at' => now(),
+                    ]
+                );
+            }
 
             return true;
         } catch (\Throwable $e) {
             Log::warning('Shiprocket status refresh exception', [
                 'order_id' => $order->id,
+                'message' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    public function syncDeliveryCharge(Order $order): bool
+    {
+        $order->loadMissing(['shop.deliverySetting']);
+
+        $setting = $order->shop?->deliverySetting;
+
+        if (!$setting || !$setting->delivery_api_enabled || $setting->delivery_provider !== 'shiprocket') {
+            return false;
+        }
+
+        $apiUserEmail = trim((string) ($setting->provider_api_key ?? ''));
+        $apiUserPassword = trim((string) ($setting->provider_api_secret ?? ''));
+
+        if (!$apiUserEmail || !$apiUserPassword) {
+            return false;
+        }
+
+        $shiprocketOrderId = trim((string) ($order->shiprocket_order_id ?? $order->provider_order_id ?? ''));
+        if ($shiprocketOrderId === '') {
+            return false;
+        }
+
+        $baseUrl = 'https://apiv2.shiprocket.in/v1/external';
+        $tokenCacheKey = 'shiprocket.token.shop.' . ($order->shop_id ?? 'na') . '.' . md5($apiUserEmail);
+
+        $token = Cache::remember($tokenCacheKey, now()->addMinutes(50), function () use ($baseUrl, $apiUserEmail, $apiUserPassword) {
+            $authResponse = Http::timeout(20)->acceptJson()->post($baseUrl . '/auth/login', [
+                'email' => $apiUserEmail,
+                'password' => $apiUserPassword,
+            ]);
+
+            if (!$authResponse->successful()) {
+                return null;
+            }
+
+            return $authResponse->json('token');
+        });
+
+        if (!$token) {
+            return false;
+        }
+
+        $payload = [
+            'order_id' => $shiprocketOrderId,
+            'shipping_charges' => (float) ($order->delivery_charge ?? 0),
+            'sub_total' => (float) ($order->total_amount ?? 0),
+            'total_discount' => (float) ($order->coupon_discount ?? 0),
+            'transaction_charges' => 0,
+            'giftwrap_charges' => 0,
+        ];
+
+        try {
+            $response = Http::timeout(25)
+                ->acceptJson()
+                ->withToken($token)
+                ->post($baseUrl . '/orders/update/adhoc', $payload);
+
+            $this->writeLatestOrderUpdateResponse($response, [
+                'order_id' => $order->id,
+                'order_code' => $order->prefix . $order->order_code,
+                'shiprocket_order_id' => $shiprocketOrderId,
+                'delivery_charge' => (float) ($order->delivery_charge ?? 0),
+            ]);
+
+            if ($response->status() === 401) {
+                Cache::forget($tokenCacheKey);
+                return false;
+            }
+
+            if (!$response->successful()) {
+                Log::warning('Shiprocket delivery charge sync failed', [
+                    'order_id' => $order->id,
+                    'shiprocket_order_id' => $shiprocketOrderId,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+                return false;
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('Shiprocket delivery charge sync exception', [
+                'order_id' => $order->id,
+                'shiprocket_order_id' => $shiprocketOrderId,
                 'message' => $e->getMessage(),
             ]);
             return false;
@@ -790,23 +927,69 @@ class ShiprocketOrderSyncService
         $normalized = strtoupper(trim((string) $status));
         $normalized = str_replace(['-', ' '], '_', $normalized);
 
-        if (str_contains($normalized, 'DELIVERED')) {
-            return OrderStatus::DELIVERED;
+        // Try numeric status code mapping (1-90) from Shiprocket
+        // Status Codes: 1=New, 2=Invoiced, 3=Ready To Ship, 4=Pickup Scheduled, 5=Canceled, etc.
+        if (is_numeric($status)) {
+            $code = (int) $status;
+            
+            // DELIVERED statuses
+            if (in_array($code, [7, 16, 26, 38, 41, 42, 52], true)) {
+                return OrderStatus::DELIVERED;
+            }
+            
+            // SHIPPED (In Transit) statuses
+            if (in_array($code, [6, 19, 20, 36, 37, 43, 44, 51, 60, 61, 64, 65, 66, 67, 89], true)) {
+                return OrderStatus::SHIPPED;
+            }
+            
+            // CONFIRM (Warehouse/Pickup related) statuses
+            if (in_array($code, [1, 2, 3, 4, 12, 13, 34, 58, 59, 62, 70, 71, 72, 73, 74, 75, 76, 80, 81], true)) {
+                return OrderStatus::CONFIRM;
+            }
+            
+            // CANCELLED statuses (includes RTO, Returns, Errors, etc.)
+            if (in_array($code, [5, 8, 9, 10, 11, 14, 15, 17, 18, 21, 22, 23, 24, 25, 27, 28, 29, 30, 31, 32, 33, 35, 39, 40, 45, 46, 47, 48, 49, 50, 53, 54, 55, 57, 68, 82, 83, 87, 88, 90], true)) {
+                return OrderStatus::CANCELLED;
+            }
         }
-
-        if (str_contains($normalized, 'CANCEL') || str_contains($normalized, 'RTO') || str_contains($normalized, 'LOST') || str_contains($normalized, 'UNDELIVER') || str_contains($normalized, 'RETURN')) {
-            return OrderStatus::CANCELLED;
+        
+        // Fallback to text-based pattern matching for status names
+        if (str_contains($normalized, 'DELIVERED') || str_contains($normalized, 'FULFILLED') || str_contains($normalized, 'SELF_FULFILLED')) {
+            return OrderStatus::DELIVERED;
         }
 
         if (str_contains($normalized, 'SHIPPED')
             || str_contains($normalized, 'IN_TRANSIT')
             || str_contains($normalized, 'OUT_FOR_DELIVERY')
-            || str_contains($normalized, 'PICKED')
-            || str_contains($normalized, 'PICKUP')
-            || str_contains($normalized, 'MANIFEST')
-            || str_contains($normalized, 'AWB')
-            || str_contains($normalized, 'DISPATCH')) {
+            || str_contains($normalized, 'OUT_FOR_PICKUP')
+            || str_contains($normalized, 'IN_FLIGHT')
+            || str_contains($normalized, 'PICKED_UP')
+            || str_contains($normalized, 'REACHED_DESTINATION')
+            || str_contains($normalized, 'HANDOVER')) {
             return OrderStatus::SHIPPED;
+        }
+
+        if (str_contains($normalized, 'READY_TO_SHIP')
+            || str_contains($normalized, 'READY_TO_PACK')
+            || str_contains($normalized, 'PACKED')
+            || str_contains($normalized, 'PICKUP_SCHEDULED')
+            || str_contains($normalized, 'PICKUP_BOOKED')
+            || str_contains($normalized, 'PICKUP_QUEUE')
+            || str_contains($normalized, 'PICKLIST_GENERATED')
+            || str_contains($normalized, 'NEW')
+            || str_contains($normalized, 'INVOICED')
+            || str_contains($normalized, 'BOX_PACKING')
+            || str_contains($normalized, 'ALLOCATION_IN_PROGRESS')
+            || str_contains($normalized, 'FC_ALLOCATED')
+            || str_contains($normalized, 'REACHED_WAREHOUSE')
+            || str_contains($normalized, 'PROCESSING')) {
+            return OrderStatus::CONFIRM;
+        }
+
+        // Default to CANCELLED for any unrecognized status
+        // (safer to err on the side of caution with error states)
+        if (str_contains($normalized, 'CANCEL') || str_contains($normalized, 'RTO') || str_contains($normalized, 'LOST') || str_contains($normalized, 'UNDELIVER') || str_contains($normalized, 'RETURN') || str_contains($normalized, 'ERROR') || str_contains($normalized, 'EXCEPTION') || str_contains($normalized, 'FAILED') || str_contains($normalized, 'DESTROYED') || str_contains($normalized, 'DAMAGED') || str_contains($normalized, 'DISPOSED')) {
+            return OrderStatus::CANCELLED;
         }
 
         return null;
@@ -870,6 +1053,30 @@ class ShiprocketOrderSyncService
             File::put($filePath, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         } catch (\Throwable $e) {
             Log::warning('Failed to write latest shiprocket order create response json', [
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function writeLatestOrderUpdateResponse($response, array $requestMeta = []): void
+    {
+        try {
+            $filePath = public_path('shiprocket/latest_order_update_response.json');
+            File::ensureDirectoryExists(dirname($filePath));
+
+            $data = [
+                'captured_at' => now()->toDateTimeString(),
+                'request' => $requestMeta,
+                'response' => [
+                    'status' => $response->status(),
+                    'successful' => $response->successful(),
+                    'body' => $response->json() ?? $response->body(),
+                ],
+            ];
+
+            File::put($filePath, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        } catch (\Throwable $e) {
+            Log::warning('Failed to write latest shiprocket order update response json', [
                 'message' => $e->getMessage(),
             ]);
         }

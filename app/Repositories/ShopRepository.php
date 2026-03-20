@@ -73,12 +73,6 @@ class ShopRepository extends Repository
             ]);
         }
 
-        if ($onlinePaymentEnabled && $request->delivery_mode === 'manual') {
-            throw ValidationException::withMessages([
-                'delivery_mode' => __('Manual delivery mode cannot be selected when online payment is enabled.'),
-            ]);
-        }
-
         if ($onlinePaymentProvider === 'razorpay') {
             $onlinePaymentConfig = [
                 'razorpay' => [
@@ -138,26 +132,31 @@ class ShopRepository extends Repository
             DB::transaction(function () use ($request, $shop) {
 
                 $existingSetting = DeliverySetting::where('shop_id', $shop->id)->first();
-                $providerApiKey = null;
-                $providerApiSecret = null;
 
-                if ($request->delivery_mode === 'provider_api') {
-                    $providerApiKey = $request->filled('provider_api_key')
-                        ? $request->provider_api_key
-                        : ($existingSetting?->provider_api_key);
+                $deliveryApiEnabled = $request->has('delivery_api_enabled')
+                    ? $request->boolean('delivery_api_enabled')
+                    : (bool) ($existingSetting?->delivery_api_enabled ?? false);
 
-                    $providerApiSecret = $request->filled('provider_api_secret')
-                        ? $request->provider_api_secret
-                        : ($existingSetting?->provider_api_secret);
-                }
+                $providerApiKey = $request->filled('provider_api_key')
+                    ? $request->provider_api_key
+                    : ($existingSetting?->provider_api_key);
+
+                $providerApiSecret = $request->filled('provider_api_secret')
+                    ? $request->provider_api_secret
+                    : ($existingSetting?->provider_api_secret);
+
+                $deliveryProvider = $request->filled('delivery_provider')
+                    ? $request->delivery_provider
+                    : ($existingSetting?->delivery_provider);
 
                 $setting = DeliverySetting::updateOrCreate(
                     ['shop_id' => $shop->id],
                     [
                         'delivery_mode' => $request->delivery_mode,
-                        'delivery_provider' => $request->delivery_mode === 'provider_api' ? $request->delivery_provider : null,
-                        'provider_api_key' => $providerApiKey,
-                        'provider_api_secret' => $providerApiSecret,
+                        'delivery_api_enabled' => $deliveryApiEnabled,
+                        'delivery_provider' => $deliveryProvider ?: null,
+                        'provider_api_key' => $providerApiKey ?: null,
+                        'provider_api_secret' => $providerApiSecret ?: null,
                         'update_when_shipped' => $request->update_when_shipped ?? false,
                     ]
                 );
@@ -183,7 +182,6 @@ class ShopRepository extends Repository
                     foreach ($request->state_charges ?? [] as $state) {
                         if ($state['charge'] != null) {
                             $stateModel = State::find($state['state']);
-                            // dd($stateModel);
                             DeliveryStateCharge::create([
                                 'delivery_setting_id' => $setting->id,
                                 'state' => $stateModel->name,
@@ -270,12 +268,6 @@ class ShopRepository extends Repository
             ]);
         }
 
-        if ($onlinePaymentEnabled && $request->delivery_mode === 'manual') {
-            throw ValidationException::withMessages([
-                'delivery_mode' => __('Manual delivery mode cannot be selected when online payment is enabled.'),
-            ]);
-        }
-
         if ($onlinePaymentProvider === 'razorpay') {
             $existingRazorpay = data_get($onlinePaymentConfig, 'razorpay', []);
 
@@ -350,26 +342,31 @@ class ShopRepository extends Repository
             DB::transaction(function () use ($request, $shop) {
 
                 $existingSetting = DeliverySetting::where('shop_id', $shop->id)->first();
-                $providerApiKey = null;
-                $providerApiSecret = null;
 
-                if ($request->delivery_mode === 'provider_api') {
-                    $providerApiKey = $request->filled('provider_api_key')
-                        ? $request->provider_api_key
-                        : ($existingSetting?->provider_api_key);
+                $deliveryApiEnabled = $request->has('delivery_api_enabled')
+                    ? $request->boolean('delivery_api_enabled')
+                    : (bool) ($existingSetting?->delivery_api_enabled ?? false);
 
-                    $providerApiSecret = $request->filled('provider_api_secret')
-                        ? $request->provider_api_secret
-                        : ($existingSetting?->provider_api_secret);
-                }
+                $providerApiKey = $request->filled('provider_api_key')
+                    ? $request->provider_api_key
+                    : ($existingSetting?->provider_api_key);
+
+                $providerApiSecret = $request->filled('provider_api_secret')
+                    ? $request->provider_api_secret
+                    : ($existingSetting?->provider_api_secret);
+
+                $deliveryProvider = $request->filled('delivery_provider')
+                    ? $request->delivery_provider
+                    : ($existingSetting?->delivery_provider);
 
                 $setting = DeliverySetting::updateOrCreate(
                     ['shop_id' => $shop->id],
                     [
                         'delivery_mode' => $request->delivery_mode,
-                        'delivery_provider' => $request->delivery_mode === 'provider_api' ? $request->delivery_provider : null,
-                        'provider_api_key' => $providerApiKey,
-                        'provider_api_secret' => $providerApiSecret,
+                        'delivery_api_enabled' => $deliveryApiEnabled,
+                        'delivery_provider' => $deliveryProvider ?: null,
+                        'provider_api_key' => $providerApiKey ?: null,
+                        'provider_api_secret' => $providerApiSecret ?: null,
                         'update_when_shipped' => $request->update_when_shipped ?? false,
                     ]
                 );
@@ -395,7 +392,6 @@ class ShopRepository extends Repository
                     foreach ($request->state_charges ?? [] as $state) {
                         if ($state['charge'] != null) {
                             $stateModel = State::find($state['state']);
-                            // dd($stateModel);
                             DeliveryStateCharge::create([
                                 'delivery_setting_id' => $setting->id,
                                 'state' => $stateModel->name,
@@ -546,12 +542,6 @@ class ShopRepository extends Repository
         if (! $onlinePaymentEnabled && ! $cashOnDeliveryEnabled) {
             throw ValidationException::withMessages([
                 'cash_on_delivery_enabled' => __('Either Cash on Delivery or Online Payment must be enabled.'),
-            ]);
-        }
-
-        if ($onlinePaymentEnabled && $deliveryMode === 'manual') {
-            throw ValidationException::withMessages([
-                'online_payment_enabled' => __('Online payment cannot be enabled when delivery mode is Manual.'),
             ]);
         }
 

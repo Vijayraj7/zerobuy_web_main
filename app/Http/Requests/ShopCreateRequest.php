@@ -95,10 +95,11 @@ class ShopCreateRequest extends FormRequest
             'delivery_days' => ['required', 'string'],
             'delivery_state_ids' => ['required', 'array', 'min:1'],
             'delivery_state_ids.*' => ['required', 'integer', 'exists:states,id'],
-            'delivery_mode' => ['required', 'in:amount_based,state_wise,manual,provider_api'],
-            'delivery_provider' => ['nullable', 'required_if:delivery_mode,provider_api', 'in:shiprocket,delhivery'],
-            'provider_api_key' => ['nullable', 'required_if:delivery_mode,provider_api', 'string', 'max:255'],
-            'provider_api_secret' => ['nullable', 'required_if:delivery_provider,shiprocket', 'string', 'max:255'],
+            'delivery_mode' => ['required', 'in:amount_based,state_wise,manual'],
+            'delivery_api_enabled' => ['nullable', 'boolean'],
+            'delivery_provider' => ['nullable', 'in:shiprocket,delhivery'],
+            'provider_api_key' => ['nullable', 'string', 'max:255'],
+            'provider_api_secret' => ['nullable', 'string', 'max:255'],
 
             'online_payment_enabled' => ['nullable', 'boolean'],
             'cash_on_delivery_enabled' => ['nullable', 'boolean'],
@@ -158,10 +159,10 @@ class ShopCreateRequest extends FormRequest
 
             'delivery_mode.required' => __('Please select a delivery charge method.'),
             'delivery_mode.in' => __('Selected delivery charge method is invalid.'),
-            'delivery_provider.required_if' => __('Please select a delivery API provider.'),
+            'delivery_api_enabled.boolean' => __('Delivery API toggle value is invalid.'),
             'delivery_provider.in' => __('Selected delivery API provider is invalid.'),
-            'provider_api_key.required_if' => __('The provider API key field is required for API delivery mode.'),
-            'provider_api_secret.required_if' => __('The provider API secret field is required for API delivery mode.'),
+            'provider_api_key.required_if' => __('The provider API key field is required when delivery API is enabled.'),
+            'provider_api_secret.required_if' => __('The provider API secret field is required for Shiprocket.'),
 
             'online_payment_provider.required_if' => __('Please select an online payment provider.'),
             'online_payment_provider.in' => __('Selected online payment provider is invalid.'),
@@ -188,13 +189,23 @@ class ShopCreateRequest extends FormRequest
                 );
             }
 
-            $deliveryMode = $this->input('delivery_mode');
-            if ($onlineEnabled && $deliveryMode === 'manual') {
-                $validator->errors()->add(
-                    'delivery_mode',
-                    __('Manual delivery mode cannot be selected when online payment is enabled.')
-                );
+            $deliveryApiEnabled = (bool) $this->boolean('delivery_api_enabled');
+            $deliveryProvider = strtolower(trim((string) $this->input('delivery_provider', '')));
+            $providerApiKey = trim((string) $this->input('provider_api_key', ''));
+            $providerApiSecret = trim((string) $this->input('provider_api_secret', ''));
+
+            if ($deliveryApiEnabled && $deliveryProvider === '') {
+                $validator->errors()->add('delivery_provider', __('Please select a delivery API provider.'));
             }
+
+            if ($deliveryApiEnabled && $deliveryProvider !== '' && $providerApiKey === '') {
+                $validator->errors()->add('provider_api_key', __('The provider API key field is required when an API provider is selected.'));
+            }
+
+            if ($deliveryApiEnabled && $deliveryProvider === 'shiprocket' && $providerApiSecret === '') {
+                $validator->errors()->add('provider_api_secret', __('The provider API secret field is required for Shiprocket.'));
+            }
+
         });
     }
 }

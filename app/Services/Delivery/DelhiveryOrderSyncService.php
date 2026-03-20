@@ -21,7 +21,7 @@ class DelhiveryOrderSyncService
 
         $setting = $order->shop?->deliverySetting;
 
-        if (!$setting || $setting->delivery_mode !== 'provider_api' || $setting->delivery_provider !== 'delhivery') {
+        if (!$setting || !$setting->delivery_api_enabled || $setting->delivery_provider !== 'delhivery') {
             $this->lastSyncError = 'Invalid or missing Delhivery provider setting.';
             $this->saveAttemptJson('latest_manifest_request_response.json', $order, [
                 'outcome' => 'skipped',
@@ -322,7 +322,7 @@ class DelhiveryOrderSyncService
 
         $setting = $order->shop?->deliverySetting;
 
-        if (!$setting || $setting->delivery_mode !== 'provider_api' || $setting->delivery_provider !== 'delhivery') {
+        if (!$setting || !$setting->delivery_api_enabled || $setting->delivery_provider !== 'delhivery') {
             $this->saveAttemptJson('latest_pickup_request_response.json', $order, [
                 'outcome' => 'skipped',
                 'reason' => 'invalid_or_missing_delhivery_provider_setting',
@@ -421,7 +421,7 @@ class DelhiveryOrderSyncService
 
         $setting = $order->shop?->deliverySetting;
 
-        if (!$setting || $setting->delivery_mode !== 'provider_api' || $setting->delivery_provider !== 'delhivery') {
+        if (!$setting || !$setting->delivery_api_enabled || $setting->delivery_provider !== 'delhivery') {
             return false;
         }
 
@@ -473,44 +473,137 @@ class DelhiveryOrderSyncService
                 ?? null;
 
             $mappedStatus = $this->mapDelhiveryStatusToOrderStatus($providerStatus);
-
-            if (!$mappedStatus) {
-                return false;
-            }
-
-            if (!in_array($mappedStatus->value, [
+            $canUpdateOrderStatus = $mappedStatus && in_array($mappedStatus->value, [
                 OrderStatus::CANCELLED->value,
                 OrderStatus::SHIPPED->value,
                 OrderStatus::DELIVERED->value,
-            ], true)) {
-                return false;
-            }
+            ], true);
 
-            // Build track URL if not already set
+            // Build track URL if not already set, from waybill if available
             $trackUrl = null;
-            if ($mappedStatus->value === OrderStatus::SHIPPED->value || $mappedStatus->value === OrderStatus::DELIVERED->value) {
+            if ($canUpdateOrderStatus && ($mappedStatus->value === OrderStatus::SHIPPED->value || $mappedStatus->value === OrderStatus::DELIVERED->value)) {
+                $trackUrl = 'https://www.delhivery.com/track/package/' . $waybill;
+            } elseif (!empty($waybill) && empty($order->track_url)) {
+                // Auto-generate track URL from waybill even for non-terminal states
                 $trackUrl = 'https://www.delhivery.com/track/package/' . $waybill;
             }
 
-            $updateData = ['order_status' => $mappedStatus->value];
+            $updateData = [];
+            if ($canUpdateOrderStatus && $order->order_status?->value !== $mappedStatus->value) {
+                $updateData['order_status'] = $mappedStatus->value;
+            }
+            if (!empty($providerStatus) && (string) $providerStatus !== (string) $order->provider_current_status) {
+                $updateData['provider_current_status'] = (string) $providerStatus;
+            }
             if (!empty($trackUrl) && $trackUrl !== $order->track_url) {
                 $updateData['track_url'] = (string) $trackUrl;
             }
 
-            if ($order->order_status?->value !== $mappedStatus->value || (isset($updateData['track_url']) && $updateData['track_url'] !== $order->track_url)) {
-                $order->update($updateData)->refresh();
+            if (!empty($updateData)) {
+                $order->update($updateData);
+                $order->refresh();
             }
 
-            OrderStatusTimeline::updateOrCreate(
-                ['order_id' => $order->id, 'status' => $mappedStatus->value],
-                ['changed_at' => now()]
-            );
+            if ($canUpdateOrderStatus) {
+                OrderStatusTimeline::updateOrCreate(
+                    ['order_id' => $order->id, 'status' => $mappedStatus->value],
+                    ['changed_at' => now()]
+                );
+            }
 
             return true;
         } catch (\Throwable $e) {
             Log::warning('Delhivery status refresh exception', [
                 'order_id' => $order->id,
                 'message' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    public function syncDeliveryCharge(Order $order): bool
+    {
+        $order->loadMissing(['shop.deliverySetting']);
+
+        $setting = $order->shop?->deliverySetting;
+
+        if (!$setting || !$setting->delivery_api_enabled || $setting->delivery_provider !== 'delhivery') {
+            return false;
+        }
+
+        $apiToken = $this->normalizeApiToken((string) ($setting->provider_api_key ?? ''));
+        if ($apiToken === '') {
+            return false;
+        }
+
+        $delhiveryBaseUrl = rtrim((string) (data_get(config('services'), 'delhivery.base_url', 'https://track.delhivery.com') ?: 'https://track.delhivery.com'), '/');
+        $updatePath = (string) (data_get(config('services'), 'delhivery.update_endpoint', '/api/p/edit') ?: '/api/p/edit');
+        $updateEndpoint = $delhiveryBaseUrl . '/' . ltrim($updatePath, '/');
+
+        $waybill = trim((string) ($order->provider_awb_code ?? $order->provider_shipment_id ?? ''));
+        $providerOrderRef = trim((string) ($order->provider_order_id ?? ($order->prefix . $order->order_code)));
+        if ($waybill === '' && $providerOrderRef === '') {
+            return false;
+        }
+
+        $isCod = $order->payment_method === PaymentMethod::CASH;
+
+        $payloadData = [
+            'waybill' => $waybill,
+            'order' => $providerOrderRef,
+            'total_amount' => (float) ($order->payable_amount ?? 0),
+            'cod_amount' => $isCod ? (float) ($order->payable_amount ?? 0) : 0,
+            'payment_mode' => $isCod ? 'COD' : 'Prepaid',
+            'shipping_charges' => (float) ($order->delivery_charge ?? 0),
+        ];
+
+        try {
+            $response = Http::timeout(25)
+                ->acceptJson()
+                ->withHeaders([
+                    'Authorization' => 'Token ' . $apiToken,
+                    'Token' => $apiToken,
+                ])
+                ->asForm()
+                ->post($updateEndpoint, [
+                    'format' => 'json',
+                    'data' => json_encode($payloadData, JSON_UNESCAPED_SLASHES),
+                ]);
+
+            $this->saveAttemptJson('latest_order_update_response.json', $order, [
+                'endpoint' => $updateEndpoint,
+                'request' => [
+                    'format' => 'json',
+                    'data' => $payloadData,
+                ],
+                'response' => [
+                    'status' => $response->status(),
+                    'successful' => $response->successful(),
+                    'body' => $response->json() ?? $response->body(),
+                ],
+            ]);
+
+            if (!$response->successful()) {
+                Log::warning('Delhivery delivery charge sync failed', [
+                    'order_id' => $order->id,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                    'endpoint' => $updateEndpoint,
+                ]);
+                return false;
+            }
+
+            $apiSuccess = $response->json('success');
+            if ($apiSuccess === false) {
+                return false;
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('Delhivery delivery charge sync exception', [
+                'order_id' => $order->id,
+                'message' => $e->getMessage(),
+                'endpoint' => $updateEndpoint,
             ]);
             return false;
         }
@@ -525,29 +618,63 @@ class DelhiveryOrderSyncService
         $normalized = strtoupper(trim((string) $status));
         $normalized = str_replace(['-', ' '], '_', $normalized);
 
-        if (str_contains($normalized, 'DELIVERED') && !str_contains($normalized, 'RTO')) {
+        // DELIVERED statuses (non-RTO)
+        if ((str_contains($normalized, 'DELIVERED') || str_contains($normalized, 'DELIVERED_TO_CUSTOMER')) && !str_contains($normalized, 'RTO')) {
             return OrderStatus::DELIVERED;
         }
 
-        if (
-            str_contains($normalized, 'RTO') ||
-            str_contains($normalized, 'CANCEL') ||
-            str_contains($normalized, 'LOST') ||
-            str_contains($normalized, 'RETURN')
-        ) {
-            return OrderStatus::CANCELLED;
-        }
-
+        // SHIPPED / IN-TRANSIT statuses
         if (
             str_contains($normalized, 'IN_TRANSIT') ||
+            str_contains($normalized, 'IN_FLIGHT') ||
             str_contains($normalized, 'DISPATCHED') ||
             str_contains($normalized, 'OUT_FOR_DELIVERY') ||
+            str_contains($normalized, 'OFD') ||
             str_contains($normalized, 'PICKED') ||
+            str_contains($normalized, 'PICKED_UP') ||
             str_contains($normalized, 'MANIFESTED') ||
+            str_contains($normalized, 'MANIFEST') ||
             str_contains($normalized, 'TRANSIT') ||
-            str_contains($normalized, 'SHIPPED')
+            str_contains($normalized, 'SHIPPED') ||
+            str_contains($normalized, 'REACHED_HUB') ||
+            str_contains($normalized, 'HUB') ||
+            str_contains($normalized, 'PROCESSING') ||
+            str_contains($normalized, 'SORTED')
         ) {
             return OrderStatus::SHIPPED;
+        }
+
+        // CONFIRM / WAREHOUSE statuses
+        if (
+            str_contains($normalized, 'CREATED') ||
+            str_contains($normalized, 'NEW') ||
+            str_contains($normalized, 'PENDING') ||
+            str_contains($normalized, 'BOOKED') ||
+            str_contains($normalized, 'ALLOCATED') ||
+            str_contains($normalized, 'READY') ||
+            str_contains($normalized, 'PREPARATION') ||
+            str_contains($normalized, 'WAREHOUSE')
+        ) {
+            return OrderStatus::CONFIRM;
+        }
+
+        // CANCELLED / RTO / RETURN statuses
+        if (
+            str_contains($normalized, 'RTO') ||
+            str_contains($normalized, 'RETURN') ||
+            str_contains($normalized, 'CANCEL') ||
+            str_contains($normalized, 'CANCELLED') ||
+            str_contains($normalized, 'LOST') ||
+            str_contains($normalized, 'DESTROYED') ||
+            str_contains($normalized, 'DAMAGED') ||
+            str_contains($normalized, 'UNDELIVERED') ||
+            str_contains($normalized, 'FAILURE') ||
+            str_contains($normalized, 'ERROR') ||
+            str_contains($normalized, 'EXCEPTION') ||
+            str_contains($normalized, 'DISPOSED') ||
+            str_contains($normalized, 'NDR')
+        ) {
+            return OrderStatus::CANCELLED;
         }
 
         return null;
