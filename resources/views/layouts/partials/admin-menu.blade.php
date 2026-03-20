@@ -11,13 +11,51 @@
 
 @php
     use App\Enums\OrderStatus;
+    use App\Enums\ReturnOderStatus;
+    use App\Models\Order;
     use App\Models\ReturnOrder;
+
     $orderStatuses = OrderStatus::cases();
-    $returnStatuses = \App\Enums\ReturnOderStatus::visibleStatuses();
+    $adminShop = auth()->user()?->shop ?? auth()->user()?->myShop;
+    $returnStatuses = ReturnOderStatus::visibleStatuses();
     $returnAllCount = ReturnOrder::count();
     $returnStatusCounts = [];
     foreach ($returnStatuses as $status) {
         $returnStatusCounts[$status->value] = ReturnOrder::where('status', $status->value)->count();
+    }
+
+    $adminShopOrderCount = 0;
+    $adminShopOrderStatusCounts = [];
+    $adminShopReturnCount = 0;
+    $adminShopReturnStatuses = ReturnOderStatus::cases();
+    $adminShopReturnStatusCounts = [];
+    $currentShopRoute = request()->route('shop');
+    $currentShopId = is_object($currentShopRoute) ? $currentShopRoute->id : $currentShopRoute;
+    $currentOrder = request()->route('order');
+    $currentOrderShopId = is_object($currentOrder) ? $currentOrder->shop_id : null;
+    $currentReturnOrder = request()->route('returnOrder');
+    $currentReturnOrderShopId = is_object($currentReturnOrder) ? $currentReturnOrder->shop_id : null;
+    $isMyShopOrderContext = $request->routeIs('admin.shop.orders')
+        ? (string) $currentShopId === (string) ($adminShop?->id)
+        : ($request->routeIs('shop.order.*') && (string) $currentOrderShopId === (string) ($adminShop?->id));
+    $isMyShopReturnContext = $request->routeIs('admin.shop.return')
+        ? (string) $currentShopId === (string) ($adminShop?->id)
+        : ($request->routeIs('shop.returnOrder.*') && (string) $currentReturnOrderShopId === (string) ($adminShop?->id));
+
+    if ($adminShop) {
+        $adminShopOrderCount = Order::where('shop_id', $adminShop->id)->count();
+        $adminShopOrderStatusCounts = Order::where('shop_id', $adminShop->id)
+            ->selectRaw('order_status, COUNT(*) as aggregate')
+            ->groupBy('order_status')
+            ->pluck('aggregate', 'order_status')
+            ->all();
+
+        $adminShopReturnCount = ReturnOrder::where('shop_id', $adminShop->id)->count();
+        $adminShopReturnStatusCounts = ReturnOrder::where('shop_id', $adminShop->id)
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status')
+            ->all();
     }
 @endphp
 
@@ -96,7 +134,7 @@
 
 
 <!------------------------------ Order Management ------------------------------>
-@hasPermission('admin.order.index')
+@hasPermission(['admin.order.index', 'shop.order.index', 'shop.returnOrder.index'])
     <li>
         <a class="menu {{ $request->routeIs('admin.order.*') ? 'active' : '' }}" data-bs-toggle="collapse"
             href="#OrderManagementMenu">
@@ -119,6 +157,7 @@
     </li>
 @endhasPermission
 <!------------------------------ End Order Management ------------------------------>
+
 
 
 <!------------------------------ Return Order Management ------------------------------>
@@ -167,7 +206,98 @@
     </li>
 @endhasPermission
 <!------------------------------ End Return Order Management ------------------------------>
-    
+
+
+<!------------------------------ My Shop Order Management ------------------------------>
+@if ($adminShop)
+    @hasPermission('shop.order.index')
+        <li>
+            <a class="menu {{ $isMyShopOrderContext ? 'active' : '' }}" data-bs-toggle="collapse"
+                href="#MyShopOrderManagementMenu">
+                <span>
+                    <img class="menu-icon" src="{{ asset('assets/icons-admin/orders.svg') }}" alt="icon"
+                        loading="lazy" />
+                    {{ __('My Shop Orders') }}
+                </span>
+                <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
+            </a>
+            <div class="collapse dropdownMenuCollapse {{ $isMyShopOrderContext ? 'show' : '' }}" id="MyShopOrderManagementMenu">
+                <div class="listBar">
+                    <a href="{{ route('admin.shop.orders', $adminShop->id) }}" class="subMenu hasCount {{ $isMyShopOrderContext && !request()->filled('status') ? 'active' : '' }}">
+                        <span>{{ __('All') }}</span>
+                        <span class="count badge rounded-pill text-bg-secondary text-white">
+                            {{ $adminShopOrderCount > 99 ? '99+' : $adminShopOrderCount }}
+                        </span>
+                    </a>
+                    @foreach ($orderStatuses as $status)
+                        @php
+                            $statusClass = match ($status->value) {
+                                'Pending' => 'warning',
+                                'Ready to Payment', 'Payment Successful', 'Confirm' => 'info',
+                                'Shipped' => 'primary',
+                                'Delivered' => 'success',
+                                'Cancelled', 'Cancelled By Customer' => 'danger',
+                                default => 'secondary',
+                            };
+                            $statusCount = $adminShopOrderStatusCounts[$status->value] ?? 0;
+                        @endphp
+                        <a href="{{ route('admin.shop.orders', ['shop' => $adminShop->id, 'status' => $status->value]) }}" class="subMenu hasCount {{ $isMyShopOrderContext && request()->get('status') === $status->value ? 'active' : '' }}">
+                            <span>{{ __($status->value) }}</span>
+                            <span class="count badge rounded-pill text-bg-{{ $statusClass }} text-white">
+                                {{ $statusCount > 99 ? '99+' : $statusCount }}
+                            </span>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        </li>
+    @endhasPermission
+
+    @hasPermission('shop.returnOrder.index')
+        <li>
+            <a class="menu {{ $isMyShopReturnContext ? 'active' : '' }}" data-bs-toggle="collapse"
+                href="#MyShopReturnOrderManagementMenu">
+                <span>
+                    <img class="menu-icon" src="{{ asset('assets/icons-admin/orders.svg') }}" alt="icon"
+                        loading="lazy" />
+                    {{ __('My Return Orders') }}
+                </span>
+                <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
+            </a>
+            <div class="collapse dropdownMenuCollapse {{ $isMyShopReturnContext ? 'show' : '' }}" id="MyShopReturnOrderManagementMenu">
+                <div class="listBar">
+                    <a href="{{ route('admin.shop.return', $adminShop->id) }}" class="subMenu hasCount {{ $isMyShopReturnContext && !request()->filled('status') ? 'active' : '' }}">
+                        <span>{{ __('All') }}</span>
+                        <span class="count badge rounded-pill text-bg-secondary text-white">
+                            {{ $adminShopReturnCount > 99 ? '99+' : $adminShopReturnCount }}
+                        </span>
+                    </a>
+                    @foreach ($adminShopReturnStatuses as $status)
+                        @php
+                            $statusClass = match ($status->value) {
+                                'Pending' => 'warning',
+                                'Approved' => 'info',
+                                'Completed' => 'success',
+                                'Rejected', 'Cancelled' => 'danger',
+                                default => 'secondary',
+                            };
+                            $statusCount = $adminShopReturnStatusCounts[$status->value] ?? 0;
+                        @endphp
+                        <a href="{{ route('admin.shop.return', ['shop' => $adminShop->id, 'status' => $status->value]) }}" class="subMenu hasCount {{ $isMyShopReturnContext && request()->get('status') === $status->value ? 'active' : '' }}">
+                            <span>{{ __($status->value) }}</span>
+                            <span class="count badge rounded-pill text-bg-{{ $statusClass }} text-white">
+                                {{ $statusCount > 99 ? '99+' : $statusCount }}
+                            </span>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        </li>
+    @endhasPermission
+@endif
+<!------------------------------ End My Shop Order Management ------------------------------>
+
+
 
 <!------------------------------ Product Management ------------------------------>
 @hasPermission(['shop.product.index', 'shop.product.create', 'admin.product.create'])
