@@ -518,7 +518,7 @@ class ShiprocketOrderSyncService
 
         $setting = $order->shop?->deliverySetting;
 
-        if (!$setting || !$setting->delivery_api_enabled || $setting->delivery_provider !== 'shiprocket') {
+        if (!$setting) {
             return false;
         }
 
@@ -638,7 +638,7 @@ class ShiprocketOrderSyncService
 
         $setting = $order->shop?->deliverySetting;
 
-        if (!$setting || !$setting->delivery_api_enabled || $setting->delivery_provider !== 'shiprocket') {
+        if (!$setting) {
             return false;
         }
 
@@ -776,6 +776,7 @@ class ShiprocketOrderSyncService
             $updateData = [];
 
             $canUpdateOrderStatus = $mappedStatus && in_array($mappedStatus->value, [
+                OrderStatus::CONFIRM->value,
                 OrderStatus::CANCELLED->value,
                 OrderStatus::SHIPPED->value,
                 OrderStatus::DELIVERED->value,

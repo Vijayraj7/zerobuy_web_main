@@ -277,28 +277,31 @@
                 <h5 class="fz-18 border-bottom p-3 m-0">{{ __('Order & Shipping Info') }}</h5>
 
                 @php
+                    $currentStatusValue = (string) $order->order_status->value;
                     $isCashOrderForStatusAction = in_array($normalizedPaymentMethod ?? '', ['cash', 'cash payment'], true);
                     $isDeliveryApiEnabled = (bool) ($order->shop?->deliverySetting?->delivery_api_enabled ?? false);
                     $isAdminContext = request()->routeIs('admin.*');
                     $statusChangePermission = $isAdminContext ? ['admin.order.status.change'] : ['shop.order.status.change'];
                     $statusChangeRouteName = $isAdminContext ? 'admin.order.status.change' : 'shop.order.status.change';
-                    $showReadyToPaymentButton =
-                        ($order->order_status->value === 'Pending')
-                        && !$isCashOrderForStatusAction;
+                    $statusChangeUrlBase = route($statusChangeRouteName, $order->id);
                 @endphp
 
                 <div class="px-3 py-12 d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom">
                     <div class="text-color">{{ __('Change Order Status') }}</div>
                     @php
-                        // Show buttons based on order status and payment
                         $isOnlinePayment = !in_array($normalizedPaymentMethod, ['cash', 'cash payment'], true);
                         $isPaid = (bool) (($order->payments()->latest('payments.id')->first()?->is_paid) ?? false);
-                        $isPending = $order->order_status->value === 'Pending';
-                        $isPaymentSuccessful = $order->order_status->value === 'Payment Successful';
-                        $isConfirm = $order->order_status->value === 'Confirm';
-                        
-                        // Show Cancel/Confirm buttons only when Pending
-                        $showCancelConfirmButtons = $isPending && ($isOnlinePayment && $isPaid || !$isOnlinePayment);
+                        $nextStatusAction = null;
+
+                        if ($currentStatusValue === 'Pending') {
+                            $nextStatusAction = $isOnlinePayment && !$isPaid ? 'Ready to Payment' : 'Confirm';
+                        } elseif ($currentStatusValue === 'Payment Successful') {
+                            $nextStatusAction = 'Confirm';
+                        } elseif ($currentStatusValue === 'Confirm') {
+                            $nextStatusAction = 'Shipped';
+                        } elseif ($currentStatusValue === 'Shipped') {
+                            $nextStatusAction = 'Delivered';
+                        }
                     @endphp
                     
                     @if ($isAdminContext)
@@ -327,112 +330,43 @@
                                 </ul>
                             @endhasPermission
                         </div>
-                    @elseif (!$isDeliveryApiEnabled)
-                        @php
-                            $currentStatusValue = (string) $order->order_status->value;
-                            $manualNextStatuses = [];
-
-                            if ($currentStatusValue === 'Pending') {
-                                $manualNextStatuses = ['Confirm', 'Cancelled'];
-                            } elseif ($currentStatusValue === 'Payment Successful') {
-                                $manualNextStatuses = ['Confirm'];
-                            } elseif ($currentStatusValue === 'Confirm') {
-                                $manualNextStatuses = ['Shipped'];
-                            } elseif ($currentStatusValue === 'Shipped') {
-                                $manualNextStatuses = ['Delivered'];
-                            }
-
-                            $canManuallyChangeStatus = !empty($manualNextStatuses);
-                        @endphp
-
-                        @if ($canManuallyChangeStatus)
-                            <div class="dropdown">
-                                <a class="btn border text-start dropdown-toggle" href="#" role="button"
-                                    data-bs-toggle="dropdown" aria-expanded="false">
-                                    {{ $order->order_status->value }}
-                                </a>
-                                @hasPermission($statusChangePermission)
-                                    <ul class="dropdown-menu order-status">
-                                        @foreach ($manualNextStatuses as $nextStatus)
-                                            @php
-                                                $isShippedNextStatus = $nextStatus === 'Shipped';
-                                            @endphp
-                                            <li>
-                                                <a class="dropdown-item @if (in_array($nextStatus, ['Delivered', 'Cancelled', 'Shipped'], true)) OrderStatusConfirm @endif @if ($isShippedNextStatus) js-status-shipped @endif"
-                                                    href="{{ route($statusChangeRouteName, $order->id) }}?status={{ $nextStatus }}"
-                                                    @if ($isShippedNextStatus)
-                                                        data-update-url="{{ route('shop.order.update-tracking', $order->id) }}"
-                                                        data-token="{{ csrf_token() }}"
-                                                    @endif>
-                                                    {{ __($nextStatus) }}
-                                                </a>
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                @endhasPermission
-                            </div>
-                        @else
-                            <div class="text-muted small">
-                                {{ $order->order_status->value }}
-                            </div>
-                        @endif
-                    @elseif ($showCancelConfirmButtons)
-                        <!-- Pending status: Show Cancel and Confirm buttons side by side -->
-                        <div class="d-flex gap-2">
-                            <a href="{{ route('shop.order.status.change', $order->id) }}?status=Cancelled" 
-                               class="btn btn-danger btn-sm OrderStatusConfirm">
-                                {{ __('Cancel') }}
-                            </a>
-                            <a href="{{ route('shop.order.status.change', $order->id) }}?status=Confirm" 
-                               class="btn btn-success btn-sm OrderStatusConfirm">
-                                {{ __('Confirm') }}
-                            </a>
-                        </div>
-                    @elseif ($isPaymentSuccessful)
-                        <div class="d-flex gap-2">
-                            <a href="{{ route('shop.order.status.change', $order->id) }}?status=Confirm"
-                               class="btn btn-success btn-sm OrderStatusConfirm">
-                                {{ __('Confirm') }}
-                            </a>
-                        </div>
-                    @elseif ($isConfirm)
-                        <!-- Confirm status: Show status only, Create Shipment is below -->
-                        <div class="text-muted small">
-                            {{ $order->order_status->value }}
-                        </div>
-                    @else
-                        <!-- Other statuses: Show dropdown -->
+                    @elseif ($nextStatusAction === 'Ready to Payment')
+                        @hasPermission($statusChangePermission)
+                            <button
+                                type="button"
+                                class="btn btn-warning btn-sm js-ready-to-payment"
+                                data-update-url="{{ route('shop.order.update-tracking', $order->id) }}"
+                                data-status-url="{{ $statusChangeUrlBase }}?status={{ urlencode('Ready to Payment') }}"
+                                data-create-shipment-url=""
+                                data-current-charge="{{ (float) ($order->delivery_charge ?? 0) }}"
+                                data-token="{{ csrf_token() }}">
+                                {{ __('Ready to Payment') }}
+                            </button>
+                        @endhasPermission
+                    @elseif (!empty($nextStatusAction))
                         <div class="dropdown">
                             <a class="btn border text-start dropdown-toggle" href="#" role="button"
                                 data-bs-toggle="dropdown" aria-expanded="false">
                                 {{ $order->order_status->value }}
                             </a>
-                            @if ($order->order_status->value != 'Delivered' && $order->order_status->value != 'Cancelled')
-                                @hasPermission($statusChangePermission)
-                                    <ul class="dropdown-menu order-status">
-                                        @foreach ($orderStatus as $status)
-                                            @php
-                                                $isCashOrder = in_array($normalizedPaymentMethod, ['cash', 'cash payment'], true);
-                                                $isOnlineOnlyStatus = in_array($status->value, ['Ready to Payment', 'Payment Successful'], true);
-                                                $isSystemPaymentStatus = $status->value === 'Payment Successful';
-                                                $isShippedStatus = $status->value === 'Shipped';
-                                            @endphp
-                                            @if (!($isCashOrder && $isOnlineOnlyStatus) && !$isSystemPaymentStatus)
-                                            <li>
-                                                <a class="dropdown-item @if (in_array($status->value, ['Delivered', 'Cancelled', 'Shipped'])) OrderStatusConfirm @endif @if ($isShippedStatus) js-status-shipped @endif"
-                                                    href="{{ route($statusChangeRouteName, $order->id) }}?status={{ $status->value }}"
-                                                    @if ($isShippedStatus)
-                                                        data-update-url="{{ route('shop.order.update-tracking', $order->id) }}"
-                                                        data-token="{{ csrf_token() }}"
-                                                    @endif>
-                                                    {{ __($status->value) }}
-                                                </a>
-                                            </li>
-                                            @endif
-                                        @endforeach
-                                    </ul>
-                                @endhasPermission
-                            @endif
+                            @hasPermission($statusChangePermission)
+                                <ul class="dropdown-menu order-status">
+                                    <li>
+                                        <a class="dropdown-item @if (in_array($nextStatusAction, ['Delivered', 'Shipped'], true)) OrderStatusConfirm @endif @if ($nextStatusAction === 'Shipped') js-status-shipped @endif"
+                                            href="{{ $statusChangeUrlBase }}?status={{ urlencode($nextStatusAction) }}"
+                                            @if ($nextStatusAction === 'Shipped')
+                                                data-update-url="{{ route('shop.order.update-tracking', $order->id) }}"
+                                                data-token="{{ csrf_token() }}"
+                                            @endif>
+                                            {{ __($nextStatusAction) }}
+                                        </a>
+                                    </li>
+                                </ul>
+                            @endhasPermission
+                        </div>
+                    @else
+                        <div class="text-muted small">
+                            {{ $order->order_status->value }}
                         </div>
                     @endif
                 </div>
@@ -446,40 +380,6 @@
                                     {{ __('Create Shipment') }}
                                 </button>
                             </form>
-                        </div>
-                    @endhasPermission
-                @endif
-
-                @php
-                    // Ready to Payment: show only when Pending, Online Payment, and NOT Paid
-                    $showReadyToPaymentButtonNew = 
-                        ($order->order_status->value === 'Pending') &&
-                        (!in_array($normalizedPaymentMethod, ['cash', 'cash payment'], true)) &&
-                        (!(($order->payments()->latest('payments.id')->first()?->is_paid) ?? false));
-                @endphp
-
-                @if ($showReadyToPaymentButtonNew)
-                    @hasPermission(['shop.order.status.change'])
-                        <div class="p-3 border-bottom">
-                            <button
-                                type="button"
-                                class="btn btn-warning btn-sm w-100 js-ready-to-payment"
-                                data-update-url="{{ route('shop.order.update-tracking', $order->id) }}"
-                                data-status-url="{{ route('shop.order.status.change', $order->id) }}?status={{ urlencode('Ready to Payment') }}"
-                                data-create-shipment-url=""
-                                data-current-charge="{{ (float) ($order->delivery_charge ?? 0) }}"
-                                data-token="{{ csrf_token() }}"
-                            >
-                                {{ __('Ready to Payment') }}
-                            </button>
-                        </div>
-                    @endhasPermission
-                @endif
-
-                @if ($showCreateShipmentButton && $showReadyToPaymentButtonNew)
-                    @hasPermission(['shop.order.status.change'])
-                        <div class="py-1 text-center">
-                            <small class="text-muted">Complete payment first to proceed with shipment.</small>
                         </div>
                     @endhasPermission
                 @endif

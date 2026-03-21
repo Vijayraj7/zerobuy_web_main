@@ -421,7 +421,7 @@ class DelhiveryOrderSyncService
 
         $setting = $order->shop?->deliverySetting;
 
-        if (!$setting || !$setting->delivery_api_enabled || $setting->delivery_provider !== 'delhivery') {
+        if (!$setting) {
             return false;
         }
 
@@ -474,6 +474,7 @@ class DelhiveryOrderSyncService
 
             $mappedStatus = $this->mapDelhiveryStatusToOrderStatus($providerStatus);
             $canUpdateOrderStatus = $mappedStatus && in_array($mappedStatus->value, [
+                OrderStatus::CONFIRM->value,
                 OrderStatus::CANCELLED->value,
                 OrderStatus::SHIPPED->value,
                 OrderStatus::DELIVERED->value,
@@ -618,6 +619,10 @@ class DelhiveryOrderSyncService
         $normalized = strtoupper(trim((string) $status));
         $normalized = str_replace(['-', ' '], '_', $normalized);
 
+        if (str_contains($normalized, 'NOT_PICKED') || str_contains($normalized, 'NOT_PICKUP')) {
+            return OrderStatus::CANCELLED;
+        }
+
         // DELIVERED statuses (non-RTO)
         if ((str_contains($normalized, 'DELIVERED') || str_contains($normalized, 'DELIVERED_TO_CUSTOMER')) && !str_contains($normalized, 'RTO')) {
             return OrderStatus::DELIVERED;
@@ -695,7 +700,15 @@ class DelhiveryOrderSyncService
         try {
             $filePath = public_path('delhivery/' . ltrim($fileName, '/'));
             File::ensureDirectoryExists(dirname($filePath));
-            File::put($filePath, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+            $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
+            if ($json === false) {
+                $json = json_encode([
+                    'captured_at' => now()->toDateTimeString(),
+                    'error' => 'Failed to encode debug payload',
+                ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            }
+
+            File::put($filePath, (string) $json);
         } catch (\Throwable $e) {
             Log::warning('Failed to write delhivery debug json', [
                 'file' => $fileName,

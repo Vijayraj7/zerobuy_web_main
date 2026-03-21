@@ -87,6 +87,8 @@ class OrderDetailsResource extends JsonResource
                 return [
                     'status' => $timeline->status,
                     'changed_at' => $timeline->changed_at?->format('d M, Y h:i A'),
+                    'changed_at_iso' => $timeline->changed_at?->toIso8601String(),
+                    'changed_at_unix' => $timeline->changed_at?->getTimestamp(),
                 ];
             }),
         ];

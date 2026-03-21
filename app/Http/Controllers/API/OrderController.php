@@ -1119,15 +1119,7 @@ class OrderController extends Controller
             $order->load('payments');
         }
 
-        // Refresh delivery status from provider API if not in a terminal state (throttled, non-blocking)
-        $terminalStatuses = [
-            OrderStatus::DELIVERED->value,
-            OrderStatus::CANCELLED->value,
-            OrderStatus::CANCELLED_BY_CUSTOMER->value,
-            self::LEGACY_CANCELLED_BY_CUSTOMER,
-        ];
-
-        if ($order && !in_array((string)($order->order_status?->value ?? ''), $terminalStatuses, true)) {
+        if ($order) {
             try {
                 app(OrderDeliveryStatusRefreshService::class)->refreshIfEligible($order);
                 $order->refresh();

@@ -14,6 +14,7 @@ use App\Models\Payment;
 use App\Models\Shop;
 use App\Repositories\NotificationRepository;
 use App\Repositories\OrderRepository;
+use App\Services\Delivery\OrderDeliveryStatusRefreshService;
 use App\Services\Delivery\DelhiveryOrderSyncService;
 use App\Services\Delivery\ShiprocketOrderSyncService;
 use App\Services\NotificationServices;
@@ -177,28 +178,12 @@ class OrderController extends Controller
     {
         $order = Order::find($request->order_id);
 
-        if ($order && (filled($order->shiprocket_order_id) || filled($order->shiprocket_shipment_id)) && blank($order->shiprocket_awb_code)) {
+        if ($order) {
             try {
-                $service = app(ShiprocketOrderSyncService::class);
-                if ($service->refreshAwbAndTrackUrl($order)) {
+                    app(OrderDeliveryStatusRefreshService::class)->refreshIfEligible($order);
                     $order->refresh();
-                }
             } catch (\Throwable $e) {
-                Log::warning('Shiprocket AWB refresh failed on seller order details fetch (API)', [
-                    'order_id' => $order?->id,
-                    'message' => $e->getMessage(),
-                ]);
-            }
-        }
-
-        if ($order && (filled($order->shiprocket_order_id) || filled($order->shiprocket_shipment_id))) {
-            try {
-                $service = app(ShiprocketOrderSyncService::class);
-                if ($service->refreshCurrentStatus($order)) {
-                    $order->refresh();
-                }
-            } catch (\Throwable $e) {
-                Log::warning('Shiprocket status refresh failed on seller order details fetch (API)', [
+                Log::warning('Order delivery status refresh failed on seller order details fetch (API)', [
                     'order_id' => $order?->id,
                     'message' => $e->getMessage(),
                 ]);
@@ -226,14 +211,20 @@ class OrderController extends Controller
         }
 
         $orderStatus = match ($normalizedStatus) {
-            'cancel'  => OrderStatus::CANCELLED->value,
+            'accept',
+            'accepted',
+            'confirm' => OrderStatus::CONFIRM->value,
             'shipped' => OrderStatus::SHIPPED->value,
             'delivered' => OrderStatus::DELIVERED->value,
             'ready_to_payment', 'ready to payment' => OrderStatus::READY_TO_PAYMENT->value,
-            default   => OrderStatus::CONFIRM->value,
+            default   => null,
         };
 
-        $isOnlineOrder = $order->payment_method !== PaymentMethod::CASH;
+        if ($orderStatus === null) {
+            return $this->json('This status update is not supported.', [], 422);
+        }
+
+        $isOnlineOrder = $this->isOnlineOrder($order);
         if ($orderStatus === OrderStatus::READY_TO_PAYMENT->value && ! $isOnlineOrder) {
             return $this->json('Ready to Payment is allowed only for online payment orders.', [], 422);
         }
@@ -242,10 +233,14 @@ class OrderController extends Controller
             return $this->json('Ready to Payment can be set only when order is Pending.', [], 422);
         }
 
+        if (! in_array($orderStatus, $this->getAllowedSellerStatusTransitions($order), true)) {
+            return $this->json('This status change is not allowed for the current order state.', [], 422);
+        }
+
         if ($orderStatus === OrderStatus::CANCELLED->value) {
             $payment = $order->payments()->latest('payments.id')->first();
 
-            $isOnlineOrder = $order->payment_method !== PaymentMethod::CASH;
+            $isOnlineOrder = $this->isOnlineOrder($order);
             $isPaid = (bool) ($payment?->is_paid ?? false);
             $hasRazorpayOrderId = ! empty($payment?->razorpay_order_id);
             $isPaidOnline = $isOnlineOrder && $isPaid && $hasRazorpayOrderId;
@@ -358,6 +353,38 @@ class OrderController extends Controller
             'noty' => $noty,
             'order' => SellerOrderResource::make($order),
         ]);
+    }
+
+    private function getAllowedSellerStatusTransitions(Order $order): array
+    {
+        $currentStatus = (string) ($order->order_status?->value ?? $order->order_status ?? '');
+
+        return match ($currentStatus) {
+            OrderStatus::PENDING->value => $this->isOnlineOrder($order) && ! $this->isOrderPaid($order)
+                ? [OrderStatus::READY_TO_PAYMENT->value]
+                : [OrderStatus::CONFIRM->value],
+            OrderStatus::READY_TO_PAYMENT->value => [],
+            OrderStatus::PAYMENT_SUCCESSFUL->value => [OrderStatus::CONFIRM->value],
+            OrderStatus::CONFIRM->value => [OrderStatus::SHIPPED->value],
+            OrderStatus::SHIPPED->value => [OrderStatus::DELIVERED->value],
+            default => [],
+        };
+    }
+
+    private function isOnlineOrder(Order $order): bool
+    {
+        $paymentMethod = $order->payment_method;
+
+        if ($paymentMethod instanceof PaymentMethod) {
+            return $paymentMethod !== PaymentMethod::CASH;
+        }
+
+        return strtolower(trim((string) $paymentMethod)) !== strtolower(PaymentMethod::CASH->value);
+    }
+
+    private function isOrderPaid(Order $order): bool
+    {
+        return (bool) ($order->payments()->latest('payments.id')->first()?->is_paid ?? false);
     }
 
     // track url update

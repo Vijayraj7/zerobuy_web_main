@@ -94,23 +94,14 @@ class OrderController extends Controller
     {
         $order = Order::whereId($orderId)->firstOrFail()->load('address.stateData', 'address.districtData', 'shop.deliverySetting');
 
-        // Refresh delivery status from provider API if not in a terminal state (throttled, non-blocking)
-        $terminalStatuses = [
-            OrderStatus::DELIVERED->value,
-            OrderStatus::CANCELLED->value,
-            OrderStatus::CANCELLED_BY_CUSTOMER->value,
-        ];
-
-        if (!in_array((string)($order->order_status?->value ?? ''), $terminalStatuses, true)) {
-            try {
-                app(OrderDeliveryStatusRefreshService::class)->refreshIfEligible($order);
-                $order->refresh();
-            } catch (\Throwable $e) {
-                Log::warning('Order delivery status refresh failed on shop order details fetch', [
-                    'order_id' => $order->id,
-                    'message' => $e->getMessage(),
-                ]);
-            }
+        try {
+            app(OrderDeliveryStatusRefreshService::class)->refreshIfEligible($order);
+            $order->refresh();
+        } catch (\Throwable $e) {
+            Log::warning('Order delivery status refresh failed on shop order details fetch', [
+                'order_id' => $order->id,
+                'message' => $e->getMessage(),
+            ]);
         }
 
         $orderStatus = OrderStatus::cases();
@@ -230,30 +221,37 @@ class OrderController extends Controller
     {
         $request->validate(['status' => 'required']);
 
+        $requestedStatus = (string) $request->status;
+        $allowedStatuses = $this->getAllowedSellerStatusTransitions($order);
+
         if (
-            $request->status === OrderStatus::READY_TO_PAYMENT->value
-            && $order->payment_method === PaymentMethod::CASH
+            $requestedStatus === OrderStatus::READY_TO_PAYMENT->value
+            && ! $this->isOnlineOrder($order)
         ) {
             return back()->with('error', __('Ready to Payment is allowed only for online payment orders.'));
         }
 
         if (
-            $request->status === OrderStatus::READY_TO_PAYMENT->value
+            $requestedStatus === OrderStatus::READY_TO_PAYMENT->value
             && $order->order_status?->value !== OrderStatus::PENDING->value
         ) {
             return back()->with('error', __('Ready to Payment can be set only when order is pending.'));
         }
 
         if (
-            $request->status === OrderStatus::PAYMENT_SUCCESSFUL->value
+            $requestedStatus === OrderStatus::PAYMENT_SUCCESSFUL->value
         ) {
             return back()->with('error', __('Payment Successful is updated automatically after payment.'));
         }
 
-        if ($request->status == OrderStatus::CANCELLED->value) {
+        if (! in_array($requestedStatus, $allowedStatuses, true)) {
+            return back()->with('error', __('This status change is not allowed for the current order state.'));
+        }
+
+        if ($requestedStatus == OrderStatus::CANCELLED->value) {
             $payment = $order->payments()->latest('payments.id')->first();
 
-            $isOnlineOrder = $order->payment_method !== PaymentMethod::CASH;
+            $isOnlineOrder = $this->isOnlineOrder($order);
             $isPaid = (bool) ($payment?->is_paid ?? false);
             $hasRazorpayOrderId = ! empty($payment?->razorpay_order_id);
             $isPaidOnline = $isOnlineOrder && $isPaid && $hasRazorpayOrderId;
@@ -266,7 +264,7 @@ class OrderController extends Controller
             }
         }
 
-        $order->update(['order_status' => $request->status]);
+        $order->update(['order_status' => $requestedStatus]);
 
         // Note: Auto-sync to API provider removed. Sync happens only when user explicitly clicks "Create Shipment"
         // This allows sellers more control over when to ship vs. just changing status.
@@ -274,18 +272,18 @@ class OrderController extends Controller
         OrderStatusTimeline::updateOrCreate(
             [
                 'order_id' => $order->id,
-                'status' => $request->status,
+                'status' => $requestedStatus,
             ],
             [
                 'changed_at' => Carbon::now(),
             ]
         );
 
-        if ($request->status == OrderStatus::DELIVERED->value) {
+        if ($requestedStatus == OrderStatus::DELIVERED->value) {
             $this->updateWalletAndTransaction($order);
         }
 
-        if ($request->status == OrderStatus::CANCELLED->value) {
+        if ($requestedStatus == OrderStatus::CANCELLED->value) {
             foreach ($order->products as $product) {
 
                 $qty = $product->pivot->quantity;
@@ -309,8 +307,8 @@ class OrderController extends Controller
             }
         }
 
-        $title = 'Order status ' . $request->status;
-        $message = 'Your order ' . $request->status . ' order id: #' . $order->order_code;
+        $title = 'Order status ' . $requestedStatus;
+        $message = 'Your order ' . $requestedStatus . ' order id: #' . $order->order_code;
         $deviceKeys = $order->customer->user->devices->pluck('key')->toArray();
 
         $noty = null;
@@ -378,6 +376,38 @@ class OrderController extends Controller
 
             return back()->with('error', __('Retry ship failed due to an exception. Please try again.'));
         }
+    }
+
+    private function getAllowedSellerStatusTransitions(Order $order): array
+    {
+        $currentStatus = (string) ($order->order_status?->value ?? $order->order_status ?? '');
+
+        return match ($currentStatus) {
+            OrderStatus::PENDING->value => $this->isOnlineOrder($order) && ! $this->isOrderPaid($order)
+                ? [OrderStatus::READY_TO_PAYMENT->value]
+                : [OrderStatus::CONFIRM->value],
+            OrderStatus::READY_TO_PAYMENT->value => [],
+            OrderStatus::PAYMENT_SUCCESSFUL->value => [OrderStatus::CONFIRM->value],
+            OrderStatus::CONFIRM->value => [OrderStatus::SHIPPED->value],
+            OrderStatus::SHIPPED->value => [OrderStatus::DELIVERED->value],
+            default => [],
+        };
+    }
+
+    private function isOnlineOrder(Order $order): bool
+    {
+        $paymentMethod = $order->payment_method;
+
+        if ($paymentMethod instanceof PaymentMethod) {
+            return $paymentMethod !== PaymentMethod::CASH;
+        }
+
+        return strtolower(trim((string) $paymentMethod)) !== strtolower(PaymentMethod::CASH->value);
+    }
+
+    private function isOrderPaid(Order $order): bool
+    {
+        return (bool) ($order->payments()->latest('payments.id')->first()?->is_paid ?? false);
     }
 
     public function createShipment(Order $order)

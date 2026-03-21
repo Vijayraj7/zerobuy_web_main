@@ -10,8 +10,10 @@ use App\Http\Resources\RiderOrderDetailsResource;
 use App\Http\Resources\RiderOrderResource;
 use App\Repositories\DriverOrderRepository;
 use App\Repositories\OrderRepository;
+use App\Services\Delivery\OrderDeliveryStatusRefreshService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -44,6 +46,18 @@ class OrderController extends Controller
     public function show(OrderIdRequest $request)
     {
         $order = OrderRepository::find($request->order_id);
+
+        if ($order) {
+            try {
+                app(OrderDeliveryStatusRefreshService::class)->refreshIfEligible($order);
+                $order->refresh();
+            } catch (\Throwable $e) {
+                Log::warning('Order delivery status refresh failed on rider order details fetch (API)', [
+                    'order_id' => $order?->id,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
 
         return $this->json('Order details', [
             'order' => RiderOrderDetailsResource::make($order),

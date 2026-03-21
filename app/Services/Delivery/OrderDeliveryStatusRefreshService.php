@@ -44,12 +44,6 @@ class OrderDeliveryStatusRefreshService
                 return;
             }
 
-            // Skip terminal states — no point polling a completed/cancelled order
-            $currentStatus = (string) ($order->order_status?->value ?? '');
-            if (in_array($currentStatus, ['Pending', 'Cancelled', 'Delivered'], true)) {
-                return;
-            }
-
             // Only refresh if a shipment has actually been created with the provider
             if ($provider === 'shiprocket') {
                 $hasProviderRecord = !empty($order->provider_order_id)
@@ -67,6 +61,11 @@ class OrderDeliveryStatusRefreshService
             }
 
             if ($provider === 'shiprocket') {
+                if (empty($order->provider_awb_code) && empty($order->shiprocket_awb_code)) {
+                    $this->shiprocketService->refreshAwbAndTrackUrl($order);
+                    $order->refresh();
+                }
+
                 $this->shiprocketService->refreshCurrentStatus($order);
             } elseif ($provider === 'delhivery') {
                 $this->delhiveryService->refreshCurrentStatus($order);
