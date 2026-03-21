@@ -36,3 +36,4 @@ storage/racord.txt
 /vendor/_laravel_ide
 public/delhivery/latest_invoice_response.json
 /.vscode
+/public/delhivery
