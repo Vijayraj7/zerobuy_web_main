@@ -19,6 +19,8 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    private const MIN_SEARCH_PRODUCTS = 10;
+
     /**
      * Retrieve a paginated list of products based on the provided request parameters.
      *
@@ -34,6 +36,7 @@ class ProductController extends Controller
 
         $search = $request->search;
         $shopID = $request->shop_id;
+        $productID = $request->product_id;
         $categoryID = $request->category_id;
         $subCategoryID = $request->sub_category_id;
         $childCategoryID = $request->child_category_id;
@@ -173,6 +176,145 @@ class ProductController extends Controller
         $products = $products->when($perPage && $page, function ($query) use ($perPage, $skip) {
             return $query->skip($skip)->take($perPage);
         })->get();
+
+        // Ensure the initial product-list response has enough related products
+        // in this priority: child category -> sub category -> category -> business category.
+        if ((int) ($page ?? 1) === 1 && $products->count() < self::MIN_SEARCH_PRODUCTS) {
+            $seedChildCategoryIds = !empty($childCategoryID) ? [(int) $childCategoryID] : [];
+            $seedSubCategoryIds = !empty($subCategoryID) ? [(int) $subCategoryID] : [];
+            $seedCategoryIds = !empty($categoryID) ? [(int) $categoryID] : [];
+            $seedBusinessCategoryIds = !empty($businessCategoryID) ? [(int) $businessCategoryID] : [];
+
+            $seedProduct = null;
+            if (!empty($productID)) {
+                $seedProduct = ProductRepository::query()
+                    ->with([
+                        'childCategories:id',
+                        'subcategories:id',
+                        'categories:id,business_category_id',
+                    ])
+                    ->isActive()
+                    ->where('id', (int) $productID)
+                    ->first();
+            }
+
+            if (!$seedProduct && !empty($search)) {
+                $seedProduct = ProductRepository::query()
+                    ->with([
+                        'childCategories:id',
+                        'subcategories:id',
+                        'categories:id,business_category_id',
+                    ])
+                    ->isActive()
+                    ->where(function ($query) use ($search) {
+                        $query->where('name', 'like', '%' . $search . '%')
+                            ->orWhere('short_description', 'like', '%' . $search . '%')
+                            ->orWhere('code', 'like', '%' . $search . '%');
+                    })
+                    ->first();
+            }
+
+            if ($seedProduct) {
+                $seedChildCategoryIds = collect(array_merge(
+                    $seedChildCategoryIds,
+                    $seedProduct->childCategories->pluck('id')->toArray()
+                ))->filter()->unique()->values()->toArray();
+
+                $seedSubCategoryIds = collect(array_merge(
+                    $seedSubCategoryIds,
+                    $seedProduct->subcategories->pluck('id')->toArray()
+                ))->filter()->unique()->values()->toArray();
+
+                $seedCategoryIds = collect(array_merge(
+                    $seedCategoryIds,
+                    $seedProduct->categories->pluck('id')->toArray()
+                ))->filter()->unique()->values()->toArray();
+
+                $seedBusinessCategoryIds = collect(array_merge(
+                    $seedBusinessCategoryIds,
+                    $seedProduct->categories->pluck('business_category_id')->toArray()
+                ))->filter()->unique()->values()->toArray();
+            }
+
+            $neededCount = self::MIN_SEARCH_PRODUCTS - $products->count();
+            if ($neededCount > 0 && (!empty($seedChildCategoryIds) || !empty($seedSubCategoryIds) || !empty($seedCategoryIds) || !empty($seedBusinessCategoryIds))) {
+                $alreadyIncludedIds = $products->pluck('id')->toArray();
+
+                $baseRelatedQuery = function () use ($shop, $shopID, $brandID, $colorID, $sizeID, $stateID) {
+                    return ProductRepository::query()
+                        ->withSum('orders as orders_count', 'order_products.quantity')
+                        ->withAvg('reviews as average_rating', 'rating')
+                        ->isActive()
+                        ->when($shop, function ($query) use ($shop) {
+                            return $query->where('shop_id', $shop->id);
+                        })->when($shopID && !$shop, function ($query) use ($shopID) {
+                            return $query->where('shop_id', $shopID);
+                        })->when($brandID, function ($query) use ($brandID) {
+                            return $query->where('brand_id', $brandID);
+                        })->when($colorID, function ($query) use ($colorID) {
+                            return $query->whereHas('colors', function ($query) use ($colorID) {
+                                return $query->where('id', $colorID);
+                            });
+                        })->when($sizeID, function ($query) use ($sizeID) {
+                            return $query->whereHas('sizes', function ($query) use ($sizeID) {
+                                return $query->where('id', $sizeID);
+                            });
+                        })->when($stateID, function ($query) use ($stateID) {
+                            return $query->whereHas('shop', function ($query) use ($stateID) {
+                                return $query->where('state_id', $stateID);
+                            });
+                        });
+                };
+
+                $priorityFilters = [
+                    [
+                        'relation' => 'childCategories',
+                        'column' => 'child_categories.id',
+                        'ids' => $seedChildCategoryIds,
+                    ],
+                    [
+                        'relation' => 'subcategories',
+                        'column' => 'id',
+                        'ids' => $seedSubCategoryIds,
+                    ],
+                    [
+                        'relation' => 'categories',
+                        'column' => 'id',
+                        'ids' => $seedCategoryIds,
+                    ],
+                    [
+                        'relation' => 'categories',
+                        'column' => 'business_category_id',
+                        'ids' => $seedBusinessCategoryIds,
+                    ],
+                ];
+
+                foreach ($priorityFilters as $filter) {
+                    if ($neededCount <= 0 || empty($filter['ids'])) {
+                        continue;
+                    }
+
+                    $extraProducts = $baseRelatedQuery()
+                        ->whereHas($filter['relation'], function ($query) use ($filter) {
+                            return $query->whereIn($filter['column'], $filter['ids']);
+                        })
+                        ->whereNotIn('id', $alreadyIncludedIds)
+                        ->orderByDesc('id')
+                        ->take($neededCount)
+                        ->get();
+
+                    if ($extraProducts->isEmpty()) {
+                        continue;
+                    }
+
+                    $products = $products->concat($extraProducts);
+                    $alreadyIncludedIds = array_merge($alreadyIncludedIds, $extraProducts->pluck('id')->toArray());
+                    $neededCount = self::MIN_SEARCH_PRODUCTS - $products->count();
+                }
+
+                $total = max($total, $products->count());
+            }
+        }
 
         return $this->json('products', [
             'total' => $total,

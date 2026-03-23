@@ -276,8 +276,8 @@
                     <tbody>
                         @foreach ($product->bulkPrices as $bulkPrice)
                             <tr>
-                                <td>{{ $bulkPrice->min_quantity }}</td>
-                                <td>{{ $bulkPrice->max_quantity }}</td>
+                                <td>{{ $bulkPrice->min_qty }}</td>
+                                <td>{{ $bulkPrice->max_qty }}</td>
                                 <td>{{ showCurrency($bulkPrice->price) }}</td>
                             </tr>
                         @endforeach

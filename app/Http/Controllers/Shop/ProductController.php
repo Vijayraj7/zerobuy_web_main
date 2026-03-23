@@ -154,6 +154,7 @@ class ProductController extends Controller
             'variants.size',
             'itemDetails',
             'bulkItems',
+            'bulkPrices',
         ]);
 
         return view('shop.product.show', compact('product'));
