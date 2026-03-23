@@ -420,7 +420,7 @@
                                             <div class="fw-semibold small">${message.product?.name}</div>
                                             <div class="d-flex justify-content-between align-items-center mt-1">
                                                 <strong class="me-2">
-                                                    $${message.product?.discount_price > 0 ? message.product?.discount_price : message.product?.price }
+                                                    &#8377;${message.product?.discount_price > 0 ? message.product?.discount_price : message.product?.price }
                                                 </strong>
                                                 <div class="text-warning small">
                                                     ★${message.product?.rating} <span class="text-muted">(${message.product?.total_reviews})</span>

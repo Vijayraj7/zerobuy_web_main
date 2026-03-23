@@ -215,6 +215,10 @@ class AnalyticsController extends Controller
             return [$now->copy()->subDays(6)->startOfDay(), $now->copy()->endOfDay(), 'Last 7 days'];
         }
 
+        if ($period === 'today') {
+            return [$now->copy()->startOfDay(), $now->copy()->endOfDay(), 'Today'];
+        }
+
         if ($period === 'month') {
             return [$now->copy()->startOfMonth(), $now->copy()->endOfDay(), 'This month'];
         }

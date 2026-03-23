@@ -56,12 +56,29 @@
         flex-wrap: wrap;
         gap: 10px;
         align-items: center;
+        width: 100%;
     }
 
     .analytics-toolbar .btn {
         border-radius: 999px;
         padding: 8px 16px;
         font-weight: 600;
+    }
+
+    .analytics-toolbar .period-btn.active {
+        background: var(--an-accent-3);
+        border-color: var(--an-accent-3);
+        color: #fff;
+    }
+
+    .analytics-toolbar .apply-btn {
+        margin-left: auto;
+    }
+
+    @media (max-width: 768px) {
+        .analytics-toolbar .apply-btn {
+            margin-left: 0;
+        }
     }
 
     .analytics-card {
@@ -220,10 +237,15 @@
             <form class="analytics-toolbar" method="get" action="{{ route('shop.analytics.index') }}">
                 <input type="date" name="start_date" class="form-control" value="{{ $startDate->format('Y-m-d') }}">
                 <input type="date" name="end_date" class="form-control" value="{{ $endDate->format('Y-m-d') }}">
-                <button type="submit" class="btn btn-primary">{{ __('Apply') }}</button>
-                <a href="{{ route('shop.analytics.index', ['period' => '7d']) }}" class="btn btn-outline-secondary">7D</a>
-                <a href="{{ route('shop.analytics.index', ['period' => '30d']) }}" class="btn btn-outline-secondary">30D</a>
-                <a href="{{ route('shop.analytics.index', ['period' => 'month']) }}" class="btn btn-outline-secondary">{{ __('Month') }}</a>
+                <a href="{{ route('shop.analytics.index', ['period' => 'today']) }}"
+                    class="btn period-btn {{ request('period') === 'today' ? 'btn-primary active' : 'btn-outline-secondary' }}">{{ __('Today') }}</a>
+                <a href="{{ route('shop.analytics.index', ['period' => '7d']) }}"
+                    class="btn period-btn {{ request('period') === '7d' ? 'btn-primary active' : 'btn-outline-secondary' }}">7D</a>
+                <a href="{{ route('shop.analytics.index', ['period' => '30d']) }}"
+                    class="btn period-btn {{ request('period') === '30d' ? 'btn-primary active' : 'btn-outline-secondary' }}">30D</a>
+                <a href="{{ route('shop.analytics.index', ['period' => 'month']) }}"
+                    class="btn period-btn {{ request('period') === 'month' ? 'btn-primary active' : 'btn-outline-secondary' }}">{{ __('Month') }}</a>
+                <button type="submit" class="btn btn-primary apply-btn">{{ __('Apply') }}</button>
             </form>
         </div>
 

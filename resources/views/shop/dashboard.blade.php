@@ -818,6 +818,7 @@
         }
 
         .tableStatus .statusText .statusCancelled,
+        .tableStatus .statusText .statusUserCancelled,
         .tableStatus .statusText .statusUsercancelled {
             background: #fef2f2;
             color: #991b1b;
