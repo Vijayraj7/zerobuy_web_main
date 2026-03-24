@@ -306,6 +306,21 @@ class OrderController extends Controller
     {
         $request->validate(['status' => 'required']);
 
+        $order->loadMissing(['shop.deliverySetting']);
+
+        // Require AWB generation before allowing SHIPPED status when delivery API is enabled
+        if ($request->status === OrderStatus::SHIPPED->value && $order->order_status?->value === OrderStatus::CONFIRM->value) {
+            $deliveryApiEnabled = (bool) ($order->shop?->deliverySetting?->delivery_api_enabled ?? false);
+            $provider = strtolower(trim((string) ($order->api_provider ?? $order->shop?->deliverySetting?->delivery_provider ?? '')));
+
+            if ($deliveryApiEnabled && in_array($provider, ['shiprocket', 'delhivery'], true)) {
+                $awbGenerated = !empty($order->provider_awb_code) || !empty($order->shiprocket_awb_code);
+                if (!$awbGenerated) {
+                    return back()->with('error', __('AWB (Airway Bill) must be generated before marking order as shipped.'));
+                }
+            }
+        }
+
         $order->update(['order_status' => $request->status]);
 
         OrderStatusTimeline::updateOrCreate(

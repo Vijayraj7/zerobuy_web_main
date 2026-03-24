@@ -257,6 +257,19 @@ class OrderController extends Controller
             return back()->with('error', __('This status change is not allowed for the current order state.'));
         }
 
+        // For sellers with delivery API enabled, require AWB generation before allowing SHIPPED status
+        if ($requestedStatus === OrderStatus::SHIPPED->value && $order->order_status?->value === OrderStatus::CONFIRM->value) {
+            $deliveryApiEnabled = (bool) ($order->shop?->deliverySetting?->delivery_api_enabled ?? false);
+            $provider = strtolower(trim((string) ($order->api_provider ?? $order->shop?->deliverySetting?->delivery_provider ?? '')));
+
+            if ($deliveryApiEnabled && in_array($provider, ['shiprocket', 'delhivery'], true)) {
+                $awbGenerated = !empty($order->provider_awb_code) || !empty($order->shiprocket_awb_code);
+                if (!$awbGenerated) {
+                    return back()->with('error', __('AWB (Airway Bill) must be generated before marking order as shipped.'));
+                }
+            }
+        }
+
         if ($requestedStatus == OrderStatus::CANCELLED->value) {
             $payment = $order->payments()->latest('payments.id')->first();
 
@@ -401,6 +414,11 @@ class OrderController extends Controller
             OrderStatus::SHIPPED->value => [OrderStatus::DELIVERED->value],
             default => [],
         };
+    }
+
+    private function hasAwbGenerated(Order $order): bool
+    {
+        return !empty($order->provider_awb_code) || !empty($order->shiprocket_awb_code);
     }
 
     private function hasApiShipmentForSellerLock(Order $order): bool

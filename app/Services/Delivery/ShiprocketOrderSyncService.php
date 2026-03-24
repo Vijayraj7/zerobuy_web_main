@@ -735,13 +735,6 @@ class ShiprocketOrderSyncService
             }
 
             $mappedStatus = $this->mapProviderStatusToOrderStatus($providerStatus);
-            $hasShipmentRecord = $shiprocketOrderId !== '' || $shipmentId !== '';
-            if ($hasShipmentRecord && (!$mappedStatus || !in_array($mappedStatus->value, [
-                OrderStatus::DELIVERED->value,
-                OrderStatus::CANCELLED->value,
-            ], true))) {
-                $mappedStatus = OrderStatus::SHIPPED;
-            }
 
             // Extract track URL from the API response if available
             $trackUrl = null;
@@ -774,6 +767,31 @@ class ShiprocketOrderSyncService
             if (empty($awb)) {
                 $awb = $order->provider_awb_code ?: $order->shiprocket_awb_code;
             }
+
+            $hasAwbRecord = !empty($awb);
+            $hasProviderOrderId = !empty($order->provider_order_id) || !empty($shiprocketOrderId);
+
+            // Auto-set SHIPPED on refresh only after AWB exists
+            if ($hasAwbRecord && (!$mappedStatus || !in_array($mappedStatus->value, [
+                OrderStatus::DELIVERED->value,
+                OrderStatus::CANCELLED->value,
+                OrderStatus::SHIPPED->value,
+            ], true))) {
+                $mappedStatus = OrderStatus::SHIPPED;
+            }
+
+            // Never update to SHIPPED without AWB
+            if ($mappedStatus?->value === OrderStatus::SHIPPED->value && !$hasAwbRecord) {
+                $mappedStatus = $hasProviderOrderId ? OrderStatus::CONFIRM : null;
+            }
+
+            // If order id exists but AWB is not generated yet, keep order at CONFIRM
+            if (!$hasAwbRecord && $hasProviderOrderId && (!$mappedStatus || !in_array($mappedStatus->value, [
+                OrderStatus::DELIVERED->value,
+                OrderStatus::CANCELLED->value,
+            ], true))) {
+                $mappedStatus = OrderStatus::CONFIRM;
+            }
             
             // Auto-generate track URL from AWB if API didn't provide one
             if (empty($trackUrl) && !empty($awb)) {
@@ -783,6 +801,7 @@ class ShiprocketOrderSyncService
             $updateData = [];
 
             $canUpdateOrderStatus = $mappedStatus && in_array($mappedStatus->value, [
+                OrderStatus::CONFIRM->value,
                 OrderStatus::SHIPPED->value,
                 OrderStatus::CANCELLED->value,
                 OrderStatus::DELIVERED->value,

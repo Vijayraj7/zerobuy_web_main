@@ -473,14 +473,30 @@ class DelhiveryOrderSyncService
                 ?? null;
 
             $mappedStatus = $this->mapDelhiveryStatusToOrderStatus($providerStatus);
-            $hasShipmentRecord = !empty($waybill) || !empty($order->provider_order_id) || !empty($order->provider_shipment_id);
-            if ($hasShipmentRecord && (!$mappedStatus || !in_array($mappedStatus->value, [
+            $hasAwbRecord = !empty($waybill);
+            $hasProviderOrderId = !empty($order->provider_order_id);
+            if ($hasAwbRecord && (!$mappedStatus || !in_array($mappedStatus->value, [
                 OrderStatus::DELIVERED->value,
                 OrderStatus::CANCELLED->value,
+                OrderStatus::SHIPPED->value,
             ], true))) {
                 $mappedStatus = OrderStatus::SHIPPED;
             }
+
+            // Never update to SHIPPED without AWB/waybill
+            if ($mappedStatus?->value === OrderStatus::SHIPPED->value && !$hasAwbRecord) {
+                $mappedStatus = $hasProviderOrderId ? OrderStatus::CONFIRM : null;
+            }
+
+            // If order id exists but AWB is not generated yet, keep order at CONFIRM
+            if (!$hasAwbRecord && $hasProviderOrderId && (!$mappedStatus || !in_array($mappedStatus->value, [
+                OrderStatus::DELIVERED->value,
+                OrderStatus::CANCELLED->value,
+            ], true))) {
+                $mappedStatus = OrderStatus::CONFIRM;
+            }
             $canUpdateOrderStatus = $mappedStatus && in_array($mappedStatus->value, [
+                OrderStatus::CONFIRM->value,
                 OrderStatus::SHIPPED->value,
                 OrderStatus::CANCELLED->value,
                 OrderStatus::DELIVERED->value,

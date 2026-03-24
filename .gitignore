@@ -37,3 +37,4 @@ storage/racord.txt
 public/delhivery/latest_invoice_response.json
 /.vscode
 /public/delhivery
+/public/shiprocket

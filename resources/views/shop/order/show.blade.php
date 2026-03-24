@@ -298,7 +298,13 @@
                         } elseif ($currentStatusValue === 'Payment Successful') {
                             $nextStatusAction = 'Confirm';
                         } elseif ($currentStatusValue === 'Confirm') {
-                            $nextStatusAction = 'Shipped';
+                            // For sellers with delivery API enabled, don't show direct "Shipped" option
+                            // They must use "Create Shipment" flow first
+                            if (!$isAdminContext && $isDeliveryApiEnabled) {
+                                $nextStatusAction = null;
+                            } else {
+                                $nextStatusAction = 'Shipped';
+                            }
                         } elseif ($currentStatusValue === 'Shipped') {
                             $nextStatusAction = 'Delivered';
                         }
