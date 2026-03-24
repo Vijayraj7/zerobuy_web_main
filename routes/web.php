@@ -25,6 +25,10 @@ use App\Http\Controllers\Gateway\PayPal\ProcessController as PayPalProcessContro
 use Illuminate\Support\Facades\Cookie;
 
 Route::get('/', function () {
+    if (request()->getHost() === 'admin.zerobuy.in') {
+        return redirect('/admin');
+    }
+
     $flutterIndex = public_path('web/index.html');
 
     if (file_exists($flutterIndex)) {
