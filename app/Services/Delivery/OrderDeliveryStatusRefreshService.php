@@ -15,9 +15,8 @@ class OrderDeliveryStatusRefreshService
 
     /**
      * Refresh the delivery status from the provider API for the given order.
-     * Fires on every call as long as the order has a provider shipment record
-     * and is not in a terminal state (Delivered / Cancelled).
-     * The API toggle state is intentionally ignored here — if a shipment was
+     * Fires whenever a provider shipment record exists for the order.
+     * The API toggle state is intentionally ignored here - if a shipment was
      * already created with the provider we still need to track it.
      */
     public function refreshIfEligible(Order $order): void

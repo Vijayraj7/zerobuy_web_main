@@ -473,10 +473,16 @@ class DelhiveryOrderSyncService
                 ?? null;
 
             $mappedStatus = $this->mapDelhiveryStatusToOrderStatus($providerStatus);
-            $canUpdateOrderStatus = $mappedStatus && in_array($mappedStatus->value, [
-                OrderStatus::CONFIRM->value,
+            $hasShipmentRecord = !empty($waybill) || !empty($order->provider_order_id) || !empty($order->provider_shipment_id);
+            if ($hasShipmentRecord && (!$mappedStatus || !in_array($mappedStatus->value, [
+                OrderStatus::DELIVERED->value,
                 OrderStatus::CANCELLED->value,
+            ], true))) {
+                $mappedStatus = OrderStatus::SHIPPED;
+            }
+            $canUpdateOrderStatus = $mappedStatus && in_array($mappedStatus->value, [
                 OrderStatus::SHIPPED->value,
+                OrderStatus::CANCELLED->value,
                 OrderStatus::DELIVERED->value,
             ], true);
 
@@ -630,6 +636,7 @@ class DelhiveryOrderSyncService
 
         // SHIPPED / IN-TRANSIT statuses
         if (
+            str_contains($normalized, 'PENDING') ||
             str_contains($normalized, 'IN_TRANSIT') ||
             str_contains($normalized, 'IN_FLIGHT') ||
             str_contains($normalized, 'DISPATCHED') ||
@@ -653,7 +660,6 @@ class DelhiveryOrderSyncService
         if (
             str_contains($normalized, 'CREATED') ||
             str_contains($normalized, 'NEW') ||
-            str_contains($normalized, 'PENDING') ||
             str_contains($normalized, 'BOOKED') ||
             str_contains($normalized, 'ALLOCATED') ||
             str_contains($normalized, 'READY') ||

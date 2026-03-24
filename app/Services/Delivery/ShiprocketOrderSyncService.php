@@ -735,6 +735,13 @@ class ShiprocketOrderSyncService
             }
 
             $mappedStatus = $this->mapProviderStatusToOrderStatus($providerStatus);
+            $hasShipmentRecord = $shiprocketOrderId !== '' || $shipmentId !== '';
+            if ($hasShipmentRecord && (!$mappedStatus || !in_array($mappedStatus->value, [
+                OrderStatus::DELIVERED->value,
+                OrderStatus::CANCELLED->value,
+            ], true))) {
+                $mappedStatus = OrderStatus::SHIPPED;
+            }
 
             // Extract track URL from the API response if available
             $trackUrl = null;
@@ -776,9 +783,8 @@ class ShiprocketOrderSyncService
             $updateData = [];
 
             $canUpdateOrderStatus = $mappedStatus && in_array($mappedStatus->value, [
-                OrderStatus::CONFIRM->value,
-                OrderStatus::CANCELLED->value,
                 OrderStatus::SHIPPED->value,
+                OrderStatus::CANCELLED->value,
                 OrderStatus::DELIVERED->value,
             ], true);
 

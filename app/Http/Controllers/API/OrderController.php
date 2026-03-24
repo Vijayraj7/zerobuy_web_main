@@ -68,22 +68,9 @@ class OrderController extends Controller
             return $query->skip($skip)->take($perPage);
         })->get();
 
-        // Terminal statuses - don't refresh these
-        $terminalStatuses = [
-            OrderStatus::DELIVERED->value,
-            OrderStatus::CANCELLED->value,
-            OrderStatus::CANCELLED_BY_CUSTOMER->value,
-            self::LEGACY_CANCELLED_BY_CUSTOMER,
-        ];
-
         $refreshService = app(OrderDeliveryStatusRefreshService::class);
         foreach ($orders as $orderItem) {
-            // Skip refresh if order is in terminal state
-            if (in_array((string)($orderItem->order_status?->value ?? ''), $terminalStatuses, true)) {
-                continue;
-            }
-
-            // Refresh status for both Shiprocket and Delhivery using unified service
+            // Refresh status for eligible Shiprocket and Delhivery orders using the unified service.
             try {
                 $refreshService->refreshIfEligible($orderItem);
                 $orderItem->refresh();

@@ -198,6 +198,8 @@ class OrderController extends Controller
             $order->order_status?->value === OrderStatus::PENDING->value
             && $isApiProviderOrder;
 
+        $sellerStatusChangeLockedByApiShipment = $this->hasApiShipmentForSellerLock($order);
+
         return view('shop.order.show', compact(
             'order',
             'orderStatus',
@@ -210,7 +212,8 @@ class OrderController extends Controller
             'apiProviderStatus',
             'apiProviderStatusLabel',
             'apiProviderStatusClass',
-            'apiProviderFailureReason'
+            'apiProviderFailureReason',
+            'sellerStatusChangeLockedByApiShipment'
         ));
     }
 
@@ -220,6 +223,12 @@ class OrderController extends Controller
     public function statusChange(Order $order, Request $request)
     {
         $request->validate(['status' => 'required']);
+
+        $order->loadMissing(['shop.deliverySetting']);
+
+        if ($this->hasApiShipmentForSellerLock($order)) {
+            return back()->with('error', __('Status cannot be changed manually after API shipment is created.'));
+        }
 
         $requestedStatus = (string) $request->status;
         $allowedStatuses = $this->getAllowedSellerStatusTransitions($order);
@@ -392,6 +401,29 @@ class OrderController extends Controller
             OrderStatus::SHIPPED->value => [OrderStatus::DELIVERED->value],
             default => [],
         };
+    }
+
+    private function hasApiShipmentForSellerLock(Order $order): bool
+    {
+        $provider = strtolower(trim((string) ($order->api_provider ?? '')));
+        if ($provider === '') {
+            $provider = strtolower(trim((string) ($order->shop?->deliverySetting?->delivery_provider ?? '')));
+        }
+
+        if ($provider === '' && (!empty($order->shiprocket_order_id) || !empty($order->shiprocket_shipment_id) || !empty($order->shiprocket_awb_code))) {
+            $provider = 'shiprocket';
+        }
+
+        if (!in_array($provider, ['shiprocket', 'delhivery'], true)) {
+            return false;
+        }
+
+        return !empty($order->provider_order_id)
+            || !empty($order->provider_shipment_id)
+            || !empty($order->provider_awb_code)
+            || !empty($order->shiprocket_order_id)
+            || !empty($order->shiprocket_shipment_id)
+            || !empty($order->shiprocket_awb_code);
     }
 
     private function isOnlineOrder(Order $order): bool

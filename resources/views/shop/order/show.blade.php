@@ -330,6 +330,10 @@
                                 </ul>
                             @endhasPermission
                         </div>
+                    @elseif (!empty($sellerStatusChangeLockedByApiShipment))
+                        <div class="border rounded px-3 py-2 fw-medium">
+                            {{ $order->order_status->value }}
+                        </div>
                     @elseif ($nextStatusAction === 'Ready to Payment')
                         @hasPermission($statusChangePermission)
                             <button

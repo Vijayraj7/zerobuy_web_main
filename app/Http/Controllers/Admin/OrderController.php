@@ -268,6 +268,8 @@ class OrderController extends Controller
             $order->order_status?->value === OrderStatus::PENDING->value
             && $isApiProviderOrder;
 
+        $sellerStatusChangeLockedByApiShipment = false;
+
         return view('shop.order.show', compact(
             'order',
             'orderStatus',
@@ -280,7 +282,8 @@ class OrderController extends Controller
             'apiProviderStatus',
             'apiProviderStatusLabel',
             'apiProviderStatusClass',
-            'apiProviderFailureReason'
+            'apiProviderFailureReason',
+            'sellerStatusChangeLockedByApiShipment'
         ));
     }
 
