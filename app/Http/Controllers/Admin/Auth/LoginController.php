@@ -42,6 +42,13 @@ class LoginController extends Controller
         // check user is active
         if ($user && $user->is_active && ! in_array('customer', $roles)) {
 
+            // Block regular shop sellers — only root and admin roles are allowed here
+            if (in_array('shop', $roles) && ! in_array('root', $roles) && ! in_array('admin', $roles)) {
+                return back()->withErrors([
+                    'email' => 'Email or password is incorrect',
+                ]);
+            }
+
             // login the user
             Auth::login($user);
 

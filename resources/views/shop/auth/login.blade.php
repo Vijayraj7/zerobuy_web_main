@@ -39,14 +39,17 @@
         })(window, document, "clarity", "script", "vrh02lfdix");
     </script>
 </head>
+<style>
+    body {
+        font-family: "Inter", serif;
+    }
+</style>
 
-<body style="background: url({{ asset('assets/images/shop-bg.svg') }})">
+<body style="background: url({{ asset('assets/images/admin-bg-image.png') }}); background-size: cover; background-position: center; background-repeat: no-repeat;">
 
     <section class="login-section">
 
-        <div class="thumbnail">
-            <img src="{{ asset('assets/images/shop-login.png') }}" alt="thumbnail" width="100%">
-        </div>
+        <div></div>
 
         <!-- Login Card -->
         <div class="card loginCard">
