@@ -29,6 +29,10 @@ Route::get('/', function () {
         return redirect('/admin');
     }
 
+    if (request()->getHost() === 'shop.zerobuy.in') {
+        return redirect('/shop');
+    }
+
     $flutterIndex = public_path('web/index.html');
 
     if (file_exists($flutterIndex)) {

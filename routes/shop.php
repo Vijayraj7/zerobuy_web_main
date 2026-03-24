@@ -40,7 +40,7 @@ use Twilio\Rest\Chat;
 |
 */
 
-Route::name('shop.')->group(function () {
+Route::middleware('blockShopOnAdminHost')->name('shop.')->group(function () {
 
     Route::controller(OrderController::class)->group(function () {
         Route::get('/download-invoice/{id}', 'downloadInvoice')->name('download-invoice');

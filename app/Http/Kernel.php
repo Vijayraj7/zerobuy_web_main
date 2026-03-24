@@ -73,5 +73,7 @@ class Kernel extends HttpKernel
         'checkPermission' => \App\Http\Middleware\CheckPermission::class,
         'demoMode' => \App\Http\Middleware\DemoModeMiddleware::class,
         'chack_root_user' => \App\Http\Middleware\CheckHasRootUser::class,
+        'blockShopOnAdminHost' => \App\Http\Middleware\BlockShopOnAdminHost::class,
+        'blockAdminOnShopHost' => \App\Http\Middleware\BlockAdminOnShopHost::class,
     ];
 }

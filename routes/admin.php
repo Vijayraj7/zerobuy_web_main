@@ -76,7 +76,7 @@ use App\Http\Controllers\API\LocationController;
 |
 */
 
-Route::name('admin.')->group(function () {
+Route::middleware('blockAdminOnShopHost')->name('admin.')->group(function () {
     // Login
     Route::controller(LoginController::class)->group(function () {
         Route::get('/login', 'index')->name('login')->middleware('guest');
