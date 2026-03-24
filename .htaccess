@@ -5,7 +5,7 @@ RewriteBase /
 # If request is NOT file or folder → send to Flutter
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ /public/web/index.html [L]
+RewriteRule ^ /web/index.html [L]
 </IfModule>
 
 # Protect sensitive files
