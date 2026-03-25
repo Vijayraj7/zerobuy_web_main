@@ -63,23 +63,48 @@ class CartController extends Controller
             }
         }
 
-        $product_quantity = $product->quantity;
+        if ($request->filled('bulk_items')) {
+            foreach ($request->bulk_items as $bulkItem) {
+                $bulkId = isset($bulkItem['id']) ? (int) $bulkItem['id'] : 0;
+                $bulkQty = isset($bulkItem['buyqnty']) ? (int) $bulkItem['buyqnty'] : 0;
 
-        if ($request->variant_id != null) {
-            $variant = $product->variants()->where('id', $request->variant_id)->first();
-            if ($variant) {
-                $product_quantity = $variant->quantity;
+                $bulk = $product->bulkItems()->where('id', $bulkId)->first();
+                if (! $bulk) {
+                    return $this->json('Sorry! selected model is not available for this product', [], 422);
+                }
+
+                $bulkMinQty = max((int) ($bulk->moq ?? 1), 1);
+                if ($bulkQty < $bulkMinQty || $bulkQty > (int) $bulk->quantity) {
+                    return $this->json('Sorry! product cart quantity is limited. No more stock', [], 422);
+                }
             }
-        }
+        } else {
+            $product_quantity = $product->quantity;
 
-        if ($request_quantity < $min_quantity) {
-            if ($product_quantity >= $min_quantity) {
-                $request_quantity = $min_quantity;
+            if ($request->variant_id != null) {
+                $variant = $product->variants()->where('id', $request->variant_id)->first();
+                if ($variant) {
+                    $product_quantity = $variant->quantity;
+                }
             }
-        }
 
-        if (($request_quantity < $min_quantity) || ($request_quantity > $product_quantity) || ($cart?->quantity > $product_quantity)) {
-            return $this->json('Sorry! product cart quantity is limited. No more stock', [], 422);
+            if ($request->bulk_item_id != null) {
+                $bulk = $product->bulkItems()->where('id', $request->bulk_item_id)->first();
+                if ($bulk) {
+                    $product_quantity = $bulk->quantity;
+                    $min_quantity = max((int) ($bulk->moq ?? 1), 1);
+                }
+            }
+
+            if ($request_quantity < $min_quantity) {
+                if ($product_quantity >= $min_quantity) {
+                    $request_quantity = $min_quantity;
+                }
+            }
+
+            if (($request_quantity < $min_quantity) || ($request_quantity > $product_quantity) || ($cart?->quantity > $product_quantity)) {
+                return $this->json('Sorry! product cart quantity is limited. No more stock', [], 422);
+            }
         }
 
         // store or update cart

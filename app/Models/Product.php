@@ -348,7 +348,24 @@ class Product extends Model
     public function scopeIsActive(Builder $builder)
     {
         return $builder->where('is_active', true)
-            ->whereRaw('products.quantity >= COALESCE(products.min_order_quantity, 1)')
+            ->where(function (Builder $stockQuery) {
+                $stockQuery
+                    // Priority 1: any variant meets product MOQ.
+                    ->whereHas('variants', function (Builder $variantQuery) {
+                        $variantQuery->whereRaw('product_variants.quantity >= COALESCE(products.min_order_quantity, 1)');
+                    })
+                    // Priority 2: any bulk item meets product MOQ.
+                    ->orWhereHas('bulkItems', function (Builder $bulkItemQuery) {
+                        $bulkItemQuery->whereRaw('product_bulk_items.quantity >= COALESCE(products.min_order_quantity, 1)');
+                    })
+                    // Fallback: when no variants and no bulk items, use product quantity.
+                    ->orWhere(function (Builder $fallbackQuery) {
+                        $fallbackQuery
+                            ->whereDoesntHave('variants')
+                            ->whereDoesntHave('bulkItems')
+                            ->whereRaw('products.quantity >= COALESCE(products.min_order_quantity, 1)');
+                    });
+            })
             ->where('is_approve', true)->whereHas('shop', function ($query) {
                 $query->isActive();
             });
