@@ -250,7 +250,7 @@
                                 @endhasPermission
                             @endif
                             <hr class="dropdown-profile-divider">
-                            <button onclick="document.getElementById('logoutForm').submit()" class="dropdown-item cursor-pointer logout text-danger">
+                            <button type="button" class="dropdown-item cursor-pointer logout text-danger">
                                 <img src="{{ asset('assets/icons-admin/log-out.svg') }}" alt="key" loading="lazy" /> {{ __('Logout') }}
                             </button>
                         </div>
