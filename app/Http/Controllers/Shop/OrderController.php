@@ -673,6 +673,18 @@ class OrderController extends Controller
 
         $updateData = [];
 
+        $hasShipmentCreated =
+            ! empty($order->provider_order_id)
+            || ! empty($order->provider_shipment_id)
+            || ! empty($order->provider_awb_code)
+            || ! empty($order->shiprocket_order_id)
+            || ! empty($order->shiprocket_shipment_id)
+            || ! empty($order->shiprocket_awb_code);
+
+        if ($request->filled('track_url') && $hasShipmentCreated) {
+            return back()->with('error', __('Track URL cannot be updated after shipment is created.'));
+        }
+
         if ($request->filled('track_url')) {
             $updateData['track_url'] = $request->track_url;
         }
@@ -685,7 +697,15 @@ class OrderController extends Controller
             $isReadyToPaymentFlow
             && $order->order_status?->value === OrderStatus::PENDING->value;
 
+        $isDeliveryChargeLocked =
+            ((float) $order->delivery_charge) > 0
+            || $hasShipmentCreated;
+
         if ($request->filled('delivery_charge')) {
+            if ($isDeliveryChargeLocked) {
+                return back()->with('error', __('Delivery charge cannot be updated after it is set or after shipment is created.'));
+            }
+
             if ($isManualDelivery || $order->delivery_charge == 0 || $canUpdateViaReadyToPaymentFlow) {
                 $oldDeliveryCharge = $order->delivery_charge;
                 $newDeliveryCharge = $request->delivery_charge;

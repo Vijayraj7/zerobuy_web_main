@@ -261,41 +261,8 @@ class OrderController extends Controller
             'order_status' => $orderStatus,
         ]);
 
-        $orderProvider = strtolower(trim((string) (($order->shop?->deliverySetting?->delivery_api_enabled ? ($order->api_provider ?: $order->shop?->deliverySetting?->delivery_provider) : '') ?: '')));
-
-        if ($orderStatus === OrderStatus::CONFIRM->value && in_array($orderProvider, ['shiprocket', 'delhivery'], true)) {
-            if ($order->api_provider !== $orderProvider) {
-                $order->update(['api_provider' => $orderProvider]);
-            }
-
-            if ($orderProvider === 'shiprocket' && empty($order->provider_order_id) && empty($order->shiprocket_order_id)) {
-                try {
-                    $service = app(ShiprocketOrderSyncService::class);
-                    $service->sync($order);
-                    $order->refresh();
-                } catch (\Throwable $e) {
-                    Log::warning('Shiprocket sync failed on seller order accept (API)', [
-                        'order_id' => $order->id,
-                        'message' => $e->getMessage(),
-                    ]);
-                }
-            }
-
-            if ($orderProvider === 'delhivery') {
-                try {
-                    if (empty($order->provider_order_id)) {
-                        $service = app(DelhiveryOrderSyncService::class);
-                        $service->sync($order);
-                        $order->refresh();
-                    }
-                } catch (\Throwable $e) {
-                    Log::warning('Delhivery order create failed on seller order accept (API)', [
-                        'order_id' => $order->id,
-                        'message' => $e->getMessage(),
-                    ]);
-                }
-            }
-        }
+        // Shipment creation is explicit and must only run through the
+        // dedicated createShipment endpoint, not during a CONFIRM status change.
 
         // if ($orderStatus === OrderStatus::SHIPPED->value && empty($order->shiprocket_awb_code)) {
         //     try {
@@ -396,6 +363,18 @@ class OrderController extends Controller
             return $this->json('Sorry, this order is not found', [], 422);
         }
 
+        $hasShipmentCreated =
+            ! empty($order->provider_order_id)
+            || ! empty($order->provider_shipment_id)
+            || ! empty($order->provider_awb_code)
+            || ! empty($order->shiprocket_order_id)
+            || ! empty($order->shiprocket_shipment_id)
+            || ! empty($order->shiprocket_awb_code);
+
+        if ($hasShipmentCreated) {
+            return $this->json('Track URL cannot be updated after shipment is created.', [], 422);
+        }
+
         $order->update([
             'track_url' => $request->track_url,
         ]);
@@ -418,8 +397,29 @@ class OrderController extends Controller
             return $this->json('Sorry, this order is not found', [], 422);
         }
 
+        $hasShipmentCreated =
+            ! empty($order->provider_order_id)
+            || ! empty($order->provider_shipment_id)
+            || ! empty($order->provider_awb_code)
+            || ! empty($order->shiprocket_order_id)
+            || ! empty($order->shiprocket_shipment_id)
+            || ! empty($order->shiprocket_awb_code);
+
+        if (((float) $order->delivery_charge) > 0 || $hasShipmentCreated) {
+            return $this->json(
+                'Delivery charge cannot be updated after it is set or after shipment is created.',
+                [],
+                422
+            );
+        }
+
+        $oldDeliveryCharge = (float) ($order->delivery_charge ?? 0);
+        $newDeliveryCharge = (float) ($request->delivery_charge ?? 0);
+        $updatedPayableAmount = ((float) ($order->payable_amount ?? 0)) - $oldDeliveryCharge + $newDeliveryCharge;
+
         $order->update([
-            'delivery_charge' => $request->delivery_charge,
+            'delivery_charge' => $newDeliveryCharge,
+            'payable_amount' => $updatedPayableAmount,
         ]);
 
         $order->refresh();

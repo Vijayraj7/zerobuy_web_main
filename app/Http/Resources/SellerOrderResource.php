@@ -67,6 +67,8 @@ class SellerOrderResource extends JsonResource
         $isTrackingUpdateLocked = in_array($this->order_status?->value, [OrderStatus::DELIVERED->value, OrderStatus::CANCELLED->value], true);
         $isApiProviderOrder =
             in_array($retryShipProvider, ['shiprocket', 'delhivery'], true);
+        $hasShipmentCreated = $hasProviderOrderId || $hasProviderShipmentId || $hasProviderAwb;
+        $isDeliveryChargeLocked = ((float) $this->delivery_charge) > 0 || $hasShipmentCreated;
 
         $isProviderOrderCreated = false;
         if ($retryShipProvider === 'shiprocket') {
@@ -171,7 +173,7 @@ class SellerOrderResource extends JsonResource
             'can_ready_to_payment' => (bool) $showReadyToPaymentButton,
             'is_tracking_update_locked' => (bool) $isTrackingUpdateLocked,
             'is_manual_delivery' => (bool) $isManualDelivery,
-            'can_update_delivery_charge' => (bool) ($isManualDelivery || ((float) $this->delivery_charge) == 0),
+            'can_update_delivery_charge' => (bool) (! $isDeliveryChargeLocked && ($isManualDelivery || ((float) $this->delivery_charge) == 0)),
             'estimated_delivery_date' => (string) $estimateDays,
             'track_url' => $this->track_url,
             'gst' => $this->gst,
