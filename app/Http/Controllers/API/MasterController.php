@@ -151,6 +151,7 @@ class MasterController extends Controller
             'menus' => MenuResource::collection($menus),
             'footers' => FooterResource::collection($footers),
             'return_order_within_days' => $generaleSetting?->return_order_within_days ?? 3,
+            'whatsapp_order_enabled' => (bool) ($generaleSetting?->whatsapp_order_enabled ?? false),
         ]);
     }
 }

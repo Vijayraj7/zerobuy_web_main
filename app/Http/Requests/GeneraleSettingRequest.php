@@ -42,7 +42,7 @@ class GeneraleSettingRequest extends FormRequest
             'footerqrcode' => 'nullable|image|mimes:png,jpg,jpeg,png,gif|max:2048',
             'return_order_within_days'=>'nullable|numeric',
             'partial_payment_percentage' => 'nullable|required_if:partial_payment,on|integer|min:1|max:100',
-            'whatsapp_order_enabled' => 'nullable|boolean',
+            'whatsapp_order_enabled' => 'nullable',
             'user_android_min_build' => 'nullable|integer|min:1',
             'seller_android_min_build' => 'nullable|integer|min:1',
         ];

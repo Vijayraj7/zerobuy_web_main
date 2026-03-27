@@ -261,6 +261,24 @@
                             </div>
                         </div>
                     </div>
+                    @if ($isAdminWhatsappOrderEnabled)
+                        <div class="card mt-4">
+                            <div class="card-body">
+                                <label class="form-label d-block">{{ __('Enable WhatsApp Order Sharing') }}</label>
+                                <input type="hidden" name="whatsapp_order_enabled" value="0">
+                                <div class="form-check form-switch mt-2">
+                                    <div style="display: flex; align-items:center;">
+                                        <input style="margin-top: 0px !important; margin-right: 10px;"
+                                            class="form-check-input" type="checkbox" role="switch"
+                                            id="whatsapp_order_enabled" name="whatsapp_order_enabled" value="1"
+                                            {{ old('whatsapp_order_enabled', $shop->whatsapp_order_enabled ?? false) ? 'checked' : '' }}>
+                                        <label class="form-check-label"
+                                            for="whatsapp_order_enabled">{{ __('Allow users to send this order to seller on WhatsApp') }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                     <div class="mt-3">
                         <button type="button" class="btn btn-primary next-btn float-end" data-next="2"> Next
                             &raquo;</button>
@@ -671,24 +689,6 @@
                                         </div>
                                     </div>
                                 </div>
-
-                                @if ($isAdminWhatsappOrderEnabled)
-                                    <div class="col-md-4 mt-3">
-                                        <label class="form-label d-block">{{ __('Enable WhatsApp Order Sharing') }}</label>
-                                        <input type="hidden" name="whatsapp_order_enabled" value="0">
-                                        <div class="form-check form-switch mt-2">
-                                            <div style="display: flex; align-items:center;">
-                                                <input style="margin-top: 0px !important; margin-right: 10px;"
-                                                    class="form-check-input" type="checkbox" role="switch"
-                                                    id="whatsapp_order_enabled" name="whatsapp_order_enabled" value="1"
-                                                    {{ old('whatsapp_order_enabled', $shop->whatsapp_order_enabled ?? false) ? 'checked' : '' }}>
-                                                <label class="form-check-label"
-                                                    for="whatsapp_order_enabled">{{ __('Allow users to send this order to seller on WhatsApp') }}</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
-
                                 <div class="col-12">
                                     <div class="row">
                                         <div class="col-md-4 mt-3 online-payment-provider-wrap">

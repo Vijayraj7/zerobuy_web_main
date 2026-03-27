@@ -11,6 +11,7 @@ use App\Models\District;
 use App\Models\DeliverySetting;
 use App\Models\DeliveryStateCharge;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -26,6 +27,23 @@ class ShopRepository extends Repository
     public static function model()
     {
         return Shop::class;
+    }
+
+    private static function resolveWhatsappOrderEnabled(Request $request, bool $adminWhatsappOrderEnabled, ?bool $fallback = null): bool
+    {
+        if (! $adminWhatsappOrderEnabled) {
+            return false;
+        }
+
+        if ($request->exists('whatsapp_order_enabled')) {
+            return (bool) $request->boolean('whatsapp_order_enabled');
+        }
+
+        if ($request->exists('whatsappOrderEnabled')) {
+            return (bool) $request->boolean('whatsappOrderEnabled');
+        }
+
+        return (bool) ($fallback ?? false);
     }
 
     /**
@@ -67,9 +85,10 @@ class ShopRepository extends Repository
         $onlinePaymentProvider = $request->online_payment_provider ?: null;
         $onlinePaymentConfig = null;
         $adminWhatsappOrderEnabled = (bool) (generaleSetting()?->whatsapp_order_enabled ?? false);
-        $shopWhatsappOrderEnabled = $adminWhatsappOrderEnabled
-            ? (bool) $request->boolean('whatsapp_order_enabled')
-            : false;
+        $shopWhatsappOrderEnabled = self::resolveWhatsappOrderEnabled(
+            $request,
+            $adminWhatsappOrderEnabled
+        );
 
         if (! $onlinePaymentEnabled && ! $cashOnDeliveryEnabled) {
             throw ValidationException::withMessages([
@@ -267,13 +286,11 @@ class ShopRepository extends Repository
         $onlinePaymentProvider = $request->online_payment_provider ?: ($shop->online_payment_provider ?: null);
         $onlinePaymentConfig = $shop->online_payment_config;
         $adminWhatsappOrderEnabled = (bool) (generaleSetting()?->whatsapp_order_enabled ?? false);
-        $shopWhatsappOrderEnabled = $request->has('whatsapp_order_enabled')
-            ? (bool) $request->boolean('whatsapp_order_enabled')
-            : (bool) ($shop->whatsapp_order_enabled ?? false);
-
-        if (! $adminWhatsappOrderEnabled) {
-            $shopWhatsappOrderEnabled = false;
-        }
+        $shopWhatsappOrderEnabled = self::resolveWhatsappOrderEnabled(
+            $request,
+            $adminWhatsappOrderEnabled,
+            (bool) ($shop->whatsapp_order_enabled ?? false)
+        );
 
         if (! $onlinePaymentEnabled && ! $cashOnDeliveryEnabled) {
             throw ValidationException::withMessages([
