@@ -36,6 +36,13 @@ class DeliverySettingController extends Controller
         }
 
         $selectedIds = $setting?->selected_state_ids ?? [];
+
+        // Legacy data compatibility: older records may have provider_api mode.
+        // Delivery charge mode is now strictly amount_based/state_wise/manual.
+        if ($setting && $setting->delivery_mode === 'provider_api') {
+            $setting->delivery_mode = 'manual';
+        }
+
         // return response()->json($setting);
         return $this->json('Delivery Settings', [
             'settings' => $setting,
