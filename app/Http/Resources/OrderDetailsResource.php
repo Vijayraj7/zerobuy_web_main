@@ -70,6 +70,7 @@ class OrderDetailsResource extends JsonResource
             'quantity' => (int) $this->products->sum('pivot.quantity'),
             'delivery_mode' => $this->shop->deliverySetting?->delivery_mode ?? 'manual',
             'delivery_charge' => (float) number_format(($this->delivery_charge ?? 0), 2, '.', ''),
+            'admin_whatsapp_order_enabled' => (bool) (generaleSetting()?->whatsapp_order_enabled ?? false),
             'shop' => ShopResource::make($this->shop),
             'products' => OrderProductResource::collection($this->products),
             'invoice_url' => route('shop.download-invoice', $this->id),

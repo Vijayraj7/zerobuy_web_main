@@ -178,6 +178,30 @@
             </div>
         </div>
 
+        <div class="card mt-4" id="app-version-settings">
+            <div class="card-header d-flex align-items-center gap-2 py-3">
+                <i class="bi bi-phone"></i>
+                <h5 class="mb-0">{{ __('App Versions') }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row gy-3">
+                    <div class="col-md-6">
+                        <x-input type="number" name="user_android_min_build" label="User App Android Min Build"
+                            placeholder="Enter user app minimum Android build number" :value="$generaleSetting?->user_android_min_build" />
+                    </div>
+                    <div class="col-md-6">
+                        <x-input type="number" name="seller_android_min_build" label="Seller App Android Min Build"
+                            placeholder="Enter seller app minimum Android build number" :value="$generaleSetting?->seller_android_min_build" />
+                    </div>
+                    <div class="col-12">
+                        <small class="text-muted">
+                            {{ __('If app build number is lower than these values, users will see a forced update bottom sheet in the apps.') }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!--######## Footer Information ##########-->
         <div class="card mt-4">
             <div class="card-header d-flex align-items-center justify-content-between gap-2 flex-wrap py-3">

@@ -25,6 +25,7 @@ class Shop extends Model
         'last_online' => 'datetime',
         'online_payment_enabled' => 'boolean',
         'cash_on_delivery_enabled' => 'boolean',
+        'whatsapp_order_enabled' => 'boolean',
     ];
 
     /**

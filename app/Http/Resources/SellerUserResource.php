@@ -36,6 +36,7 @@ class SellerUserResource extends JsonResource
             'date_of_birth' => $this->date_of_birth,
             'is_active' => (bool) $this->is_active,
             'shop_status' => (string) $shopStatus,
+            'admin_whatsapp_order_enabled' => (bool) (generaleSetting()?->whatsapp_order_enabled ?? false),
             'shop' => [
                 'id' => $shop->id,
                 'state' => $shop->states ? $shop->states->name : null,
@@ -64,6 +65,8 @@ class SellerUserResource extends JsonResource
                 'prefix' => $shop->prefix ?? 'ORD-',
                 'cash_on_delivery_enabled' => (bool) ($shop->cash_on_delivery_enabled ?? true),
                 'online_payment_enabled' => (bool) ($shop->online_payment_enabled ?? false),
+                'whatsapp_order_enabled' => (bool) ($shop->whatsapp_order_enabled ?? false),
+                'admin_whatsapp_order_enabled' => (bool) (generaleSetting()?->whatsapp_order_enabled ?? false),
                 'online_payment_provider' => $shop->online_payment_provider,
                 'razorpay_key_id' => data_get($shop->online_payment_config, 'razorpay.key_id'),
                 'razorpay_key_secret' => data_get($shop->online_payment_config, 'razorpay.key_secret'),

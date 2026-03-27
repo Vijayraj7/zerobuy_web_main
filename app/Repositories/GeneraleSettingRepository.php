@@ -65,6 +65,8 @@ class GeneraleSettingRepository extends Repository
                 'footer_logo_id' => $footerLogo?->id ?? $generaleSetting?->footer_logo_id,
                 'footer_qrcode_id' => $footerQr?->id ?? $generaleSetting?->footer_qrcode_id,
                 'app_logo_id' => $appLogo?->id ?? $generaleSetting?->app_logo_id,
+                'user_android_min_build' => $request->user_android_min_build,
+                'seller_android_min_build' => $request->seller_android_min_build,
             ]
         );
     }
@@ -199,6 +201,7 @@ class GeneraleSettingRepository extends Repository
             'online_payment' => $request->online_payment ? true : false,
             'partial_payment' => $partialPayment,
             'partial_payment_percentage' => $partialPayment ? $request->partial_payment_percentage : null,
+            'whatsapp_order_enabled' => $request->boolean('whatsapp_order_enabled'),
             'return_order_within_days' => $request->return_order_within_days ?? 3,
         ]);
     }

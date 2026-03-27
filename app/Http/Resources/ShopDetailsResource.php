@@ -65,6 +65,8 @@ class ShopDetailsResource extends JsonResource
             'delivery_charge' => (float) getDeliveryCharge(1),
             'cash_on_delivery_enabled' => (bool) ($this->cash_on_delivery_enabled ?? true),
             'online_payment_enabled' => (bool) ($this->online_payment_enabled ?? false),
+            'whatsapp_order_enabled' => (bool) ($this->whatsapp_order_enabled ?? false),
+            'admin_whatsapp_order_enabled' => (bool) (generaleSetting()?->whatsapp_order_enabled ?? false),
             'online_payment_provider' => $this->online_payment_provider,
         ];
     }

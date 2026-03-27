@@ -66,6 +66,10 @@ class ShopRepository extends Repository
             : true;
         $onlinePaymentProvider = $request->online_payment_provider ?: null;
         $onlinePaymentConfig = null;
+        $adminWhatsappOrderEnabled = (bool) (generaleSetting()?->whatsapp_order_enabled ?? false);
+        $shopWhatsappOrderEnabled = $adminWhatsappOrderEnabled
+            ? (bool) $request->boolean('whatsapp_order_enabled')
+            : false;
 
         if (! $onlinePaymentEnabled && ! $cashOnDeliveryEnabled) {
             throw ValidationException::withMessages([
@@ -118,6 +122,7 @@ class ShopRepository extends Repository
             'estimated_delivery_time' => $request->delivery_days,
             'online_payment_enabled' => $onlinePaymentEnabled,
             'cash_on_delivery_enabled' => $cashOnDeliveryEnabled,
+            'whatsapp_order_enabled' => $shopWhatsappOrderEnabled,
             'online_payment_provider' => $onlinePaymentProvider,
             'online_payment_config' => $onlinePaymentConfig,
             'shop_document' => $shopDocumentMedia ? $shopDocumentMedia->id : null,
@@ -261,6 +266,14 @@ class ShopRepository extends Repository
             : (bool) ($shop->cash_on_delivery_enabled ?? true);
         $onlinePaymentProvider = $request->online_payment_provider ?: ($shop->online_payment_provider ?: null);
         $onlinePaymentConfig = $shop->online_payment_config;
+        $adminWhatsappOrderEnabled = (bool) (generaleSetting()?->whatsapp_order_enabled ?? false);
+        $shopWhatsappOrderEnabled = $request->has('whatsapp_order_enabled')
+            ? (bool) $request->boolean('whatsapp_order_enabled')
+            : (bool) ($shop->whatsapp_order_enabled ?? false);
+
+        if (! $adminWhatsappOrderEnabled) {
+            $shopWhatsappOrderEnabled = false;
+        }
 
         if (! $onlinePaymentEnabled && ! $cashOnDeliveryEnabled) {
             throw ValidationException::withMessages([
@@ -329,6 +342,7 @@ class ShopRepository extends Repository
             'estimated_delivery_time' => $request->delivery_days,
             'online_payment_enabled' => $onlinePaymentEnabled,
             'cash_on_delivery_enabled' => $cashOnDeliveryEnabled,
+            'whatsapp_order_enabled' => $shopWhatsappOrderEnabled,
             'online_payment_provider' => $onlinePaymentProvider,
             'online_payment_config' => $onlinePaymentConfig,
             'shop_document' => $shopDocumentMedia ? $shopDocumentMedia->id : $shop->shop_document,
@@ -436,6 +450,14 @@ class ShopRepository extends Repository
             ? $request->online_payment_provider
             : ($shop->online_payment_provider ?: null);
         $onlinePaymentConfig = $shop->online_payment_config;
+        $adminWhatsappOrderEnabled = (bool) (generaleSetting()?->whatsapp_order_enabled ?? false);
+        $shopWhatsappOrderEnabled = $request->has('whatsapp_order_enabled')
+            ? (bool) $request->boolean('whatsapp_order_enabled')
+            : (bool) ($shop->whatsapp_order_enabled ?? false);
+
+        if (! $adminWhatsappOrderEnabled) {
+            $shopWhatsappOrderEnabled = false;
+        }
 
         if ($onlinePaymentProvider === 'razorpay') {
             $existingRazorpay = data_get($onlinePaymentConfig, 'razorpay', []);
@@ -493,6 +515,7 @@ class ShopRepository extends Repository
             }, $request->off_day) : null,
             'online_payment_enabled' => $onlinePaymentEnabled,
             'cash_on_delivery_enabled' => $cashOnDeliveryEnabled,
+            'whatsapp_order_enabled' => $shopWhatsappOrderEnabled,
             'online_payment_provider' => $onlinePaymentProvider,
             'online_payment_config' => $onlinePaymentConfig,
             'shop_document' => $shopDocumentMedia ? $shopDocumentMedia->id : $shop->shop_document,

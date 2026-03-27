@@ -10,11 +10,28 @@ use App\Models\Shop;
 use App\Models\State;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class DeliverySettingController extends Controller
 {
+    public function validateProvider(Request $request)
+    {
+        $shop = generaleSetting('shop');
+        if (!$shop instanceof Shop) {
+            throw ValidationException::withMessages([
+                'shop' => 'Shop context is invalid.',
+            ]);
+        }
+
+        $existingSetting = DeliverySetting::where('shop_id', $shop->id)->first();
+
+        $this->validateDeliveryProviderCredentials($request, $shop, $existingSetting);
+
+        return $this->json('Delivery provider credentials verified successfully');
+    }
+
     /**
      * Get delivery settings for a shop
      */
@@ -151,33 +168,18 @@ class DeliverySettingController extends Controller
         ]);
 
         $shop = generaleSetting('shop');
+        if (!$shop instanceof Shop) {
+            throw ValidationException::withMessages([
+                'shop' => 'Shop context is invalid.',
+            ]);
+        }
         $existingSetting = DeliverySetting::where('shop_id', $shop->id)->first();
         $deliveryApiEnabled = array_key_exists('delivery_api_enabled', $validated)
             ? !empty($validated['delivery_api_enabled'])
             : (bool) ($existingSetting?->delivery_api_enabled ?? false);
 
         if ($deliveryApiEnabled) {
-            $provider = strtolower(trim((string) (($validated['delivery_provider'] ?? null) ?? ($existingSetting?->delivery_provider ?? ''))));
-            $apiKey = trim((string) (($validated['provider_api_key'] ?? null) ?? ($existingSetting?->provider_api_key ?? '')));
-            $apiSecret = trim((string) (($validated['provider_api_secret'] ?? null) ?? ($existingSetting?->provider_api_secret ?? '')));
-
-            if ($provider === '') {
-                throw ValidationException::withMessages([
-                    'delivery_provider' => __('Please select a delivery API provider.'),
-                ]);
-            }
-
-            if ($apiKey === '') {
-                throw ValidationException::withMessages([
-                    'provider_api_key' => __('The provider API key field is required when an API provider is selected.'),
-                ]);
-            }
-
-            if ($provider === 'shiprocket' && $apiSecret === '') {
-                throw ValidationException::withMessages([
-                    'provider_api_secret' => __('The provider API secret field is required for Shiprocket.'),
-                ]);
-            }
+            $this->validateDeliveryProviderCredentials($request, $shop, $existingSetting, $validated);
         }
 
         DB::transaction(function () use ($validated, $shop, $existingSetting, $deliveryApiEnabled) {
@@ -240,6 +242,119 @@ class DeliverySettingController extends Controller
         return response()->json([
             'message' => 'Delivery settings saved successfully',
             'delivery_mode' => $validated['delivery_mode'],
+        ]);
+    }
+
+    private function validateDeliveryProviderCredentials(
+        Request $request,
+        Shop $shop,
+        ?DeliverySetting $existingSetting = null,
+        ?array $validated = null
+    ): void {
+        $deliveryApiEnabled = is_array($validated) && array_key_exists('delivery_api_enabled', $validated)
+            ? !empty($validated['delivery_api_enabled'])
+            : $request->boolean('delivery_api_enabled');
+
+        if (!$deliveryApiEnabled) {
+            return;
+        }
+
+        $provider = strtolower(trim((string) (
+            (is_array($validated) ? ($validated['delivery_provider'] ?? null) : null)
+            ?? $request->input('delivery_provider')
+            ?? ($existingSetting?->delivery_provider ?? '')
+        )));
+
+        $apiKey = trim((string) (
+            (is_array($validated) ? ($validated['provider_api_key'] ?? null) : null)
+            ?? $request->input('provider_api_key')
+            ?? ($existingSetting?->provider_api_key ?? '')
+        ));
+
+        $apiSecret = trim((string) (
+            (is_array($validated) ? ($validated['provider_api_secret'] ?? null) : null)
+            ?? $request->input('provider_api_secret')
+            ?? ($existingSetting?->provider_api_secret ?? '')
+        ));
+
+        if ($provider === '') {
+            throw ValidationException::withMessages([
+                'delivery_provider' => 'Please select a delivery API provider.',
+            ]);
+        }
+
+        if ($apiKey === '') {
+            throw ValidationException::withMessages([
+                'provider_api_key' => 'The provider API key field is required when an API provider is selected.',
+            ]);
+        }
+
+        if ($provider === 'shiprocket') {
+            if ($apiSecret === '') {
+                throw ValidationException::withMessages([
+                    'provider_api_secret' => 'The provider API secret field is required for Shiprocket.',
+                ]);
+            }
+
+            try {
+                $authResponse = Http::timeout(20)->acceptJson()->post('https://apiv2.shiprocket.in/v1/external/auth/login', [
+                    'email' => $apiKey,
+                    'password' => $apiSecret,
+                ]);
+            } catch (\Throwable $e) {
+                throw ValidationException::withMessages([
+                    'provider_api_key' => 'Unable to verify Shiprocket credentials right now. Please try again.',
+                ]);
+            }
+
+            $token = (string) ($authResponse->json('token') ?? '');
+            if (!$authResponse->successful() || $token === '') {
+                throw ValidationException::withMessages([
+                    'provider_api_key' => (string) ($authResponse->json('message')
+                        ?? $authResponse->json('error')
+                        ?? 'Invalid Shiprocket credentials. Please check API key and secret.'),
+                ]);
+            }
+
+            return;
+        }
+
+        if ($provider === 'delhivery') {
+            $delhiveryBaseUrl = rtrim((string) (data_get(config('services'), 'delhivery.base_url', 'https://track.delhivery.com') ?: 'https://track.delhivery.com'), '/');
+            $originPin = trim((string) (($request->input('pincode') ?: ($shop->pincode ?? '110001'))));
+
+            try {
+                $response = Http::timeout(20)
+                    ->acceptJson()
+                    ->withHeaders([
+                        'Authorization' => 'Token ' . $apiKey,
+                    ])
+                    ->get($delhiveryBaseUrl . '/api/kinko/v1/invoice/charges/.json', [
+                        'md' => 'S',
+                        'ss' => 'DTO',
+                        'd_pin' => $originPin,
+                        'o_pin' => $originPin,
+                        'cgm' => 1000,
+                        'pt' => 'Pre-paid',
+                        'declared_value' => 1,
+                    ]);
+            } catch (\Throwable $e) {
+                throw ValidationException::withMessages([
+                    'provider_api_key' => 'Unable to verify Delhivery API key right now. Please try again.',
+                ]);
+            }
+
+            if (in_array($response->status(), [401, 403], true)) {
+                throw ValidationException::withMessages([
+                    'provider_api_key' => 'Invalid Delhivery API key. Please check and try again.',
+                ]);
+            }
+
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'delivery_provider' => 'Selected delivery API provider is invalid.',
         ]);
     }
 }

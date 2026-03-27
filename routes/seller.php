@@ -62,6 +62,7 @@ Route::prefix('/seller')->group(function () {
             Route::post('/user-update', 'updateProfile');
             Route::post('/shop-update', 'shopUpdate');
             Route::post('/shop-setting-update', 'shopSettingUpdate');
+            Route::post('/payment-setting-validate', 'validatePaymentSetting');
             Route::post('/payment-setting-update', 'paymentSettingUpdate');
         });
 
@@ -139,6 +140,7 @@ Route::prefix('/seller')->group(function () {
             Route::get('/delivery-settings', 'show');
             Route::get('/get-states', 'getStates');
             Route::post('/delivery-settings/selected-states', 'saveSelectedStates');
+            Route::post('/delivery-settings/validate-provider', 'validateProvider');
             Route::post('/delivery-settings', 'store');
         });
 

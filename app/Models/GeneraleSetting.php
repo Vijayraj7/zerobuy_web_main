@@ -16,6 +16,13 @@ class GeneraleSetting extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'cash_on_delivery' => 'boolean',
+        'online_payment' => 'boolean',
+        'partial_payment' => 'boolean',
+        'whatsapp_order_enabled' => 'boolean',
+    ];
+
     protected $table = 'generate_settings';
 
     public function mediaLogo()

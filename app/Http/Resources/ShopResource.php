@@ -25,6 +25,8 @@ class ShopResource extends JsonResource
             'banner' => $this->banner,
             'contact_number' => $this->phone_number,
             'whatsapp_number' => $this->whatsapp_number,
+            'whatsapp_order_enabled' => (bool) ($this->whatsapp_order_enabled ?? false),
+            'admin_whatsapp_order_enabled' => (bool) (generaleSetting()?->whatsapp_order_enabled ?? false),
             'store_type' => $this->store_type ? $this->store_type : 'retail',
             'state' => $this->states ? $this->states->name : null,
             'district' => $this->districts ? $this->districts->name : null,

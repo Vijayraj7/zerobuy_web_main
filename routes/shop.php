@@ -169,6 +169,8 @@ Route::middleware('blockShopOnAdminHost')->name('shop.')->group(function () {
             Route::post('/vendors/store', 'store')->name('shop.store');
             // Route::get('/vendors/{shop}/edit', 'edit')->name('shop.edit');
             Route::post('/vendors/{shop}/update', 'update')->name('shop.update');
+            Route::post('/vendors/validate-delivery-provider', 'validateDeliveryProvider')->name('shop.validateDeliveryProvider');
+            Route::post('/vendors/validate-payment-provider', 'validatePaymentProvider')->name('shop.validatePaymentProvider');
             // Route::get('/vendors/{shop}', 'show')->name('shop.show');
 
             // Route::get('/vendors/{shop}/orders', 'orders')->name('shop.orders');

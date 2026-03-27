@@ -30,6 +30,7 @@ class ShopSettingUpdateRequest extends FormRequest
             'off_day' => 'nullable|array',
             'cash_on_delivery_enabled' => 'nullable|boolean',
             'online_payment_enabled' => 'nullable|boolean',
+            'whatsapp_order_enabled' => 'nullable|boolean',
             'online_payment_provider' => 'nullable|string|in:razorpay',
             'razorpay_key_id' => 'nullable|string|max:255|required_if:online_payment_provider,razorpay',
             'razorpay_key_secret' => 'nullable|string|max:255|required_if:online_payment_provider,razorpay',

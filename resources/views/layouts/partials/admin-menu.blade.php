@@ -1074,6 +1074,10 @@
                         class="subMenu {{ request()->routeIs('admin.generale-setting.index') ? 'active' : '' }}">
                         {{ __('General Settings') }}
                     </a>
+                    <a href="{{ route('admin.generale-setting.index') }}#app-version-settings"
+                        class="subMenu {{ request()->routeIs('admin.generale-setting.index') ? 'active' : '' }}">
+                        {{ __('App Versions') }}
+                    </a>
                 @endhasPermission
 
                 @hasPermission('admin.business-setting.index')

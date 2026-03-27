@@ -194,6 +194,28 @@
                         </div>
                         <div class="check-icon">✅</div>
                     </label>
+
+                    <!-- WhatsApp Order -->
+                    <label for="whatsapp_order_enabled"
+                        class="payment-card border p-3 rounded {{ $generaleSetting?->whatsapp_order_enabled ? 'selected' : '' }}">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3 fs-3">💬</div>
+                            <span class="fw-semibold">
+                                {{ __('WhatsApp Order Sharing') }}
+                            </span>
+                        </div>
+                        <div class="mt-2 d-flex align-items-center gap-1">
+                            <span class="fw-semibold text-muted">
+                                {{ $generaleSetting?->whatsapp_order_enabled ? __('Enable') : __('Disable') }}
+                            </span>
+                            <label class="switch mb-0">
+                                <input id="whatsapp_order_enabled" name="whatsapp_order_enabled" type="checkbox"
+                                    {{ $generaleSetting?->whatsapp_order_enabled ? 'checked' : '' }}>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <div class="check-icon">✅</div>
+                    </label>
                 </div>
 
             </div>
@@ -239,7 +261,7 @@
 
 @push('scripts')
     <script>
-        $('#cash, #online').on('change', function() {
+        $('#cash, #online, #whatsapp_order_enabled').on('change', function() {
             if ($(this).is(':checked')) {
                 $(this).closest('.payment-card').addClass('selected');
             } else {

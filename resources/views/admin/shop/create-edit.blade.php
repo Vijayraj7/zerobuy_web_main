@@ -11,6 +11,7 @@
     $pageHeading = $isEdit ? __('Edit Shop') : ($isPublicRegistration ? __('Register as Seller') : __('Add New Shop'));
     $onlinePaymentConfig = old('online_payment_config', $isEdit ? $shop->online_payment_config ?? [] : []);
     $isShopDocumentUploadEnabled = (bool) ($generaleSetting?->shop_document_upload ?? true);
+    $isAdminWhatsappOrderEnabled = (bool) ($generaleSetting?->whatsapp_order_enabled ?? false);
     $shopDocumentIsRequired = $isShopDocumentUploadEnabled && (!$isEdit || !$shop->shop_document);
     $allDistricts = \App\Models\District::query()->select('id', 'name', 'state_id')->orderBy('name')->get();
     // dd($allDistricts);
@@ -671,6 +672,23 @@
                                     </div>
                                 </div>
 
+                                @if ($isAdminWhatsappOrderEnabled)
+                                    <div class="col-md-4 mt-3">
+                                        <label class="form-label d-block">{{ __('Enable WhatsApp Order Sharing') }}</label>
+                                        <input type="hidden" name="whatsapp_order_enabled" value="0">
+                                        <div class="form-check form-switch mt-2">
+                                            <div style="display: flex; align-items:center;">
+                                                <input style="margin-top: 0px !important; margin-right: 10px;"
+                                                    class="form-check-input" type="checkbox" role="switch"
+                                                    id="whatsapp_order_enabled" name="whatsapp_order_enabled" value="1"
+                                                    {{ old('whatsapp_order_enabled', $shop->whatsapp_order_enabled ?? false) ? 'checked' : '' }}>
+                                                <label class="form-check-label"
+                                                    for="whatsapp_order_enabled">{{ __('Allow users to send this order to seller on WhatsApp') }}</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+
                                 <div class="col-12">
                                     <div class="row">
                                         <div class="col-md-4 mt-3 online-payment-provider-wrap">
@@ -909,6 +927,9 @@
         const HAS_CASHFREE_SECRET_KEY = @json(!empty(data_get($shop->online_payment_config, 'cashfree.secret_key')));
         const SHOP_DOCUMENT_UPLOAD_ENABLED = @json($isShopDocumentUploadEnabled);
         const HAS_EXISTING_SHOP_DOCUMENT = @json($isEdit && !empty($shop->shop_document));
+        const DELIVERY_PROVIDER_VALIDATE_URL = @json(route('shop.shop.validateDeliveryProvider'));
+        const PAYMENT_PROVIDER_VALIDATE_URL = @json(route('shop.shop.validatePaymentProvider'));
+        const CURRENT_SHOP_ID = @json($isEdit ? $shop->id : null);
         $(document).ready(function() {
 
             const strictNumericSelector =
@@ -1852,6 +1873,103 @@
                     $box.removeClass('d-none');
                 }
             }
+
+            function focusFirstErrorField(errors) {
+                const firstErrorField = Object.keys(errors || {})[0];
+                if (!firstErrorField) {
+                    return;
+                }
+
+                activateStep(stepForField(firstErrorField));
+                const firstField = $('[name="' + firstErrorField + '"], [name="' + firstErrorField +
+                    '[]"]:first');
+                if (firstField.length) {
+                    firstField.trigger('focus');
+                }
+
+                if ($('#formErrorBox').length) {
+                    $('html, body').animate({
+                        scrollTop: $('#formErrorBox').offset().top - 100
+                    }, 300);
+                }
+            }
+
+            function shouldValidateDeliveryProviderBeforeSubmit() {
+                const enabled = $('input[name="delivery_api_enabled"]:checked').val() === '1';
+                const provider = ($('select[name="delivery_provider"]').val() || '').toString().trim();
+                return enabled && provider !== '';
+            }
+
+            function validateDeliveryProviderBeforeSubmit() {
+                if (!shouldValidateDeliveryProviderBeforeSubmit()) {
+                    return $.Deferred().resolve({
+                        status: 'skipped'
+                    }).promise();
+                }
+
+                const payload = new FormData();
+                payload.append('_token', $('input[name="_token"]').val() || '');
+                payload.append('delivery_api_enabled', '1');
+                payload.append('delivery_provider', ($('select[name="delivery_provider"]').val() || '').toString()
+                    .trim());
+                payload.append('provider_api_key', ($('input[name="provider_api_key"]').val() || '').toString()
+                    .trim());
+                payload.append('provider_api_secret', ($('input[name="provider_api_secret"]').val() || '').toString()
+                    .trim());
+                payload.append('pincode', ($('input[name="pincode"]').val() || '').toString().trim());
+
+                if (CURRENT_SHOP_ID) {
+                    payload.append('shop_id', String(CURRENT_SHOP_ID));
+                }
+
+                return $.ajax({
+                    url: DELIVERY_PROVIDER_VALIDATE_URL,
+                    method: 'POST',
+                    data: payload,
+                    processData: false,
+                    contentType: false,
+                });
+            }
+
+            function shouldValidatePaymentProviderBeforeSubmit() {
+                const onlineEnabled = $('input[name="online_payment_enabled"]:checked').val() === '1';
+                const provider = ($('select[name="online_payment_provider"]').val() || '').toString().trim();
+                return onlineEnabled && provider !== '';
+            }
+
+            function validatePaymentProviderBeforeSubmit() {
+                if (!shouldValidatePaymentProviderBeforeSubmit()) {
+                    return $.Deferred().resolve({
+                        status: 'skipped'
+                    }).promise();
+                }
+
+                const payload = new FormData();
+                payload.append('_token', $('input[name="_token"]').val() || '');
+                payload.append('online_payment_enabled', '1');
+                payload.append('online_payment_provider', ($('select[name="online_payment_provider"]').val() || '')
+                    .toString().trim());
+                payload.append('razorpay_key_id', ($('input[name="razorpay_key_id"]').val() || '').toString()
+                    .trim());
+                payload.append('razorpay_key_secret', ($('input[name="razorpay_key_secret"]').val() || '')
+                    .toString().trim());
+                payload.append('cashfree_app_id', ($('input[name="cashfree_app_id"]').val() || '').toString()
+                    .trim());
+                payload.append('cashfree_secret_key', ($('input[name="cashfree_secret_key"]').val() || '')
+                    .toString().trim());
+
+                if (CURRENT_SHOP_ID) {
+                    payload.append('shop_id', String(CURRENT_SHOP_ID));
+                }
+
+                return $.ajax({
+                    url: PAYMENT_PROVIDER_VALIDATE_URL,
+                    method: 'POST',
+                    data: payload,
+                    processData: false,
+                    contentType: false,
+                });
+            }
             let termsModal = null;
             if (!IS_EDIT && !IS_PUBLIC) {
                 const termsModalEl = document.getElementById('termsModal');
@@ -1879,22 +1997,47 @@
             }
 
             if (!IS_PUBLIC) {
-                $('#ajaxSubmitBtn').on('click', function() {
+                $('#ajaxSubmitBtn').on('click', async function() {
                     clearErrors();
                     setAjaxSubmitLoading(true);
                     const clientErrors = validateShopFormClient();
                     if (Object.keys(clientErrors).length) {
                         showErrors(clientErrors);
-                        const firstErrorField = Object.keys(clientErrors)[0];
-                        activateStep(stepForField(firstErrorField));
-                        const firstField = $('[name="' + firstErrorField + '"], [name="' + firstErrorField +
-                            '[]"]:first');
-                        if (firstField.length) {
-                            firstField.trigger('focus');
+                        focusFirstErrorField(clientErrors);
+                        setAjaxSubmitLoading(false);
+                        return;
+                    }
+
+                    try {
+                        await validateDeliveryProviderBeforeSubmit();
+                    } catch (xhr) {
+                        if (xhr && xhr.status === 422 && xhr.responseJSON?.errors) {
+                            showErrors(xhr.responseJSON.errors);
+                            focusFirstErrorField(xhr.responseJSON.errors);
+                        } else {
+                            Toast.fire({
+                                icon: 'error',
+                                title: 'Unable to validate delivery API credentials right now. Please try again.'
+                            });
                         }
-                        $('html, body').animate({
-                            scrollTop: $('#formErrorBox').offset().top - 100
-                        }, 300);
+
+                        setAjaxSubmitLoading(false);
+                        return;
+                    }
+
+                    try {
+                        await validatePaymentProviderBeforeSubmit();
+                    } catch (xhr) {
+                        if (xhr && xhr.status === 422 && xhr.responseJSON?.errors) {
+                            showErrors(xhr.responseJSON.errors);
+                            focusFirstErrorField(xhr.responseJSON.errors);
+                        } else {
+                            Toast.fire({
+                                icon: 'error',
+                                title: 'Unable to validate payment credentials right now. Please try again.'
+                            });
+                        }
+
                         setAjaxSubmitLoading(false);
                         return;
                     }
@@ -1959,23 +2102,54 @@
             }
 
             if (IS_PUBLIC) {
-                $('#shopForm').on('submit', function(e) {
+                $('#shopForm').on('submit', async function(e) {
+                    if (this.dataset.deliveryApiValidated === '1') {
+                        return;
+                    }
+
                     clearErrors();
                     const clientErrors = validateShopFormClient();
                     if (Object.keys(clientErrors).length) {
                         e.preventDefault();
                         showErrors(clientErrors);
-                        const firstErrorField = Object.keys(clientErrors)[0];
-                        activateStep(stepForField(firstErrorField));
-                        const firstField = $('[name="' + firstErrorField + '"], [name="' + firstErrorField +
-                            '[]"]:first');
-                        if (firstField.length) {
-                            firstField.trigger('focus');
-                        }
-                        $('html, body').animate({
-                            scrollTop: $('#formErrorBox').offset().top - 100
-                        }, 300);
+                        focusFirstErrorField(clientErrors);
+                        return;
                     }
+
+                    e.preventDefault();
+
+                    try {
+                        await validateDeliveryProviderBeforeSubmit();
+                    } catch (xhr) {
+                        if (xhr && xhr.status === 422 && xhr.responseJSON?.errors) {
+                            showErrors(xhr.responseJSON.errors);
+                            focusFirstErrorField(xhr.responseJSON.errors);
+                        } else {
+                            Toast.fire({
+                                icon: 'error',
+                                title: 'Unable to validate delivery API credentials right now. Please try again.'
+                            });
+                        }
+                        return;
+                    }
+
+                    try {
+                        await validatePaymentProviderBeforeSubmit();
+                    } catch (xhr) {
+                        if (xhr && xhr.status === 422 && xhr.responseJSON?.errors) {
+                            showErrors(xhr.responseJSON.errors);
+                            focusFirstErrorField(xhr.responseJSON.errors);
+                        } else {
+                            Toast.fire({
+                                icon: 'error',
+                                title: 'Unable to validate payment credentials right now. Please try again.'
+                            });
+                        }
+                        return;
+                    }
+
+                    this.dataset.deliveryApiValidated = '1';
+                    this.submit();
                 });
             }
         });
