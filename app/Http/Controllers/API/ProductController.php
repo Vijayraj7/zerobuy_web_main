@@ -41,6 +41,7 @@ class ProductController extends Controller
         $subCategoryID = $request->sub_category_id;
         $childCategoryID = $request->child_category_id;
         $businessCategoryID = $request->business_category_id;
+        $hasStrictCategoryFilter = $request->boolean('strict_category_filter');
 
         $rating = $request->rating; // 4.0
         $sortType = $request->sort_type;
@@ -179,7 +180,7 @@ class ProductController extends Controller
 
         // Ensure the initial product-list response has enough related products
         // in this priority: child category -> sub category -> category -> business category.
-        if ((int) ($page ?? 1) === 1 && $products->count() < self::MIN_SEARCH_PRODUCTS) {
+        if ((int) ($page ?? 1) === 1 && $products->count() < self::MIN_SEARCH_PRODUCTS && !$hasStrictCategoryFilter) {
             $seedChildCategoryIds = !empty($childCategoryID) ? [(int) $childCategoryID] : [];
             $seedSubCategoryIds = !empty($subCategoryID) ? [(int) $subCategoryID] : [];
             $seedCategoryIds = !empty($categoryID) ? [(int) $categoryID] : [];
