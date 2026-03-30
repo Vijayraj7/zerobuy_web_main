@@ -1013,6 +1013,66 @@
                 }
             }
 
+            const $onlinePaymentProvider = $('select[name="online_payment_provider"]');
+            const $razorpayKeyId = $('input[name="razorpay_key_id"]');
+            const $razorpayKeySecret = $('input[name="razorpay_key_secret"]');
+            const $cashfreeAppId = $('input[name="cashfree_app_id"]');
+            const $cashfreeSecretKey = $('input[name="cashfree_secret_key"]');
+
+            const paymentProviderCredentials = {
+                razorpay: {
+                    key_id: '',
+                    key_secret: ''
+                },
+                cashfree: {
+                    app_id: '',
+                    secret_key: ''
+                },
+            };
+
+            let activePaymentProvider = ($onlinePaymentProvider.val() || '').toString().trim().toLowerCase();
+
+            function cachePaymentCredentials(provider) {
+                if (provider === 'razorpay') {
+                    paymentProviderCredentials.razorpay.key_id = ($razorpayKeyId.val() || '').toString();
+                    paymentProviderCredentials.razorpay.key_secret = ($razorpayKeySecret.val() || '').toString();
+                    return;
+                }
+
+                if (provider === 'cashfree') {
+                    paymentProviderCredentials.cashfree.app_id = ($cashfreeAppId.val() || '').toString();
+                    paymentProviderCredentials.cashfree.secret_key = ($cashfreeSecretKey.val() || '').toString();
+                }
+            }
+
+            function applyPaymentCredentials(provider) {
+                if (provider === 'razorpay') {
+                    $razorpayKeyId.val(paymentProviderCredentials.razorpay.key_id || '');
+                    $razorpayKeySecret.val(paymentProviderCredentials.razorpay.key_secret || '');
+                    return;
+                }
+
+                if (provider === 'cashfree') {
+                    $cashfreeAppId.val(paymentProviderCredentials.cashfree.app_id || '');
+                    $cashfreeSecretKey.val(paymentProviderCredentials.cashfree.secret_key || '');
+                }
+            }
+
+            if (activePaymentProvider === 'razorpay') {
+                cachePaymentCredentials('razorpay');
+                $cashfreeAppId.val('');
+                $cashfreeSecretKey.val('');
+            } else if (activePaymentProvider === 'cashfree') {
+                cachePaymentCredentials('cashfree');
+                $razorpayKeyId.val('');
+                $razorpayKeySecret.val('');
+            } else {
+                $razorpayKeyId.val('');
+                $razorpayKeySecret.val('');
+                $cashfreeAppId.val('');
+                $cashfreeSecretKey.val('');
+            }
+
             function toggleDeliveryProviderCredentialFields() {
                 const provider = ($('select[name="delivery_provider"]').val() || '').toString().trim()
                     .toLowerCase();
@@ -1051,12 +1111,76 @@
                 $('.provider-secret-wrap').show();
             }
 
+            const $deliveryProvider = $('select[name="delivery_provider"]');
+            const $deliveryApiKey = $('input[name="provider_api_key"]');
+            const $deliveryApiSecret = $('input[name="provider_api_secret"]');
+
+            const deliveryProviderCredentials = {
+                shiprocket: {
+                    api_key: '',
+                    api_secret: ''
+                },
+                delhivery: {
+                    api_key: '',
+                    api_secret: ''
+                },
+            };
+
+            let activeDeliveryProvider = ($deliveryProvider.val() || '').toString().trim().toLowerCase();
+
+            function cacheDeliveryCredentials(provider) {
+                if (!provider || !deliveryProviderCredentials[provider]) {
+                    return;
+                }
+
+                deliveryProviderCredentials[provider].api_key = ($deliveryApiKey.val() || '').toString();
+                deliveryProviderCredentials[provider].api_secret = ($deliveryApiSecret.val() || '').toString();
+            }
+
+            function applyDeliveryCredentials(provider) {
+                if (!provider || !deliveryProviderCredentials[provider]) {
+                    $deliveryApiKey.val('');
+                    $deliveryApiSecret.val('');
+                    return;
+                }
+
+                $deliveryApiKey.val(deliveryProviderCredentials[provider].api_key || '');
+                $deliveryApiSecret.val(deliveryProviderCredentials[provider].api_secret || '');
+            }
+
+            if (activeDeliveryProvider) {
+                cacheDeliveryCredentials(activeDeliveryProvider);
+            } else {
+                $deliveryApiKey.val('');
+                $deliveryApiSecret.val('');
+            }
+
             toggleOnlinePaymentCredentialFields();
             toggleDeliveryProviderCredentialFields();
-            $(document).on('change', 'select[name="online_payment_provider"], input[name="online_payment_enabled"]',
-                toggleOnlinePaymentCredentialFields);
-            $(document).on('change', 'select[name="delivery_provider"], input[name="delivery_api_enabled"]',
-                toggleDeliveryProviderCredentialFields);
+
+            $(document).on('change', 'select[name="online_payment_provider"]', function() {
+                cachePaymentCredentials(activePaymentProvider);
+                activePaymentProvider = ($(this).val() || '').toString().trim().toLowerCase();
+                applyPaymentCredentials(activePaymentProvider);
+                toggleOnlinePaymentCredentialFields();
+            });
+
+            $(document).on('change', 'input[name="online_payment_enabled"]', function() {
+                cachePaymentCredentials(activePaymentProvider);
+                toggleOnlinePaymentCredentialFields();
+            });
+
+            $(document).on('change', 'select[name="delivery_provider"]', function() {
+                cacheDeliveryCredentials(activeDeliveryProvider);
+                activeDeliveryProvider = ($(this).val() || '').toString().trim().toLowerCase();
+                applyDeliveryCredentials(activeDeliveryProvider);
+                toggleDeliveryProviderCredentialFields();
+            });
+
+            $(document).on('change', 'input[name="delivery_api_enabled"]', function() {
+                cacheDeliveryCredentials(activeDeliveryProvider);
+                toggleDeliveryProviderCredentialFields();
+            });
 
             $(document).on('click', '.toggle-secret-btn', function() {
                 const targetId = $(this).data('target');
@@ -1564,13 +1688,17 @@
                 if (onlinePaymentEnabled && onlinePaymentProvider === 'razorpay') {
                     const razorpayKeyId = textVal('razorpay_key_id');
                     const razorpayKeySecret = textVal('razorpay_key_secret');
+                    const cachedRazorpay = paymentProviderCredentials.razorpay || {
+                        key_id: '',
+                        key_secret: ''
+                    };
 
-                    if (!razorpayKeyId && !HAS_RAZORPAY_KEY_ID) {
+                    if (!razorpayKeyId && !cachedRazorpay.key_id) {
                         addError(errors, 'razorpay_key_id',
                             'The Razorpay key ID field is required when Razorpay is selected.');
                     }
 
-                    if (!razorpayKeySecret && !HAS_RAZORPAY_KEY_SECRET) {
+                    if (!razorpayKeySecret && !cachedRazorpay.key_secret) {
                         addError(errors, 'razorpay_key_secret',
                             'The Razorpay key secret field is required when Razorpay is selected.');
                     }
@@ -1579,13 +1707,17 @@
                 if (onlinePaymentEnabled && onlinePaymentProvider === 'cashfree') {
                     const cashfreeAppId = textVal('cashfree_app_id');
                     const cashfreeSecretKey = textVal('cashfree_secret_key');
+                    const cachedCashfree = paymentProviderCredentials.cashfree || {
+                        app_id: '',
+                        secret_key: ''
+                    };
 
-                    if (!cashfreeAppId && !HAS_CASHFREE_APP_ID) {
+                    if (!cashfreeAppId && !cachedCashfree.app_id) {
                         addError(errors, 'cashfree_app_id',
                             'The Cashfree app ID field is required when Cashfree is selected.');
                     }
 
-                    if (!cashfreeSecretKey && !HAS_CASHFREE_SECRET_KEY) {
+                    if (!cashfreeSecretKey && !cachedCashfree.secret_key) {
                         addError(errors, 'cashfree_secret_key',
                             'The Cashfree secret key field is required when Cashfree is selected.');
                     }
@@ -1702,12 +1834,17 @@
                     }
 
                     if (deliveryApiEnabled && deliveryProvider) {
-                        if (!providerApiKey && !HAS_PROVIDER_API_KEY) {
+                        const cachedDelivery = deliveryProviderCredentials[deliveryProvider] || {
+                            api_key: '',
+                            api_secret: ''
+                        };
+
+                        if (!providerApiKey && !cachedDelivery.api_key) {
                             addError(errors, 'provider_api_key',
                                 'The provider API key field is required when an API provider is selected.');
                         }
 
-                        if (deliveryProvider === 'shiprocket' && !providerApiSecret && !HAS_PROVIDER_API_SECRET) {
+                        if (deliveryProvider === 'shiprocket' && !providerApiSecret && !cachedDelivery.api_secret) {
                             addError(errors, 'provider_api_secret',
                                 'The provider API secret field is required for Shiprocket.');
                         }
