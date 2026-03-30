@@ -204,6 +204,8 @@
             border: 1px solid #303042;
             background-clip: border-box;
             padding: 0 8px;
+            display: inline-block;
+            margin-bottom: 12px;
         }
 
         .float-left {
@@ -543,8 +545,10 @@
         @endif
     </div>
     <div class="footer">
-        <p class="w-50 float-left"> {{ __('Thanks for the business.') }} </p>
-        <div class="w-50 text-right float-left"> <span class="signature"> {{ __('Signature') }} </span> </div>
+        <div class="w-50 float-left text-left">
+            <div><span class="signature"> {{ __('Signature') }} </span></div>
+            <p>{{ __('Thanks for the business.') }}</p>
+        </div>
     </div>
 </body>
 
