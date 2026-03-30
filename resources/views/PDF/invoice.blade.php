@@ -378,13 +378,29 @@
                     <th class="text-right"> {{ __('Order Date') }} </th>
                 </tr>
                 <tr>
-                    <td>{{ $order->payment_method->value === 'Cash Payment' ? __('Cash on delivery') : $order->payment_method->value }}</td>
+                    @foreach ($order->orderProducts ?? [] as $orderProduct)
                     <td>#{{ $order->prefix . $order->order_code }}</td>
-                    <td>{{ now()->format('d F, Y') }}</td>
-                    <td class="text-right">{{ $order->created_at->format('d F, Y') }}</td>
-                </tr>
-            </table>
-            <table class="items-table">
+                            $product = $orderProduct->product;
+
+                            $price = 0;
+                            $name = (string) ($orderProduct->name ?? $orderProduct->product_name ?? ($product?->name ?? ''));
+                            $shortDescription = (string) ($product?->short_description ?? '');
+                            $size = null;
+                            $color = null;
+
+                            if ($orderProduct->orderVariant) {
+                                $price = (float) ($orderProduct->orderVariant->price ?? 0);
+                                $size = (string) ($orderProduct->orderVariant->size_name ?? $size);
+                                $color = (string) ($orderProduct->orderVariant->color_name ?? $color);
+                            } elseif ($orderProduct->orderBulkItem) {
+                                $name = (string) ($orderProduct->orderBulkItem->name ?? $name);
+                                $price = (float) ($orderProduct->orderBulkItem->selling_price ?? 0);
+                            } else {
+                                $price = (float) ($orderProduct->price ?? 0);
+                            }
+
+                            if ($directory == 'rtl' && $product) {
+                                $translation = $product->translations()?->where('lang', 'ar')->first();
                 <thead>
                     <tr>
                         <th class="text-left"> {{ __('Item') }} </th>
@@ -416,19 +432,20 @@
                                 $displayNameLines[1] = rtrim($displayNameLines[1], ". \t\n\r\0\x0B") . '...';
                             }
                             $displayName = implode("\n", $displayNameLines);
-                            $quantity = (float) ($product->pivot->quantity ?? 0);
+                            $quantity = (float) ($orderProduct->quantity ?? 0);
                             $lineSubtotal = $price * $quantity;
-                            $productTaxPercentage = (float) ($product->pivot->gst ?? $product->tax_percentage ?? 0);
+                            $productTaxPercentage = (float) ($orderProduct->gst ?? $product?->tax_percentage ?? 0);
                             $productGstAmount = $showProductGst ? ($lineSubtotal * $productTaxPercentage) / 100 : 0;
                             $totalProductGst += $productGstAmount;
                             $plainShortDescription = strip_tags($shortDescription);
+                            $thumbnail = $product?->thumbnail ?? asset('default/default.jpg');
                         @endphp <tr>
                             <td>{{ $loop->iteration }}.</td>
                             <td style="border: none !important">
                                 <table>
                                     <tr>
                                         <td style="width: 40px !important; padding: 0 !important"> <img
-                                                src="{{ $product->thumbnail }}" alt=""
+                                                src="{{ $thumbnail }}" alt=""
                                                 style="width: 40px; height: 40px"> </td>
                                         <td style="padding: 3px"> <span style="text-transform: capitalize; white-space: pre-line; display: block; line-height: 1.2;">
                                             {{ $displayName }} </span>
@@ -438,13 +455,13 @@
                                 </table>
                             </td>
                             <td class="text-center fw-400">{{ showCurrency($price) }}</td>
-                            <td class="text-center">{{ $product->pivot->quantity }}</td>
-                            <td class="text-center">{{ $product->pivot->size ?? '--' }}</td>
-                            <td class="text-center">{{ $product->pivot->color ?? '--' }}</td>
+                            <td class="text-center">{{ $orderProduct->quantity }}</td>
+                            <td class="text-center">{{ $size ?? '--' }}</td>
+                            <td class="text-center">{{ $color ?? '--' }}</td>
                             @if ($showProductGst)
                                 <td class="text-center">{{ $productTaxPercentage > 0 ? showCurrency($productGstAmount) : '--' }}</td>
                             @endif
-                            <td class="text-right">{{ showCurrency($price * $product->pivot->quantity) }}</td>
+                            <td class="text-right">{{ showCurrency($price * $orderProduct->quantity) }}</td>
                         </tr>
                     @endforeach
                 </tbody>

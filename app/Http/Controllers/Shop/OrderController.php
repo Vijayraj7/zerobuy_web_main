@@ -769,7 +769,18 @@ class OrderController extends Controller
 
     public function downloadInvoice($id)
     {
-        $order = Order::findOrFail($id);
+        $order = Order::with([
+            'products.translations',
+            'orderProducts.product.translations',
+            'orderProducts.orderVariant',
+            'orderProducts.orderBulkItem',
+            'address.stateData',
+            'address.districtData',
+            'customer.user',
+            'shop.states',
+            'shop.districts',
+            'vatTaxes',
+        ])->findOrFail($id);
 
         $orderCode = '#' . $order->prefix . $order->order_code;
 
