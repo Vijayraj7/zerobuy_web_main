@@ -364,7 +364,10 @@ class ProductController extends Controller
         $targetShop = $targetShop ?? $shop;
 
         $businessCategoryIds = $targetShop?->businessCategories()->pluck('business_categories.id') ?? collect();
-        $categories = Category::whereIn('business_category_id', $businessCategoryIds)->get();
+        $categories = Category::query()
+            ->whereIn('business_category_id', $businessCategoryIds)
+            ->active()
+            ->get();
 
         $colors = $shop?->colors()->isActive()->get();
         $sizes = $shop?->sizes()->isActive()->get();

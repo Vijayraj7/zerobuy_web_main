@@ -130,7 +130,10 @@ class ProductController extends Controller
 
         // categories scoped to the shop's selected business categories
         $businessCategoryIds = $shop?->businessCategories()->pluck('business_categories.id') ?? collect();
-        $categories = Category::whereIn('business_category_id', $businessCategoryIds)->get();
+        $categories = Category::query()
+            ->whereIn('business_category_id', $businessCategoryIds)
+            ->active()
+            ->get();
 
         $flashSale = FlashSaleRepository::getIncoming();
 
@@ -172,7 +175,10 @@ class ProductController extends Controller
         $brands = $shop?->brands()->isActive()->get();
         $colors = $shop?->colors()->isActive()->get();
         $businessCategoryIds = $shop?->businessCategories()->pluck('business_categories.id') ?? collect();
-        $categories = Category::whereIn('business_category_id', $businessCategoryIds)->get();
+        $categories = Category::query()
+            ->whereIn('business_category_id', $businessCategoryIds)
+            ->active()
+            ->get();
         $units = $shop?->units()->isActive()->get();
         $sizes = $shop?->sizes()->isActive()->get();
 
@@ -261,7 +267,10 @@ class ProductController extends Controller
         $brands = $rootShop?->brands()->isActive()->get();
         $colors = $rootShop?->colors()->isActive()->get();
         $businessCategoryIds = $rootShop?->businessCategories()->pluck('business_categories.id') ?? collect();
-        $categories = Category::whereIn('business_category_id', $businessCategoryIds)->get();
+        $categories = Category::query()
+            ->whereIn('business_category_id', $businessCategoryIds)
+            ->active()
+            ->get();
         $units = $rootShop?->units()->isActive()->get();
         $sizes = $rootShop?->sizes()->isActive()->get();
 
