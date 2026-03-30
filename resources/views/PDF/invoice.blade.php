@@ -378,29 +378,13 @@
                     <th class="text-right"> {{ __('Order Date') }} </th>
                 </tr>
                 <tr>
-                    @foreach ($order->orderProducts ?? [] as $orderProduct)
+                    <td>{{ $order->payment_method->value === 'Cash Payment' ? __('Cash on delivery') : $order->payment_method->value }}</td>
                     <td>#{{ $order->prefix . $order->order_code }}</td>
-                            $product = $orderProduct->product;
-
-                            $price = 0;
-                            $name = (string) ($orderProduct->name ?? $orderProduct->product_name ?? ($product?->name ?? ''));
-                            $shortDescription = (string) ($product?->short_description ?? '');
-                            $size = null;
-                            $color = null;
-
-                            if ($orderProduct->orderVariant) {
-                                $price = (float) ($orderProduct->orderVariant->price ?? 0);
-                                $size = (string) ($orderProduct->orderVariant->size_name ?? $size);
-                                $color = (string) ($orderProduct->orderVariant->color_name ?? $color);
-                            } elseif ($orderProduct->orderBulkItem) {
-                                $name = (string) ($orderProduct->orderBulkItem->name ?? $name);
-                                $price = (float) ($orderProduct->orderBulkItem->selling_price ?? 0);
-                            } else {
-                                $price = (float) ($orderProduct->price ?? 0);
-                            }
-
-                            if ($directory == 'rtl' && $product) {
-                                $translation = $product->translations()?->where('lang', 'ar')->first();
+                    <td>{{ now()->format('d F, Y') }}</td>
+                    <td class="text-right">{{ $order->created_at->format('d F, Y') }}</td>
+                </tr>
+            </table>
+            <table class="items-table">
                 <thead>
                     <tr>
                         <th class="text-left"> {{ __('Item') }} </th>
@@ -416,21 +400,38 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($order->products ?? [] as $product)
+                    @foreach ($order->orderProducts ?? [] as $orderProduct)
                         @php
-                            $price = $product->discount_price > 0 ? $product->discount_price : $product->price;
-                            $name = $product->name;
-                            $shortDescription = $product->short_description;
-                            if ($directory == 'rtl') {
+                            $product = $orderProduct->product;
+                            $price = 0;
+                            $name = (string) ($orderProduct->name ?? $orderProduct->product_name ?? ($product?->name ?? ''));
+                            $shortDescription = (string) ($product?->short_description ?? '');
+                            $size = null;
+                            $color = null;
+
+                            if ($orderProduct->orderVariant != null) {
+                                $price = (float) number_format((float) ($orderProduct->orderVariant->price ?? 0), 2, '.', '');
+                                $color = $orderProduct->orderVariant->color_name;
+                                $size = $orderProduct->orderVariant->size_name;
+                            } elseif ($orderProduct->orderBulkItem != null) {
+                                $name = (string) ($orderProduct->orderBulkItem->name ?? $name);
+                                $price = (float) number_format((float) ($orderProduct->orderBulkItem->selling_price ?? 0), 2, '.', '');
+                            } else {
+                                $price = (float) number_format((float) ($orderProduct->price ?? 0), 2, '.', '');
+                            }
+
+                            if ($directory == 'rtl' && $product) {
                                 $translation = $product->translations()?->where('lang', 'ar')->first();
                                 $name = $translation?->name ?? $name;
-                                $shortDescription = $translation?->short_description ?? $short_description;
+                                $shortDescription = $translation?->short_description ?? $shortDescription;
                             }
+
                             $wrappedNameLines = preg_split('/\r\n|\r|\n/', wordwrap((string) $name, 22, "\n", true)) ?: [];
                             $displayNameLines = array_slice($wrappedNameLines, 0, 2);
                             if (count($wrappedNameLines) > 2 && isset($displayNameLines[1])) {
                                 $displayNameLines[1] = rtrim($displayNameLines[1], ". \t\n\r\0\x0B") . '...';
                             }
+
                             $displayName = implode("\n", $displayNameLines);
                             $quantity = (float) ($orderProduct->quantity ?? 0);
                             $lineSubtotal = $price * $quantity;
@@ -439,7 +440,8 @@
                             $totalProductGst += $productGstAmount;
                             $plainShortDescription = strip_tags($shortDescription);
                             $thumbnail = $product?->thumbnail ?? asset('default/default.jpg');
-                        @endphp <tr>
+                        @endphp
+                        <tr>
                             <td>{{ $loop->iteration }}.</td>
                             <td style="border: none !important">
                                 <table>
@@ -448,7 +450,7 @@
                                                 src="{{ $thumbnail }}" alt=""
                                                 style="width: 40px; height: 40px"> </td>
                                         <td style="padding: 3px"> <span style="text-transform: capitalize; white-space: pre-line; display: block; line-height: 1.2;">
-                                            {{ $displayName }} </span>
+                                                {{ $displayName }} </span>
                                             <p class="pt-1 text-gray product-des"> {{ $plainShortDescription }} </p>
                                         </td>
                                     </tr>
@@ -461,7 +463,7 @@
                             @if ($showProductGst)
                                 <td class="text-center">{{ $productTaxPercentage > 0 ? showCurrency($productGstAmount) : '--' }}</td>
                             @endif
-                            <td class="text-right">{{ showCurrency($price * $orderProduct->quantity) }}</td>
+                            <td class="text-right">{{ showCurrency($lineSubtotal) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
