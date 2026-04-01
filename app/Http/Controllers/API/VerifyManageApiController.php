@@ -20,6 +20,10 @@ class VerifyManageApiController extends Controller
 
         $phoneMinLength = $verifyManage?->phone_min_length > 0 ? $verifyManage?->phone_min_length : 9;
         $phoneMaxLength = $verifyManage?->phone_max_length > 0 ? $verifyManage?->phone_max_length : 16;
+        $supportPhone = trim((string) ($generaleSetting?->mobile ?? ''));
+        if ($supportPhone === '') {
+            $supportPhone = trim((string) ($generaleSetting?->footer_phone ?? ''));
+        }
 
         return $this->json('Verify manage', [
             'register_otp_verify' => (bool) ($verifyManage?->register_otp ?? false),
@@ -29,6 +33,8 @@ class VerifyManageApiController extends Controller
             'phone_required' => (bool) ($verifyManage?->phone_required ?? true),
             'phone_min_length' => (int) $phoneMinLength,
             'phone_max_length' => (int) $phoneMaxLength,
+            'support_phone' => $supportPhone,
+            'support_whatsapp' => $supportPhone,
             'user_android_min_build' => (int) ($generaleSetting?->user_android_min_build ?? 1),
             'seller_android_min_build' => (int) ($generaleSetting?->seller_android_min_build ?? 1),
             'google_playstore_url' => $generaleSetting?->google_playstore_url,
