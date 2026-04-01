@@ -553,7 +553,7 @@
                             </div>
 
                             <!-- Manual -->
-                            <div id="manual_box" class="delivery-box d-none">
+                            {{-- <div id="manual_box" class="delivery-box d-none">
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" name="update_when_shipped"
                                         value="1"
@@ -562,7 +562,7 @@
                                         Update delivery charge when shipped
                                     </label>
                                 </div>
-                            </div>
+                            </div> --}}
 
                         </div>
                     </div>

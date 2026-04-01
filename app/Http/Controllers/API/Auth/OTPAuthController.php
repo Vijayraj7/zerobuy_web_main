@@ -45,6 +45,10 @@ class OTPAuthController extends Controller
             return $this->json('Sorry, your account is banned', [], 422);
         }
 
+        if (! $isNewUser && $user->hasRole('shop')) {
+            return $this->json('Mobile number already taken', [], Response::HTTP_BAD_REQUEST);
+        }
+
         $verifyManage = Cache::rememberForever('verify_manage', function () {
             return VerifyManage::first();
         });
@@ -126,6 +130,10 @@ class OTPAuthController extends Controller
         $verificationCode = VerificationCodeRepository::checkOTP($request->phone, $request->otp);
 
         if (!$verificationCode) {
+            // Before returning "Invalid OTP", check if phone is already registered by a seller
+            if (!$isNewUser && $user->hasRole('shop')) {
+                return $this->json('Mobile number already taken', [], Response::HTTP_BAD_REQUEST);
+            }
             return $this->json('Invalid otp', [], Response::HTTP_BAD_REQUEST);
         }
 
@@ -139,6 +147,11 @@ class OTPAuthController extends Controller
         } else {
             /** @var \App\Models\User $existingUser */
             $existingUser = $user;
+
+            // Check if user is a seller (shop owner) trying to login as customer
+            if ($existingUser->hasRole('shop')) {
+                return $this->json('Mobile number already taken', [], Response::HTTP_BAD_REQUEST);
+            }
 
             // Existing user - ensure user is a customer before allowing login
             // (same rule as AuthController::login)
