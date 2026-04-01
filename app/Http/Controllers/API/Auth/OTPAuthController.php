@@ -46,7 +46,7 @@ class OTPAuthController extends Controller
         }
 
         if (! $isNewUser && $user->hasRole('shop')) {
-            return $this->json('Mobile number already taken', [], Response::HTTP_BAD_REQUEST);
+            return $this->json('Login as customer only', [], Response::HTTP_BAD_REQUEST);
         }
 
         $verifyManage = Cache::rememberForever('verify_manage', function () {
@@ -132,7 +132,7 @@ class OTPAuthController extends Controller
         if (!$verificationCode) {
             // Before returning "Invalid OTP", check if phone is already registered by a seller
             if (!$isNewUser && $user->hasRole('shop')) {
-                return $this->json('Mobile number already taken', [], Response::HTTP_BAD_REQUEST);
+                return $this->json('Login as customer only', [], Response::HTTP_BAD_REQUEST);
             }
             return $this->json('Invalid otp', [], Response::HTTP_BAD_REQUEST);
         }
@@ -150,7 +150,7 @@ class OTPAuthController extends Controller
 
             // Check if user is a seller (shop owner) trying to login as customer
             if ($existingUser->hasRole('shop')) {
-                return $this->json('Mobile number already taken', [], Response::HTTP_BAD_REQUEST);
+                return $this->json('Login as customer only', [], Response::HTTP_BAD_REQUEST);
             }
 
             // Existing user - ensure user is a customer before allowing login
