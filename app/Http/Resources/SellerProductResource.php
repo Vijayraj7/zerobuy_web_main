@@ -16,6 +16,7 @@ class SellerProductResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'product_code' => $this->product_code,
             'name' => $this->name,
             'thumbnail' => $this->thumbnail,
             'price' => (float) $this->price,

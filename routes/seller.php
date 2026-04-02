@@ -87,6 +87,8 @@ Route::prefix('/seller')->group(function () {
         // advertisement route
         Route::controller(AdvertisementController::class)->group(function () {
             Route::get('/advertisements', 'index');
+            Route::post('/advertisements/wallet/create-order', 'createWalletOrder');
+            Route::post('/advertisements/wallet/verify-payment', 'verifyWalletPayment');
         });
 
         // flash sale routes

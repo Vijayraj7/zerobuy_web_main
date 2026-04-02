@@ -12,6 +12,11 @@ class AdTransaction extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'created_at' => 'datetime:Y-m-d\TH:i:sP',
+        'updated_at' => 'datetime:Y-m-d\TH:i:sP',
+    ];
+
     protected static function booted(): void
     {
         static::creating(function (self $transaction) {

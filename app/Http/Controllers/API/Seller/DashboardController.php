@@ -93,9 +93,7 @@ class DashboardController extends Controller
         $shop = generaleSetting('shop');
         $orderObject = $shop->orders();
 
-        $totalSales = (clone $orderObject)->where(function ($query) {
-            $query->where('order_status', OrderStatus::DELIVERED->value)->whereBetween('created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
-        })->sum('total_amount');
+        $totalSales = (clone $orderObject)->where('order_status', OrderStatus::DELIVERED->value)->sum('total_amount');
 
         $todayOrders = (clone $orderObject)->whereDate('created_at', Carbon::today())->count();
 

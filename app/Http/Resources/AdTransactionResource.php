@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Carbon\Carbon;
 
 class AdTransactionResource extends JsonResource
 {
@@ -24,8 +25,12 @@ class AdTransactionResource extends JsonResource
             'transaction_id' => $this->transaction_id,
             'purpose' => $this->purpose,
             'note' => $this->note,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'created_at' => $this->created_at
+                ? Carbon::parse($this->created_at)->setTimezone('Asia/Kolkata')->format('d-m-Y | h:i A')
+                : null,
+            'updated_at' => $this->updated_at
+                ? Carbon::parse($this->updated_at)->setTimezone('Asia/Kolkata')->format('d-m-Y | h:i A')
+                : null,
         ];
     }
 }
