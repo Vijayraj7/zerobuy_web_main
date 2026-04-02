@@ -69,13 +69,22 @@ class AdvertismentController extends Controller
                     $end = Carbon::parse($r->end_date);
                     // UPCOMING
                     if ($start->gt($now)) {
-                        $days = $now->diffInDays($start);
+                        $totalHours = (int) $now->diffInHours($start);
+                        $days  = (int) floor($totalHours / 24);
+                        $hours = $totalHours % 24;
 
-                        if ($days == 1) {
-                            return '<span class="badge bg-info">Starts Tomorrow</span>';
+                        if ($days === 0) {
+                            $label = $hours . ' hr' . ($hours != 1 ? 's' : '');
+                        } elseif ($days === 1 && $hours === 0) {
+                            $label = 'Tomorrow';
+                        } else {
+                            $label = $days . ' day' . ($days != 1 ? 's' : '');
+                            if ($hours > 0) {
+                                $label .= ' ' . $hours . ' hr' . ($hours != 1 ? 's' : '');
+                            }
                         }
 
-                        return '<span class="badge bg-info">Starts in ' . $days . ' days</span>';
+                        return '<span class="badge bg-info">Starts in ' . $label . '</span>';
                     }
                     // ACTIVE
                     if ($now->between($start, $end)) {
