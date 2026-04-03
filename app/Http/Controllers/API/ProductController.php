@@ -339,10 +339,19 @@ class ProductController extends Controller
     public function show(Request $request)
     {
         $request->validate([
-            'product_id' => 'required|exists:products,id',
+            'product_id' => 'required',
         ]);
 
-        $product = ProductRepository::find($request->product_id);
+        $identifier = (string) $request->product_id;
+        $product = ProductRepository::query()
+            ->where('id', $identifier)
+            ->orWhere('product_code', $identifier)
+            ->first();
+
+        if (! $product) {
+            return $this->json('Product not found', [], 404);
+        }
+
         ProductRepository::recentView($product);
 
         $relatedProducts = ProductRepository::query()->whereHas('categories', function ($query) use ($product) {

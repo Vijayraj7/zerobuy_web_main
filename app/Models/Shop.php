@@ -28,6 +28,14 @@ class Shop extends Model
         'whatsapp_order_enabled' => 'boolean',
     ];
 
+    public function resolveRouteBinding($value, $field = null)
+    {
+        return $this->newQuery()
+            ->where($field ?? $this->getRouteKeyName(), $value)
+            ->orWhere('shop_code', $value)
+            ->firstOrFail();
+    }
+
     /**
      * Store payment config encrypted and return it as decrypted array.
      */
