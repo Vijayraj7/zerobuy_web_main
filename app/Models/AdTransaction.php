@@ -23,6 +23,10 @@ class AdTransaction extends Model
             if (empty($transaction->ad_transaction_id)) {
                 $transaction->ad_transaction_id = self::generateAdTransactionCode();
             }
+
+            if (empty($transaction->transaction_id)) {
+                $transaction->transaction_id = self::generateReferenceCode();
+            }
         });
     }
 
@@ -31,6 +35,15 @@ class AdTransaction extends Model
         do {
             $code = 'TXN' . strtoupper(Str::random(10));
         } while (self::query()->where('ad_transaction_id', $code)->exists());
+
+        return $code;
+    }
+
+    public static function generateReferenceCode(string $prefix = 'ADREF'): string
+    {
+        do {
+            $code = $prefix . strtoupper(Str::random(10));
+        } while (self::query()->where('transaction_id', $code)->exists());
 
         return $code;
     }

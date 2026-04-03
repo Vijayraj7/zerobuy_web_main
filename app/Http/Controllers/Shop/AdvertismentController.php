@@ -154,7 +154,7 @@ class AdvertismentController extends Controller
         }
 
         DB::transaction(function () use ($request, $shop, $wallet, $dailyBudget, $total, $startDateTime, $endDateTime) {
-            $adNew = Advertisement::create([
+            Advertisement::create([
                 'shop_id' => $shop->id,
                 'ads_type' => $request->ads_type,
                 'product_id' => $request->ads_type == 'product'
@@ -174,7 +174,7 @@ class AdvertismentController extends Controller
                 'amount' => $total,
                 'type' => 'debit',
                 'purpose' => 'Ads Run',
-                'transaction_id' => $adNew->id,
+                'transaction_id' => AdTransaction::generateReferenceCode('ADRUN'),
                 'note' => 'Advertisement'
             ]);
         });

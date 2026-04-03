@@ -137,6 +137,7 @@ class AdsWalletController extends Controller
                 'amount'         => $request->amount,
                 'type'           => $request->type, // credit / debit
                 'is_commission'  => 0,
+                'transaction_id' => AdTransaction::generateReferenceCode('ADWLT'),
                 'purpose'        => $request->type === 'credit'
                     ? 'Wallet Recharge by Admin'
                     : 'Wallet Adjustment by Admin',

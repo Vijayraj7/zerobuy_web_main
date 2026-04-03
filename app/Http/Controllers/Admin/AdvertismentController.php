@@ -164,6 +164,7 @@ class AdvertismentController extends Controller
                 'amount' => $total,
                 'type' => 'debit',
                 'purpose' => 'Ads Run',
+                'transaction_id' => AdTransaction::generateReferenceCode('ADRUN'),
                 'note' => 'Advertisement'
             ]);
         });
