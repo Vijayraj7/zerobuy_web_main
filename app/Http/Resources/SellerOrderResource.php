@@ -193,9 +193,30 @@ class SellerOrderResource extends JsonResource
             ],
             'products' => SellerOrderProductResource::collection($this->orderProducts),
             'rider' => $this->driverOrder ? OrderRiderResource::make($this->driverOrder) : null,
-            'invoice_url' => route('shop.download-invoice', $this->id),
-            'payment_receipt_url' => route('shop.payment-slip', $this->id),
+            'invoice_url' => $this->shopUrl('shop.download-invoice', $this->id),
+            'payment_receipt_url' => $this->shopUrl('shop.payment-slip', $this->id),
             'status_timeline' => $timeline,
         ];
+    }
+
+    private function shopUrl(string $routeName, mixed ...$params): string
+    {
+        $url = route($routeName, ...$params);
+        $appBase = rtrim(config('app.url'), '/');
+        $shopBase = rtrim(
+            config('app.shop_url') ?? $this->deriveShopBase($appBase),
+            '/'
+        );
+
+        return str_replace($appBase, $shopBase, $url);
+    }
+
+    private function deriveShopBase(string $appUrl): string
+    {
+        $parsed = parse_url($appUrl);
+        $scheme = $parsed['scheme'] ?? 'https';
+        $host   = $parsed['host']   ?? 'localhost';
+
+        return $scheme . '://shop.' . $host;
     }
 }
