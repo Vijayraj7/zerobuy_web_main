@@ -73,8 +73,8 @@ class OrderDetailsResource extends JsonResource
             'admin_whatsapp_order_enabled' => (bool) (generaleSetting()?->whatsapp_order_enabled ?? false),
             'shop' => ShopResource::make($this->shop),
             'products' => OrderProductResource::collection($this->products),
-            'invoice_url' => route('shop.download-invoice', $this->id),
-            'payment_receipt_url' => route('shop.payment-slip', $this->id),
+            'invoice_url' => $this->shopUrl('shop.download-invoice', $this->id),
+            'payment_receipt_url' => $this->shopUrl('shop.payment-slip', $this->id),
             'address' => AddressResource::make($this->address),
             'all_vat_taxes' => $this->vatTaxes,
             'track_url' => $this->track_url,
@@ -93,5 +93,26 @@ class OrderDetailsResource extends JsonResource
                 ];
             }),
         ];
+    }
+
+    private function shopUrl(string $routeName, mixed ...$params): string
+    {
+        $url = route($routeName, ...$params);
+        $appBase = rtrim(config('app.url'), '/');
+        $shopBase = rtrim(
+            config('app.shop_url') ?? $this->deriveShopBase($appBase),
+            '/'
+        );
+
+        return str_replace($appBase, $shopBase, $url);
+    }
+
+    private function deriveShopBase(string $appUrl): string
+    {
+        $parsed = parse_url($appUrl);
+        $scheme = $parsed['scheme'] ?? 'https';
+        $host   = $parsed['host']   ?? 'localhost';
+
+        return $scheme . '://shop.' . $host;
     }
 }

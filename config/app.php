@@ -60,6 +60,8 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'shop_url' => env('SHOP_URL', null),
+
     'asset_url' => env('ASSET_URL'),
 
     'mail_mailer' => (string) env('MAIL_MAILER'),
