@@ -104,6 +104,10 @@ class RolePermissionController extends Controller
             }
         }
 
+        foreach ($allPermissionArray as $scope => $permissionsByModule) {
+            $allPermissionArray[$scope] = $this->sortPermissionSectionsByMenu((array) $permissionsByModule);
+        }
+
         $notNeedRoles = ['shop', 'customer', 'driver'];
         $rolesQuery = Role::whereNotIn('name', $notNeedRoles)->with('permissions');
 
@@ -119,6 +123,89 @@ class RolePermissionController extends Controller
         $selectedRole = $role;
 
         return view('admin.role-permission.index', compact('selectedRole', 'permissions', 'roles', 'activeRole', 'allPermissionArray'));
+    }
+
+    private function sortPermissionSectionsByMenu(array $permissions): array
+    {
+        $menuOrder = [
+            'dashboard',
+            'employee',
+            'role',
+            'customer',
+            'order',
+            'returnOrder',
+            'shop',
+            'rider',
+            'product',
+            'category',
+            'subcategory',
+            'child-category',
+            'brand',
+            'color',
+            'size',
+            'unit',
+            'business-category',
+            'withdraw',
+            'banner',
+            'ad',
+            'advrtsettings',
+            'subscription',
+            'flashSale',
+            'coupon',
+            'voucher',
+            'deliveryCharge',
+            'vatTax',
+            'country',
+            'currency',
+            'language',
+            'page',
+            'menu',
+            'ticketIssueType',
+            'supportTicket',
+            'support',
+            'notification',
+            'customerNotification',
+            'socialLink',
+            'socialAuth',
+            'themeColor',
+            'business-setting',
+            'generale-setting',
+            'app-version',
+            'verification',
+            'profile',
+            'contactUs',
+            'mailConfig',
+            'sms-gateway',
+            'paymentGateway',
+            'firebase',
+            'googleReCaptcha',
+            'pusher',
+            'legalPage',
+            'blog',
+            'aiPrompt',
+            'revenue',
+            'analytics',
+            'bulk-product-import',
+            'bulk-product-export',
+            'gallery',
+            'pos',
+            'profile',
+        ];
+
+        $orderMap = array_flip($menuOrder);
+
+        uksort($permissions, function ($a, $b) use ($orderMap) {
+            $aOrder = $orderMap[$a] ?? PHP_INT_MAX;
+            $bOrder = $orderMap[$b] ?? PHP_INT_MAX;
+
+            if ($aOrder === $bOrder) {
+                return strcmp($a, $b);
+            }
+
+            return $aOrder <=> $bOrder;
+        });
+
+        return $permissions;
     }
 
     public function updateRolePermission(Request $request, Role $role)

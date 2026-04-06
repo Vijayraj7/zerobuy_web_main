@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
 use App\Enums\OrderStatus;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -154,7 +155,7 @@ class SellerOrderResource extends JsonResource
             'api_provider' => $this->api_provider,
             'amount' => (float) number_format($this->payable_amount, 2, '.', ''),
             'order_status' => $this->order_status->value,
-            'payment_status' => $this->payment_status->value,
+            'payment_status' => ($this->payment_method->value === PaymentMethod::CASH->value && $this->order_status->value === 'Delivered') ? PaymentStatus::PAID->value : $this->payment_status->value,
             'payment_method' => $this->payment_method->value == PaymentMethod::CASH->value ? 'Cash' : 'Online',
             'gateway_payment_method' => $latestPayment?->payment_method,
             'gateway_payment_status' => $gatewayPaymentStatus,

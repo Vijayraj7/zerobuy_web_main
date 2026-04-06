@@ -103,18 +103,37 @@ class EmployeeController extends Controller
         $allPermissions = array_merge($userPermissions, $rolePermissions);
         $allPermissions = array_unique($allPermissions);
 
-        $allPermissionArray = [];
+        $shopPermissions = (array) config('acl.permissions.shop');
+        $shopMultiShopPermissions = (array) config('acl.permissions.shopMultiShop');
 
-        $allPermissionArray['shop'] = config('acl.permissions.shop');
-        $allPermissionArray['shop']['withdraw'] = config('acl.permissions.shopMultiShop.withdraw');
-        $allPermissionArray['shop']['dashboard'] = config('acl.permissions.shopMultiShop.dashboard');
-        $allPermissionArray['shop']['brand'] = config('acl.permissions.shopMultiShop.brand');
-        $allPermissionArray['shop']['color'] = config('acl.permissions.shopMultiShop.color');
-        $allPermissionArray['shop']['size'] = config('acl.permissions.shopMultiShop.size');
-        $allPermissionArray['shop']['unit'] = config('acl.permissions.shopMultiShop.unit');
-        $allPermissionArray['shop']['category'] = config('acl.permissions.shopMultiShop.category');
-        $allPermissionArray['shop']['subcategory'] = config('acl.permissions.shopMultiShop.subcategory');
-        $allPermissionArray['shop']['withdraw'] = config('acl.permissions.shopMultiShop.withdraw');
+        // Keep this page aligned with current shop sidebar menu items.
+        $menuPermissionKeys = [
+            'dashboard',
+            'order',
+            'returnOrder',
+            'product',
+            'color',
+            'size',
+            'flashSale',
+            'voucher',
+            'employee',
+            'profile',
+        ];
+
+        $allPermissionArray = [
+            'shop' => [
+                'dashboard' => $shopMultiShopPermissions['dashboard'] ?? [],
+                'color' => $shopMultiShopPermissions['color'] ?? [],
+                'size' => $shopMultiShopPermissions['size'] ?? [],
+                ...$shopPermissions,
+            ],
+        ];
+
+        $allPermissionArray['shop'] = array_filter(
+            $allPermissionArray['shop'],
+            fn ($permissionValues, $permissionKey) => in_array($permissionKey, $menuPermissionKeys, true),
+            ARRAY_FILTER_USE_BOTH
+        );
 
         $userAvailablePermissions = array_diff($allPermissions, $userNonPermissions);
 

@@ -25,6 +25,9 @@ class VerifyManageApiController extends Controller
             $supportPhone = trim((string) ($generaleSetting?->footer_phone ?? ''));
         }
 
+        $sellerAndroidStoreUrl = $generaleSetting?->seller_google_playstore_url ?: $generaleSetting?->google_playstore_url;
+        $sellerIosStoreUrl = $generaleSetting?->seller_app_store_url ?: $generaleSetting?->app_store_url;
+
         return $this->json('Verify manage', [
             'register_otp_verify' => (bool) ($verifyManage?->register_otp ?? false),
             'register_otp_type' => $verifyManage?->register_otp_type ?? 'email',
@@ -36,17 +39,26 @@ class VerifyManageApiController extends Controller
             'support_phone' => $supportPhone,
             'support_whatsapp' => $supportPhone,
             'user_android_min_build' => (int) ($generaleSetting?->user_android_min_build ?? 1),
+            'user_ios_min_build' => (int) ($generaleSetting?->user_ios_min_build ?? 1),
             'seller_android_min_build' => (int) ($generaleSetting?->seller_android_min_build ?? 1),
+            'seller_ios_min_build' => (int) ($generaleSetting?->seller_ios_min_build ?? 1),
             'google_playstore_url' => $generaleSetting?->google_playstore_url,
             'app_store_url' => $generaleSetting?->app_store_url,
+            'apple_appstore_url' => $generaleSetting?->app_store_url,
+            'seller_google_playstore_url' => $sellerAndroidStoreUrl,
+            'seller_apple_appstore_url' => $sellerIosStoreUrl,
             'app_versions' => [
                 'user' => [
                     'android_min_build' => (int) ($generaleSetting?->user_android_min_build ?? 1),
+                    'ios_min_build' => (int) ($generaleSetting?->user_ios_min_build ?? 1),
                     'android_store_url' => $generaleSetting?->google_playstore_url,
+                    'ios_store_url' => $generaleSetting?->app_store_url,
                 ],
                 'seller' => [
                     'android_min_build' => (int) ($generaleSetting?->seller_android_min_build ?? 1),
-                    'android_store_url' => $generaleSetting?->google_playstore_url,
+                    'ios_min_build' => (int) ($generaleSetting?->seller_ios_min_build ?? 1),
+                    'android_store_url' => $sellerAndroidStoreUrl,
+                    'ios_store_url' => $sellerIosStoreUrl,
                 ],
             ],
         ]);

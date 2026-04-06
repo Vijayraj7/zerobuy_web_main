@@ -30,6 +30,8 @@ class GeneraleSettingRequest extends FormRequest
             'address' => 'nullable|string|max:255',
             'google_playstore_url' => 'nullable|string|max:255',
             'app_store_url' => 'nullable|string|max:255',
+            'seller_google_playstore_url' => 'nullable|string|max:255',
+            'seller_app_store_url' => 'nullable|string|max:255',
             'currency' => 'nullable|string|max:4',
             'currency_position' => 'nullable|string',
             'direction' => 'nullable|string',
@@ -44,7 +46,9 @@ class GeneraleSettingRequest extends FormRequest
             'partial_payment_percentage' => 'nullable|required_if:partial_payment,on|integer|min:1|max:100',
             'whatsapp_order_enabled' => 'nullable',
             'user_android_min_build' => 'nullable|integer|min:1',
+            'user_ios_min_build' => 'nullable|integer|min:1',
             'seller_android_min_build' => 'nullable|integer|min:1',
+            'seller_ios_min_build' => 'nullable|integer|min:1',
         ];
     }
 

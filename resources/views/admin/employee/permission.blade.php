@@ -78,9 +78,10 @@
                                     <input type="checkbox" id="checkAll" class="form-check-input m-0"
                                         style="width: 20px; height: 20px">
                                     <span class="text-capitalize fz-18">
-                                        <span id="showTotalPermission">
+                                        <span id="showTotalPermission" class="badge rounded-pill text-bg-primary px-3 py-2">
                                             {{ count($userAvailablePermissions) }}
-                                        </span> {{ __('Permissions Selected') }}
+                                        </span>
+                                        {{ __('Permissions Selected') }}
                                     </span>
                                 </div>
                                 <div class="d-flex align-items-center gap-3">
@@ -96,19 +97,30 @@
                                 </div>
                             </div>
 
+                            <div class="mt-3">
+                                <div class="position-relative">
+                                    <input type="text" id="permissionSearch" class="form-control py-2.5"
+                                        placeholder="{{ __('Search permissions or modules') }}">
+                                    <span class="permission-search-icon">
+                                        <i class="fa fa-search"></i>
+                                    </span>
+                                </div>
+                            </div>
+
                             <div class="d-flex flex-column gap-3 mt-3">
 
                                 @foreach ($allPermissionArray as $adminType => $allPermissions)
                                     @php
                                         $type = $adminType == 'adminMultiShop' ? 'admin' : $adminType;
                                     @endphp
-                                    <div class="border rounded-3 overflow-hidden">
-                                        <div class="bg-light px-3 py-2.5 h4 text-capitalize m-0">
+                                    <div class="border rounded-3 overflow-hidden permission-group-card" data-group-label="{{ strtolower($type) }}">
+                                        <div class="bg-light px-3 py-2.5 h4 text-capitalize m-0 d-flex align-items-center justify-content-between">
                                             {{ $type }}
+                                            <span class="badge text-bg-light border text-dark permission-group-count"></span>
                                         </div>
                                         <div class="p-3 d-flex flex-column gap-3 bg-white">
                                             @foreach ($allPermissions as $permissionName => $permissionValues)
-                                                <div class="border rounded-3 permission-item">
+                                                <div class="border rounded-3 permission-item permission-section-card" data-permission-label="{{ strtolower(permissionName($permissionName)) }}">
                                                     <div class="text-capitalize m-0 fz-18 p-2 fw-bold border-bottom">
                                                         {{ permissionName($permissionName) }}
                                                     </div>
@@ -119,12 +131,12 @@
                                                                     id="{{ $type . '-' . $permissionName . '-' . $permission }}"
                                                                     name="permissions[]"
                                                                     value="{{ $type . '.' . $permissionName . '.' . $permission }}"
-                                                                    class="form-check-input m-0"
+                                                                    class="form-check-input m-0 permission-checkbox"
                                                                     style="width: 18px; height: 18px"{{ in_array($type . '.' . $permissionName . '.' . $permission, $userAvailablePermissions) ? 'checked' : '' }}
                                                                     onclick="countSelectedPermissions()">
                                                                 <label
                                                                     for="{{ $type . '-' . $permissionName . '-' . $permission }}"
-                                                                    class="m-0" onclick="countSelectedPermissions()">
+                                                                    class="m-0 permission-label" onclick="countSelectedPermissions()">
                                                                     {{ permissionName($permission) }}
                                                                 </label>
                                                             </div>
@@ -180,30 +192,84 @@
             border-radius: 8px;
             padding: 12px;
         }
+
+        .permission-search-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        .permission-group-card {
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        }
+
+        .permission-item {
+            transition: all 0.2s ease;
+        }
+
+        .permission-item:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+        }
     </style>
 @endpush
 
 @push('scripts')
     <script>
         var totalPermissions = "{{ count($userAvailablePermissions) }}";
+        const permissionCheckboxes = $('.permission-checkbox');
 
         $('#checkAll').click(function() {
-            $('input[type="checkbox"]').prop('checked', true);
+            permissionCheckboxes.prop('checked', true);
             countSelectedPermissions();
         });
 
         $('#uncheckAll').click(function() {
-            $('input[type="checkbox"]').prop('checked', false);
+            permissionCheckboxes.prop('checked', false);
             countSelectedPermissions();
         });
 
         const countSelectedPermissions = () => {
-            totalPermissions = $('input[type="checkbox"]:checked').length;
-            if ($('#checkAll').is(':checked')) {
-                totalPermissions = totalPermissions - 1;
-            }
+            totalPermissions = $('.permission-checkbox:checked').length;
             $('#showTotalPermission').text(totalPermissions);
         }
+
+        $('#permissionSearch').on('input', function() {
+            const query = $(this).val().toLowerCase().trim();
+
+            $('.permission-group-card').each(function() {
+                const groupCard = $(this);
+                const groupLabel = (groupCard.data('group-label') || '').toString();
+                let visibleSections = 0;
+
+                groupCard.find('.permission-section-card').each(function() {
+                    const sectionCard = $(this);
+                    const sectionLabel = (sectionCard.data('permission-label') || '').toString();
+                    let matched = query === '' || groupLabel.includes(query) || sectionLabel.includes(query);
+
+                    if (!matched) {
+                        sectionCard.find('.permission-label').each(function() {
+                            if ($(this).text().toLowerCase().includes(query)) {
+                                matched = true;
+                                return false;
+                            }
+                        });
+                    }
+
+                    sectionCard.toggle(matched);
+                    if (matched) {
+                        visibleSections++;
+                    }
+                });
+
+                groupCard.find('.permission-group-count').text(`${visibleSections} {{ __('modules') }}`);
+                groupCard.toggle(visibleSections > 0);
+            });
+        });
+
+        $('#permissionSearch').trigger('input');
 
         countSelectedPermissions();
     </script>

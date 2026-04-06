@@ -244,6 +244,9 @@
             $payment = $order->payments()?->latest()->first();
             $transactionId = $payment?->payment_token ?? str_pad($order->id, 6, '0', STR_PAD_LEFT);
             $user = $order->customer?->user;
+            $isCod = $order->payment_method->value === 'Cash Payment';
+            $isDelivered = $order->order_status->value === 'Delivered';
+            $isEffectivelyPaid = $order->payment_status->value === 'Paid' || ($isCod && $isDelivered);
         @endphp
 
         <div class="section">
@@ -263,7 +266,7 @@
                                 </tr>
                                 <tr>
                                     <td><strong>Payment Status:</strong></td>
-                                    <td class="text">{{ $order->payment_status->value }}</td>
+                                    <td class="text">{{ $isEffectivelyPaid ? __('Paid') : $order->payment_status->value }}</td>
                                 </tr>
                             </table>
                         </td>

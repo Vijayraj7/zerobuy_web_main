@@ -51,6 +51,8 @@ class GeneraleSettingRepository extends Repository
                 'show_download_app' => $request->show_download_app ? true : false,
                 'google_playstore_url' => $request->google_playstore_url,
                 'app_store_url' => $request->app_store_url,
+                'seller_google_playstore_url' => $request->seller_google_playstore_url,
+                'seller_app_store_url' => $request->seller_app_store_url,
                 'currency' => $currency ? $currency->symbol : '$',
                 'currency_id' => $currency ? $currency->id : null,
                 'currency_position' => $request->currency_position,
@@ -66,7 +68,9 @@ class GeneraleSettingRepository extends Repository
                 'footer_qrcode_id' => $footerQr?->id ?? $generaleSetting?->footer_qrcode_id,
                 'app_logo_id' => $appLogo?->id ?? $generaleSetting?->app_logo_id,
                 'user_android_min_build' => $request->user_android_min_build,
+                'user_ios_min_build' => $request->user_ios_min_build,
                 'seller_android_min_build' => $request->seller_android_min_build,
+                'seller_ios_min_build' => $request->seller_ios_min_build,
             ]
         );
     }
@@ -82,6 +86,28 @@ class GeneraleSettingRepository extends Repository
                 'page_description' => $request->page_description ?? $generaleSetting?->page_description,
                 'product_description' => $request->product_description ?? $generaleSetting?->product_description,
                 'blog_description' => $request->blog_description ?? $generaleSetting?->blog_description,
+            ]
+        );
+    }
+
+    /**
+     * Update only app version and download link fields.
+     */
+    public static function updateByAppVersionRequest($request): void
+    {
+        $generaleSetting = GeneraleSetting::first();
+
+        self::query()->updateOrCreate(
+            ['id' => $generaleSetting?->id ?? null],
+            [
+                'google_playstore_url' => $request->google_playstore_url,
+                'app_store_url' => $request->app_store_url,
+                'seller_google_playstore_url' => $request->seller_google_playstore_url,
+                'seller_app_store_url' => $request->seller_app_store_url,
+                'user_android_min_build' => $request->user_android_min_build,
+                'user_ios_min_build' => $request->user_ios_min_build,
+                'seller_android_min_build' => $request->seller_android_min_build,
+                'seller_ios_min_build' => $request->seller_ios_min_build,
             ]
         );
     }

@@ -56,7 +56,7 @@ class OrderDetailsResource extends JsonResource
             'placed_at' => $this->created_at->format('d M, Y h:i A'),
             'estimated_delivery_date' => (string) $estimateDelivery,
             'payment_method' => $paymentMethod,
-            'payment_status' => $this->payment_status->value,
+            'payment_status' => ($this->payment_method->value === PaymentMethod::CASH->value && $this->order_status->value === 'Delivered') ? PaymentStatus::PAID->value : $this->payment_status->value,
             'gateway_payment_method' => $latestPayment?->payment_method,
             'gateway_payment_status' => $gatewayPaymentStatus,
             'razorpay_order_id' => $latestPayment?->razorpay_order_id,

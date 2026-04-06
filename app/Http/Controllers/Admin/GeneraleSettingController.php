@@ -63,6 +63,18 @@ class GeneraleSettingController extends Controller
     }
 
 
+    public function appVersionIndex()
+    {
+        return view('admin.app-version');
+    }
+
+    public function appVersionUpdate(Request $request)
+    {
+        GeneraleSettingRepository::updateByAppVersionRequest($request);
+
+        return back()->withSuccess(__('App version settings updated successfully'));
+    }
+
     public function aiPromptIndex()
     {
         return view('admin.aiPrompt.index');

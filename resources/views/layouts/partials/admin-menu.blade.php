@@ -62,7 +62,7 @@
 <!------------------------------ Users Management ------------------------------>
 @hasPermission(['admin.employee.index', 'admin.employee.create', 'admin.role.index'])
     <li>
-        <a class="menu {{ request()->routeIs('admin.employee.*') ? 'active' : '' }}" data-bs-toggle="collapse"
+        <a class="menu {{ request()->routeIs('admin.employee.*', 'admin.role.*') ? 'active' : '' }}" data-bs-toggle="collapse"
             href="#employeeMenu">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/employee.svg') }}" alt="icon"
@@ -71,7 +71,7 @@
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="icon" class="downIcon">
         </a>
-        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.employee.*') ? 'show' : '' }}"
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.employee.*', 'admin.role.*') ? 'show' : '' }}"
             id="employeeMenu">
             <div class="listBar">
                 @hasPermission('admin.employee.index')
@@ -1057,7 +1057,7 @@
 <!------------------------------ Business Settings ------------------------------>
 @hasPermission([ 'admin.generale-setting.index', 'admin.business-setting.index', 'admin.socialLink.index', 'admin.themeColor.index', 'admin.deliveryCharge.index', 'admin.ticketIssueType.index', 'admin.verification.index', 'admin.vatTax.index', 'admin.currency.index', 'admin.aiPrompt.index','admin.advrtsettings.edit',])
     <li>
-        <a class="menu {{ request()->routeIs('admin.generale-setting.*', 'admin.business-setting.*', 'admin.socialLink.*', 'admin.themeColor.*', 'admin.deliveryCharge.*', 'admin.ticketIssueType.*', 'admin.verification.*', 'admin.vatTax.*', 'admin.currency.*', 'admin.aiPrompt.index','admin.advrtsettings.edit') ? 'active' : '' }}"
+        <a class="menu {{ request()->routeIs('admin.generale-setting.*', 'admin.app-version.*', 'admin.business-setting.*', 'admin.socialLink.*', 'admin.themeColor.*', 'admin.deliveryCharge.*', 'admin.ticketIssueType.*', 'admin.verification.*', 'admin.vatTax.*', 'admin.currency.*', 'admin.aiPrompt.index','admin.advrtsettings.edit') ? 'active' : '' }}"
             data-bs-toggle="collapse" href="#settings">
             <span>
                 <img class="menu-icon" src="{{ asset('assets/icons-admin/settings.svg') }}" alt="icon"
@@ -1066,7 +1066,7 @@
             </span>
             <img src="{{ asset('assets/icons-admin/caret-down.svg') }}" alt="" class="downIcon">
         </a>
-        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.generale-setting.*', 'admin.business-setting.*', 'admin.socialLink.*', 'admin.themeColor.*', 'admin.deliveryCharge.*', 'admin.ticketIssueType.*', 'admin.verification.*', 'admin.vatTax.*', 'admin.currency.*', 'admin.aiPrompt.index','admin.advrtsettings.edit') ? 'show' : '' }}"
+        <div class="collapse dropdownMenuCollapse {{ $request->routeIs('admin.generale-setting.*', 'admin.app-version.*', 'admin.business-setting.*', 'admin.socialLink.*', 'admin.themeColor.*', 'admin.deliveryCharge.*', 'admin.ticketIssueType.*', 'admin.verification.*', 'admin.vatTax.*', 'admin.currency.*', 'admin.aiPrompt.index','admin.advrtsettings.edit') ? 'show' : '' }}"
             id="settings">
             <div class="listBar">
                 @hasPermission('admin.generale-setting.index')
@@ -1074,8 +1074,11 @@
                         class="subMenu {{ request()->routeIs('admin.generale-setting.index') ? 'active' : '' }}">
                         {{ __('General Settings') }}
                     </a>
-                    <a href="{{ route('admin.generale-setting.index') }}#app-version-settings"
-                        class="subMenu {{ request()->routeIs('admin.generale-setting.index') ? 'active' : '' }}">
+                @endhasPermission
+
+                @hasPermission('admin.app-version.index')
+                    <a href="{{ route('admin.app-version.index') }}"
+                        class="subMenu {{ request()->routeIs('admin.app-version.*') ? 'active' : '' }}">
                         {{ __('App Versions') }}
                     </a>
                 @endhasPermission

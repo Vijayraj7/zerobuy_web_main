@@ -425,6 +425,8 @@ Route::middleware('blockAdminOnShopHost')->name('admin.')->group(function () {
             Route::get('/generale-setting', 'index')->name('generale-setting.index');
             Route::post('/generale-setting', 'update')->name('generale-setting.update')->middleware('demoMode');
             Route::post('/generale-update-command', 'updateCommand')->name('generale-setting.update.command');
+            Route::get('/app-version', 'appVersionIndex')->name('app-version.index');
+            Route::post('/app-version', 'appVersionUpdate')->name('app-version.update')->middleware('demoMode');
             Route::get('/ai-prompts', 'aiPromptIndex')->name('aiPrompt.index');
             Route::post('/ai-prompts/update', 'aiPromptUpdate')->name('aiPrompt.update')->middleware('demoMode');
             Route::get('/ai-prompts/configure', 'aiPromptConfigure')->name('aiPrompt.configure');
