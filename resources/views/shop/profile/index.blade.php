@@ -42,10 +42,10 @@
                                 </div>
                             </div>
                             <div class="mt-2">
-                                <a href="/shops/{{ $shop->id }}" target="blank"
+                                {{-- <a href="/shops/{{ $shop->id }}" target="blank"
                                     class="btn btn-outline-primary btn-sm">
                                     {{ __('View Live') }}
-                                </a>
+                                </a> --}}
                             </div>
                         </div>
                     </div>

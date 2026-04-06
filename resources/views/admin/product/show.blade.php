@@ -13,9 +13,9 @@
                     <div class="rounded overflow-hidden ratio1x1">
                         <img src="{{ $product->thumbnail }}" alt="" width="140">
                     </div>
-                    <a href="/products/{{ $product->id }}/details" target="_blank" class="btn btn-outline-primary mt-3">
+                    {{-- <a href="/products/{{ $product->id }}/details" target="_blank" class="btn btn-outline-primary mt-3">
                         <i class="fa-solid fa-globe"></i> {{ __('View Live') }}
-                    </a>
+                    </a> --}}
                 </div>
 
                 <div class="flex-grow-1">

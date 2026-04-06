@@ -62,10 +62,10 @@
                                             Join Date : {{$shop->created_at->format('d-m-Y | h:i A')}}
                                         </div>
                                         <div class="mt-2">
-                                            <a href="/shops/{{ $shop->id }}" target="blank"
+                                            {{-- <a href="/shops/{{ $shop->id }}" target="blank"
                                                 class="btn btn-outline-primary btn-sm">
                                                 {{ __('View Live') }}
-                                            </a>
+                                            </a> --}}
                                             <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#ResetPasswordModal">
                                                 <i class="bi bi-shield-lock-fill"></i>
                                                 {{ __('Reset Password') }}
