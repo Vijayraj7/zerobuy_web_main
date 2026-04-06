@@ -61,7 +61,7 @@ class ReturnOrderController extends Controller
 
         foreach ($request->order_product_ids as $productId) {
             $orderProduct = $order->products()->wherePivot('id', $productId)->first();
-            $days = $orderProduct->return_days;
+            $days = $orderProduct->pivot->return_days;
 
             if ($order->created_at->diffInDays(now()) > $days) {
                 return $this->json("Cannot return order after {$days} days", [], 422);
