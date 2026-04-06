@@ -7,6 +7,7 @@ use App\Models\ReturnOrder;
 use App\Models\OrderProduct;
 use Illuminate\Http\Request;
 use App\Models\ReturnOrderDetail;
+use App\Models\ReturnOrderStatusTimeline;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ReturnOrderRequest;
 use App\Http\Resources\ReturnOrderResource;
@@ -109,6 +110,16 @@ class ReturnOrderController extends Controller
         }
 
         $returnOrder->update(['status' => 'Cancelled']);
+
+        ReturnOrderStatusTimeline::updateOrCreate(
+            [
+                'return_order_id' => $returnOrder->id,
+                'status' => 'Cancelled',
+            ],
+            [
+                'changed_at' => now(),
+            ]
+        );
 
         $title = 'Return Cancelled';
         $message =  'Return Cancelled by User';

@@ -16,42 +16,35 @@ class ReturnOrderDetailsResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $statusTimelines = $this->statusTimelines
-            ?->sortBy('changed_at')
-            ?->keyBy('status') ?? collect();
+        $statusTimelines = $this->statusTimelines?->sortBy('changed_at') ?? collect();
+        $statusTimelinesByStatus = $statusTimelines->keyBy('status');
+
+        $pendingChangedAt = $statusTimelinesByStatus->get(ReturnOderStatus::PENDING->value)?->changed_at
+            ?? $this->created_at;
+
+        $timeline = [
+            [
+                'status' => ReturnOderStatus::PENDING->value,
+                'changed_at' => $pendingChangedAt ? Carbon::parse($pendingChangedAt)->format('d M, Y h:i A') : null,
+            ],
+        ];
 
         $orderedStatuses = [
-            ReturnOderStatus::PENDING->value,
             ReturnOderStatus::APPROVED->value,
             ReturnOderStatus::COMPLETED->value,
             ReturnOderStatus::REJECTED->value,
             ReturnOderStatus::CANCELLED->value,
         ];
 
-        $currentStatus = $this->status ?? ReturnOderStatus::PENDING->value;
-        $maxIndex = array_search($currentStatus, $orderedStatuses, true);
-        if ($maxIndex === false) {
-            $maxIndex = 0;
-        }
-
-        if ($currentStatus === ReturnOderStatus::CANCELLED->value) {
-            $maxIndex = array_search(ReturnOderStatus::CANCELLED->value, $orderedStatuses, true);
-        }
-
-        $timeline = [];
-        for ($i = 0; $i <= $maxIndex; $i++) {
-            $status = $orderedStatuses[$i];
-            $changedAt = null;
-
-            if ($status === ReturnOderStatus::PENDING->value) {
-                $changedAt = $this->created_at;
-            } elseif ($statusTimelines->has($status)) {
-                $changedAt = $statusTimelines->get($status)?->changed_at;
+        foreach ($orderedStatuses as $status) {
+            $entry = $statusTimelinesByStatus->get($status);
+            if (!$entry) {
+                continue;
             }
 
             $timeline[] = [
                 'status' => $status,
-                'changed_at' => $changedAt ? Carbon::parse($changedAt)->format('d M, Y h:i A') : null,
+                'changed_at' => $entry->changed_at ? Carbon::parse($entry->changed_at)->format('d M, Y h:i A') : null,
             ];
         }
 

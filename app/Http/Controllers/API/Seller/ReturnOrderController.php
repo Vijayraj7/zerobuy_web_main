@@ -74,6 +74,16 @@ class ReturnOrderController extends Controller
             return $this->json('error', __('You do not have permission to update this return order'));
         }
 
+        ReturnOrderStatusTimeline::updateOrCreate(
+            [
+                'return_order_id' => $returnOrder->id,
+                'status' => ReturnOderStatus::PENDING->value,
+            ],
+            [
+                'changed_at' => $returnOrder->created_at,
+            ]
+        );
+
         $previousStatus = (string) $returnOrder->status;
         $returnOrder->update(['status' => $request->status]);
 

@@ -7,6 +7,7 @@ use App\Models\ReturnOrder;
 use App\Models\OrderProduct;
 use App\Models\ProductBulkItem;
 use App\Models\ProductVariant;
+use App\Models\ReturnOrderStatusTimeline;
 use App\Enums\ReturnOderStatus;
 use Abedin\Maker\Repositories\Repository;
 use App\Services\NotificationServices;
@@ -45,6 +46,17 @@ class ReturnOrderRepository extends Repository
             'customer_id' => Auth::user()?->customer?->id,
             'status' => ReturnOderStatus::PENDING->value
         ]);
+
+        ReturnOrderStatusTimeline::updateOrCreate(
+            [
+                'return_order_id' => $returnOrder->id,
+                'status' => ReturnOderStatus::PENDING->value,
+            ],
+            [
+                'changed_at' => $returnOrder->created_at,
+            ]
+        );
+
         foreach ($request->products as $oproduct) {
 
             $orderProduct = $order->products()->wherePivot('order_products.id', $oproduct['order_product_id'])->first();
