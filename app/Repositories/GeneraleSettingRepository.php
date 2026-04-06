@@ -91,6 +91,30 @@ class GeneraleSettingRepository extends Repository
     }
 
     /**
+     * Update only app-version page fields.
+     */
+    public static function updateByAppVersionRequest($request): void
+    {
+        $generaleSetting = GeneraleSetting::first();
+
+        self::query()->updateOrCreate(
+            [
+                'id' => $generaleSetting?->id ?? null,
+            ],
+            [
+                'google_playstore_url' => $request->google_playstore_url,
+                'app_store_url' => $request->app_store_url,
+                'seller_google_playstore_url' => $request->seller_google_playstore_url,
+                'seller_app_store_url' => $request->seller_app_store_url,
+                'user_android_min_build' => $request->user_android_min_build,
+                'user_ios_min_build' => $request->user_ios_min_build,
+                'seller_android_min_build' => $request->seller_android_min_build,
+                'seller_ios_min_build' => $request->seller_ios_min_build,
+            ]
+        );
+    }
+
+    /**
      * Update the logo using the provided request and logo.
      *
      * @param  Media  $logo
