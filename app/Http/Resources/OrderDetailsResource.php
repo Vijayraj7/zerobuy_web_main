@@ -42,7 +42,7 @@ class OrderDetailsResource extends JsonResource
 
         if ($this->created_at && $this->order_status->value === 'Delivered') {
             $is_returned = $this->created_at->copy()
-                ->addDays($generaleSetting?->return_order_within_days ?? 3)
+                ->addDays($this->return_days ?? 0)
                 ->isFuture();
         }
 
@@ -79,9 +79,9 @@ class OrderDetailsResource extends JsonResource
             'all_vat_taxes' => $this->vatTaxes,
             'track_url' => $this->track_url,
             'gst' => $this->gst,
-            'return_order_within_days' => $generaleSetting?->return_order_within_days ?? 3,
+            'return_order_within_days' => $this->return_days ?? 0,
             'last_return_date' => $this->created_at
-                ? $this->created_at->copy()->addDays($generaleSetting?->return_order_within_days ?? 3)->format('d M, Y h:i A')
+                ? $this->created_at->copy()->addDays($this->return_days ?? 0)->format('d M, Y h:i A')
                 : null,
             'is_returnable' => $is_returned,
             'order_status_timelines' => $this->statusTimelines->map(function ($timeline) {
