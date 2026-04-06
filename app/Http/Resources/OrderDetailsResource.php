@@ -40,9 +40,11 @@ class OrderDetailsResource extends JsonResource
 
         $is_returned = false;
 
+        $return_days = (int) ($this->products->pluck('return_days')->filter()->max() ?? 0);
+
         if ($this->created_at && $this->order_status->value === 'Delivered') {
             $is_returned = $this->created_at->copy()
-                ->addDays($this->return_days ?? 0)
+                ->addDays($return_days)
                 ->isFuture();
         }
 
@@ -79,9 +81,9 @@ class OrderDetailsResource extends JsonResource
             'all_vat_taxes' => $this->vatTaxes,
             'track_url' => $this->track_url,
             'gst' => $this->gst,
-            'return_order_within_days' => $this->return_days ?? 0,
+            'return_order_within_days' => $return_days,
             'last_return_date' => $this->created_at
-                ? $this->created_at->copy()->addDays($this->return_days ?? 0)->format('d M, Y h:i A')
+                ? $this->created_at->copy()->addDays($return_days)->format('d M, Y h:i A')
                 : null,
             'is_returnable' => $is_returned,
             'order_status_timelines' => $this->statusTimelines->map(function ($timeline) {

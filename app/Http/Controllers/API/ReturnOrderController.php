@@ -54,17 +54,18 @@ class ReturnOrderController extends Controller
     public function store(ReturnOrderRequest $request)
     {
         $order = Order::where('id', $request->order_id)->first();
-        $days = generaleSetting()->return_order_within_days;
 
-        if ($order->created_at->diffInDays(now()) > $days) {
-            return $this->json("Cannot return order after {$days} days", [], 422);
-        }
         if ($order->order_status->value != 'Delivered') {
             return $this->json("This Order is not Delivered yet", [], 422);
         }
 
         foreach ($request->order_product_ids as $productId) {
             $orderProduct = $order->products()->wherePivot('id', $productId)->first();
+            $days = $orderProduct->return_days;
+
+            if ($order->created_at->diffInDays(now()) > $days) {
+                return $this->json("Cannot return order after {$days} days", [], 422);
+            }
 
             if (! $orderProduct) {
                 return $this->json("Product with ID {$productId} not found in this order", [], 422);
