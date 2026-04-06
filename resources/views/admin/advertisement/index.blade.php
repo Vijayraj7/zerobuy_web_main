@@ -19,7 +19,9 @@
             <a href="{{ route('admin.advertisement.transactions') }}" class="btn btn-warning">
                 <i class="fa fa-exchange"></i> {{ __('Transaction History') }}
             </a>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#advertisementModal"> {{ __('Run Ads') }} </button>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#advertisementModal">
+                <i class="fa fa-plus-circle"></i> {{ __('Run Ads') }}
+            </button>
         </div>
     </div>
 </div>
@@ -180,16 +182,64 @@ $(function () {
     });
 
     // DATE & TOTAL BUDGET
-    $('#start_date,#end_date').change(function(){
-        let s = $('#start_date').val();
-        let e = $('#end_date').val();
-        let d = $('#daily_budget').val();
+    function parseLocalDate(dateString){
+        const parts = (dateString || '').split('-');
+        if(parts.length !== 3) return null;
+        return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    }
 
-        if(s && e){
-            let days = (new Date(e) - new Date(s)) / 86400000 + 1;
-            $('#total_budget').val(days * d);
+    function validateAdDateRange(showError = false){
+        const s = $('#start_date').val();
+        const e = $('#end_date').val();
+        const dailyBudget = parseFloat($('#daily_budget').val() || 0);
+
+        $('#end_date').attr('min', s || "{{ date('Y-m-d') }}");
+
+        if(e){
+            $('#start_date').attr('max', e);
+        } else {
+            $('#start_date').removeAttr('max');
+        }
+
+        if(!s || !e){
+            $('#total_budget').val('');
+            if(showError){
+                $('#formError').removeClass('d-none').text('Start date and end date are required.');
+            }
+            return false;
+        }
+
+        const startDate = parseLocalDate(s);
+        const endDate = parseLocalDate(e);
+        if(!startDate || !endDate || endDate < startDate){
+            $('#total_budget').val('');
+            if(showError){
+                $('#formError').removeClass('d-none').text('End date must be after or same as start date.');
+            }
+            return false;
+        }
+
+        const days = Math.floor((endDate - startDate) / 86400000) + 1;
+        $('#total_budget').val((days * dailyBudget).toFixed(2));
+        return true;
+    }
+
+    $('#start_date').on('change click', function(){
+        const s = $('#start_date').val();
+        if(s){
             $('#end_date').attr('min', s);
         }
+        validateAdDateRange(false);
+    });
+
+    $('#end_date').on('change click', function(){
+        const e = $('#end_date').val();
+        if(e){
+            $('#start_date').attr('max', e);
+        } else {
+            $('#start_date').removeAttr('max');
+        }
+        validateAdDateRange(false);
     });
 
     // LOAD PRODUCTS
@@ -221,6 +271,9 @@ $(function () {
         $('#ads_type').val('product');
         $('#productSection').removeClass('d-none');
 
+        $('#start_date').removeAttr('max');
+        $('#end_date').attr('min', "{{ date('Y-m-d') }}");
+
         loadProducts(); // auto load products
     });
 
@@ -235,8 +288,13 @@ $(function () {
     // SUBMIT
     $('#advertisementForm').submit(function(e){
         e.preventDefault();
-        $('#submitBtn').prop('disabled',true);
         $('#formError').addClass('d-none');
+
+        if(!validateAdDateRange(true)){
+            return;
+        }
+
+        $('#submitBtn').prop('disabled',true);
 
         $.post("{{ route('admin.advertisement.store') }}",
             $(this).serialize()
