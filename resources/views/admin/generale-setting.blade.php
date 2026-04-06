@@ -135,25 +135,93 @@
             </div>
         </div>
 
-        <!--######## Download App Toggle ##########-->
+        <!--######## download app link ##########-->
         <div class="card mt-4">
             <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2 py-3">
                 <div class="d-flex align-items-center gap-2">
                     <i class="bi bi-app-indicator"></i>
                     <h5 class="mb-0">
-                        {{ __('Download App') }}
+                        {{ __('Download App Link') }}
                     </h5>
                 </div>
+
                 <div>
-                    <label class="m-0 fw-bold" for="show_download_app_toggle">
+                    <label class="m-0 fw-bold" for="toggle">
                         {{ __('Show/Hide Website Navigation Download App') }}
                     </label>
                     <label class="switch mb-0" data-bs-toggle="tooltip" data-bs-placement="left"
                         data-bs-title="Show/Hide">
-                        <input id="show_download_app_toggle" type="checkbox" {{ $generaleSetting?->show_download_app ? 'checked' : '' }}
+                        <input id="toggle" type="checkbox" {{ $generaleSetting?->show_download_app ? 'checked' : '' }}
                             name="show_download_app">
                         <span class="slider round"></span>
                     </label>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row gy-3">
+                    <div class="col-md-6">
+                        <label for="" class="mb-1">
+                            {{ __('Google PlayStore App Link') }}
+                        </label>
+                        <textarea name="google_playstore_url" class="form-control" rows="3"
+                            placeholder="Enter Google PlayStore App Link">{{ $generaleSetting?->google_playstore_url }}</textarea>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="" class="mb-1">
+                            {{ __('Apple Store App Link') }}
+                        </label>
+                        <textarea name="app_store_url" class="form-control" rows="3" placeholder="Enter Apple Store App Link">{{ $generaleSetting?->app_store_url }}</textarea>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="" class="mb-1">
+                            {{ __('Seller App Google PlayStore Link') }}
+                        </label>
+                        <textarea name="seller_google_playstore_url" class="form-control" rows="3"
+                            placeholder="Enter Seller App Google PlayStore Link">{{ $generaleSetting?->seller_google_playstore_url }}</textarea>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="" class="mb-1">
+                            {{ __('Seller App Apple Store Link') }}
+                        </label>
+                        <textarea name="seller_app_store_url" class="form-control" rows="3"
+                            placeholder="Enter Seller App Apple Store Link">{{ $generaleSetting?->seller_app_store_url }}</textarea>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4" id="app-version-settings">
+            <div class="card-header d-flex align-items-center gap-2 py-3">
+                <i class="bi bi-phone"></i>
+                <h5 class="mb-0">{{ __('App Versions') }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row gy-3">
+                    <div class="col-md-6">
+                        <x-input type="number" name="user_android_min_build" label="User App Android Min Build"
+                            placeholder="Enter user app minimum Android build number" :value="$generaleSetting?->user_android_min_build" />
+                    </div>
+                    <div class="col-md-6">
+                        <x-input type="number" name="user_ios_min_build" label="User App iOS Min Build"
+                            placeholder="Enter user app minimum iOS build number" :value="$generaleSetting?->user_ios_min_build" />
+                    </div>
+                    <div class="col-md-6">
+                        <x-input type="number" name="seller_android_min_build" label="Seller App Android Min Build"
+                            placeholder="Enter seller app minimum Android build number" :value="$generaleSetting?->seller_android_min_build" />
+                    </div>
+                    <div class="col-md-6">
+                        <x-input type="number" name="seller_ios_min_build" label="Seller App iOS Min Build"
+                            placeholder="Enter seller app minimum iOS build number" :value="$generaleSetting?->seller_ios_min_build" />
+                    </div>
+                    <div class="col-12">
+                        <small class="text-muted">
+                            {{ __('If app build number is lower than these values, users will see a forced update bottom sheet in the apps.') }}
+                        </small>
+                    </div>
                 </div>
             </div>
         </div>

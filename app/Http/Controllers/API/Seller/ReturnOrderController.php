@@ -58,7 +58,8 @@ class ReturnOrderController extends Controller
     {
         $request->validate(['status' => ['required', new Enum(ReturnOderStatus::class)]]);
 
-        $returnOrder = ReturnOrder::where('id', $request->order_id)->first();
+        $returnOrderId = $request->input('return_id', $request->input('order_id'));
+        $returnOrder = ReturnOrder::where('id', $returnOrderId)->first();
         if (!$returnOrder) {
             return $this->json('error', __('Not Found'));
         }
@@ -70,7 +71,7 @@ class ReturnOrderController extends Controller
         $shop = auth()->user()->shop;
 
         if ($returnOrder->shop_id != $shop->id) {
-            return $this->json('error', __('You do not have permission to update this order'));
+            return $this->json('error', __('You do not have permission to update this return order'));
         }
 
         $previousStatus = (string) $returnOrder->status;

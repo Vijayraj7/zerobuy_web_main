@@ -100,15 +100,15 @@ class ReturnOrderController extends Controller
             return $this->json('Return order not found', [], 404);
         }
 
-        if ($returnOrder->status === 'cancelled') {
+        if ($returnOrder->status === 'Cancelled') {
             return $this->json('Return order is already cancelled', [], 422);
         }
 
-        if (in_array($returnOrder->status, ['completed', 'rejected'])) {
+        if (in_array($returnOrder->status, ['Completed', 'Rejected'])) {
             return $this->json('Cannot cancel this return order', [], 422);
         }
 
-        $returnOrder->update(['status' => 'cancelled']);
+        $returnOrder->update(['status' => 'Cancelled']);
 
         $title = 'Return Cancelled';
         $message =  'Return Cancelled by User';
