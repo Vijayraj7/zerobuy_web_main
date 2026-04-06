@@ -79,7 +79,7 @@
 
                 <div class="modal-header">
                     <h5>{{ __('Run Advertisement') }}</h5>
-                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
                 <div class="modal-body">
@@ -132,7 +132,7 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button class="btn btn-primary" id="submitBtn"> RUN </button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn"> RUN </button>
                 </div>
             </div>
         </form>

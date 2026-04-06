@@ -95,7 +95,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5>{{ __('Add Money to Ad Wallet') }}</h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="addMoneyForm">
@@ -108,8 +108,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
-                <button class="btn btn-success" id="addMoneyBtn">{{ __('Proceed to Payment') }}</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                <button type="button" class="btn btn-success" id="addMoneyBtn">{{ __('Proceed to Payment') }}</button>
             </div>
         </div>
     </div>
@@ -124,7 +124,7 @@
 
                 <div class="modal-header">
                     <h5>{{ __('Run Advertisement') }}</h5>
-                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
                 <div class="modal-body">
@@ -177,7 +177,7 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button class="btn btn-primary" id="submitBtn"> RUN </button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn"> RUN </button>
                 </div>
             </div>
         </form>
