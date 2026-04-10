@@ -12,9 +12,24 @@ use App\Repositories\WalletRepository;
 use App\Repositories\ReturnOrderRepository;
 use App\Repositories\TransactionRepository;
 use Carbon\Carbon;
+use Illuminate\Validation\Rule;
 
 class ReturnOrderController extends Controller
 {
+    private function allowedNextStatuses(string $currentStatus): array
+    {
+        return match ($currentStatus) {
+            ReturnOderStatus::PENDING->value => [
+                ReturnOderStatus::APPROVED->value,
+                ReturnOderStatus::REJECTED->value,
+            ],
+            ReturnOderStatus::APPROVED->value => [
+                ReturnOderStatus::COMPLETED->value,
+            ],
+            default => [],
+        };
+    }
+
     // public function index()
     // {
     //     $returnOrder = ReturnOrderRepository::query()->latest('id')->paginate(20);
@@ -135,14 +150,13 @@ class ReturnOrderController extends Controller
     {
         $returnOrder->load('order.address.stateData', 'order.address.districtData', 'returnProduct.product', 'returnProductImages');
 
-        $returnStatus = ReturnOderStatus::cases();
-        return view('shop.returnOrder.show', compact('returnOrder', 'returnStatus'));
+        $allowedNextStatuses = $this->allowedNextStatuses((string) $returnOrder->status);
+
+        return view('admin.returnOrder.show', compact('returnOrder', 'allowedNextStatuses'));
     }
 
     public function statusChange(ReturnOrder $returnOrder, Request $request)
     {
-        $request->validate(['status' => 'required']);
-
         $shopId   = auth()->user()->shop->id;
         $rootShop = generaleSetting('rootShop');
 
@@ -153,6 +167,16 @@ class ReturnOrderController extends Controller
         if ($returnOrder->payment_status == 1) {
             return back()->with('error', __('Already paid for this order'));
         }
+
+        $allowedNextStatuses = $this->allowedNextStatuses((string) $returnOrder->status);
+
+        if (empty($allowedNextStatuses)) {
+            return back()->with('error', __('Status cannot be changed from current state'));
+        }
+
+        $request->validate([
+            'status' => ['required', Rule::in($allowedNextStatuses)],
+        ]);
 
         $previousStatus = (string) $returnOrder->status;
         $returnOrder->update(['status' => $request->status]);
@@ -188,8 +212,8 @@ class ReturnOrderController extends Controller
         if ($returnOrder->status == 'Pending') {
             return back()->with('error', __('Return order is not approved yet'));
         }
-        if ($returnOrder->status == 'Cancelled') {
-            return back()->with('error', __('Return order is Cancelled'));
+        if (in_array($returnOrder->status, ['Cancelled', 'Rejected'], true)) {
+            return back()->with('error', __('Return order is not eligible for payment update'));
         }
         if ($returnOrder->payment_status == 1) {
             return back()->with('error', __('Payment status updated successfully'));

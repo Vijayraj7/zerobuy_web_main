@@ -206,16 +206,16 @@
                             data-bs-toggle="dropdown" aria-expanded="false">
                             {{ $returnOrder->status }}
                         </a>
-                        @if ($returnOrder->status != 'Cancelled' && $returnOrder->status != 'Refunded')
+                        @if (!empty($allowedNextStatuses))
                             @hasPermission(['shop.order.status.change'])
                                 <ul class="dropdown-menu order-status">
-                                    @foreach(\App\Enums\ReturnOderStatus::visibleStatuses() as $status)
+                                    @foreach($allowedNextStatuses as $status)
                                         <li>
                                             <form action="{{ route('shop.returnOrder.status.change', $returnOrder->id) }}" method="POST">
                                                 @csrf
-                                                <input type="hidden" name="status" value="{{ $status->value }}">
+                                                <input type="hidden" name="status" value="{{ $status }}">
                                                 <button type="submit" class="dropdown-item">
-                                                    {{ __($status->value) }}
+                                                    {{ __($status) }}
                                                 </button>
                                             </form>
                                         </li>
