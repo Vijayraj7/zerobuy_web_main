@@ -32,6 +32,18 @@ class ReturnOrderRequest extends FormRequest
             'ifsc' => 'nullable|string|max:50',
             'upi_id' => 'nullable|string|max:100',
             'return_address' => 'required|string',
+            'images' => 'nullable|array|max:5',
+            'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:20480',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'images.max' => 'You can upload up to 5 images.',
+            'images.*.image' => 'Each uploaded file must be an image.',
+            'images.*.mimes' => 'Images must be in jpg, jpeg, png, or webp format.',
+            'images.*.max' => 'Each image must be less than or equal to 20 MB.',
         ];
     }
 }

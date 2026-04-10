@@ -5,6 +5,7 @@ namespace App\Exceptions;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Exceptions\PostTooLargeException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use RuntimeException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -27,7 +28,23 @@ class Handler extends ExceptionHandler
     {
         // 413: Payload Too Large
         if ($exception instanceof PostTooLargeException) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Uploaded files are too large. Please upload smaller images.',
+                ], 413);
+            }
+
             return back()->withErrors(['error' => 'File size is too large.'], 413);
+        }
+
+        if ($exception instanceof RuntimeException) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $exception->getMessage(),
+                ], 422);
+            }
         }
 
         // 403: Access Denied handler

@@ -14,6 +14,7 @@ use App\Services\NotificationServices;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 class ReturnOrderRepository extends Repository
 {
@@ -75,19 +76,24 @@ class ReturnOrderRepository extends Repository
             $totalAmount += $orderProduct->pivot->price * $qnty;
         }
 
-        try {
-            // Handle image uploads
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
+        // Handle image uploads
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                try {
                     $path = $image->store('return_orders', 'public');
                     $returnOrder->returnProductImages()->create([
                         'image_path' => $path,
                     ]);
+                } catch (\Throwable $e) {
+                    Log::error('Return Order Image Upload Error', [
+                        'return_order_id' => $returnOrder->id,
+                        'file_name' => $image->getClientOriginalName(),
+                        'message' => $e->getMessage(),
+                    ]);
+
+                    throw new RuntimeException('Failed to upload one or more return images. Please try with a smaller image or different format.');
                 }
             }
-        } catch (\Exception $e) {
-            // Log the error or handle it as needed
-            Log::error('Return Order Image Upload Error: ' . $e->getMessage());
         }
 
         $returnOrder->amount = $totalAmount;
