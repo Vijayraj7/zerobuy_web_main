@@ -16,11 +16,7 @@
                             <div class="order-item">
                                 <label class="label">{{ __('Order Id') }}:</label>
                                 <span class="value">#{{ $returnOrder->order->prefix . $returnOrder->order->order_code }}</span>
-                            </div> 
-                            <!-- <div class="order-item">
-                                <label class="label">{{ __('Payment Status') }}:</label>
-                                <span class="value">{{ $returnOrder->order->payment_status }}</span>
-                            </div> -->
+                            </div>
                             <div class="order-item">
                                 <label class="label">{{ __('Order Status') }}:</label>
                                 <span class="value">{{ $returnOrder->order->order_status }}</span>
