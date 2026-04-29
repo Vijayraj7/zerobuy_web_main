@@ -27,7 +27,6 @@ class SellerUserResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'shop_code' => $this->shop_code,
             'first_name' => $this->name,
             'last_name' => $this->last_name,
             'phone' => $this->phone,
@@ -40,6 +39,7 @@ class SellerUserResource extends JsonResource
             'admin_whatsapp_order_enabled' => (bool) (generaleSetting()?->whatsapp_order_enabled ?? false),
             'shop' => [
                 'id' => $shop->id,
+                'shop_code' => $this->shop_code,
                 'state' => $shop->states ? $shop->states->name : null,
                 'state_id' => $shop->states ? (int)$shop->states->id : null,
                 'store_type' => $shop->store_type,
