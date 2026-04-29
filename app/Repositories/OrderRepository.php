@@ -210,8 +210,8 @@ class OrderRepository extends Repository
 
                 if ($cart->variant) {
                     $order_variant_id = OrderVariant::create([
-                        'color_name' => $cart->variant->color?->name,
-                        'color_code' => $cart->variant->color?->color_code,
+                        'color_name' => $cart->variant->color->name,
+                        'color_code' => $cart->variant->color->color_code,
                         'size_name' => $cart->variant->size?->name,
                         'price' => $cart->variant->price,
                         'quantity' => $cart->quantity,
