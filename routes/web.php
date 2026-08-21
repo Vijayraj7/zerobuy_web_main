@@ -110,6 +110,12 @@ Route::match(['get', 'post'], '/subscription/payment/{payment}/cancel', [Subscri
 // check user is online or not
 Route::post('/update/last/seen', [CheckOnlineUserController::class, 'checkOnlineStatus']);
 
+// Account deactivation routes (Play Store App Delete URL)
+Route::controller(\App\Http\Controllers\UserDeactivateController::class)->group(function () {
+    Route::get('/delete-account', 'show')->name('account.delete.show');
+    Route::post('/delete-account', 'deactivate')->name('account.delete.submit');
+});
+
 // handle frontend page load
 Route::get('/{any}', function () {
     // manage admin and shop routes
