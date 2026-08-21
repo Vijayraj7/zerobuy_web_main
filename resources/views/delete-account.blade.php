@@ -492,7 +492,7 @@
                     @enderror
 
                     <!-- Submit Button -->
-                    <button type="submit" class="btn">Deactivate Account</button>
+                    <button type="submit" class="btn">Delete Account</button>
                 </form>
             @endif
 
