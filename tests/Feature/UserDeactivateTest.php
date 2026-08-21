@@ -18,7 +18,7 @@ class UserDeactivateTest extends TestCase
         $response = $this->get(route('account.delete.show'));
 
         $response->assertStatus(200);
-        $response->assertSee('Deactivate Account');
+        $response->assertSee('Delete Account');
     }
 
     /**

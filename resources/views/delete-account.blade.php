@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Deactivate Account | {{ $setting?->title ?? config('app.name', 'ZeroBuy') }}</title>
+    <title>Delete Account | {{ $setting?->title ?? config('app.name', 'ZeroBuy') }}</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -389,9 +389,9 @@
                             <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
                     </div>
-                    <h2 class="success-title">Account Deactivated</h2>
+                    <h2 class="success-title">Account Deleted</h2>
                     <p class="success-desc">
-                        Your account has been successfully deactivated. Your personal data is preserved securely but your account profile is now offline and inactive. You have been signed out from all active app sessions.
+                        Your account deletion request has been successfully processed. Your profile has been taken offline and you have been signed out from all active sessions.
                     </p>
                     <a href="{{ url('/') }}" class="btn-secondary">Go to Home</a>
                 </div>
@@ -409,7 +409,7 @@
                         @endif
                     </div>
                     <div class="app-name">{{ $setting?->title ?? config('app.name', 'ZeroBuy') }}</div>
-                    <h1 class="title">Deactivate Account</h1>
+                    <h1 class="title">Delete Account</h1>
                 </div>
 
                 <div class="alert-box">
@@ -419,7 +419,7 @@
                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
                     <div>
-                        <strong>Important:</strong> Deactivating your account will take your profile offline and log you out of all devices immediately. Your existing order records, transaction logs, and profile data will not be deleted but you will not be able to log in.
+                        <strong>Important:</strong> Deleting your account will take your profile offline and log you out of all devices immediately. You will no longer be able to log in or access your profile.
                     </div>
                 </div>
 
@@ -463,12 +463,12 @@
 
                     <!-- Reason field -->
                     <div class="form-group">
-                        <label class="label" for="reason">Reason for leaving (Optional)</label>
+                        <label class="label" for="reason">Reason for deleting (Optional)</label>
                         <textarea 
                             id="reason" 
                             name="reason" 
                             class="input textarea @error('reason') input-error @enderror" 
-                            placeholder="Please tell us why you are deactivating your account"
+                            placeholder="Please tell us why you are deleting your account"
                         >{{ old('reason') }}</textarea>
                         @error('reason')
                             <span class="error-message">{{ $message }}</span>
@@ -484,7 +484,7 @@
                             </svg>
                         </span>
                         <span class="checkbox-label">
-                            I confirm that I understand this will <strong>deactivate my account profile</strong> and that my account data is not deleted from the server.
+                            I confirm that I want to <strong>delete my account profile</strong> and remove all my access.
                         </span>
                     </label>
                     @error('confirm')
